@@ -7,7 +7,7 @@ This repository acts as a single source location to help you get or build all th
 
 ## Contributing  
 
-The RackHD project is a collection of libraries and applications housed at https://github.com/RackHD/. The code for RackHD is a combination of Python, Javascript (NodeJS), and C, available under the Apache 2.0 license (or compatible sublicences for library dependencies).
+The RackHD project is a collection of libraries and applications housed at https://github.com/RackHD/. The code for RackHD is a combination of Javascript (Node.js), and C, available under the Apache 2.0 license (or compatible sublicences for library dependencies).
 
 We maintain a mailing list at https://groups.google.com/d/forum/rackhd. You can visit the group
 through the web page, or subscribe directly from email by sending email to rackhd+subscribe@googlegroups.com
