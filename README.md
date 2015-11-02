@@ -5,16 +5,18 @@ RackHD (Rack Hardware Director) is a technology stack up created for enabling ha
 
 This repository acts as a single source location to help you get or build all the pieces to learn about, take advantage of, and contribute to RackHD.
 
-## Contributing  
+## Contribute  
 
 The RackHD project is a collection of libraries and applications housed at https://github.com/RackHD/. The code for RackHD is a combination of Javascript (Node.js), and C, available under the Apache 2.0 license (or compatible sublicences for library dependencies).
+
+Code and Bug submissions at handled on github at the relevant repository for the code, with more detail in our documentation at http://rackhd.readthedocs.org/en/latest/contributing.html
+
+## Community
 
 We maintain a mailing list at https://groups.google.com/d/forum/rackhd. You can visit the group
 through the web page, or subscribe directly from email by sending email to rackhd+subscribe@googlegroups.com
 
 We also have a #RackHD slack channel under https://codecommunity.slack.com - https://codecommunity.slack.com/messages/rackhd/. You can get an invite by requesting one at http://community.emccode.com. The subchannel is #rackhd.
-
-Code and Bug submissions at handled on github at the relevant repository for the code, with more detail in our documentation at http://rackhd.readthedocs.org/en/latest/contributing.html
 
 ## Documentation
 
