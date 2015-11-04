@@ -1,0 +1,6 @@
+---
+- name: Install Build Tools
+  apt: pkg={{ item }} state=installed update-cache=yes
+  with_items:
+    - build-essential
+  sudo: yes

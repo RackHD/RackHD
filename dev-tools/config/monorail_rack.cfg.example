@@ -1,0 +1,5 @@
+# monorail_rack.cfg
+# used to customize default deployment
+
+# deployment variables
+pxe_count=1

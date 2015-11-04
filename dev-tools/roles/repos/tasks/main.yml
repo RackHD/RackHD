@@ -1,0 +1,13 @@
+---
+- name: Install/Update Service Repos
+  git: repo=https://github.com/RackHD/{{ item }}.git
+       dest=/home/vagrant/src/{{ item }}
+       accept_hostkey=yes
+  with_items:
+    - on-core
+    - on-http
+    - on-tftp
+    - on-dhcp-proxy
+    - on-taskgraph
+    - on-syslog
+  sudo: yes 

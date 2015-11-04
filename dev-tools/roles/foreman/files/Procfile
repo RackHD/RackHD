@@ -1,0 +1,9 @@
+# Copyright 2015, EMC, Inc.
+
+# SUDO must be enabled in the terminal before running nf start (or run sudo nf start)
+# See .env for environment variable definitions
+graph: /bin/bash -c "echo running $TASKGRAPHDIR/index.js; cd $TASKGRAPHDIR && exec sudo node index.js"
+http: /bin/bash -c "echo running $HTTPDIR/index.js; cd $HTTPDIR && exec sudo node index.js"
+dhcp: /bin/bash -c "echo running $DHCPDIR/index.js; cd $DHCPDIR && exec sudo node index.js"
+tftp: /bin/bash -c "echo running $TFTPDIR/index.js; cd $TFTPDIR && exec sudo node index.js"
+syslog: /bin/bash -c "echo running $SYSLOGDIR/index.js; cd $SYSLOGDIR && exec sudo node index.js"
