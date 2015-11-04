@@ -18,7 +18,7 @@ Code and bug submissions are handled on GitHub at the relevant repository for th
 We maintain a mailing list at https://groups.google.com/d/forum/rackhd. You can visit the group
 through the web page, or subscribe directly from email by sending email to rackhd+subscribe@googlegroups.com
 
-We also have a #RackHD slack channel under https://codecommunity.slack.com - https://codecommunity.slack.com/messages/rackhd/. You can get an invite by requesting one at http://community.emccode.com. The subchannel is #rackhd.
+We also have a #RackHD slack channel: You can get an invite by requesting one at http://community.emccode.com.
 
 ## Documentation
 
