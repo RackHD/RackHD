@@ -1,17 +1,4 @@
 ---
-#- name: Install/Update Service Repos
-#  git: repo=https://github.com/RackHD/{{ item }}.git
-#       dest=/home/vagrant/src/{{ item }}
-#       accept_hostkey=yes
-#  with_items:
-#    - on-core
-#    - on-http
-#    - on-tftp
-#    - on-dhcp-proxy
-#    - on-taskgraph
-#    - on-syslog
-#  sudo: yes
-
 - name: Init git submodules
   shell: git submodule init
   args:
@@ -35,3 +22,7 @@
     - on-syslog
     - on-tasks
   sudo: yes 
+
+- name: Make common static directory
+  file: path /home/vagrant/src/on-http/static/http/common state=directory
+  sudo: yes
