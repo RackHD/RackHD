@@ -26,8 +26,8 @@
 
     $ cp ./monorail_rack.cfg.example ./monorail_rack.cfg
 
-    Edits can be made to this new file to adjust the number of clients created.
-
+    Edits can be made to this new file to adjust the number of pxe clients created.
+    Please see below for more information on the configuration file.
 
     $ cd ~/<repos directory>/RackHD/dev-tools/bin/
 
@@ -52,6 +52,23 @@
   Provision an existing monorail server:
 
     $ vagrant provision
+
+## CONFIGURATION FILE
+
+```
+# monorail_rack.cfg
+# used to customize default deployment
+# edit $pxe_count to change the amount of headless pxe clients are created when running
+# the monorail_rack setup script.
+
+# deployment variables
+pxe_count=1
+```
+
+Changing the number of $pxe_count within the running configuration script will effect how many headless pxe clients are created when running the monorail_rack setup script.
+
+Please note, and example configuration file is provided and you must copy that file to a new file with the same name excluding the .example extension.
+
 
 ## ENVIRONMENT BREAKDOWN
 
