@@ -1,15 +1,23 @@
 ---
-- name: Install/Update Service Repos
-  git: repo=https://github.com/RackHD/{{ item }}.git
-       dest=/home/vagrant/src/{{ item }}
-       accept_hostkey=yes
-  with_items:
-    - on-core
-    - on-http
-    - on-tftp
-    - on-dhcp-proxy
-    - on-taskgraph
-    - on-syslog
+#- name: Install/Update Service Repos
+#  git: repo=https://github.com/RackHD/{{ item }}.git
+#       dest=/home/vagrant/src/{{ item }}
+#       accept_hostkey=yes
+#  with_items:
+#    - on-core
+#    - on-http
+#    - on-tftp
+#    - on-dhcp-proxy
+#    - on-taskgraph
+#    - on-syslog
+#  sudo: yes
+
+- name: Init git submodules
+  shell: cd /home/vagrant/src; git submodule init
+  sudo: yes
+
+- name: Populate git submodules
+  shell: cd /home/vagrant/src; git submodule update
   sudo: yes
 
 - name: Npm install Repos
@@ -21,4 +29,5 @@
     - on-dhcp-proxy
     - on-taskgraph
     - on-syslog
+    - on-tasks
   sudo: yes 

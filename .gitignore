@@ -1,9 +1,3 @@
 dev-tools/.vagrant
 dev-tools/config/monorail_rack.cfg
 dev-tools/bin/pxe*
-on-core/
-on-dhcp-proxy/
-on-http/
-on-syslog/
-on-taskgraph/
-on-tftp/
