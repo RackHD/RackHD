@@ -4,7 +4,7 @@
 
   We expect the latest version of GIT, Vagrant, and Ansible installed onto the host system.
 
-  We excpect static files to be located in the correct path from the parent directory of on-dev:
+  We expect static files to be located in the correct path from the parent directory of dev-tools:
 
     i.e.
         ~/<repos directory>/RackHD/on-http/static/http/common/
@@ -33,23 +33,13 @@
 
     $ ./monorail_rack
 
+  Copy local basic static files to common directory:
+
+    $ cp ~/<static files directory>/* ~/<repos directory>/RackHD/on-http/static/http/common/
+
   Now ssh into the monorail server:
 
     $ vagrant ssh dev
-
-
-  We will now need to do fresh npm installs on all basic services.
-  This can be done by entering the /src directory, and then
-  entering each service folder and running npm install.
-
-    i.e.
-
-      $ cd /home/vagrant/src/on-http
-
-      $ npm install 
-
-  Please note, before procceeding you must copy static files to the location listed within the above requirments.
-
 
   Bring up all monorail services:
 
