@@ -1,4 +1,6 @@
-#Documentation...
+## DOCUMENTATION
+
+  The monorail_rack setup script is an easy "one button push" script to deploy an virtual rack within virtualbox to emulate a monorail server and some number of virtualbox PXE-booting clients.
 
 ## PRE-REQS
 
@@ -9,7 +11,8 @@
     i.e.
         ~/<repos directory>/RackHD/on-http/static/http/common/
 
-
+  Our static files can be built locally using the tools found here:
+      https://github.com/RackHD/on-imagebuilder
 
 ## SET UP INSTRUCTIONS
 
@@ -58,7 +61,7 @@
 ```
 # monorail_rack.cfg
 # used to customize default deployment
-# edit $pxe_count to change the amount of headless pxe clients are created when running
+# edit $pxe_count to change the amount of virtualbox PXE-booting clients are created when running
 # the monorail_rack setup script.
 
 # deployment variables
