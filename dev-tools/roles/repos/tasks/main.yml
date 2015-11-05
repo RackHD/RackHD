@@ -13,11 +13,15 @@
 #  sudo: yes
 
 - name: Init git submodules
-  shell: cd /home/vagrant/src; git submodule init
+  shell: git submodule init
+  args:
+    chdir: /home/vagrant/src
   sudo: yes
 
 - name: Populate git submodules
-  shell: cd /home/vagrant/src; git submodule update
+  shell: git submodule update
+  args:
+    chdir: /home/vagrant/src
   sudo: yes
 
 - name: Npm install Repos
