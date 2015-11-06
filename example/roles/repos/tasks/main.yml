@@ -11,6 +11,20 @@
     chdir: /home/vagrant/src
   sudo: yes
 
+- name: Checkout branch and set HEAD to most current
+  shell: git checkout {{ branch }}
+  args:
+    chdir: /home/vagrant/src/{{ item }}
+  with_items:
+    - on-core
+    - on-http
+    - on-tftp
+    - on-dhcp-proxy
+    - on-taskgraph
+    - on-syslog
+    - on-tasks
+  sudo: yes
+
 - name: Npm install Repos
   npm: path=/home/vagrant/src/{{ item }}
   with_items:
