@@ -1,0 +1,16 @@
+---
+- name: Development Server
+  hosts: all
+  sudo: no
+  roles:
+    - build
+    - git
+    - rabbitmq
+    - mongodb
+    - node
+    - isc-dhcp-server
+    - monorail
+    - snmptool
+    - ipmitool
+    - foreman
+    - repos 

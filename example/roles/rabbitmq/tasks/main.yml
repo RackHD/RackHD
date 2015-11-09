@@ -1,0 +1,6 @@
+---
+- name: Install RabbitMQ
+  apt: pkg={{ item }} state=installed update-cache=yes
+  with_items:
+    - rabbitmq-server
+  sudo: yes

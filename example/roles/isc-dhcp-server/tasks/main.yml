@@ -1,0 +1,19 @@
+---
+- name: Install isc-dhcp-server
+  apt: pkg={{ item }} state=installed update-cache=yes 
+  with_items:
+    - isc-dhcp-server
+  sudo: yes
+
+
+- name: Copy isc-dhcp-server file to guest
+  copy: src=isc-dhcp-server dest=/etc/default/isc-dhcp-server
+  sudo: yes
+  
+- name: Copy dhcpd.conf file to guest
+  copy: src=dhcpd.conf dest=/etc/dhcp/dhcpd.conf  
+  sudo: yes
+
+- name: Start isc-dhcp-server
+  service: name=isc-dhcp-server state=started
+  sudo: yes

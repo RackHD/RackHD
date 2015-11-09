@@ -1,0 +1,8 @@
+---
+- name: Create directory for monorail config file
+  file: path=/opt/onrack/etc/ state=directory mode=0777
+  sudo: yes
+
+- name: Load monorail conf onto guest
+  copy: src=monorail.json dest=/opt/onrack/etc/monorail.json
+  sudo: yes

@@ -1,0 +1,35 @@
+######################
+# Vagrant File Start #
+######################
+
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+    # MONORAIL SERVER
+    config.vm.define "dev" do |target|
+        target.vm.box = "ubuntu/trusty64"
+        target.vm.box_url = "https://atlas.hashicorp.com/ubuntu/boxes/trusty64/versions/14.04/providers/virtualbox.box"
+        target.vm.synced_folder "../", "/home/vagrant/src"
+
+        target.vm.provision "ansible" do |ansible|
+            ansible.playbook = "dev.yml"
+
+            # If you wish to use a specific commit, include the variable below.
+            # ansible.extra_vars = { branch: "master" }
+
+            # if the playbook seems hung try uncommenting below to debug
+            # ansible.verbose = "vvv"
+        end
+
+        target.vm.provider "virtualbox" do |v|
+            v.memory = 4096
+            v.cpus = 4
+            v.customize ["modifyvm", :id, "--nicpromisc2", "allow-all"]
+        end
+
+        target.vm.network "private_network", ip: "172.31.128.1", virtualbox__intnet: "closednet"
+        target.vm.network "forwarded_port", guest: 8080, host: 9090
+
+    end
+end

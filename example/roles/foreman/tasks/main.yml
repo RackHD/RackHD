@@ -1,0 +1,12 @@
+---
+- name: Install foreman
+  shell: npm install -g foreman
+  sudo: yes
+
+- name: Copy foreman .env file to /home/vagrant/
+  copy: src=.env dest=/home/vagrant
+  sudo: yes
+
+- name: Copy foreman Procfile to /home/vagrant/
+  copy: src=Procfile dest=/home/vagrant
+  sudo: yes

@@ -1,0 +1,76 @@
+#!/bin/bash
+# monorail_rack
+# script to deploy a development test enviorment.
+
+
+##################
+# INCLUDE CONFIG #
+##################
+
+source ../config/monorail_rack.cfg
+
+
+############
+# GET OPTS #
+############
+
+function usage {
+  printf "\nusage: monorail_rack [-h]\n"
+  printf "\t-h display usage\n\n"
+  printf "\t customize deployment variables by editing:\n"
+  printf "\t\t /on-dev/config/monorail_rack.cfg\n\n"
+  exit
+}
+
+
+while getopts ":h" opt; do
+  case $opt in
+    h)
+      usage
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      usage
+      ;;
+  esac
+done
+
+
+##########################
+# DEPLOY MONORAIL SERVER #
+##########################
+
+# TODO: handle if we want to download static files and/or BMCs
+#       For now assumed no downloading of dependicies...
+
+echo "I'll set up monorail server now..."
+vagrant up dev
+
+# This is a place holder for diffrent yml calls for the above todo~
+# if [ $getCommonFiles eq "yes" ]
+#    then
+#      vagrant up dev1
+# fi
+
+
+######################
+# DEPLOY PXE CLIENTS #
+######################
+
+if [ $pxe_count ]
+  then
+    for (( i=1; i <= $pxe_count; i++ ))
+      do
+        echo "deploying pxe: $i"
+        vmName="pxe-$i"
+
+        vboxmanage createvm --name $vmName --register;
+        vboxmanage createhd --filename $vmName --size 8192;
+        VBoxManage storagectl $vmName --name "SATA Controller" --add sata --controller IntelAHCI
+        VBoxManage storageattach $vmName --storagectl "SATA Controller" --port 0 --device 0 --type hdd --medium $vmName.vdi
+        vboxmanage modifyvm $vmName --ostype Ubuntu --boot1 net --memory 350;
+        vboxmanage modifyvm $vmName --nic1 intnet --intnet1 closednet --nicpromisc1 allow-all;
+        vboxmanage modifyvm $vmName --nictype1 82540EM --macaddress1 auto;
+
+      done
+fi

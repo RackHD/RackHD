@@ -1,0 +1,7 @@
+# monorail_rack.cfg
+# used to customize default deployment
+# edit $pxe_count to change the amount of virtualbox PXE-booting clients are created when running
+# the monorail_rack setup script.
+
+# deployment variables
+pxe_count=1
