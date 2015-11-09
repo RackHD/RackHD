@@ -1,6 +1,6 @@
 ## DOCUMENTATION
 
-  The monorail_rack setup script is an easy "one button push" script to deploy an virtual rack within virtualbox to emulate a monorail server and some number of virtualbox PXE-booting clients.
+  The monorail_rack setup script is an easy "one button push" script to deploy an virtual rack within virtualbox to emulate a monorail server and some number of virtualbox PXE-booting clients. The enviornment is tied together using a virual network called closednet set to our defualt subnet of 172.31.128.x for servicing DHCP and TFTP to the PXE clients.
 
 ## PRE-REQS
 
@@ -23,16 +23,16 @@
         ~/<repos directory>/RackHD/
 
 
-  Within the dev-tools directory, create config and run the setup command:
+  Within the example directory, create config and run the setup command:
 
-    $ cd ~/<repos directory>/RackHD/dev-tools/config/
+    $ cd ~/<repos directory>/RackHD/example/config/
 
     $ cp ./monorail_rack.cfg.example ./monorail_rack.cfg
 
     Edits can be made to this new file to adjust the number of pxe clients created.
     Please see below for more information on the configuration file.
 
-    $ cd ~/<repos directory>/RackHD/dev-tools/bin/
+    $ cd ~/<repos directory>/RackHD/example/bin/
 
     $ ./monorail_rack
 
