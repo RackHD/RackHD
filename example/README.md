@@ -94,13 +94,13 @@ Please note, and example configuration file is provided and you must copy that f
 
     $ sudo ~/n/bin/n
 
-## CHANGE REPO BRANCH USED
+## CHANGE CODE VERSION USED
 
-  In some cases, you may wish to use a different branch then the default for our git submodules. This can be achieved easily by editing the vagrant file found in RackHD/example. By uncommented the line below, you will tell our ansible script to update our repositories to a different branch (i.e. an older release)
+  To checkout to a different commit than what is referenced by git submodule, edit the vagrant file (RackHD/example/Vagrantfile) to specify the branch variable for the ansible provisioner.
 
 ```
-    # If you wish to use a specific release, include the variable below.
-# ansible.extra_vars = { branch: "master" }
+    # If you wish to use a specific tag, include the variable below.
+    ansible.extra_vars = { branch: "master" }
 ```
 
 ## TESTING
