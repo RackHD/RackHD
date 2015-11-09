@@ -99,7 +99,7 @@ Please note, and example configuration file is provided and you must copy that f
   To checkout to a different commit than what is referenced by git submodule, edit the vagrant file (RackHD/example/Vagrantfile) to specify the branch variable for the ansible provisioner.
 
 ```
-    # If you wish to use a specific tag, include the variable below.
+    # If you wish to use a specific commit, include the variable below.
     ansible.extra_vars = { branch: "master" }
 ```
 
