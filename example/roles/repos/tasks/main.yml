@@ -13,6 +13,7 @@
 
 - name: Checkout branch and set HEAD to most current
   shell: git checkout {{ branch }}
+  when: branch is defined
   args:
     chdir: /home/vagrant/src/{{ item }}
   with_items:

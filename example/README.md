@@ -1,6 +1,6 @@
 ## DOCUMENTATION
 
-  The monorail_rack setup script is an easy "one button push" script to deploy an virtual rack within virtualbox to emulate a monorail server and some number of virtualbox PXE-booting clients. The enviornment is tied together using a virual network called closednet set to our defualt subnet of 172.31.128.x for servicing DHCP and TFTP to the PXE clients.
+  The monorail_rack setup script is an easy "one button push" script to deploy an virtual rack within virtualbox to emulate a monorail server and some number of virtualbox PXE-booting clients. The enviornment is tied together using a virtual network called closednet set to our defualt subnet of 172.31.128.x for servicing DHCP and TFTP to the PXE clients.
 
 ## PRE-REQS
 
@@ -94,6 +94,14 @@ Please note, and example configuration file is provided and you must copy that f
 
     $ sudo ~/n/bin/n
 
+## CHANGE REPO BRANCH USED
+
+  In some cases, you may wish to use a different branch then the default for our git submodules. This can be achieved easily by editing the vagrant file found in RackHD/example. By uncommented the line below, you will tell our ansible script to update our repositories to a different branch (i.e. an older release)
+
+```
+    # If you wish to use a specific release, include the variable below.
+# ansible.extra_vars = { branch: "master" }
+```
 
 ## TESTING
 

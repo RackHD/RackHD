@@ -14,8 +14,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
         target.vm.provision "ansible" do |ansible|
             ansible.playbook = "dev.yml"
-            # If you wish to use a specific release, change the variable below.
-            ansible.extra_vars = { branch: "master" }
+
+            # If you wish to use a specific release, include the variable below.
+            # ansible.extra_vars = { branch: "master" }
+
             # if the playbook seems hung try uncommenting below to debug
             # ansible.verbose = "vvv"
         end
