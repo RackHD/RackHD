@@ -6,14 +6,6 @@
 
   We expect the latest version of GIT, Vagrant, and Ansible installed onto the host system.
 
-  We expect static files to be located in the correct path from the parent directory of dev-tools:
-
-    i.e.
-        ~/<repos directory>/RackHD/on-http/static/http/common/
-
-  Our static files can be built locally using the tools found here:
-      https://github.com/RackHD/on-imagebuilder
-
 ## SET UP INSTRUCTIONS
 
 
@@ -36,13 +28,20 @@
 
     $ ./monorail_rack
 
-  Copy local basic static files to common directory:
-
-    $ cp ~/<static files directory>/* ~/<repos directory>/RackHD/on-http/static/http/common/
-
   Now ssh into the monorail server:
 
     $ vagrant ssh dev
+
+  Build the discovery images from the monorail server (or any debian-based system):
+
+    $ sudo apt-get install -y ansible
+    $ git clone https://github.com/rackhd/on-imagebuilder.git
+    $ cd on-imagebuilder
+    $ sudo ansible-playbook -i hosts all.yml
+
+  Place the discovery images into HTTP server's static file directory:
+
+    $ mv /tmp/on-imagebuilder/builds/* ~/src/on-http/static/http/common/
 
   Bring up all monorail services:
 
@@ -50,7 +49,6 @@
       or $ sudo nf start [graph,http,dhcp,tftp,syslog]
 
     Now that the services are running we can begin powering on pxe clients and watch them boot.
-
 
   Provision an existing monorail server:
 
