@@ -18,7 +18,7 @@ function usage {
   printf "\nusage: monorail_rack [-h]\n"
   printf "\t-h display usage\n\n"
   printf "\t customize deployment variables by editing:\n"
-  printf "\t\t /on-dev/config/monorail_rack.cfg\n\n"
+  printf "\t\t example/config/monorail_rack.cfg\n\n"
   exit
 }
 
