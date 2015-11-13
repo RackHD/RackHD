@@ -46,3 +46,19 @@
   shell: 'npm run apidoc'
   args:
     chdir: /home/vagrant/src/on-http
+
+- name: retrieve microkernel and overlays from bintray
+  get_url: url=https://bintray.com/artifact/download/rackhd/binary/builds/{{ item }}
+           dest=/home/vagrant/src/on-http/static/http/common/{{ item }}
+  with_items:
+   - base.trusty.3.13.0-32-generic.squashfs.img
+   - discovery.overlay.cpio.gz
+   - initrd.img-3.13.0-32-generic
+   - vmlinux-3.13.0-32-generic
+
+- name: retrieve bootloaders from bintray
+  get_url: url=https://bintray.com/artifact/download/rackhd/binary/ipxe/{{ item }}
+           dest=/home/vagrant/src/on-tftp/static/tftp/{{ item }}
+  with_items:
+   - ipxe.ipxe
+   - undionly.ipxe
