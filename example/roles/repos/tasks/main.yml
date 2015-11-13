@@ -54,7 +54,7 @@
    - base.trusty.3.13.0-32-generic.squashfs.img
    - discovery.overlay.cpio.gz
    - initrd.img-3.13.0-32-generic
-   - vmlinux-3.13.0-32-generic
+   - vmlinuz-3.13.0-32-generic
 
 - name: retrieve bootloaders from bintray
   get_url: url=https://bintray.com/artifact/download/rackhd/binary/ipxe/{{ item }}
