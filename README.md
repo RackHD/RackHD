@@ -2,7 +2,7 @@
 
 > RackHD is a new program and is currently in active development by EMC.  If you have any further questions or would like to contact EMC about the RackHD program – please contact us at: rackhd@googlegroups.com
 
-RackHD (Rack Hardware Director) is a technology stack up created for enabling hardware management and orchestration, to provide cohesive APIs to enabled automated infrastructure. In a Converged Infrastructure Platform (CIP) architecture, RackHD software provides hardware management and orchestration
+RackHD (Rack Hardware Director) is a technology stack created for enabling hardware management and orchestration, to provide cohesive APIs to enable automated infrastructure. In a Converged Infrastructure Platform (CIP) architecture, RackHD software provides hardware management and orchestration
 (M&O). It serves as an abstraction layer between other M&O layers and the underlying physical hardware. Developers can use the RackHD API to create a user interface that serves as single point of access for managing hardware services regardless of the specific hardware in place.
 
 This repository acts as a single source location to help you get or build all the pieces to learn about, take advantage of, and contribute to RackHD.
