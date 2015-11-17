@@ -49,6 +49,7 @@
 - name: retrieve microkernel and overlays from bintray
   get_url: url=https://bintray.com/artifact/download/rackhd/binary/builds/{{ item }}
            dest=/home/vagrant/src/on-http/static/http/common/{{ item }}
+           validate_certs=no
   with_items:
    - base.trusty.3.13.0-32-generic.squashfs.img
    - discovery.overlay.cpio.gz
@@ -58,6 +59,7 @@
 - name: retrieve bootloaders from bintray
   get_url: url=https://bintray.com/artifact/download/rackhd/binary/ipxe/{{ item }}
            dest=/home/vagrant/src/on-tftp/static/tftp/{{ item }}
+           validate_certs=no
   with_items:
    - monorail.ipxe
    - monorail-efi32-snponly.efi
