@@ -40,7 +40,6 @@
 
 - name: Make common static directory
   file: path=/home/vagrant/src/on-http/static/http/common state=directory
-  sudo: yes
 
 - name: Render API docs for local reference
   shell: 'npm run apidoc'
