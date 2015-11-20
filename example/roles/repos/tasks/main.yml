@@ -67,3 +67,14 @@
    - monorail-efi32-snponly.efi
    - monorail-efi64-snponly.efi
    - undionly.kpxe
+
+- name: make CoreOS directory for hosting CoreOS demonstration booting
+  file: path=/home/vagrant/src/on-http/static/http/coreos state=directory
+
+- name: retrieve CoreOS kernel and initrd
+  get_url: url=http://stable.release.core-os.net/amd64-usr/current/{{ item }}
+           dest=/home/vagrant/src/on-http/static/http/coreos/{{ item }}
+           force=yes
+  with_items:
+   - coreos_production_pxe.vmlinuz
+   - coreos_production_pxe_image.cpio.gz
