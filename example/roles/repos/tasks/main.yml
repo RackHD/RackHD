@@ -11,8 +11,8 @@
     chdir: /home/vagrant/src
   sudo: yes
 
-- name: Checkout branch and set HEAD to most current
-  shell: git checkout {{ branch }}
+- name: Reset to the branch specified
+  shell: git reset --hard {{ branch }}
   when: branch is defined
   args:
     chdir: /home/vagrant/src/{{ item }}
@@ -57,7 +57,7 @@
    - initrd.img-3.13.0-32-generic
    - vmlinuz-3.13.0-32-generic
 
-- name: retrieve bootloaders from bintray
+- name: retrieve the latest bootloaders from bintray
   get_url: url=https://bintray.com/artifact/download/rackhd/binary/ipxe/{{ item }}
            dest=/home/vagrant/src/on-tftp/static/tftp/{{ item }}
            validate_certs=no
@@ -74,7 +74,6 @@
 - name: retrieve CoreOS kernel and initrd
   get_url: url=http://stable.release.core-os.net/amd64-usr/current/{{ item }}
            dest=/home/vagrant/src/on-http/static/http/coreos/{{ item }}
-           force=yes
   with_items:
    - coreos_production_pxe.vmlinuz
    - coreos_production_pxe_image.cpio.gz
