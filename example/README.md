@@ -1,62 +1,96 @@
 ## DOCUMENTATION
 
-  The monorail_rack setup script is an easy "one button push" script to deploy an virtual rack within virtualbox to emulate a monorail server and some number of virtualbox PXE-booting clients. The enviornment is tied together using a virtual network called closednet set to our defualt subnet of 172.31.128.x for servicing DHCP and TFTP to the PXE clients.
+The monorail_rack setup script is an easy "one button push" script to deploy
+a 'virtual rack' using virtualbox. This emulates a RackHD server and some number
+of virtual servers - using virtualbox PXE-booting VMs. Private virtual networks
+simulate the connections between servers that would otherwise be on a switch
+in a rack.
 
-## PRE-REQS
+The virtual network `closednet` is set to our default subnet of 172.31.128.x
+to connect DHCP and TFTP from RackHD to the PXE clients.
 
-  We expect the latest version of GIT, Vagrant, and Ansible installed onto the host system.
+## PRE-REQS / SCRIPT EXPECTATIONS
 
-  We expect static files to be located in the correct path from the parent directory of dev-tools:
+We expect the latest version of git, Vagrant, and Ansible installed onto your
+system in order to use this script.
 
-    i.e.
+We also rely on the this projects structure of submodules to link the source
+into the VM (through vagrant). The ansible roles are written to expect the
+source to be autoloaded on the virtual machine with directory mappings
+configured in Vagrantfile:
+
+for example:
+
         ~/<repos directory>/RackHD/on-http/static/http/common/
 
-  Our static files can be built locally using the tools found here:
-      https://github.com/RackHD/on-imagebuilder
+The static files that RackHD uses can be built locally using the tools found in
+the on-imagebuilder repository (https://github.com/RackHD/on-imagebuilder),
+and this script will download the latest built versions that are stored in
+bintray from that open source repository's outputs.
 
 ## SET UP INSTRUCTIONS
 
+Clone RackHD repo to your local git directory.
 
-  Clone RackHD repo to your local git directory.
-
-    i.e.
-        ~/<repos directory>/RackHD/
+    $ git clone https://github.com/RackHD/RackHD
+    $ cd RackHD
 
 
-  Within the example directory, create config and run the setup command:
+Change into the directory `example`, create config and run the setup command:
 
-    $ cd ~/<repos directory>/RackHD/example/config/
-
+    $ pushd example/config/
     $ cp ./monorail_rack.cfg.example ./monorail_rack.cfg
+    $ popd
 
-    Edits can be made to this new file to adjust the number of pxe clients created.
-    Please see below for more information on the configuration file.
+Edits can be made to this new file to adjust the number of pxe clients created.
 
-    $ cd ~/<repos directory>/RackHD/example/bin/
-
+    $ pushd bin/
     $ ./monorail_rack
 
-  Copy local basic static files to common directory:
-
-    $ cp ~/<static files directory>/* ~/<repos directory>/RackHD/on-http/static/http/common/
-
-  Now ssh into the monorail server:
+Now ssh into the RackHD server and start the services
 
     $ vagrant ssh dev
-
-  Bring up all monorail services:
-
     $ sudo nf start
-      or $ sudo nf start [graph,http,dhcp,tftp,syslog]
 
-    Now that the services are running we can begin powering on pxe clients and watch them boot.
+Now that the services are running we can open Virtualbox and power on pxe
+clients and watch them boot.
+
+## TESTING
+
+Once you've started the services, the RackHD API will be available on your local
+machine through port 9090. For example, you should be able to view the RackHD
+API documentation that's set up with the service at http://localhost:9090/docs.
+
+You can also interact with the APIs using curl from the command line of your
+local machine.
+
+To view the list of nodes that has been discovered:
+    $ curl http://localhost:9090/api/1.1/nodes | python -m json.tool
+
+    $ curl http://localhost:9090/api/1.1/catalogs | python -m json.tool
 
 
-  Provision an existing monorail server:
+## HACKING THIS SETUP
 
-    $ vagrant provision
+If you're having on this script or the ansible roles to change the
+functionality, you can shortcut some of this process by just invoking
+`vagrant provision` to use ansible to update the VM that's already been created.
 
-## CONFIGURATION FILE
+
+### CHANGE NODE VERSION
+
+Currently the monorail server is built with Node v0.10.40 but this can be changed.
+
+Install additional Node versions
+
+    $ sudo ~/n/bin/n <version>
+
+Use n's menu system to change running Node version
+
+    $ sudo ~/n/bin/n
+
+
+### CONFIGURATION FILE
 
 ```
 # monorail_rack.cfg
@@ -68,47 +102,28 @@
 pxe_count=1
 ```
 
-Changing the number of $pxe_count within the running configuration script will effect how many headless pxe clients are created when running the monorail_rack setup script.
+Changing the number of $pxe_count within the running configuration script will
+effect how many headless pxe clients are created when running the monorail_rack
+setup script.
 
-Please note, and example configuration file is provided and you must copy that file to a new file with the same name excluding the .example extension.
+Please note, and example configuration file is provided and you must copy that
+file to a new file with the same name excluding the .example extension.
 
+### CHANGE WHAT BRANCH IS USED
+
+To checkout to a different commit than what is referenced by git submodule,
+edit the vagrant file (RackHD/example/Vagrantfile) to specify the `branch`
+variable for the ansible provisioner. A commented out line exists in
+`Vagrantfile` you can enable and edit.
+
+    ansible.extra_vars = { branch: "master" }
 
 ## ENVIRONMENT BREAKDOWN
 
-  Remove an existing monorail server:
+The monorail_rack script doesn't currently have the capability to shut down or
+remove anything. To get rid of the RackHD server you can use:
 
     $ vagrant destroy
 
-  Please note all pxe clients must to be removed by hand currently.
-
-
-## CHANGE NODE VERSION
-
-  Currently the monorail server is built with Node v0.10.40 but this can be changed.
-
-  Install additional Node versions
-
-    $ sudo ~/n/bin/n <version>
-
-  Use n's menu system to change running Node version
-
-    $ sudo ~/n/bin/n
-
-## CHANGE CODE VERSION USED
-
-  To checkout to a different commit than what is referenced by git submodule, edit the vagrant file (RackHD/example/Vagrantfile) to specify the branch variable for the ansible provisioner.
-
-```
-    # If you wish to use a specific commit, include the variable below.
-    ansible.extra_vars = { branch: "master" }
-```
-
-## TESTING
-
-  Test node was discovered from the monorail server:
-
-    $ curl localhost:8080/api/1.1/nodes | python -m json.tool
-
-  Check Cataloging has happend:
-
-    $ mongo pxe --eval 'db.catalogs.count()'
+Any PXE client VMs you created will need to be removed by hand using the
+virtualbox GUI.
