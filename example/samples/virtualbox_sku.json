@@ -1,0 +1,15 @@
+{
+    "name": "Noop OBM settings for VirtualBox nodes",
+    "discoveryGraphName": "Graph.Obm.Vbox.CreateSettings",
+    "discoveryGraphOptions": {
+        "defaults": {
+            "service": "noop-obm-service"
+        }
+    },
+    "rules": [
+        {
+            "path": "dmi.System Information.Product Name",
+            "equals": "VirtualBox"
+        }
+    ]
+}

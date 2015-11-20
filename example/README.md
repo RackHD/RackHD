@@ -52,9 +52,6 @@ Now ssh into the RackHD server and start the services
     $ vagrant ssh dev
     $ sudo nf start
 
-Now that the services are running we can open Virtualbox and power on pxe
-clients and watch them boot.
-
 ## TESTING
 
 Once you've started the services, the RackHD API will be available on your local
@@ -67,8 +64,39 @@ local machine.
 To view the list of nodes that has been discovered:
     $ curl http://localhost:9090/api/1.1/nodes | python -m json.tool
 
+View the list of catalogs logged into RackHD:
     $ curl http://localhost:9090/api/1.1/catalogs | python -m json.tool
 
+
+
+### Install a "Virtualbox" SKUs
+
+    curl -H "Content-Type: application/json" -X POST --data @samples/virtualbox_sku.json http://localhost:9090/api/1.1/skus
+    {"name":"Noop OBM settings for VirtualBox nodes","discoveryGraphName":"Graph.Obm.Vbox.CreateSettings","discoveryGraphOptions":{"defaults":{"service":"noop-obm-service"}},"rules":[{"path":"dmi.System Information.Product Name","equals":"VirtualBox"}],"createdAt":"2015-11-20T22:41:31.365Z","updatedAt":"2015-11-20T22:41:31.365Z","id":"564fa19b7c4bc7e43854c6bc"}
+
+View the current SKU definitions:
+
+    $ curl http://localhost:9090/api/1.1/skus | python -m json.tool
+    [
+        {
+            "createdAt": "2015-11-20T22:41:31.365Z",
+            "discoveryGraphName": "Graph.Obm.Vbox.CreateSettings",
+            "discoveryGraphOptions": {
+                "defaults": {
+                    "service": "noop-obm-service"
+                }
+            },
+            "id": "564fa19b7c4bc7e43854c6bc",
+            "name": "Noop OBM settings for VirtualBox nodes",
+            "rules": [
+                {
+                    "equals": "VirtualBox",
+                    "path": "dmi.System Information.Product Name"
+                }
+            ],
+            "updatedAt": "2015-11-20T22:41:31.365Z"
+        }
+    ]
 
 ## HACKING THIS SETUP
 
