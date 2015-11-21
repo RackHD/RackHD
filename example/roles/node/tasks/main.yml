@@ -9,6 +9,11 @@
   sudo: yes
   when: download_n|changed
 
-- name: set node version
-  shell: /home/vagrant/n/bin/n {{ node_version | default('0.10.40') }}
+- name: Install node
+  shell: /home/vagrant/n/bin/n {{ item }}
+  with_items:
+    - 4.1.1
+    - 0.12.7
+    - 0.10.40
   sudo: yes
+  when: download_n|changed

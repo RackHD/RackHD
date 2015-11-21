@@ -17,6 +17,8 @@
   args:
     chdir: /home/vagrant/src/{{ item }}
   with_items:
+    - on-core
+    - on-tasks
     - on-http
     - on-tftp
     - on-dhcp-proxy
@@ -27,6 +29,8 @@
 - name: Npm install Repos
   npm: path=/home/vagrant/src/{{ item }}
   with_items:
+    - on-core
+    - on-tasks
     - on-http
     - on-tftp
     - on-dhcp-proxy
