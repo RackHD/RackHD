@@ -21,7 +21,7 @@
         },
         {
             "label": "install-coreos",
-            "taskName": "Task.Os.Install.CoreOS",
+            "taskName": "Task.Os.Install.CoreOS"
         }
     ]
 }

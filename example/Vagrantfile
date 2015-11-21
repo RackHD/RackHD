@@ -18,7 +18,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             # If you wish to use a specific branch, enable the variable below
             # and the repos role will check out code on that branch across
             # the RackHD git repositories.
-            # ansible.extra_vars = { branch: "master" }
+            # ansible.extra_vars = { branch: "master", node_version: "0.10.40" }
 
             # if the playbook seems hung try uncommenting below to enable
             # debuging level output

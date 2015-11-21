@@ -49,7 +49,7 @@ Edits can be made to this new file to adjust the number of pxe clients created.
 
 Now ssh into the RackHD server and start the services
 
-    $ vagrant ssh dev
+    $ vagrant ssh
     $ sudo nf start
 
 ## TESTING
@@ -67,14 +67,14 @@ To view the list of nodes that has been discovered:
 View the list of catalogs logged into RackHD:
     $ curl http://localhost:9090/api/1.1/catalogs | python -m json.tool
 
-
+(both of these should result in empty lists in a brand new installation)
 
 ### Install a default workflow for Virtualbox VMs and a SKUs definition
 
 This example includes a workflow that we'll use when we identify a "virtualbox"
 SKU with RackHD. We'll load it into our library of workflows:
 
-    curl -H "Content-Type: application/json" -X POST \
+    curl -H "Content-Type: application/json" -X PUT \
     --data @samples/virtualbox_install_coreos.json \
     http://localhost:9090/api/1.1/workflow
 
@@ -86,35 +86,25 @@ workflow we just loaded into the library.
     -X POST --data @samples/virtualbox_sku.json \
     http://localhost:9090/api/1.1/skus
 
-The API will reply with the created SKU:
-
-    {
-        "id": "564fa19b7c4bc7e43854c6bc"
-    }
-
 View the current SKU definitions:
 
     $ curl http://localhost:9090/api/1.1/skus | python -m json.tool
     [
-        {
-            "createdAt": "2015-11-20T22:41:31.365Z",
-            "discoveryGraphName": "Graph.Obm.Vbox.CreateSettings",
-            "discoveryGraphOptions": {
-                "defaults": {
-                    "service": "noop-obm-service"
-                }
-            },
-            "id": "564fa19b7c4bc7e43854c6bc",
-            "name": "Noop OBM settings for VirtualBox nodes",
-            "rules": [
-                {
-                    "equals": "VirtualBox",
-                    "path": "dmi.System Information.Product Name"
-                }
-            ],
-            "updatedAt": "2015-11-20T22:41:31.365Z"
-        }
-    ]
+    {
+        "createdAt": "2015-11-21T00:46:04.068Z",
+        "discoveryGraphName": "Graph.DefaultVirtualBox.InstallCoreOS",
+        "discoveryGraphOptions": {},
+        "id": "564fbecc1dee9e7d2f1d33ca",
+        "name": "Noop OBM settings for VirtualBox nodes",
+        "rules": [
+            {
+                "equals": "VirtualBox",
+                "path": "dmi.System Information.Product Name"
+            }
+        ],
+        "updatedAt": "2015-11-21T00:46:04.068Z"
+    }
+]
 
 ## HACKING THESE SCRIPTS
 
@@ -125,18 +115,16 @@ functionality, you can shortcut some of this process by just invoking
 
 ### CHANGE NODE VERSION
 
-Currently this example uses `n` (https://github.com/tj/n) to install multiple
-versions of Node.js: `4.1.1`, `0.12.7`, and `0.10.40`. You can change what
-version of node is used by default by logging into the Vagrant instance and
-using the `n` command:
+Currently this example uses `n` (https://github.com/tj/n) to install node
+version `0.10.40`. You can change what version of node is used by default by
+logging into the Vagrant instance and using the `n` command:
 
-    vagrant ssh dev
+    vagrant ssh
     sudo ~/n/bin/n <version>
 
-Or to use `n` menu system to change running Node version
+Or setting the variable `node_version` in `Vagrantfile`:
 
-    vagrant ssh dev
-    sudo ~/n/bin/n
+    ansible.extra_vars = { branch: "master", node_version: "0.4.1" }
 
 
 ### CONFIGURATION FILE
@@ -165,7 +153,7 @@ edit the vagrant file (RackHD/example/Vagrantfile) to specify the `branch`
 variable for the ansible provisioner. A commented out line exists in
 `Vagrantfile` you can enable and edit.
 
-    ansible.extra_vars = { branch: "master" }
+    ansible.extra_vars = { branch: "master", node_version: "0.4.1" }
 
 ## ENVIRONMENT BREAKDOWN
 
@@ -174,5 +162,13 @@ remove anything. To get rid of the RackHD server you can use:
 
     $ vagrant destroy
 
-Any PXE client VMs you created will need to be removed by hand using the
-virtualbox GUI.
+Any PXE client VMs you created will need to be removed by hand.
+
+## Running the web UI
+
+We are experimenting with single page web UI applications within the repository
+`on-web-ui` (https://github.com/rackhd/on-web-ui). That repository includes a
+README and is set up to host the UI externally to the RackHD. Follow the
+README instructions in that repository to run the application, and you can
+change the settings while running to point to this instance of RackHD at
+`https://localhost:9090/`
