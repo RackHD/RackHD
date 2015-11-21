@@ -69,10 +69,28 @@ View the list of catalogs logged into RackHD:
 
 
 
-### Install a "Virtualbox" SKUs
+### Install a default workflow for Virtualbox VMs and a SKUs definition
 
-    curl -H "Content-Type: application/json" -X POST --data @samples/virtualbox_sku.json http://localhost:9090/api/1.1/skus
-    {"name":"Noop OBM settings for VirtualBox nodes","discoveryGraphName":"Graph.Obm.Vbox.CreateSettings","discoveryGraphOptions":{"defaults":{"service":"noop-obm-service"}},"rules":[{"path":"dmi.System Information.Product Name","equals":"VirtualBox"}],"createdAt":"2015-11-20T22:41:31.365Z","updatedAt":"2015-11-20T22:41:31.365Z","id":"564fa19b7c4bc7e43854c6bc"}
+This example includes a workflow that we'll use when we identify a "virtualbox"
+SKU with RackHD. We'll load it into our library of workflows:
+
+    curl -H "Content-Type: application/json" -X POST \
+    --data @samples/virtualbox_install_coreos.json \
+    http://localhost:9090/api/1.1/workflow
+
+We also include the sku definition. RackHD sku support includes a mechanism that
+will run a workflow when a SKU is identified. In this case, the example uses the
+workflow we just loaded into the library.
+
+    curl -H "Content-Type: application/json" \
+    -X POST --data @samples/virtualbox_sku.json \
+    http://localhost:9090/api/1.1/skus
+
+The API will reply with the created SKU:
+
+    {
+        "id": "564fa19b7c4bc7e43854c6bc"
+    }
 
 View the current SKU definitions:
 
@@ -98,7 +116,7 @@ View the current SKU definitions:
         }
     ]
 
-## HACKING THIS SETUP
+## HACKING THESE SCRIPTS
 
 If you're having on this script or the ansible roles to change the
 functionality, you can shortcut some of this process by just invoking
@@ -107,15 +125,18 @@ functionality, you can shortcut some of this process by just invoking
 
 ### CHANGE NODE VERSION
 
-Currently the monorail server is built with Node v0.10.40 but this can be changed.
+Currently this example uses `n` (https://github.com/tj/n) to install multiple
+versions of Node.js: `4.1.1`, `0.12.7`, and `0.10.40`. You can change what
+version of node is used by default by logging into the Vagrant instance and
+using the `n` command:
 
-Install additional Node versions
+    vagrant ssh dev
+    sudo ~/n/bin/n <version>
 
-    $ sudo ~/n/bin/n <version>
+Or to use `n` menu system to change running Node version
 
-Use n's menu system to change running Node version
-
-    $ sudo ~/n/bin/n
+    vagrant ssh dev
+    sudo ~/n/bin/n
 
 
 ### CONFIGURATION FILE
@@ -130,7 +151,7 @@ Use n's menu system to change running Node version
 pxe_count=1
 ```
 
-Changing the number of $pxe_count within the running configuration script will
+Changing the number of `pxe_count` within the running configuration script will
 effect how many headless pxe clients are created when running the monorail_rack
 setup script.
 
