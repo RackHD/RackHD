@@ -1,3 +1,3 @@
-dev-tools/.vagrant
-dev-tools/config/monorail_rack.cfg
-dev-tools/bin/pxe*
+example/.vagrant
+example/config/monorail_rack.cfg
+example/bin/pxe*
