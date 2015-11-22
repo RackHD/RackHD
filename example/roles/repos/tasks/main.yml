@@ -29,13 +29,13 @@
 - name: Npm install Repos
   npm: path=/home/vagrant/src/{{ item }}
   with_items:
-    - on-core
-    - on-tasks
-    - on-http
+#    - on-core
+#    - on-tasks
+    - on-syslog
     - on-tftp
     - on-dhcp-proxy
     - on-taskgraph
-    - on-syslog
+    - on-http
   sudo: yes
 
 - name: Make common static directory

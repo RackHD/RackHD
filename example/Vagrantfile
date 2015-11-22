@@ -18,7 +18,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             # If you wish to use a specific branch, enable the variable below
             # and the repos role will check out code on that branch across
             # the RackHD git repositories.
-            # ansible.extra_vars = { branch: "master", node_version: "0.10.40" }
+            # ansible.extra_vars = { branch: "master" }
 
             # if the playbook seems hung try uncommenting below to enable
             # debuging level output
@@ -34,7 +34,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         # Create a public network, which generally matched to bridged network.
         # Bridged networks make the machine appear as another physical device on
         # your network.
-        # server.vm.network :public_network
+        # target.vm.network :public_network
 
         target.vm.network "private_network", ip: "172.31.128.1", virtualbox__intnet: "closednet"
         target.vm.network "forwarded_port", guest: 8080, host: 9090

@@ -122,10 +122,6 @@ logging into the Vagrant instance and using the `n` command:
     vagrant ssh
     sudo ~/n/bin/n <version>
 
-Or setting the variable `node_version` in `Vagrantfile`:
-
-    ansible.extra_vars = { branch: "master", node_version: "0.4.1" }
-
 
 ### CONFIGURATION FILE
 
@@ -153,7 +149,7 @@ edit the vagrant file (RackHD/example/Vagrantfile) to specify the `branch`
 variable for the ansible provisioner. A commented out line exists in
 `Vagrantfile` you can enable and edit.
 
-    ansible.extra_vars = { branch: "master", node_version: "0.4.1" }
+    ansible.extra_vars = { branch: "master" }
 
 ## ENVIRONMENT BREAKDOWN
 
