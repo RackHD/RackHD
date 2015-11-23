@@ -29,8 +29,6 @@
 - name: Npm install Repos
   npm: path=/home/vagrant/src/{{ item }}
   with_items:
-#    - on-core
-#    - on-tasks
     - on-syslog
     - on-tftp
     - on-dhcp-proxy
