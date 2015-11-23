@@ -6,8 +6,8 @@
 ##################
 # INCLUDE CONFIG #
 ##################
-
-source ../config/monorail_rack.cfg
+SCRIPT_DIR=$(cd $(dirname $0) && pwd)
+source $SCRIPT_DIR/../config/monorail_rack.cfg
 
 
 ############
@@ -45,6 +45,9 @@ done
 
 echo "I'll set up monorail server now..."
 vagrant up dev
+echo "starting the services"
+vagrant ssh dev -c "sudo nf start" &
+echo "The RackHD documentation will be available shortly at http://localhost:9090/docs"
 
 # This is a place holder for diffrent yml calls for the above todo~
 # if [ $getCommonFiles eq "yes" ]
@@ -63,14 +66,14 @@ if [ $pxe_count ]
       do
         echo "deploying pxe: $i"
         vmName="pxe-$i"
-
-        vboxmanage createvm --name $vmName --register;
-        vboxmanage createhd --filename $vmName --size 8192;
-        VBoxManage storagectl $vmName --name "SATA Controller" --add sata --controller IntelAHCI
-        VBoxManage storageattach $vmName --storagectl "SATA Controller" --port 0 --device 0 --type hdd --medium $vmName.vdi
-        vboxmanage modifyvm $vmName --ostype Ubuntu --boot1 net --memory 350;
-        vboxmanage modifyvm $vmName --nic1 intnet --intnet1 closednet --nicpromisc1 allow-all;
-        vboxmanage modifyvm $vmName --nictype1 82540EM --macaddress1 auto;
-
+        if [[ -e $vmName ]]; then # check to see if PXE vm already exists
+            vboxmanage createvm --name $vmName --register;
+            vboxmanage createhd --filename $vmName --size 8192;
+            VBoxManage storagectl $vmName --name "SATA Controller" --add sata --controller IntelAHCI
+            VBoxManage storageattach $vmName --storagectl "SATA Controller" --port 0 --device 0 --type hdd --medium $vmName.vdi
+            vboxmanage modifyvm $vmName --ostype Ubuntu --boot1 net --memory 350;
+            vboxmanage modifyvm $vmName --nic1 intnet --intnet1 closednet --nicpromisc1 allow-all;
+            vboxmanage modifyvm $vmName --nictype1 82540EM --macaddress1 auto;
+        fi
       done
 fi
