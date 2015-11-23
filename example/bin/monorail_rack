@@ -45,16 +45,6 @@ done
 
 echo "I'll set up monorail server now..."
 vagrant up dev
-echo "starting the services"
-vagrant ssh dev -c "sudo nf start" &
-echo "The RackHD documentation will be available shortly at http://localhost:9090/docs"
-
-# This is a place holder for diffrent yml calls for the above todo~
-# if [ $getCommonFiles eq "yes" ]
-#    then
-#      vagrant up dev1
-# fi
-
 
 ######################
 # DEPLOY PXE CLIENTS #
@@ -69,11 +59,15 @@ if [ $pxe_count ]
         if [[ -e $vmName ]]; then # check to see if PXE vm already exists
             vboxmanage createvm --name $vmName --register;
             vboxmanage createhd --filename $vmName --size 8192;
-            VBoxManage storagectl $vmName --name "SATA Controller" --add sata --controller IntelAHCI
-            VBoxManage storageattach $vmName --storagectl "SATA Controller" --port 0 --device 0 --type hdd --medium $vmName.vdi
-            vboxmanage modifyvm $vmName --ostype Ubuntu --boot1 net --memory 350;
+            vboxmanage storagectl $vmName --name "SATA Controller" --add sata --controller IntelAHCI
+            vboxmanage storageattach $vmName --storagectl "SATA Controller" --port 0 --device 0 --type hdd --medium $vmName.vdi
+            vboxmanage modifyvm $vmName --ostype Ubuntu --boot1 net --memory 768;
             vboxmanage modifyvm $vmName --nic1 intnet --intnet1 closednet --nicpromisc1 allow-all;
             vboxmanage modifyvm $vmName --nictype1 82540EM --macaddress1 auto;
         fi
       done
 fi
+
+echo "starting the services"
+echo "The RackHD documentation will be available shortly at http://localhost:9090/docs"
+vagrant ssh dev -c "sudo nf start"
