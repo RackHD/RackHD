@@ -74,9 +74,9 @@ View the list of catalogs logged into RackHD:
 This example includes a workflow that we'll use when we identify a "virtualbox"
 SKU with RackHD. We'll load it into our library of workflows:
 
-    curl -H "Content-Type: application/json" -X PUT \
-    --data @samples/virtualbox_install_coreos.json \
-    http://localhost:9090/api/1.1/workflow
+    curl -H "Content-Type: application/json" \
+    -X PUT --data @samples/virtualbox_install_coreos.json \
+    http://localhost:9090/api/1.1/workflows
 
 We also include the sku definition. RackHD sku support includes a mechanism that
 will run a workflow when a SKU is identified. In this case, the example uses the
