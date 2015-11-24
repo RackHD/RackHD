@@ -1,0 +1,27 @@
+{
+    "friendlyName": "VirtualBox Default Install CoreOS",
+    "injectableName": "Graph.DefaultVirtualBox.InstallCoreOS",
+    "tasks": [
+        {
+            "label": "create-noop-obm-settings",
+            "taskDefinition": {
+                "friendlyName": "Create VirtualBox OBM settings",
+                "injectableName": "Task.Obm.Vbox.CreateSettings",
+                "implementsTask": "Task.Base.Obm.CreateSettings",
+                "options": {
+                    "service": "noop-obm-service",
+                    "config": {}
+                },
+                "properties": {
+                    "obm": {
+                        "type": "virtualbox"
+                    }
+                }
+            }
+        },
+        {
+            "label": "install-coreos",
+            "taskName": "Task.Os.Install.CoreOS"
+        }
+    ]
+}

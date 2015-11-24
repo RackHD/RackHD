@@ -19,3 +19,6 @@
 [submodule "on-tasks"]
 	path = on-tasks
 	url = https://github.com/RackHD/on-tasks.git
+[submodule "on-imagebuilder"]
+	path = on-imagebuilder
+	url = https://github.com/RackHD/on-imagebuilder.git

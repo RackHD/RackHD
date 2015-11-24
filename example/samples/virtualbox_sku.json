@@ -1,0 +1,11 @@
+{
+    "name": "Noop OBM settings for VirtualBox nodes",
+    "discoveryGraphName": "Graph.DefaultVirtualBox.InstallCoreOS",
+    "discoveryGraphOptions": {},
+    "rules": [
+        {
+            "path": "dmi.System Information.Product Name",
+            "equals": "VirtualBox"
+        }
+    ]
+}
