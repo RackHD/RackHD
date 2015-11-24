@@ -26,15 +26,25 @@
     - on-syslog
   sudo: yes
 
-- name: Npm install Repos
-  npm: path=/home/vagrant/src/{{ item }}
-  with_items:
-    - on-syslog
-    - on-tftp
-    - on-dhcp-proxy
-    - on-taskgraph
-    - on-http
-  sudo: yes
+- name: clean any local installation
+  shell: './src/scripts/clean_all.bash'
+  args:
+    chdir: /home/vagrant
+
+- name: Link and install locally
+  shell: './src/scripts/link_install_locally.bash'
+  args:
+    chdir: /home/vagrant
+
+# - name: Npm install Repos
+#   npm: path=/home/vagrant/src/{{ item }}
+#   with_items:
+#     - on-syslog
+#     - on-tftp
+#     - on-dhcp-proxy
+#     - on-taskgraph
+#     - on-http
+#   sudo: yes
 
 - name: Make common static directory
   file: path=/home/vagrant/src/on-http/static/http/common state=directory
