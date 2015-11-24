@@ -72,7 +72,10 @@ View the list of catalogs logged into RackHD:
 ### Install a default workflow for Virtualbox VMs and a SKUs definition
 
 This example includes a workflow that we'll use when we identify a "virtualbox"
-SKU with RackHD. We'll load it into our library of workflows:
+SKU with RackHD. This workflow sets up no-op out of band management settings
+for a demo and triggers an installation of CoreOS as a default flow to run
+once the "virtualbox" SKU has been identified. We'll load it into our library
+of workflows:
 
     cd ~/src/rackhd/example
     # make sure you're in the example directory to reference the sample JSON correctly
@@ -81,9 +84,10 @@ SKU with RackHD. We'll load it into our library of workflows:
     -X PUT --data @samples/virtualbox_install_coreos.json \
     http://localhost:9090/api/1.1/workflows
 
-We also include the sku definition. RackHD sku support includes a mechanism that
-will run a workflow when a SKU is identified. In this case, the example uses the
-workflow we just loaded into the library.
+To enable that workflow, we also need to include a SKU definition that includes
+the option of another workflow to run once the SKU has been identified. This
+takes advantage of the `Graph.SKU.Discovery` workflow, which will attempt to
+identify a SKU and run another workflow if specified.
 
     cd ~/src/rackhd/example
     # make sure you're in the example directory to reference the sample JSON correctly
