@@ -76,3 +76,15 @@
   with_items:
    - coreos_production_pxe.vmlinuz
    - coreos_production_pxe_image.cpio.gz
+
+# hacks for install CoreOS demo - to be replaced with proxy functionality
+- name: make CoreOS directory for hosting CoreOS demonstration booting
+  file: path=/home/vagrant/src/on-http/static/http/coreos/766.5.0 state=directory
+
+- name: retrieve CoreOS kernel and initrd
+  get_url: url=http://stable.release.core-os.net/amd64-usr/current/{{ item }}
+           dest=/home/vagrant/src/on-http/static/http/coreos/766.5.0/{{ item }}
+           force=yes
+  with_items:
+   - coreos_production_image.bin.bz2
+   - coreos_production_image.bin.bz2.sig
