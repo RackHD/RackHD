@@ -54,9 +54,9 @@ if [ $pxe_count ]
   then
     for (( i=1; i <= $pxe_count; i++ ))
       do
-        echo "deploying pxe: $i"
         vmName="pxe-$i"
-        if [[ -e $vmName ]]; then # check to see if PXE vm already exists
+        if [[ ! -e $vmName.vdi ]]; then # check to see if PXE vm already exists
+            echo "deploying pxe: $i"
             vboxmanage createvm --name $vmName --register;
             vboxmanage createhd --filename $vmName --size 8192;
             vboxmanage storagectl $vmName --name "SATA Controller" --add sata --controller IntelAHCI
