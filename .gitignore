@@ -1,3 +1,4 @@
 example/.vagrant
 example/config/monorail_rack.cfg
 example/bin/pxe*
+*.vdi
