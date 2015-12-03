@@ -140,11 +140,11 @@ installed. The installation workflow included in the RackHD system installs
 with a default SSH key that's included in our repositories. From the `example`
 directory, you should be able to log in using:
 
-`vagrant ssh`
+`vagrant ssh`:
 
     cp ~/src/on-http/data/rackhd_rsa ~/.ssh/id_rsa
-    chmod 400 ~/.ssh/id_rsa
-    ssh -i ~/src/on-http/data/rackhd_rsa core@172.32.128.2
+    chmod 0400 ~/.ssh/id_rsa
+    ssh core@172.31.128.2
 
 
 ## USING OTHER WORKFLOWS
