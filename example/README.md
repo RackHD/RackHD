@@ -18,7 +18,7 @@ installed onto your system in order to use this script.
 
 [ansible roles](https://github.com/RackHD/RackHD/tree/master/example/roles)
 
-We also rely on the this projects structure of submodules to link the source
+We also rely on the projects structure of submodules to link the source
 into the VM (through vagrant). The ansible roles are written to expect the
 source to be autoloaded on the virtual machine with directory mappings
 configured in Vagrantfile:
@@ -141,6 +141,7 @@ with a default SSH key that's included in our repositories. From the `example`
 directory, you should be able to log in using:
 
 `vagrant ssh`
+
     cp ~/src/on-http/data/rackhd_rsa ~/.ssh/id_rsa
     chmod 400 ~/.ssh/id_rsa
     ssh -i ~/src/on-http/data/rackhd_rsa core@172.32.128.2
@@ -160,7 +161,8 @@ for rebooting the `pxe-1` virtual machine.
 
 ### UNPACKING AN OS INSTALL ISO
 
-For example, you can [manually download the ESXi installation ISO](https://www.vmware.com/go/download-vspherehypervisor) or download a [CentOS 7 LiveCD](http://buildlogs.centos.org/centos/7/isos/x86_64/CentOS-7-livecd-x86_64.iso).
+For example, you can [manually download the ESXi installation ISO](https://www.vmware.com/go/download-vspherehypervisor)
+or download a [CentOS 7 LiveCD](http://buildlogs.centos.org/centos/7/isos/x86_64/CentOS-7-livecd-x86_64.iso).
 
 Copy it into the `examples` directory and then you can unpack it in vagrant:
 
@@ -177,14 +179,10 @@ Copy it into the `examples` directory and then you can unpack it in vagrant:
     sudo python ~/src/on-http/data/templates/setup_iso.py /vagrant/Cent*.iso \
     /var/mirrors --link=/home/vagrant/src
 
-
-
-
-
 ## HACKING THESE SCRIPTS
 
-If you're having on this script or the [ansible roles](https://github.com/RackHD/RackHD/tree/master/example/roles) to change the
-functionality, you can shortcut some of this process by just invoking
+If you're having on this script or the [ansible roles](https://github.com/RackHD/RackHD/tree/master/example/roles)
+to change the functionality, you can shortcut some of this process by just invoking
 `vagrant provision` to use ansible to update the VM that's already been created.
 
 
