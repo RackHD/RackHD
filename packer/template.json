@@ -12,7 +12,6 @@
         "iso_name": "ubuntu-14.04.3-server-amd64.iso",
         "mirror": "http://releases.ubuntu.com/trusty",
         "name": "ubuntu-14.04",
-        "preseed_path": "http/preseed.cfg",
         "template": "ubuntu-14.04-amd64",
         "apt_mirror": "",
         "headless": "false"
@@ -73,7 +72,7 @@
        " noapic<wait>",
        " interface=eth0<wait>",
        " netcfg/choose_interface=eth0<wait>",
-       " preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/{{user `preseed_path`}}<wait>",
+       " preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.cfg <wait>",
        " -- <wait>",
        "<enter><wait>"
      ],
@@ -133,7 +132,7 @@
        " netcfg/get_hostname=rackhd<wait>",
        " netcfg/get_domain=vagrantup.com<wait>",
        " noapic<wait>",
-       " preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/{{user `preseed_path`}}<wait>",
+       " preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.cfg <wait>",
        " -- <wait>",
        "<enter><wait>"
      ],
