@@ -1,0 +1,4 @@
+---
+- name: Update apt
+  apt: update-cache=yes
+  sudo: yes
