@@ -23,7 +23,7 @@ SCRIPT_DIR=$(cd $(dirname $0) && pwd)
 
 # first wave, just install on-core
 pushd "${SCRIPT_DIR}/../on-core"
-npm install
+npm install --production
 popd
 
 # second wave, symlink in on-core
