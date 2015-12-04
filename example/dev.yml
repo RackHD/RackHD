@@ -3,6 +3,7 @@
   hosts: all
   sudo: no
   roles:
+    - apt
     - build
     - git
     - rabbitmq
