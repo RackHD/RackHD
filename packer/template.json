@@ -36,6 +36,12 @@
             }
         },
         {
+            "type": "ansible-local",
+            "playbook_file": "../example/dev.yml",
+            "playbook_dir": "../example",
+            "role_paths": "../example/roles"
+        },
+        {
             "type": "shell",
             "scripts": [
                 "scripts/cleanup.sh",
@@ -166,7 +172,6 @@
        [ "modifyvm", "{{.Name}}", "--memory", "4096" ],
        [ "modifyvm", "{{.Name}}", "--cpus", "2" ]
      ],
-     "format": "ovf",
      "vboxmanage_post": [
        [ "modifyvm", "{{.Name}}", "--nic2", "intnet", "--intnet2", "closednet", "--nicpromisc2", "allow-all" ],
        [ "modifyvm", "{{.Name}}", "--nictype2", "82540EM", "--macaddress2", "auto" ]
