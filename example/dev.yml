@@ -15,4 +15,4 @@
     - ipmitool
     - foreman
     - repos
-    - overlays
+    - images

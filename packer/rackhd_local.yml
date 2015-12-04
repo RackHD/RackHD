@@ -15,7 +15,7 @@
     - ipmitool
     - foreman
     - remoterepos
-    - overlays
+    - images
   vars:
 # branch of https://github.com/rackhd/rackhd to be used
     - branch: "master"
