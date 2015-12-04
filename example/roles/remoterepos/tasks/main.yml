@@ -3,7 +3,6 @@
   git: repo=https://github.com/rackhd/rackhd
        dest=/home/vagrant/src
        accept_hostkey=true
-       recursive=yes
        version="{{ branch | default('master') }}"
 
 - name: Link and install locally
