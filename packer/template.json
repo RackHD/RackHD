@@ -19,21 +19,28 @@
     "provisioners": [
         {
             "type": "shell",
+            "script": "scripts/base.sh",
+            "execute_command": "echo 'vagrant'|sudo -S bash '{{.Path}}'"
+        },
+        {
+            "type": "shell",
+            "script": "scripts/virtualbox.sh",
+            "execute_command": "echo 'vagrant'|sudo -S bash '{{.Path}}'",
+            "only": ["virtualbox-iso"]
+        },
+        {
+            "type": "shell",
+            "script": "scripts/vmware.sh",
+            "execute_command": "echo 'vagrant'|sudo -S bash '{{.Path}}'",
+            "only": ["vmware-iso"]
+        },
+        {
+            "type": "shell",
             "scripts": [
-                "scripts/base.sh",
-                "scripts/virtualbox.sh",
-                "scripts/vmware.sh",
-                "scripts/vagrant.sh",
-                "scripts/dep.sh"
+                "scripts/vagrant.sh"
+                "scripts/dep.sh",
             ],
-            "override": {
-                "virtualbox-iso": {
-                    "execute_command": "echo 'vagrant'|sudo -S bash '{{.Path}}'"
-                },
-                "vmware-iso": {
-                    "execute_command": "echo 'vagrant'|sudo -S bash '{{.Path}}'"
-                }
-            }
+            "execute_command": "echo 'vagrant'|sudo -S bash '{{.Path}}'"
         },
         {
             "type": "ansible-local",
@@ -47,14 +54,7 @@
                 "scripts/cleanup.sh",
                 "scripts/zerodisk.sh"
             ],
-            "override": {
-                "virtualbox-iso": {
-                    "execute_command": "echo 'vagrant'|sudo -S bash '{{.Path}}'"
-                },
-                "vmware-iso": {
-                    "execute_command": "echo 'vagrant'|sudo -S bash '{{.Path}}'"
-                }
-            }
+            "execute_command": "echo 'vagrant'|sudo -S bash '{{.Path}}'"
         }
     ],
     "builders": [
@@ -190,7 +190,7 @@
             "artifact_type": "vagrant.box",
             "metadata": {
                 "provider": "vmware_desktop",
-                "version": "0.0.1"
+                "version": "1.1.0"
             }
         },
         {
@@ -200,7 +200,7 @@
             "artifact_type": "vagrant.box",
             "metadata": {
                 "provider": "virtualbox",
-                "version": "0.0.1"
+                "version": "1.1.0"
             }
         }]
     ]
