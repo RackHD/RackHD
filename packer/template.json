@@ -37,9 +37,9 @@
         },
         {
             "type": "ansible-local",
-            "playbook_file": "../example/dev.yml",
-            "playbook_dir": "../example",
-            "role_paths": "../example/roles"
+            "inventory_groups": "local",
+            "playbook_file": "rackhd_local.yml",
+            "playbook_dir": "../example"
         },
         {
             "type": "shell",
