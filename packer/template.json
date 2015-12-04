@@ -103,7 +103,7 @@
      "shutdown_command": "echo 'shutdown -P now' > /tmp/shutdown.sh; echo 'vagrant'|sudo -S sh '/tmp/shutdown.sh'",
      "vmx_data": {
        "memsize": "4096",
-       "numvcpus": "2",
+       "numvcpus": "4",
        "cpuid.coresPerSocket": "1"
      },
      "vmx_data_post": {
@@ -170,7 +170,7 @@
      "shutdown_command": "echo 'shutdown -P now' > /tmp/shutdown.sh; echo 'vagrant'|sudo -S sh '/tmp/shutdown.sh'",
      "vboxmanage": [
        [ "modifyvm", "{{.Name}}", "--memory", "4096" ],
-       [ "modifyvm", "{{.Name}}", "--cpus", "2" ]
+       [ "modifyvm", "{{.Name}}", "--cpus", "4" ]
      ],
      "vboxmanage_post": [
        [ "modifyvm", "{{.Name}}", "--nic2", "intnet", "--intnet2", "closednet", "--nicpromisc2", "allow-all" ],
