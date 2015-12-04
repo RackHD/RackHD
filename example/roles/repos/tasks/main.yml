@@ -39,6 +39,11 @@
 - name: Make common static directory
   file: path=/home/vagrant/src/on-http/static/http/common state=directory
 
+- name: Npm install apidoc
+  shell: 'npm install apidoc'
+  args:
+    chdir: /home/vagrant/src/on-http
+
 - name: Render API docs for local reference
   shell: 'npm run apidoc'
   args:
