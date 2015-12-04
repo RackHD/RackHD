@@ -2,6 +2,17 @@
 
 perl -p -i -e 's#http://us.archive.ubuntu.com/ubuntu#http://mirror.rackspace.com/ubuntu#gi' /etc/apt/sources.list
 
+# reduces package installs to bare mininums
+cat <<EOAPT > /etc/apt/apt.conf
+APT::Install-Recommends "0";
+APT::Install-Suggests "0";
+Acquire::Languages "none";
+Acquire::GzipIndexes "true";
+Acquire::CompressionTypes::Order:: "gz";
+Dir::Cache::srcpkgcache "";
+Dir::Cache::pkgcache "";
+EOAPT
+
 # Update the box
 apt-get -y update >/dev/null
 apt-get -y install facter linux-headers-$(uname -r) build-essential zlib1g-dev libssl-dev libreadline-gplv2-dev curl unzip >/dev/null
