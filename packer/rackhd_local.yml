@@ -14,4 +14,4 @@
     - snmptool
     - ipmitool
     - foreman
-    - repos
+    - remoterepos

@@ -14,7 +14,7 @@
         "name": "ubuntu-14.04",
         "template": "ubuntu-14.04-amd64",
         "apt_mirror": "",
-        "headless": "false"
+        "headless": "true"
     },
     "provisioners": [
         {
