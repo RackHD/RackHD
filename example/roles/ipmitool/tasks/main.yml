@@ -1,4 +1,4 @@
 ---
 - name: Install ipmitool
-  apt: pkg=ipmitool state=installed update-cache=yes
+  apt: pkg=ipmitool state=installed
   sudo: yes
