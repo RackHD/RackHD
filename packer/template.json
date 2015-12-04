@@ -37,8 +37,8 @@
         {
             "type": "shell",
             "scripts": [
-                "scripts/vagrant.sh"
-                "scripts/dep.sh",
+                "scripts/vagrant.sh",
+                "scripts/dep.sh"
             ],
             "execute_command": "echo 'vagrant'|sudo -S bash '{{.Path}}'"
         },
