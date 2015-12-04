@@ -24,7 +24,20 @@
                 "scripts/virtualbox.sh",
                 "scripts/vmware.sh",
                 "scripts/vagrant.sh",
-                "scripts/dep.sh",
+                "scripts/dep.sh"
+            ],
+            "override": {
+                "virtualbox-iso": {
+                    "execute_command": "echo 'vagrant'|sudo -S bash '{{.Path}}'"
+                },
+                "vmware-iso": {
+                    "execute_command": "echo 'vagrant'|sudo -S bash '{{.Path}}'"
+                }
+            }
+        },
+        {
+            "type": "shell",
+            "scripts": [
                 "scripts/cleanup.sh",
                 "scripts/zerodisk.sh"
             ],
@@ -48,7 +61,7 @@
      "disk_size": 20480,
      "iso_checksum": "{{user `iso_checksum`}}",
      "iso_checksum_type": "{{user `iso_checksum_type`}}",
-     "iso_url": "{{user `mirror`}}/{{{user `iso_name`}}",
+     "iso_url": "{{user `mirror`}}/{{user `iso_name`}}",
      "output_directory": "vmware-{{user `template`}}-iso",
      "boot_command": [
        "<esc><wait>",
@@ -155,9 +168,8 @@
      ],
      "format": "ovf",
      "vboxmanage_post": [
-       [ "modifyvm", "{{.Name}}", "--nic1", "ADMIN" ],
-       [ "modifyvm", "{{.Name}}", "--nic2", "CONTROL" ],
-       [ "modifyvm", "{{.Name}}", "--nic3", "PDU" ]
+       [ "modifyvm", "{{.Name}}", "--nic2", "intnet", "--intnet2", "closednet", "--nicpromisc2", "allow-all" ],
+       [ "modifyvm", "{{.Name}}", "--nictype2", "82540EM", "--macaddress2", "auto" ]
      ]
    }
  ],
