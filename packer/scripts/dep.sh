@@ -7,6 +7,6 @@ apt-get -y update
 apt-get -y install ansible
 
 # enable sudo local access to anyone logging in (for ansible)
-echo '%sudo    ALL=(ALL)  NOPASSWD:ALL' >> /etc/sudoers
+#echo '%sudo    ALL=(ALL)  NOPASSWD:ALL' >> /etc/sudoers
 
 # You can install anything you need here.
