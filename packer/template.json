@@ -11,8 +11,7 @@
         "iso_checksum_type": "sha256",
         "iso_name": "ubuntu-14.04.3-server-amd64.iso",
         "mirror": "http://releases.ubuntu.com/trusty",
-        "name": "ubuntu-14.04",
-        "template": "ubuntu-14.04-amd64",
+        "template": "rackhd-ubuntu-14.04-amd64",
         "apt_mirror": "",
         "headless": "true"
     },
@@ -46,7 +45,7 @@
             "type": "ansible-local",
             "inventory_groups": "local",
             "playbook_file": "rackhd_local.yml",
-            "playbook_dir": "../example"
+            "playbook_dir": "."
         },
         {
             "type": "shell",

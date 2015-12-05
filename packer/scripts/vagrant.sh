@@ -10,4 +10,4 @@ chmod 0600 /home/vagrant/.ssh/authorized_keys
 chown -R vagrant /home/vagrant/.ssh
 
 # Customize the message of the day
-echo 'Development Environment' > /etc/motd
+echo 'RackHD Demo/Development Environment' > /etc/motd
