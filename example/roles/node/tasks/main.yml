@@ -10,6 +10,6 @@
   when: download_n|changed
 
 - name: Install node
-  shell: /home/vagrant/n/bin/n {{ node_version | default('0.10.40') }}
+  shell: /home/vagrant/n/bin/n {{ node_version | default('0.10.37') }}
   sudo: yes
   when: download_n|changed

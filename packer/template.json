@@ -64,7 +64,7 @@
      "guest_os_type": "ubuntu-64",
      "headless": "{{user `headless`}}",
      "boot_wait": "20s",
-     "disk_size": 20480,
+     "disk_size": 40960,
      "iso_checksum": "{{user `iso_checksum`}}",
      "iso_checksum_type": "{{user `iso_checksum_type`}}",
      "iso_url": "{{user `mirror`}}/{{user `iso_name`}}",

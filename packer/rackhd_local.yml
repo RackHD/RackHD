@@ -20,4 +20,4 @@
 # branch of https://github.com/rackhd/rackhd to be used
     - branch: "master"
 # version of Node.js to use
-    - node_version: "0.10.40"
+    - node_version: "0.10.41"
