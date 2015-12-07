@@ -1,0 +1,8 @@
+---
+- name: Install Build Tools
+  apt: pkg={{ item }} state=installed
+  with_items:
+    - nodejs
+    - nodejs-legacy
+    - npm
+  sudo: yes

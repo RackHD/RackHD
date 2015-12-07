@@ -170,10 +170,6 @@
      "vboxmanage": [
        [ "modifyvm", "{{.Name}}", "--memory", "4096" ],
        [ "modifyvm", "{{.Name}}", "--cpus", "4" ]
-     ],
-     "vboxmanage_post": [
-       [ "modifyvm", "{{.Name}}", "--nic2", "intnet", "--intnet2", "closednet", "--nicpromisc2", "allow-all" ],
-       [ "modifyvm", "{{.Name}}", "--nictype2", "82540EM", "--macaddress2", "auto" ]
      ]
    }
  ],
@@ -189,7 +185,7 @@
             "artifact_type": "vagrant.box",
             "metadata": {
                 "provider": "vmware_desktop",
-                "version": "1.1.0"
+                "version": "1.1.3"
             }
         },
         {
@@ -199,7 +195,7 @@
             "artifact_type": "vagrant.box",
             "metadata": {
                 "provider": "virtualbox",
-                "version": "1.1.1"
+                "version": "1.1.3"
             }
         }]
     ]

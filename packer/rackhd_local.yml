@@ -8,7 +8,7 @@
     - git
     - rabbitmq
     - mongodb
-    - node
+    - node-legacy
     - isc-dhcp-server
     - monorail
     - snmptool
