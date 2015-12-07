@@ -31,6 +31,10 @@
   args:
     chdir: /home/vagrant
 
+- shell: echo 'df -h'
+  register: df_echo
+- debug: msg="{{df_echo.stdout}}"
+
 - name: Link and install locally
   shell: './src/scripts/link_install_locally.bash'
   args:
@@ -48,3 +52,7 @@
   shell: 'npm run apidoc'
   args:
     chdir: /home/vagrant/src/on-http
+
+- shell: echo 'df -h'
+  register: df_echo
+- debug: msg="{{df_echo.stdout}}"

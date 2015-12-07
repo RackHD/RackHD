@@ -10,6 +10,11 @@
    - initrd.img-3.13.0-32-generic
    - vmlinuz-3.13.0-32-generic
 
+
+- shell: echo 'df -h'
+  register: df_echo
+- debug: msg="{{df_echo.stdout}}"
+
 - name: retrieve the latest bootloaders from bintray
   get_url: url="https://bintray.com/artifact/download/rackhd/binary/ipxe/{{ item }}"
            dest="/home/vagrant/src/on-tftp/static/tftp/{{ item }}"
@@ -20,6 +25,11 @@
    - monorail-efi32-snponly.efi
    - monorail-efi64-snponly.efi
    - undionly.kpxe
+
+
+- shell: echo 'df -h'
+  register: df_echo
+- debug: msg="{{df_echo.stdout}}"
 
 - name: make CoreOS directory for hosting CoreOS demonstration booting
   file: path=/home/vagrant/src/on-http/static/http/coreos state=directory
@@ -32,6 +42,11 @@
    - coreos_production_pxe.vmlinuz
    - coreos_production_pxe_image.cpio.gz
 
+
+- shell: echo 'df -h'
+  register: df_echo
+- debug: msg="{{df_echo.stdout}}"
+
 # hacks for install CoreOS demo - to be replaced with proxy functionality
 - name: make CoreOS directory for hosting CoreOS demonstration booting
   file: path=/home/vagrant/src/on-http/static/http/coreos/835.8.0 state=directory
@@ -43,3 +58,8 @@
   with_items:
    - coreos_production_image.bin.bz2
    - coreos_production_image.bin.bz2.sig
+
+
+- shell: echo 'df -h'
+  register: df_echo
+- debug: msg="{{df_echo.stdout}}"
