@@ -9,8 +9,10 @@ wget --no-check-certificate 'https://raw.github.com/mitchellh/vagrant/master/key
 chmod 0600 /home/vagrant/.ssh/authorized_keys
 chown -R vagrant /home/vagrant/.ssh
 
-# enable sudo access for vagrant
-echo "vagrant ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/vagrant
+# enabling Vagrant sudo access
+echo 'Defaults:vagrant !requiretty' > /etc/sudoers.d/vagrant;
+echo 'vagrant ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers.d/vagrant;
+chmod 440 /etc/sudoers.d/vagrant
 
 # Customize the message of the day
 echo 'RackHD Demo/Development Environment' > /etc/motd
