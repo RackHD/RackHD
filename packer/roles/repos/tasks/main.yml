@@ -1,0 +1,58 @@
+---
+- name: Init git submodules
+  shell: git submodule init
+  args:
+    chdir: /home/vagrant/src
+  sudo: yes
+
+- name: Populate git submodules
+  shell: git submodule update
+  args:
+    chdir: /home/vagrant/src
+  sudo: yes
+
+- name: Reset to the branch specified
+  shell: git reset --hard {{ branch }}
+  when: branch is defined
+  args:
+    chdir: /home/vagrant/src/{{ item }}
+  with_items:
+    - on-core
+    - on-tasks
+    - on-http
+    - on-tftp
+    - on-dhcp-proxy
+    - on-taskgraph
+    - on-syslog
+  sudo: yes
+
+- name: clean any local installation
+  shell: './src/scripts/clean_all.bash'
+  args:
+    chdir: /home/vagrant
+
+- shell: echo 'df -h'
+  register: df_echo
+- debug: msg="{{df_echo.stdout}}"
+
+- name: Link and install locally
+  shell: './src/scripts/link_install_locally.bash'
+  args:
+    chdir: /home/vagrant
+
+- name: Make common static directory
+  file: path=/home/vagrant/src/on-http/static/http/common state=directory
+
+- name: Npm install apidoc
+  shell: 'npm install apidoc'
+  args:
+    chdir: /home/vagrant/src/on-http
+
+- name: Render API docs for local reference
+  shell: 'npm run apidoc'
+  args:
+    chdir: /home/vagrant/src/on-http
+
+- shell: echo 'df -h'
+  register: df_echo
+- debug: msg="{{df_echo.stdout}}"
