@@ -44,8 +44,8 @@
         {
             "type": "ansible-local",
             "inventory_groups": "local",
-            "playbook_file": "rackhd_local.yml",
-            "playbook_dir": "."
+            "playbook_file": "ansible/rackhd_local.yml",
+            "playbook_dir": "ansible"
         },
         {
             "type": "shell",
