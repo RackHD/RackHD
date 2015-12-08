@@ -27,5 +27,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         # Default value: false
         target.ssh.forward_agent = true
 
+        target.vm.provision "shell", inline: <<-SHELL
+          service isc-dhcp-server start
+        SHELL
+
     end
 end

@@ -11,7 +11,7 @@
    - vmlinuz-3.13.0-32-generic
 
 
-- shell: echo 'df -h'
+- shell: df -h
   register: df_echo
 - debug: msg="{{df_echo.stdout}}"
 
@@ -43,7 +43,7 @@
    - coreos_production_pxe_image.cpio.gz
 
 
-- shell: echo 'df -h'
+- shell: df -h
   register: df_echo
 - debug: msg="{{df_echo.stdout}}"
 
@@ -60,6 +60,6 @@
    - coreos_production_image.bin.bz2.sig
 
 
-- shell: echo 'df -h'
+- shell: df -h
   register: df_echo
 - debug: msg="{{df_echo.stdout}}"

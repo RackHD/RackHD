@@ -44,8 +44,8 @@
         {
             "type": "ansible-local",
             "inventory_groups": "local",
-            "playbook_file": "rackhd_local.yml",
-            "playbook_dir": "."
+            "playbook_file": "ansible/rackhd_local.yml",
+            "playbook_dir": "ansible"
         },
         {
             "type": "shell",
@@ -185,7 +185,7 @@
             "artifact_type": "vagrant.box",
             "metadata": {
                 "provider": "vmware_desktop",
-                "version": "1.1.3"
+                "version": "1.1.4"
             }
         },
         {
@@ -195,7 +195,7 @@
             "artifact_type": "vagrant.box",
             "metadata": {
                 "provider": "virtualbox",
-                "version": "1.1.3"
+                "version": "1.1.4"
             }
         }]
     ]
