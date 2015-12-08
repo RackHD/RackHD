@@ -5,6 +5,8 @@
 RackHD is a technology stack created for enabling hardware management and orchestration, to provide cohesive APIs to enable automated infrastructure. In a Converged Infrastructure Platform (CIP) architecture, RackHD software provides hardware management and orchestration
 (M&O). It serves as an abstraction layer between other M&O layers and the underlying physical hardware. Developers can use the RackHD API to create a user interface that serves as single point of access for managing hardware services regardless of the specific hardware in place.
 
+[![IMAGE ALT TEXT](http://img.youtube.com/vi/cCiXtROSt8U/0.jpg)](http://www.youtube.com/watch?v=cCiXtROSt8U "Introduction to RackHD")
+
 This repository acts as a single source location to help you get or build all the pieces to learn about, take advantage of, and contribute to RackHD.
 
 ## Contribute
