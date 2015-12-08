@@ -4,6 +4,8 @@
 apt-get -y autoremove
 apt-get -y clean
 
+apt-get purge linux-headers-$(uname -r) build-essential zlib1g-dev libssl-dev libreadline-gplv2-dev
+
 echo "Cleaning up apt cache"
 rm -f /etc/apt/apt.conf.d/90aptcache
 
