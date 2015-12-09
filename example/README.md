@@ -53,10 +53,11 @@ Edits can be made to this new file to adjust the number of pxe clients created.
     $ ./monorail_rack
 
 
-Now ssh into the RackHD server and start the services
+The `monorail_rack` script will auto-start all of the services by default, but you can
+also run them manually if you prefer.
 
     $ vagrant ssh
-    $ sudo nf start
+    vagrant:~$ sudo nf start
 
 
 ## TESTING
