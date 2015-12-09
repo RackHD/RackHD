@@ -16,7 +16,7 @@ and [Ansible](http://docs.ansible.com/ansible/intro_installation.html)
 installed onto your system in order to use this script.
 
 
-[ansible roles](https://github.com/RackHD/RackHD/tree/master/example/roles)
+[ansible roles](https://github.com/RackHD/RackHD/tree/master/packer/ansible/roles)
 
 We also rely on the projects structure of submodules to link the source
 into the VM (through vagrant). The ansible roles are written to expect the
