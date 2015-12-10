@@ -8,7 +8,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
     # MONORAIL SERVER
     config.vm.define "dev" do |target|
-        target.vm.box = "heckj/experiment"
+        target.vm.box = "rackhd/rackhd"
         target.vm.provider "virtualbox" do |v|
             v.memory = 4096
             v.cpus = 4
