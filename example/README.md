@@ -134,7 +134,7 @@ View the current SKU definitions:
 Once you've added those definitions, you can start up the test "PXE-1" virtual machine
 using the command:
 
-    vboxmanage startvm pxe-1 --type gui
+    VBoxManage startvm pxe-1 --type gui
 
 You should see the VM PXE boot, get discovered, and ultimately get CoreOS
 installed. The installation workflow included in the RackHD system installs
@@ -232,9 +232,9 @@ remove anything. To get rid of the RackHD server you can use:
 
     vagrant destroy
 
-And you can remove the PXE vm(s) using the `vboxmanage` command, such as:
+And you can remove the PXE vm(s) using the `VBoxManage` command, such as:
 
-    vboxmanage unregistervm --delete pxe-1
+    VBoxManage unregistervm --delete pxe-1
 
 ## Running the web UI
 
