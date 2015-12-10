@@ -8,6 +8,12 @@ homebrew:
 
 or retrieving it from the download available at https://www.packer.io/downloads.html
 
+## To Run
+
+Set up your ATLAS_USER and ATLAS_TOKEN environment variables with your username
+and API access token from Atlas, then invoke:
+
+    packer push -name=$ATLAS_USER/rackhd template.json
 
 ### License notes
 
