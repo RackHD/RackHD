@@ -12,7 +12,8 @@ class obmSettings(object):
         self._nodes = Nodes()
 
     def _set_snmp(self, uid):
-        return
+        LOG.warning('_set_snmp() is currently a no-op function')
+        return True
 
     def _set_ipmi(self, uid):
         user, passwd = get_bmc_cred()
@@ -27,7 +28,7 @@ class obmSettings(object):
             if 'data' in rmm:
                 mac = bmc['data'].get('MAC Address')
         if mac is not None:
-            LOG.info('BMC MAC a{0} for {1}'.format(mac,uid))
+            LOG.debug('BMC MAC {0} for {1}'.format(mac,uid))
             setting = dumps({
                 'obmSettings':[{
                     'service':'ipmi-obm-service', 
@@ -39,49 +40,50 @@ class obmSettings(object):
                 }]
             })
             LOG.info('Creating ipmi obm-settings for node {0}'.format(uid))
-            rsp = self._nodes.patch_node(uid,node=setting)
-            return rsp
+            try:
+                self._nodes.patch_node(uid,node=setting)
+            except Exception as e:
+                LOG.error(e.message)
+                return False
+        else:
+            LOG.error('Error finding configurable IPMI MAC address for {0}'.format(uid))
+            return False
 
-    def setup_nodes(self):
+    def setup_nodes(self, service_type='ipmi-obm-service',uuid=None):
+        retval = []
         rsp = self._nodes.get_nodes()
         nodes = rsp.json()
         for n in nodes:
-            add_ipmi = False
-            add_snmp = False
             node_type = n.get('type')
             uid = n.get('id')
-            obm_obj = n.get('obmSettings', None)
-            if obm_obj is None:
-                add_ipmi = True
-                add_snmp = True
-            else:
-                for obm in obm_obj:
-                    service = obm.get('service')
-                    if "ipmi-obm-service" not in service:
-                        add_ipmi = True
-                    if "snmp-obm-service" not in service:
-                        add_snmp = True
-            if add_ipmi and node_type == 'compute':
-                self._set_ipmi(uid)
-            if add_snmp and node_type != 'enclosure':
-                self._set_snmp(uid)
-        return True
+            if uuid is None or uuid == uid:
+                if service_type == 'ipmi-obm-service' and node_type == 'compute':
+                    if self._set_ipmi(uid) == False:
+                        retval.append('Error setting IPMI OBM settings for noe {0}'.format(uid))
+                if service_type == 'snmp-obm-service' and node_type != 'enclosure':
+                    if self._set_snmp(uid) == False:
+                        retval.append('Error setting SNMP OBM settings for noe {0}'.format(uid))
+        return retval
 
     def check_nodes(self,service_type='ipmi-obm-service',uuid=None):
+        retval = []
         rsp = self._nodes.get_nodes()
         nodes = rsp.json()
         for n in nodes:
             node_type = n.get('type')
             uid = n.get('id')
-            if uuid is not None and uuid == uid:
-                obm_obj = n.get('obmSettings')
-                if node_type != 'enclosure' and obm_obj is None:
-                    raise KeyError('Expected obmSettings for node type {0} (id={1})'.format(node_type,uid))
-                else:
-                    for obm in obm_obj:
-                        service = obm.get('service')
-                        if service_type not in service:
-                            raise ValueError('Expected OBM service type {0} (id={1})'.format(service_type,uid))
-        return True
+            if uuid is None or uuid == uid:
+                if node_type != 'enclosure':
+                    obm_obj = n.get('obmSettings')
+                    if obm_obj is None:
+                        LOG.error('No OBM settings for node type {0} (id={1})'.format(node_type,uid))
+                        retval.append(False)
+                    else:
+                        for obm in obm_obj:
+                            service = obm.get('service')
+                            if service_type not in service:
+                                LOG.error('No OBM service type {0} (id={1})'.format(service_type,uid))
+                                retval.append(False)
+        return retval
 
 
