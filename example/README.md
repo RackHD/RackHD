@@ -42,15 +42,13 @@ Clone RackHD repo to your local git directory.
 
 Change into the directory `example`, create config and run the setup command:
 
-    $ pushd example/config/
-    $ cp ./monorail_rack.cfg.example ./monorail_rack.cfg
-    $ popd
+    $ cd example
+    $ cp config/monorail_rack.cfg.example config/monorail_rack.cfg
 
 
 Edits can be made to this new file to adjust the number of pxe clients created.
 
-    $ pushd bin/
-    $ ./monorail_rack
+    $ bin/monorail_rack
 
 
 The `monorail_rack` script will auto-start all of the services by default, but you can
