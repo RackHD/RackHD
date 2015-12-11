@@ -15,6 +15,9 @@ The RackHD project is a collection of libraries and applications housed at https
 
 Code and bug submissions are handled on GitHub at the relevant repository for the code, with more detail in our documentation at http://rackhd.readthedocs.org/en/latest/contributing.html
 
+This project adheres to the [Open Code of Conduct][code-of-conduct]. By participating, you are expected to honor this code.
+[code-of-conduct]: http://todogroup.org/opencodeofconduct/#RackHD/rackhd@emc.com
+
 ## Community
 
 We maintain a mailing list at https://groups.google.com/d/forum/rackhd. You can visit the group
