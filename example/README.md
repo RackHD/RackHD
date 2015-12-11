@@ -168,31 +168,50 @@ Copy it into the `examples` directory and then you can unpack it in vagrant:
 `vagrant ssh`:
 
     sudo mkdir /var/mirrors
-    sudo python ~/src/on-http/data/templates/setup_iso.py \
-    /vagrant/VMware-VMvisor-Installer-*.x86_64.iso \
-    /var/mirrors --link=/home/vagrant/src
+    sudo python ~/src/on-http/data/templates/setup_iso.py /vagrant/VMware-VMvisor-Installer-*.x86_64.iso /var/mirrors --link=/home/vagrant/src
 
-`mv ~/Downloads/CentOS*.iso ~/src/rackhd/example/`
+
 `vagrant ssh`:
 
-    sudo python ~/src/on-http/data/templates/setup_iso.py /vagrant/Cent*.iso \
-    /var/mirrors --link=/home/vagrant/src
+    cd /tmp
+    wget http://mirror.umd.edu/centos/7/isos/x86_64/CentOS-7-x86_64-DVD-1503-01.iso
+    # 4GB
+    sudo python ~/src/on-http/data/templates/setup_iso.py /tmp/CentOS-7-x86_64-Minimal.iso /var/mirrors --link=/home/vagrant/src
+
+### Mirror down the CentOS 7 packages for remote installation
+
+__this doesn't work inside EMC due to port 22 blocks__
+
+`vagrant ssh`:
+
+    sudo mkdir -p /var/mirrors/centos/7
+    sudo ln -s /var/mirrors/centos ~/src/on-http/static/http/centos
+    sudo rsync --progress -av --delete --delete-excluded --exclude "local*" \
+    --exclude "i386" rsync://centos.eecs.wsu.edu/centos/7/ /var/mirrors/centos/7
+
+
+And then invoking the workflow to install CentOS you just unpacked
+
+    cd ~/src/rackhd/example
+    # make sure you're in the example directory to reference the sample JSON correctly
+
+    curl -H "Content-Type: application/json" \
+    -X POST --data @samples/centos_iso_boot.json \
+    http://localhost:9090/api/1.1/nodes/566af6c77c5de76d1530d1f3/workflows | python -m json.tool
+
+
+**NOTE** because this demonstration setup uses Virtualbox, there is no out
+of band management to trigger the machine to reboot. Once the workflow
+has been activated, the VM will need to be rebooted manually for the
+workflow to operate.
 
 ## HACKING THESE SCRIPTS
 
-If you're having on this script or the [ansible roles](https://github.com/RackHD/RackHD/tree/master/example/roles)
-to change the functionality, you can shortcut some of this process by just invoking
-`vagrant provision` to use ansible to update the VM that's already been created.
-
-
-### CHANGE NODE VERSION
-
-Currently this example uses `n` (https://github.com/tj/n) to install node
-version `0.10.40`. You can change what version of node is used by default by
-logging into the Vagrant instance and using the `n` command:
-
-    vagrant ssh
-    sudo ~/n/bin/n <version>
+The vagrat image is built using [packer](https://packer.io/) with the
+configuration in https://github.com/RackHD/RackHD/tree/master/packer and
+provisioned using  [ansible roles](https://github.com/RackHD/RackHD/tree/master/packer/ansible/roles).
+You can tweak those roles and make your own builds either locally or using
+packer and [atlas](http://atlas.hashicorp.com).
 
 
 ### CONFIGURATION FILE
@@ -213,15 +232,6 @@ setup script.
 
 Please note, and example configuration file is provided and you must copy that
 file to a new file with the same name excluding the .example extension.
-
-### CHANGE WHAT BRANCH IS USED
-
-To checkout to a different commit than what is referenced by git submodule,
-edit the vagrant file (RackHD/example/Vagrantfile) to specify the `branch`
-variable for the ansible provisioner. A commented out line exists in
-`Vagrantfile` you can enable and edit.
-
-    ansible.extra_vars = { branch: "master" }
 
 ## ENVIRONMENT BREAKDOWN
 

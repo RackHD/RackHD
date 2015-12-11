@@ -1,0 +1,12 @@
+{
+    "name": "Graph.InstallCentOS",
+    "options": {
+        "defaults": {
+            "obmServiceName": "noop-obm-service"
+        },
+        "install-os": {
+            "repo": "{{api.server}}/Centos/7.0",
+            "rootPassword": "root"
+        }
+    }
+}
