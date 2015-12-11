@@ -57,13 +57,13 @@ if [ $pxe_count ]
         vmName="pxe-$i"
         if [[ ! -e $vmName.vdi ]]; then # check to see if PXE vm already exists
             echo "deploying pxe: $i"
-            vboxmanage createvm --name $vmName --register;
-            vboxmanage createhd --filename $vmName --size 8192;
-            vboxmanage storagectl $vmName --name "SATA Controller" --add sata --controller IntelAHCI
-            vboxmanage storageattach $vmName --storagectl "SATA Controller" --port 0 --device 0 --type hdd --medium $vmName.vdi
-            vboxmanage modifyvm $vmName --ostype Ubuntu --boot1 net --memory 768;
-            vboxmanage modifyvm $vmName --nic1 intnet --intnet1 closednet --nicpromisc1 allow-all;
-            vboxmanage modifyvm $vmName --nictype1 82540EM --macaddress1 auto;
+            VBoxManage createvm --name $vmName --register;
+            VBoxManage createhd --filename $vmName --size 8192;
+            VBoxManage storagectl $vmName --name "SATA Controller" --add sata --controller IntelAHCI
+            VBoxManage storageattach $vmName --storagectl "SATA Controller" --port 0 --device 0 --type hdd --medium $vmName.vdi
+            VBoxManage modifyvm $vmName --ostype Ubuntu --boot1 net --memory 768;
+            VBoxManage modifyvm $vmName --nic1 intnet --intnet1 closednet --nicpromisc1 allow-all;
+            VBoxManage modifyvm $vmName --nictype1 82540EM --macaddress1 auto;
         fi
       done
 fi
