@@ -161,7 +161,7 @@ for rebooting the `pxe-1` virtual machine.
 ### UNPACKING AN OS INSTALL ISO
 
 For example, you can [manually download the ESXi installation ISO](https://www.vmware.com/go/download-vspherehypervisor)
-or download a [CentOS 7 LiveCD](http://buildlogs.centos.org/centos/7/isos/x86_64/CentOS-7-livecd-x86_64.iso).
+or download a [CentOS 7 Installation ISO](http://mirror.umd.edu/centos/7/isos/x86_64/CentOS-7-x86_64-DVD-1503-01.iso).
 
 Copy it into the `examples` directory and then you can unpack it in vagrant:
 
@@ -176,19 +176,15 @@ Copy it into the `examples` directory and then you can unpack it in vagrant:
     cd /tmp
     wget http://mirror.umd.edu/centos/7/isos/x86_64/CentOS-7-x86_64-DVD-1503-01.iso
     # 4GB
-    sudo python ~/src/on-http/data/templates/setup_iso.py /tmp/CentOS-7-x86_64-Minimal.iso /var/mirrors --link=/home/vagrant/src
+    sudo python ~/src/on-http/data/templates/setup_iso.py /tmp/CentOS-7-x86_64*.iso /var/mirrors --link=/home/vagrant/src
 
-### Mirror down the CentOS 7 packages for remote installation
+The CentOS installer wants a bit more memory easily available for the
+installation than we default our test VM towards, so I recommend updating
+it to 2GB of RAM with the following commands:
 
-__this doesn't work inside EMC due to port 22 blocks__
-
-`vagrant ssh`:
-
-    sudo mkdir -p /var/mirrors/centos/7
-    sudo ln -s /var/mirrors/centos ~/src/on-http/static/http/centos
-    sudo rsync --progress -av --delete --delete-excluded --exclude "local*" \
-    --exclude "i386" rsync://centos.eecs.wsu.edu/centos/7/ /var/mirrors/centos/7
-
+    VBoxManage controlvm poweroff pxe-1
+    VBoxManage modifyvm pxe-1 --memory 2048;
+    VBoxManage controlvm poweron pxe-1
 
 And then invoking the workflow to install CentOS you just unpacked
 
@@ -199,6 +195,14 @@ And then invoking the workflow to install CentOS you just unpacked
     -X POST --data @samples/centos_iso_boot.json \
     http://localhost:9090/api/1.1/nodes/566af6c77c5de76d1530d1f3/workflows | python -m json.tool
 
+You can see the example stanza for posting a workflow with options at
+[samples/centos_iso_boot.json](samples/centos_iso_boot.json).
+
+Some of the workflows (like OS install) are set to allow for additional
+options during installation as well. For example, at
+[samples/centos_iso_kvm_boot.json](samples/centos_iso_kvm_boot.json) we
+include an additional option that is rendered by the template to install
+the KVM packages after the default installation.
 
 **NOTE** because this demonstration setup uses Virtualbox, there is no out
 of band management to trigger the machine to reboot. Once the workflow
