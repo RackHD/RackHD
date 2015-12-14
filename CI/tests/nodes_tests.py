@@ -63,7 +63,7 @@ class NodesTests(object):
 
     @test(groups=['nodes.test','test-nodes'])
     def test_nodes(self):
-        """ Testing GET:/nodes API """
+        """ Testing GET:/nodes """
         rsp = Nodes().get_nodes()
         nodes = rsp.json()
         LOG.debug(nodes,json=True)
@@ -72,7 +72,7 @@ class NodesTests(object):
 
     @test(groups=['test-node-id'], depends_on_groups=['test-nodes'])
     def test_node_id(self):
-        """ Testing GET:/nodes/:id API """
+        """ Testing GET:/nodes/:id """
         rsp = Nodes().get_nodes()
         nodes = rsp.json()
         for n in nodes:
@@ -87,7 +87,7 @@ class NodesTests(object):
     def test_node_create(self):
         """ Verfiy POST:/nodes/ """
         for n in self.__test_nodes:
-            LOG.info(n, json=True)
+            LOG.info('Creating node (name={0})'.format(n.get('name')))
             rsp = Nodes().post_node(dumps(n))
             assert_equal(201,rsp.status_code, message='Unexpected response {0}'.format(rsp.status_code))
     

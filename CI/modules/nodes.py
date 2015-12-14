@@ -33,8 +33,8 @@ class Nodes(object):
         path = '/nodes'
         if uuid is not None:
             path = '{0}/{1}'.format(path,uuid)
-            if suffix is not None:
-                path = '{0}/{1}'.format(path,suffix)
+        if suffix is not None:
+            path = '{0}/{1}'.format(path,suffix)
         kwargs['data'] = data
         rsp = getattr(self.__urls,attr)(path,**kwargs)
         return rsp

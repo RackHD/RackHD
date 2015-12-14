@@ -5,6 +5,7 @@ def run_tests():
     from tests.nodes_tests import NodesTests
     from tests.obm_tests import OBMTests
     from tests.amqp_tests import AMQPTests
+    from tests.lookups_tests import LookupsTests
 
     groups_list  = [
             'integraton'
@@ -12,7 +13,8 @@ def run_tests():
     depends_list = [
             'nodes.tests',
             'obm.tests',
-            'amqp.tests'
+            'amqp.tests',
+            'lookups.tests'
     ]
     register(groups=groups_list, depends_on_groups=depends_list)
     TestProgram().run_and_exit()

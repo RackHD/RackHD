@@ -10,9 +10,9 @@ QUEUE_SEL_RESULT        = Queue('ipmi.command.sel.result',
 QUEUE_SDR_RESULT        = Queue('ipmi.command.sdr.result',
                                 EXCHANGE_TASK,
                                 routing_key='ipmi.command.sdr.result.*')
-QUEUE_CHASSIS_RESULT    = Queue('ipmi.command.chassus.result',
+QUEUE_CHASSIS_RESULT    = Queue('ipmi.command.chassis.result',
                                 EXCHANGE_TASK,
-                                routing_key='ipmi.command.sdr.result.*')
+                                routing_key='ipmi.command.chassis.result.*')
 
 # Event exchange queues
 EXCHANGE_EVENT          = Exchange('on.events', type='topic')

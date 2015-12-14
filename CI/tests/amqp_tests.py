@@ -18,18 +18,25 @@ class AMQPTests(object):
     def __init__(self):
         self.__task_worker = None
 
-    @test(groups=['amqp.tests'],depends_on_groups=['check-obm'])
+    @test(depends_on_groups=['check-obm'])
     def check_sel_task(self):
         """ Testing AMQP on.task.ipmi.sel.result """
         self.__task_worker = Worker(queue=QUEUE_SEL_RESULT,
                                     callbacks=[self.handle_sel_result])
         self.__task_worker.start()
 
-    @test(groups=['amqp.tests'],depends_on_groups=['check-obm'])
+    @test(depends_on_groups=['check-obm'])
     def check_sdr_task(self):
         """ Testing AMQP on.task.ipmi.sdr.result """
         self.__task_worker = Worker(queue=QUEUE_SDR_RESULT,
                                     callbacks=[self.handle_sdr_result])
+        self.__task_worker.start()
+
+    @test(depends_on_groups=['check-obm'])
+    def check_chassis_task(self):
+        """ Testing AMQP on.task.ipmi.chassis.result """
+        self.__task_worker = Worker(queue=QUEUE_CHASSIS_RESULT,
+                                    callbacks=[self.handle_chassis_result])
         self.__task_worker.start()
 
     def handle_sel_result(self,body,message):
@@ -39,6 +46,15 @@ class AMQPTests(object):
         message.ack()
         self.__task_worker.stop()
         self.__task_worker = None
+    
+    def handle_chassis_result(self,body,message):
+        LOG.debug(body,json=True)
+        assert_is_not_none(body)
+        assert_is_not_none(message)
+        message.ack()
+        self.__task_worker.stop()
+        self.__task_worker = None
+    
     
     def handle_sdr_result(self,body,message):
         LOG.debug(body,json=True)
