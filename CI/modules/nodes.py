@@ -10,13 +10,13 @@ class Nodes(object):
     def get_nodes(self,uid=None):
         return self.__send(uuid=uid)
 
-    def post_node(self, uid):
-        return self.__send(uuid=uid,attr='post')
+    def post_node(self, node):
+        return self.__send(attr='post',data=node)
 
     def patch_node(self, uid, node):
         return self.__send(uuid=uid,attr='patch',data=node)
 
-    def delete_node(self, uud):
+    def delete_node(self, uid):
         return self.__send(uuid=uid,attr='delete')
 
     def get_node_catalog(self, uid,source=''):

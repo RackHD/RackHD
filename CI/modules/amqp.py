@@ -26,7 +26,7 @@ class Worker(ConsumerMixin):
         out =  'Received message: %r' % dumps(body)
         out += ' properties: %s' % dumps(message.properties)
         out += '  delivery_info: %s' % dumps(message.delivery_info)
-        LOG.info(out,pprint=True)
+        LOG.info(out,json=True)
         message.ack()
 
     def start(self):

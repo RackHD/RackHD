@@ -7,6 +7,8 @@ API_VERSION = '1.1'
 
 # CRITICAL[0] < ERROR[1] < WARNING[2] < INFO[3] < DEBUG[4]
 LOGLEVEL = 2
+LOGFMT = '%(asctime)s:%(name)s:%(levelname)s - %(message)s'
+
 HOST_IP = 'localhost'
 HOST_PORT = '8080'
 CRED_FILE = '.passwd'

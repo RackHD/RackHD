@@ -76,13 +76,13 @@ class obmSettings(object):
                 if node_type != 'enclosure':
                     obm_obj = n.get('obmSettings')
                     if obm_obj is None:
-                        LOG.error('No OBM settings for node type {0} (id={1})'.format(node_type,uid))
+                        LOG.warning('No OBM settings for node type {0} (id={1})'.format(node_type,uid))
                         retval.append(False)
                     else:
                         for obm in obm_obj:
                             service = obm.get('service')
                             if service_type not in service:
-                                LOG.error('No OBM service type {0} (id={1})'.format(service_type,uid))
+                                LOG.warning('No OBM service type {0} (id={1})'.format(service_type,uid))
                                 retval.append(False)
         return retval
 

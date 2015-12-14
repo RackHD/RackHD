@@ -1,6 +1,6 @@
 from config.settings import *
 import logging
-import pprint
+from json import dumps,loads
 
 LEVEL = [
     logging.CRITICAL, 
@@ -15,29 +15,30 @@ class Log(object):
         self._name = args[0] if args else __name__
         self._level = kwargs.get('level',LOGLEVEL)
         try:
-            logging.basicConfig(level=LEVEL[self._level])
+            logging.basicConfig(level=LEVEL[self._level], format=LOGFMT)
         except IndexError:
             logging.warning('Invalid log level %d, using default level', self._level)
         self.log = logging.getLogger(self._name)
 
-    def critical(self,m,pprint=False):
-        self.__log('critical',m,pprint)
+    def critical(self,m,json=False):
+        self.__log('critical',m,json)
 
-    def info(self,m,pprint=False):
-        self.__log('info',m,pprint)
+    def info(self,m,json=False):
+        self.__log('info',m,json)
     
-    def debug(self,m,pprint=False):
-        self.__log('debug',m,pprint)
+    def debug(self,m,json=False):
+        self.__log('debug',m,json)
     
-    def error(self,m,pprint=False):
-        self.__log('error',m,pprint)
+    def error(self,m,json=False):
+        self.__log('error',m,json)
     
-    def warning(self,m,pprint=False):
-        self.__log('warning',m,pprint)
+    def warning(self,m,json=False):
+        self.__log('warning',m,json)
 
-    def __log(self,attr,m,pretty=False):
-        if pretty: 
-            m = pprint.pformat(m)
+    def __log(self,attr,m,json=False):
+        if json:
+            m = dumps(m,sort_keys=True,indent=4,separators=(',', ': ')) \
+                    .decode('string-escape')
         return getattr(self.log,attr)(m)
 
 
