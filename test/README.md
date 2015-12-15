@@ -4,7 +4,7 @@
 ## setup
 
     virtualenv .venv
-    pip install -r requirements.txt
+    sudo pip install -r requirements.txt
 
 ## running the tests
 
@@ -13,7 +13,7 @@ run Vagrant environment
     cd ../example
     vagrant up
     vagrant ssh dev -c "sudo nf start"
-    cd ../CI
+    cd ../test
 
 run the tests
 
