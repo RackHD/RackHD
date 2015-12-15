@@ -1,6 +1,7 @@
 from kombu import Exchange, Queue
+import os
 
-AMQP_URL = 'amqp://localhost:9091'
+AMQP_URL = os.getenv('RACKHD_AMQP_URL', 'amqp://localhost:9091')
 
 # Task exchange queues
 EXCHANGE_TASK           = Exchange('on.task', type='topic')

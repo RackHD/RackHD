@@ -1,7 +1,7 @@
 from imp import load_source
 from getpass import getpass
 from base64 import b64encode, b64decode
-from os.path import isfile
+import os
 
 API_VERSION = '1.1'
 
@@ -9,8 +9,8 @@ API_VERSION = '1.1'
 LOGLEVEL = 2
 LOGFMT = '%(asctime)s:%(name)s:%(levelname)s - %(message)s'
 
-HOST_IP = 'localhost'
-HOST_PORT = '9090'
+HOST_IP = os.getenv('RACKHD_HOST','localhost')
+HOST_PORT = os.getenv('RACKHD_PORT','9090')
 CRED_FILE = '.passwd'
 
 # Obfuscate credentials
@@ -29,7 +29,7 @@ def get_bmc_cred():
     return b64decode(creds.BMC_USER), b64decode(creds.BMC_PASS)
 
 # Initial bmc passwd file if it doesn't exist
-if isfile(CRED_FILE) is False:
+if os.path.isfile(CRED_FILE) is False:
     if 0 == len(DEFAULT_BMC_USER) and 0 == len(DEFAULT_BMC_PASS):
         DEFAULT_BMC_USER = raw_input('BMC username: ')
         DEFAULT_BMC_PASS = getpass('BMC password: ')
