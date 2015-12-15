@@ -4,10 +4,16 @@ import requests
 
 LOG = Log(__name__)
 
+"""
+Class to abstract HTTP request functionality
+:param verify: optional validate SSL certificate 
+:param json: optional always return formated JSON data
+:param headers: optional header object
+"""
 class urls(object):
     def __init__(self, **kwargs):
         self.sslVerify = kwargs.get('verify',False)
-        self.headers = { 'Content-Type':'application/json' }
+        self.headers = kwargs.get('headers', { 'Content-Type':'application/json' })
         self.pfx = 'https' if self.sslVerify else 'http'
         self.url = '{0}://{1}:{2}/{3}'.format(self.pfx,HOST_IP,HOST_PORT,'api/{0}'.format(API_VERSION))
         self.json = kwargs.get('json', False)

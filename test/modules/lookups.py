@@ -3,6 +3,9 @@ from logger import Log
 
 LOG = Log(__name__)
 
+"""
+Class to abstract the RackHD :/lookups API commands
+"""
 class Lookups(object):
     def __init__(self):
         self.__urls = urls()

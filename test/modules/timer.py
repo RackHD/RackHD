@@ -3,6 +3,14 @@ from threading import Timer
 
 LOG = Log(__name__)
 
+"""
+Class to abstract timed task service functionality
+:param interval: periodic interval duration to execute the task on
+:param daemon: run timed task in daemon mode
+:param function: the task function to be executed 
+:param args: args to pass to the function
+:param kwargs: keyword arguments to pass into the function
+"""
 class TimerTask(object):
     def __init__(self, 
                  interval=5, 

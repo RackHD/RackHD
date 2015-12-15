@@ -10,6 +10,11 @@ LEVEL = [
     logging.DEBUG
 ]
 
+"""
+Class to abstract python logging functionality
+:param name: optional logging name
+:param level: optional logging level, default defined in config/settings.py
+"""
 class Log(object):
     def __init__(self, *args, **kwargs):
         self._name = args[0] if args else __name__

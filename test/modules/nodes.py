@@ -3,6 +3,9 @@ from logger import Log
 
 LOG = Log(__name__)
 
+"""
+Class to absract the RackHD :/nodes API commands
+"""
 class Nodes(object):
     def __init__(self):
         self.__urls = urls()

@@ -8,6 +8,12 @@ from kombu import BrokerConnection
 
 LOG = Log('kombu')
 
+"""
+Class to abstract AMQP consumer event handling
+:param callbacks: optional callbacks to be invoked on queue event
+:param amqp_url: optional AMQP URL to connect, defaults from config/amqp.py
+:param queue: The queue exchange to listen on for events
+"""
 class Worker(ConsumerMixin):
     def __init__(self, **kwargs):
         self.__callbacks = kwargs.get('callbacks',self.on_message)
