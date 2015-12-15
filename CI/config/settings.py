@@ -10,10 +10,10 @@ LOGLEVEL = 2
 LOGFMT = '%(asctime)s:%(name)s:%(levelname)s - %(message)s'
 
 HOST_IP = 'localhost'
-HOST_PORT = '8080'
+HOST_PORT = '9090'
 CRED_FILE = '.passwd'
 
-# Obfuscate credentials 
+# Obfuscate credentials
 def set_bmc_cred(user,password):
     u = b64encode(user)
     p = b64encode(password)
@@ -34,4 +34,3 @@ if isfile(CRED_FILE) is False:
         DEFAULT_BMC_USER = raw_input('BMC username: ')
         DEFAULT_BMC_PASS = getpass('BMC password: ')
     set_bmc_cred(DEFAULT_BMC_USER,DEFAULT_BMC_PASS)
-

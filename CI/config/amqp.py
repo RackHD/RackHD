@@ -1,11 +1,11 @@
 from kombu import Exchange, Queue
 
-AMQP_URL = 'amqp://localhost'
+AMQP_URL = 'amqp://localhost:9091'
 
 # Task exchange queues
 EXCHANGE_TASK           = Exchange('on.task', type='topic')
-QUEUE_SEL_RESULT        = Queue('ipmi.command.sel.result', 
-                                EXCHANGE_TASK, 
+QUEUE_SEL_RESULT        = Queue('ipmi.command.sel.result',
+                                EXCHANGE_TASK,
                                 routing_key='ipmi.command.sel.result.*')
 QUEUE_SDR_RESULT        = Queue('ipmi.command.sdr.result',
                                 EXCHANGE_TASK,

@@ -1,0 +1,6 @@
+amqp==1.4.8
+anyjson==0.3.3
+kombu==3.0.30
+logging==0.4.9.6
+proboscis==1.2.6.0
+requests==2.9.0
