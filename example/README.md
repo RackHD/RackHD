@@ -12,6 +12,7 @@ to connect DHCP and TFTP from RackHD to the PXE clients.
 ## PRE-REQS / SCRIPT EXPECTATIONS
 
 We expect the latest version of git, [Vagrant](https://www.vagrantup.com/downloads.html),
+[VrtualBox](https://www.virtualbox.org/wiki/Linux_Downloads),
 and [Ansible](http://docs.ansible.com/ansible/intro_installation.html)
 installed onto your system in order to use this script.
 
