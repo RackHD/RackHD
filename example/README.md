@@ -179,7 +179,7 @@ Copy it into the `examples` directory and then you can unpack it in vagrant:
     sudo python ~/src/on-http/data/templates/setup_iso.py /tmp/CentOS-7-x86_64*.iso /var/mirrors --link=/home/vagrant/src
 
 The CentOS installer wants a bit more memory easily available for the
-installation than we default our test VM towards, so I recommend updating
+installation than we default our test VM towards, so we recommend updating
 it to 2GB of RAM with the following commands:
 
     VBoxManage controlvm poweroff pxe-1
@@ -211,7 +211,7 @@ workflow to operate.
 
 ## HACKING THESE SCRIPTS
 
-The vagrat image is built using [packer](https://packer.io/) with the
+The vagrant image is built using [packer](https://packer.io/) with the
 configuration in https://github.com/RackHD/RackHD/tree/master/packer and
 provisioned using  [ansible roles](https://github.com/RackHD/RackHD/tree/master/packer/ansible/roles).
 You can tweak those roles and make your own builds either locally or using
