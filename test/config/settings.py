@@ -1,12 +1,13 @@
 from imp import load_source
 from getpass import getpass
 from base64 import b64encode, b64decode
+import logging
 import os
 
 API_VERSION = '1.1'
 
-# CRITICAL[0] < ERROR[1] < WARNING[2] < INFO[3] < DEBUG[4]
-LOGLEVEL = 2
+# CRITICAL < ERROR < WARNING < INFO < DEBUG
+LOGLEVEL = os.getenv('RACKHD_TEST_LOGLVL', 'WARNING')
 LOGFMT = '%(asctime)s:%(name)s:%(levelname)s - %(message)s'
 
 HOST_IP = os.getenv('RACKHD_HOST','localhost')

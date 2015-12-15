@@ -22,28 +22,28 @@ class NodesTests(object):
                 'autoDiscover': 'false',
                 'name': 'test_switch_node',
                 'type': 'switch',
-                'obmSettings': [{
-                    'config': { 'host': '1.1.1.1', 'community': 'rackhd' },
-                    'service': 'snmp-obm-service'
-                }]
+                'snmpSettings': {
+                    'host': '1.1.1.1', 
+                    'community': 'rackhd'
+                }
             },
             {
                 'autoDiscover': 'false',
                 'name': 'test_mgmt_node',
                 'type': 'mgmt',
-                'obmSettings': [{
-                    'config': { 'host': '1.1.1.1', 'community': 'rackhd' },
-                    'service': 'snmp-obm-service'
-                }]
+                'snmpSettings': {
+                    'host': '1.1.1.1', 
+                    'community': 'rackhd' 
+                }
             },
             {
                 'autoDiscover': 'false',
                 'name': 'test_pdu_node',
                 'type': 'pdu',
-                'obmSettings': [{
-                    'config': { 'host': '1.1.1.2', 'community': 'rackhd' },
-                    'service': 'snmp-obm-service'
-                }]
+                'snmpSettings': {
+                    'host': '1.1.1.2', 
+                    'community': 'rackhd' 
+                }
             },
             {
                 'autoDiscover': 'false',

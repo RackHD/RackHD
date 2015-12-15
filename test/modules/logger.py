@@ -2,13 +2,13 @@ from config.settings import *
 import logging
 from json import dumps,loads
 
-LEVEL = [
-    logging.CRITICAL, 
-    logging.ERROR, 
-    logging.WARNING, 
-    logging.INFO, 
-    logging.DEBUG
-]
+LEVEL = {
+    'CRITICAL': logging.CRITICAL,
+    'ERROR': logging.ERROR,
+    'WARNING': logging.WARNING,
+    'INFO': logging.INFO,
+    'DEBUG': logging.DEBUG
+}
 
 """
 Class to abstract python logging functionality
