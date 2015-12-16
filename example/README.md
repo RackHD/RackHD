@@ -161,38 +161,61 @@ for rebooting the `pxe-1` virtual machine.
 ### UNPACKING AN OS INSTALL ISO
 
 For example, you can [manually download the ESXi installation ISO](https://www.vmware.com/go/download-vspherehypervisor)
-or download a [CentOS 7 LiveCD](http://buildlogs.centos.org/centos/7/isos/x86_64/CentOS-7-livecd-x86_64.iso).
+or download a [CentOS 7 Installation ISO](http://mirror.umd.edu/centos/7/isos/x86_64/CentOS-7-x86_64-DVD-1503-01.iso).
 
 Copy it into the `examples` directory and then you can unpack it in vagrant:
 
 `vagrant ssh`:
 
     sudo mkdir /var/mirrors
-    sudo python ~/src/on-http/data/templates/setup_iso.py \
-    /vagrant/VMware-VMvisor-Installer-*.x86_64.iso \
-    /var/mirrors --link=/home/vagrant/src
+    sudo python ~/src/on-http/data/templates/setup_iso.py /vagrant/VMware-VMvisor-Installer-*.x86_64.iso /var/mirrors --link=/home/vagrant/src
 
-`mv ~/Downloads/CentOS*.iso ~/src/rackhd/example/`
+
 `vagrant ssh`:
 
-    sudo python ~/src/on-http/data/templates/setup_iso.py /vagrant/Cent*.iso \
-    /var/mirrors --link=/home/vagrant/src
+    cd /tmp
+    wget http://mirror.umd.edu/centos/7/isos/x86_64/CentOS-7-x86_64-DVD-1503-01.iso
+    # 4GB
+    sudo python ~/src/on-http/data/templates/setup_iso.py /tmp/CentOS-7-x86_64*.iso /var/mirrors --link=/home/vagrant/src
+
+The CentOS installer wants a bit more memory easily available for the
+installation than we default our test VM towards, so we recommend updating
+it to 2GB of RAM with the following commands:
+
+    VBoxManage controlvm poweroff pxe-1
+    VBoxManage modifyvm pxe-1 --memory 2048;
+    VBoxManage controlvm poweron pxe-1
+
+And then invoking the workflow to install CentOS you just unpacked
+
+    cd ~/src/rackhd/example
+    # make sure you're in the example directory to reference the sample JSON correctly
+
+    curl -H "Content-Type: application/json" \
+    -X POST --data @samples/centos_iso_boot.json \
+    http://localhost:9090/api/1.1/nodes/566af6c77c5de76d1530d1f3/workflows | python -m json.tool
+
+You can see the example stanza for posting a workflow with options at
+[samples/centos_iso_boot.json](samples/centos_iso_boot.json).
+
+Some of the workflows (like OS install) are set to allow for additional
+options during installation as well. For example, at
+[samples/centos_iso_kvm_boot.json](samples/centos_iso_kvm_boot.json) we
+include an additional option that is rendered by the template to install
+the KVM packages after the default installation.
+
+**NOTE** because this demonstration setup uses Virtualbox, there is no out
+of band management to trigger the machine to reboot. Once the workflow
+has been activated, the VM will need to be rebooted manually for the
+workflow to operate.
 
 ## HACKING THESE SCRIPTS
 
-If you're having on this script or the [ansible roles](https://github.com/RackHD/RackHD/tree/master/example/roles)
-to change the functionality, you can shortcut some of this process by just invoking
-`vagrant provision` to use ansible to update the VM that's already been created.
-
-
-### CHANGE NODE VERSION
-
-Currently this example uses `n` (https://github.com/tj/n) to install node
-version `0.10.40`. You can change what version of node is used by default by
-logging into the Vagrant instance and using the `n` command:
-
-    vagrant ssh
-    sudo ~/n/bin/n <version>
+The vagrant image is built using [packer](https://packer.io/) with the
+configuration in https://github.com/RackHD/RackHD/tree/master/packer and
+provisioned using  [ansible roles](https://github.com/RackHD/RackHD/tree/master/packer/ansible/roles).
+You can tweak those roles and make your own builds either locally or using
+packer and [atlas](http://atlas.hashicorp.com).
 
 
 ### CONFIGURATION FILE
@@ -213,15 +236,6 @@ setup script.
 
 Please note, and example configuration file is provided and you must copy that
 file to a new file with the same name excluding the .example extension.
-
-### CHANGE WHAT BRANCH IS USED
-
-To checkout to a different commit than what is referenced by git submodule,
-edit the vagrant file (RackHD/example/Vagrantfile) to specify the `branch`
-variable for the ansible provisioner. A commented out line exists in
-`Vagrantfile` you can enable and edit.
-
-    ansible.extra_vars = { branch: "master" }
 
 ## ENVIRONMENT BREAKDOWN
 

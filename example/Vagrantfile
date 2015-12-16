@@ -29,6 +29,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
         target.vm.provision "shell", inline: <<-SHELL
           service isc-dhcp-server start
+          service rsyslog stop
+          echo manual | sudo tee /etc/init/rsyslog.override
         SHELL
 
     end

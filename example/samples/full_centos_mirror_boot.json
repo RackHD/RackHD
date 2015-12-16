@@ -1,0 +1,25 @@
+{
+    "name": "Graph.InstallCentOS",
+    "options": {
+        "defaults": {
+            "obmServiceName": "noop-obm-service"
+        },
+        "install-os": {
+            "repo": "{{api.server}}/centos/7/os/x86_64",
+            "rootPassword": "root",
+            "hostname": "demoCentOS",
+            "domain": "vagrantup.com",
+            "dnsServers": [ "8.8.8.8" ],
+            "networkDevices": [
+                {
+                    "device": "eth0",
+                    "ipv4": {
+                        "ipAddr": "172.31.128.100",
+                        "gateway": "172.31.128.1",
+                        "netmask": "255.255.255.0"
+                    }
+                }
+            ]
+        }
+    }
+}
