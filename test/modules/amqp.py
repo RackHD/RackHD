@@ -19,9 +19,11 @@ class Worker(ConsumerMixin):
         self.__callbacks = kwargs.get('callbacks',self.on_message)
         self.__amqp_url = kwargs.get('amqp_url',AMQP_URL)
         self.__queue = kwargs.get('queue')
+        self.__conn_retries = kwargs.get('max_retries',2)
         if self.__queue is None:
             raise TypeError('invalid worker queue parameter')
         self.connection = BrokerConnection(self.__amqp_url)
+        self.connection.ensure_connection(max_retries=self.__conn_retries, callback=self.on_conn_retry)
     
     def get_consumers(self, consumer, channel):
         if not isinstance(self.__callbacks,list):
@@ -34,6 +36,9 @@ class Worker(ConsumerMixin):
         out += '  delivery_info: %s' % dumps(message.delivery_info)
         LOG.info(out,json=True)
         message.ack()
+
+    def on_conn_retry(self):
+        LOG.error('Retrying connection for {0}'.format(self.__amqp_url))
 
     def start(self):
         LOG.info('Starting AMQP worker {0}'.format(self.__queue))

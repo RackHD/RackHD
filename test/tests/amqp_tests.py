@@ -55,7 +55,6 @@ class AMQPTests(object):
         self.__task_worker.stop()
         self.__task_worker = None
     
-    
     def handle_sdr_result(self,body,message):
         LOG.debug(body,json=True)
         assert_is_not_none(body)
