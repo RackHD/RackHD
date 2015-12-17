@@ -22,6 +22,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
         target.vm.network "private_network", ip: "172.31.128.1", virtualbox__intnet: "closednet"
         target.vm.network "forwarded_port", guest: 8080, host: 9090
+        target.vm.network "forwarded_port", guest: 5672, host: 9091
 
         # If true, then any SSH connections made will enable agent forwarding.
         # Default value: false

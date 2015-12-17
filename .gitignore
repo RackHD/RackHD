@@ -5,3 +5,21 @@ example/bin/pxe*
 *.iso
 *.box
 packer_cache
+
+# # python giblets
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Environment / Unit test / coverage reports
+.tox
+.venv
+.passwdc
