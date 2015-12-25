@@ -5,6 +5,10 @@
 
     virtualenv .venv
     sudo pip install -r requirements.txt
+    
+    echo "deb https://dl.bintray.com/rackhd/debian trusty main" | sudo tee -a /etc/apt/sources.list.d/rackhd-trusty.list
+    sudo apt-get update
+    sudo apt-get install -y --force-yes python-on-http
 
 ## running the tests
 

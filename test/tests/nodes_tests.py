@@ -1,6 +1,7 @@
 from config.settings import *
-from modules.nodes import Nodes
 from modules.logger import Log
+from on_http import NodesApi as Nodes
+from on_http import rest
 from datetime import datetime
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
@@ -17,6 +18,7 @@ LOG = Log(__name__)
 class NodesTests(object):
 
     def __init__(self):
+        self.__client = config.api_client
         self.__test_nodes = [
             {
                 'autoDiscover': 'false',
@@ -64,54 +66,57 @@ class NodesTests(object):
     @test(groups=['nodes.test','test-nodes'])
     def test_nodes(self):
         """ Testing GET:/nodes """
-        rsp = Nodes().get_nodes()
-        nodes = rsp.json()
-        LOG.debug(nodes,json=True)
-        assert_equal(200,rsp.status_code)
-        assert_not_equal(len(nodes), 0, message='Node list was empty!')
+        Nodes().api1_1_nodes_get()
+        nodes = dumps(self.__client.last_response.data)
+        assert_equal(200,self.__client.last_response.status)
+        assert_not_equal(0, len(nodes), message='Node list was empty!')
 
     @test(groups=['test-node-id'], depends_on_groups=['test-nodes'])
     def test_node_id(self):
         """ Testing GET:/nodes/:id """
-        rsp = Nodes().get_nodes()
-        nodes = rsp.json()
+        Nodes().api1_1_nodes_get()
+        nodes = loads(self.__client.last_response.data)
+        codes = []
         for n in nodes:
             if n.get('type') == 'compute':
                 uuid = n.get('id')
-                rsp = Nodes().get_nodes(uid=uuid)
-                assert_equal(200,rsp.status_code, message='Unexpected response {0} for node {1}'.format(rsp.status_code,uuid))
-        rsp = Nodes().get_nodes(uid='fooey')
-        assert_equal(404, rsp.status_code, message='Expected failure for invalid node')
+                Nodes().api1_1_nodes_identifier_get(uuid)
+                rsp = self.__client.last_response
+                codes.append(rsp)
+        assert_not_equal(0, len(codes), message='Failed to find compute node Ids')
+        for c in codes:
+            assert_equal(200, c.status, message=c.reason)
+        assert_raises(rest.ApiException, Nodes().api1_1_nodes_identifier_get, 'fooey')
 
     @test(groups=['create-node'], depends_on_groups=['test-nodes'])
     def test_node_create(self):
         """ Verfiy POST:/nodes/ """
         for n in self.__test_nodes:
             LOG.info('Creating node (name={0})'.format(n.get('name')))
-            rsp = Nodes().post_node(dumps(n))
-            assert_equal(201,rsp.status_code, message='Unexpected response {0}'.format(rsp.status_code))
+            Nodes().api1_1_nodes_post(n)
+            rsp = self.__client.last_response
+            assert_equal(201, rsp.status, message=rsp.reason)
     
     @test(groups=['delete-node'], depends_on_groups=['create-node'])
     def test_node_delete(self):
         """ Testing DELETE:/nodes/:id """
         codes = []
         test_names = []
-        rsp = Nodes().get_nodes()
-        nodes = rsp.json()
+        Nodes().api1_1_nodes_get()
+        nodes = loads(self.__client.last_response.data)
         test_names = [ t.get('name') for t in self.__test_nodes ]
         for n in nodes:
             name = n.get('name')
             if name in test_names:
                 uuid = n.get('id')
                 LOG.info('Deleting node {0} (name={1})'.format(uuid, name))
-                rsp = Nodes().delete_node(uid=uuid)
-                codes.append(rsp)
+                Nodes().api1_1_nodes_identifier_delete(uuid)
+                codes.append(self.__client.last_response)
        
         assert_not_equal(0, len(codes), message='Delete node list empty!')
         for c in codes:
-            assert_equal(200,c.status_code, message='Unexpected delete response {0}'.format(c.status_code))
-        rsp = Nodes().delete_node(uid='fooey')
-        assert_equal(404, rsp.status_code, message='Expected delete failure for invalid node')
+            assert_equal(200,c.status, message=c.reason)
+        assert_raises(rest.ApiException, Nodes().api1_1_nodes_identifier_delete, 'fooey')
     
 
 
