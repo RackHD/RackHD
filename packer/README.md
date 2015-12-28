@@ -8,12 +8,17 @@ homebrew:
 
 or retrieving it from the download available at https://www.packer.io/downloads.html
 
-## To Run
+## To build locally
 
-Set up your ATLAS_USER and ATLAS_TOKEN environment variables with your username
-and API access token from Atlas, then invoke:
+    packer build -only=virtualbox-iso template.json
+    packer push -name=$ATLAS_USERNAME/rackhd template.json
 
-    packer push -name=$ATLAS_USER/rackhd template.json
+## To build with ATLAS
+
+Set up your ATLAS_USERNAME and ATLAS_TOKEN environment variables
+with your username and API access token from Atlas, then invoke:
+
+    packer push -name=$ATLAS_USERNAME/rackhd template.json
 
 ### License notes
 

@@ -6,6 +6,7 @@ example/bin/pxe*
 *.box
 packer_cache
 .bundle
+.DS_Store
 
 # # python giblets
 # Byte-compiled / optimized / DLL files
