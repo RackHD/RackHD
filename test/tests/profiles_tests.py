@@ -102,7 +102,7 @@ class ProfilesTests(object):
         try:
             Profiles().api1_1_profiles_library_identifier_get('wrongProfileName')
         except Exception,e:
-           assert_equal(404,e.status, message = 'hello')
+           assert_equal(404,e.status, message = 'status should be 404')
 
 
 
