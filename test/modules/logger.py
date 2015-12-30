@@ -2,14 +2,6 @@ from config.settings import *
 import logging
 from json import dumps,loads
 
-LEVEL = {
-    'CRITICAL': logging.CRITICAL,
-    'ERROR': logging.ERROR,
-    'WARNING': logging.WARNING,
-    'INFO': logging.INFO,
-    'DEBUG': logging.DEBUG
-}
-
 """
 Class to abstract python logging functionality
 :param name: optional logging name
@@ -18,12 +10,9 @@ Class to abstract python logging functionality
 class Log(object):
     def __init__(self, *args, **kwargs):
         self._name = args[0] if args else __name__
-        self._level = kwargs.get('level',LOGLEVEL)
-        try:
-            logging.basicConfig(level=LEVEL[self._level], format=LOGFMT)
-        except IndexError:
-            logging.warning('Invalid log level %d, using default level', self._level)
-        self.log = logging.getLogger(self._name)
+        self._level = kwargs.get('level',LOGGER_LVL)
+        self._logger = logging.getLogger(self._name)
+        self._logger.setLevel(LOGLEVELS[self._level])
 
     def critical(self,m,json=False):
         self.__log('critical',m,json)
@@ -44,6 +33,6 @@ class Log(object):
         if json:
             m = dumps(m,sort_keys=True,indent=4,separators=(',', ': ')) \
                     .decode('string-escape')
-        return getattr(self.log,attr)(m)
+        return getattr(self._logger,attr)(m)
 
 

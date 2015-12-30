@@ -16,6 +16,10 @@ We expect the latest version of git, [Vagrant](https://www.vagrantup.com/downloa
 and [Ansible](http://docs.ansible.com/ansible/intro_installation.html)
 installed onto your system in order to use this script.
 
+**NOTE**: Do not use Vagrant 1.8.0, as the private network settings don't appear
+to be working correctly. Bug filed upstream with Vagrant at 
+https://github.com/mitchellh/vagrant/issues/6730.
+
 
 [ansible roles](https://github.com/RackHD/RackHD/tree/master/packer/ansible/roles)
 
