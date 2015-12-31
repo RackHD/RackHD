@@ -77,19 +77,16 @@ class NodesTests(object):
         Nodes().api1_1_nodes_get()
         nodes = loads(self.__client.last_response.data)
         codes = []
-        data = {
-                    "value": True
-        }
+        data = {"value": True}
         for n in nodes:
             if n.get('type') == 'compute':
                 uuid = n.get('id')
                 Nodes().api1_1_nodes_identifier_obm_identify_post(uuid, data)
                 rsp = self.__client.last_response
                 codes.append(rsp)
-        assert_not_equal(0, len(codes), message='Failed to find compute node Ids')
         for c in codes:
             assert_equal(200, c.status, message=c.reason)
-        assert_raises(rest.ApiException, Nodes().api1_1_nodes_identifier_get, 'fooey')
+        assert_raises(rest.ApiException, Nodes().api1_1_nodes_identifier_obm_identify_post, 'fooey', data)
 
     @test(groups=['test-node-id'], depends_on_groups=['test-nodes'])
     def test_node_id(self):
@@ -125,7 +122,7 @@ class NodesTests(object):
         assert_not_equal(0, len(codes), message='Failed to find compute node Ids')
         for c in codes:
             assert_equal(200, c.status, message=c.reason)
-        assert_raises(rest.ApiException, Nodes().api1_1_nodes_identifier_get, 'fooey')
+        assert_raises(rest.ApiException, Nodes().api1_1_nodes_identifier_obm_get, 'fooey')
 
     @test(groups=['create-node-id-obm'], depends_on_groups=['test-nodes', 'create-node'])
     def test_node_id_obm_create(self):
@@ -146,7 +143,7 @@ class NodesTests(object):
         assert_not_equal(0, len(codes), message='Failed to find compute node Ids')
         for c in codes:
             assert_equal(201, c.status, message=c.reason)
-        assert_raises(rest.ApiException, Nodes().api1_1_nodes_identifier_get, 'fooey')
+        assert_raises(rest.ApiException, Nodes().api1_1_nodes_identifier_obm_post, 'fooey', data)
 
     @test(groups=['create-node'], depends_on_groups=['test-nodes'])
     def test_node_create(self):
