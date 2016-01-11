@@ -9,6 +9,8 @@ LOG = Log(__name__)
 """
 Class to abstract the RackHD Out-of-Band settings 
 """
+
+
 class obmSettings(object):
     def __init__(self, *args, **kwargs):
         self.__client = config.api_client
@@ -34,14 +36,12 @@ class obmSettings(object):
         if mac is not None:
             LOG.debug('BMC MAC {0} for {1}'.format(mac,uid))
             setting = {
-                'obmSettings':[{
-                    'service':'ipmi-obm-service', 
-                    'config' : { 
-                        'user':user, 
+                    'service':'ipmi-obm-service',
+                    'config': {
+                        'user':user,
                         'password':passwd,
-                        'host': mac 
+                        'host': mac
                     }
-                }]
             }
             LOG.info('Creating ipmi obm-settings for node {0} \n {1}'.format(uid,setting))
             try:
@@ -53,7 +53,7 @@ class obmSettings(object):
             LOG.error('Error finding configurable IPMI MAC address for {0}'.format(uid))
             return False
 
-    def setup_nodes(self, service_type='ipmi-obm-service',uuid=None):
+    def setup_nodes(self, service_type='ipmi-obm-service', uuid=None):
         err = []
         Nodes().api1_1_nodes_get()
         nodes = loads(self.__client.last_response.data)
@@ -61,12 +61,15 @@ class obmSettings(object):
             node_type = n.get('type')
             uid = n.get('id')
             if uuid is None or uuid == uid:
-                if service_type == 'ipmi-obm-service' and node_type == 'compute':
-                    if self._set_ipmi(uid) == False:
-                        err.append('Error setting IPMI OBM settings for node {0}'.format(uid))
-                if service_type == 'snmp-obm-service' and node_type != 'enclosure':
-                    if self._set_snmp(uid) == False:
-                        err.append('Error setting SNMP OBM settings for node {0}'.format(uid))
+                    if service_type == 'ipmi-obm-service' and node_type == 'compute':
+                        if len(self.check_nodes(uuid=uuid)) > 0:
+                            if self._set_ipmi(uid) == False:
+                                err.append('Error setting IPMI OBM settings for node {0}'.format(uid))
+                            else:
+                                LOG.info('Successful')
+                    if service_type == 'snmp-obm-service' and node_type != 'enclosure':
+                        if self._set_snmp(uid) == False:
+                            err.append('Error setting SNMP OBM settings for node {0}'.format(uid))
         for e in err:
             LOG.error(e)
         return err
@@ -81,7 +84,7 @@ class obmSettings(object):
             if uuid is None or uuid == uid:
                 if node_type != 'enclosure':
                     obm_obj = n.get('obmSettings')
-                    if obm_obj is None:
+                    if (obm_obj is None) or (obm_obj is not None and len(obm_obj)== 0):
                         LOG.warning('No OBM settings for node type {0} (id={1})'.format(node_type,uid))
                         retval.append(False)
                     else:

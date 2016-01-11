@@ -117,7 +117,34 @@ class NodesTests(object):
             rsp = self.__client.last_response
             assert_equal(201, rsp.status, message=rsp.reason)
 
-    @test(groups=['delete-node'], depends_on_groups=['create-node', 'test-node-id-obm'])
+    @test(groups=['patch-node'], depends_on_groups=['test-nodes', 'test-node-id-obm'])
+    def test_node_patch(self):
+        """ Verify PATCH:/nodes/:id """
+        data = {"name": 'fake_name_test'}
+        Nodes().api1_1_nodes_get()
+        nodes = loads(self.__client.last_response.data)
+        codes = []
+        for n in nodes:
+            if n.get('name') == 'test_compute_node':
+                uuid = n.get('id')
+                Nodes().api1_1_nodes_identifier_patch(uuid, data)
+                rsp = self.__client.last_response
+                test_nodes = loads(self.__client.last_response.data)
+                assert_equal(test_nodes.get('name'), 'fake_name_test', 'Oops patch failed')
+                codes.append(rsp)
+                LOG.info('Restoring name to "test_compute_node"')
+                correct_data = {"name": 'test_compute_node'}
+                Nodes().api1_1_nodes_identifier_patch(uuid, correct_data)
+                rsp = self.__client.last_response
+                restored_nodes = loads(self.__client.last_response.data)
+                assert_equal(restored_nodes.get('name'), 'test_compute_node', 'Oops restoring failed')
+                codes.append(rsp)
+        assert_not_equal(0, len(codes), message='Failed to find compute node Ids')
+        for c in codes:
+            assert_equal(200, c.status, message=c.reason)
+        assert_raises(rest.ApiException, Nodes().api1_1_nodes_identifier_patch, 'fooey', data)
+
+    @test(groups=['delete-node'], depends_on_groups=['create-node', 'patch-node'])
     def test_node_delete(self):
         """ Testing DELETE:/nodes/:id """
         codes = []

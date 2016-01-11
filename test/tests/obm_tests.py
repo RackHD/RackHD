@@ -1,7 +1,8 @@
 from config.settings import *
+from modules.obm import obmSettings
+from on_http import ObmsApi as Obms
 from on_http import NodesApi as Nodes
 from on_http import rest
-from modules.obm import obmSettings
 from modules.logger import Log
 from datetime import datetime
 from proboscis.asserts import assert_equal
@@ -11,7 +12,7 @@ from proboscis.asserts import assert_true
 from proboscis.asserts import assert_not_equal
 from proboscis import SkipTest
 from proboscis import test
-from json import loads, dumps
+from json import dumps, loads
 
 LOG = Log(__name__)
 
@@ -59,4 +60,27 @@ class OBMTests(object):
         for c in codes:
             assert_equal(200, c.status, message=c.reason)
         assert_raises(rest.ApiException, Nodes().api1_1_nodes_identifier_obm_identify_post, 'fooey', data)
+
+    @test(groups=['obm.tests', 'test-obms'])
+    def test_obm_library(self):
+        """ Testing GET:/obms/library """
+        Obms().api1_1_obms_library_get()
+        obms = loads(self.__client.last_response.data)
+        services = [t.get('service') for t in obms]
+        assert_equal(200, self.__client.last_response.status)
+        assert_not_equal(0, len(obms), message='OBM list was empty!')
+
+    @test(groups=['obm.tests', 'test-obms-identifier'])
+    def test_obm_library_identifier(self):
+        """ Testing GET:/obms/library/:id """
+        Obms().api1_1_obms_library_get()
+        obms = loads(self.__client.last_response.data)
+        codes = []
+        services = [t.get('service') for t in obms]
+        for n in services:
+            Obms().api1_1_obms_library_identifier_get(n)
+            codes.append(self.__client.last_response)
+        assert_not_equal(0, len(obms), message='OBM list was empty!')
+        for c in codes:
+            assert_equal(200, c.status, message=c.reason)
 
