@@ -9,8 +9,6 @@ LOG = Log(__name__)
 """
 Class to abstract the RackHD Out-of-Band settings 
 """
-
-
 class obmSettings(object):
     def __init__(self, *args, **kwargs):
         self.__client = config.api_client
