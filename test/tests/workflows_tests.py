@@ -2,6 +2,7 @@
 import json
 from config.settings import *
 from on_http import WorkflowsApi as Workflows
+from on_http import NodesApi as Nodes
 from on_http import rest
 from modules.logger import Log
 from datetime import datetime
@@ -13,6 +14,8 @@ from proboscis.asserts import assert_true
 from proboscis import SkipTest
 from proboscis import test
 from json import dumps, loads
+import time
+
 
 LOG = Log(__name__)
 
@@ -21,7 +24,11 @@ class WorkflowsTests(object):
 
     def __init__(self):
         self.__client = config.api_client
-        self.workflowDict = {  "friendlyName": "Shell Commands Hwtest_1",  "injectableName": "Graph.ShellCommands.Hwtest"}
+        self.workflowDict = {
+                                "friendlyName": "Shell Commands Hwtest_1",
+                               "injectableName": "Graph.ShellCommands.Hwtest",
+                                "tasks": [{"taskName": "Task.Trigger.Send.Finish"}]
+                            }
 
     @test(groups=['workflows.tests', 'workflows_get'])
     def test_workflows_get(self):
@@ -55,7 +62,7 @@ class WorkflowsTests(object):
         assert_equal(200,self.__client.last_response.status)
         assert_not_equal(0, len(json.loads(self.__client.last_response.data)), message='Active workflows list was empty!')
 
-    @test(groups=['workflows_library_put'], depends_on_groups=['workflows_library_get'])
+    @test(groups=['workflows_put'], depends_on_groups=['workflows_library_get'])
     def test_workflows_put(self):
         """ Testing PUT:/workflows:/library """
 
@@ -80,20 +87,35 @@ class WorkflowsTests(object):
         #Validating the content is as expected
         Workflows().api1_1_workflows_library_get()
         rawj=  json.loads(self.__client.last_response.data)
+        #LOG.info("the json is : "+ str(rawj))
         listLen =len(json.loads(self.__client.last_response.data))
-        slistLen =len(json.loads(self.__client.last_response.data))
         readWorkflowTask= rawj[listLen-1]
         readFriendlyName= readWorkflowTask.get('friendlyName')
         readInjectableName  = readWorkflowTask.get('injectableName')
         assert_equal(readFriendlyName,self.workflowDict.get('friendlyName'))
         assert_equal(readInjectableName,self.workflowDict.get('injectableName'))
 
-    @test(groups=['workflows_library_identifier_get', 'workflows_library_put'])
+    @test(groups=['workflows_library_identifier_get'], depends_on_groups=['workflows_put'])
     def test_workflows_library_identifier_get(self):
         """ Testing GET:/library:/identifier"""
         Workflows().api1_1_workflows_library_identifier_get(self.workflowDict.get('injectableName'))
         assert_equal(200,self.__client.last_response.status)
         assert_equal(self.workflowDict.get('friendlyName'),str(json.loads(self.__client.last_response.data)[0].get('friendlyName')))
 
+    @test(groups=['workflows_library_identifier_get', 'test_node_workflows_post'])
+    def test_node_workflows_post(self):
+        """Testing node POST:id/workflows"""
+        Nodes().api1_1_nodes_get()
+        nodes = loads(self.__client.last_response.data)
 
+        for n in nodes:
+            if n.get('type') == 'compute':
+                Nodes().api1_1_nodes_identifier_workflows_post(n.get('id'),name='Graph.noop-example',body={})
+                returnedWorkflowID=str(json.loads(self.__client.last_response.data).get("id"))
+                #wait for the workflow to finsih
+                time.sleep(1)
+                Workflows().api1_1_workflows_identifier_get(returnedWorkflowID)
+                postedWorkflow=  json.loads(self.__client.last_response.data)
+                status= postedWorkflow.get("_status")
+                assert_equal(status,"succeeded")
 
