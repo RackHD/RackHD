@@ -69,6 +69,7 @@ class NodesTests(object):
         """ Testing GET:/nodes """
         Nodes().api1_1_nodes_get()
         nodes = dumps(self.__client.last_response.data)
+        LOG.info(nodes)
         assert_equal(200, self.__client.last_response.status)
         assert_not_equal(0, len(nodes), message='Node list was empty!')
 
@@ -77,8 +78,10 @@ class NodesTests(object):
         """ Testing GET:/nodes/:id """
         Nodes().api1_1_nodes_get()
         nodes = loads(self.__client.last_response.data)
+        LOG.info(nodes)
         codes = []
         for n in nodes:
+            LOG.info(n)
             if n.get('type') == 'compute':
                 uuid = n.get('id')
                 Nodes().api1_1_nodes_identifier_get(uuid)
@@ -89,11 +92,21 @@ class NodesTests(object):
             assert_equal(200, c.status, message=c.reason)
         assert_raises(rest.ApiException, Nodes().api1_1_nodes_identifier_get, 'fooey')
 
-    @test(groups=['test-node-id-obm'], depends_on_groups=['test-node-id', 'create-node-id-obm'])
+    @test(groups=['create-node'], depends_on_groups=['test-node-id'])
+    def test_node_create(self):
+        """ Verify POST:/nodes/ """
+        for n in self.__test_nodes:
+            LOG.info('Creating node (name={0})'.format(n.get('name')))
+            Nodes().api1_1_nodes_post(n)
+            rsp = self.__client.last_response
+            assert_equal(201, rsp.status, message=rsp.reason)
+
+    @test(groups=['test-node-id-obm'], depends_on_groups=['create-node'])
     def test_node_id_obm(self):
         """ Testing GET:/nodes/:id/obm """
         Nodes().api1_1_nodes_get()
         nodes = loads(self.__client.last_response.data)
+        LOG.info(nodes)
         codes = []
         for n in nodes:
             if n.get('name') == 'test_compute_node':
@@ -108,16 +121,7 @@ class NodesTests(object):
             assert_equal(200, c.status, message=c.reason)
         assert_raises(rest.ApiException, Nodes().api1_1_nodes_identifier_obm_get, 'fooey')
 
-    @test(groups=['create-node'], depends_on_groups=['test-nodes'])
-    def test_node_create(self):
-        """ Verify POST:/nodes/ """
-        for n in self.__test_nodes:
-            LOG.info('Creating node (name={0})'.format(n.get('name')))
-            Nodes().api1_1_nodes_post(n)
-            rsp = self.__client.last_response
-            assert_equal(201, rsp.status, message=rsp.reason)
-
-    @test(groups=['patch-node'], depends_on_groups=['test-nodes', 'test-node-id-obm'])
+    @test(groups=['patch-node'], depends_on_groups=['test-node-id-obm'])
     def test_node_patch(self):
         """ Verify PATCH:/nodes/:id """
         data = {"name": 'fake_name_test'}
@@ -144,7 +148,7 @@ class NodesTests(object):
             assert_equal(200, c.status, message=c.reason)
         assert_raises(rest.ApiException, Nodes().api1_1_nodes_identifier_patch, 'fooey', data)
 
-    @test(groups=['delete-node'], depends_on_groups=['create-node', 'patch-node'])
+    @test(groups=['delete-node'], depends_on_groups=['patch-node'])
     def test_node_delete(self):
         """ Testing DELETE:/nodes/:id """
         codes = []
@@ -203,7 +207,7 @@ class NodesTests(object):
         rsp = self.__client.last_response
         assert_equal(204, rsp.status, message=rsp.reason)
 
-    @test(groups=['catalog_nodes'], depends_on_groups=['create-node','delete-node'])
+    @test(groups=['catalog_nodes'], depends_on_groups=['delete-whitelist-node'])
     def test_node_catalogs(self):
         """ Testing GET id:/catalogs """
         resps = []
@@ -217,7 +221,7 @@ class NodesTests(object):
             assert_not_equal(0, len(loads(resp)), message='Node catalog is empty!')
         assert_raises(rest.ApiException, Nodes().api1_1_nodes_identifier_catalogs_get, 'fooey')
 
-    @test(groups=['catalog_source'], depends_on_groups=['create-node','delete-node','catalog_nodes'])
+    @test(groups=['catalog_source'], depends_on_groups=['catalog_nodes'])
     def test_node_catalogs_bysource(self):
         """ Testing GET id:/catalogs/source """
         resps = []
@@ -231,8 +235,7 @@ class NodesTests(object):
             assert_equal(200,resp.status, message=resp.reason)
         assert_raises(rest.ApiException, Nodes().api1_1_nodes_identifier_catalogs_source_get, 'fooey','bmc')
 
-
-    @test(groups=['node_workflows'], depends_on_groups=['create-node','delete-node'])
+    @test(groups=['node_workflows'], depends_on_groups=['catalog_source'])
     def test_node_workflows_get(self):
         """Testing node GET:id/workflows"""
         resps = []
@@ -246,7 +249,7 @@ class NodesTests(object):
             assert_not_equal(0, len(loads(resp)), message='No Workflows found for Node')
         assert_raises(rest.ApiException, Nodes().api1_1_nodes_identifier_workflows_get, 'fooey')
 
-    @test(groups=['node_post_workflows'], depends_on_groups=['create-node','node_workflows'])
+    @test(groups=['node_post_workflows'], depends_on_groups=['node_workflows'])
     def test_node_workflows_post(self):
         """Testing node POST:id/workflows"""
         resps = []

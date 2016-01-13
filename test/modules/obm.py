@@ -34,12 +34,15 @@ class obmSettings(object):
         if mac is not None:
             LOG.debug('BMC MAC {0} for {1}'.format(mac,uid))
             setting = {
+                'obmSettings': [{
                     'service':'ipmi-obm-service',
                     'config': {
                         'user':user,
                         'password':passwd,
                         'host': mac
                     }
+                }
+                ]
             }
             LOG.info('Creating ipmi obm-settings for node {0} \n {1}'.format(uid,setting))
             try:
