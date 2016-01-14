@@ -15,7 +15,7 @@
   register: df_echo
 - debug: msg="{{df_echo.stdout}}"
 
-- name: retrieve the latest bootloaders from bintray
+- name: retrieve the latest ipxe bootloaders from bintray
   get_url: url="https://bintray.com/artifact/download/rackhd/binary/ipxe/{{ item }}"
            dest="/home/vagrant/src/on-tftp/static/tftp/{{ item }}"
            validate_certs=no
@@ -24,8 +24,14 @@
    - monorail.ipxe
    - monorail-efi32-snponly.efi
    - monorail-efi64-snponly.efi
-   - undionly.kpxe
 
+- name: retrieve the latest syslinux bootloaders from bintray
+  get_url: url="https://bintray.com/artifact/download/rackhd/binary/syslinux/{{ item }}"
+           dest="/home/vagrant/src/on-tftp/static/tftp/{{ item }}"
+           validate_certs=no
+           force=yes
+  with_items:
+   - undionly.kkpxe
 
 - shell: echo 'df -h'
   register: df_echo
