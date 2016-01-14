@@ -71,7 +71,7 @@ class LookupsTests(object):
 
     @test(groups=['check-post-lookup'],depends_on_groups=['check-lookups-query'])
     def post_lookup(self):
-        """ Testing POST """
+        """ Testing POST /"""
 
         #Validate that the lookup has not been posted from a previous test
         Lookups().api1_1_lookups_get(self.lookup.get("macAddress"))
@@ -100,7 +100,7 @@ class LookupsTests(object):
 
     @test(groups=['check-post-lookup-negativeTesting'],depends_on_groups=['check-lookups-query','check-post-lookup'])
     def post_lookup_negativeTesting(self):
-        """ Negative Testing POST """
+        """ Negative Testing POST / """
         #Validate that a POST for a lookup with same id as an existing one gets rejected
         try:
             Lookups().api1_1_lookups_post(self.lookup)
@@ -109,7 +109,7 @@ class LookupsTests(object):
 
     @test(groups=['check-patch-lookup'],depends_on_groups=['check-lookups-query','check-post-lookup','check-post-lookup-negativeTesting'])
     def patch_lookup(self):
-        """ Testing PATCH """
+        """ Testing PATCH /:id"""
         Lookups().api1_1_lookups_id_patch(self.id,self.patchedNode)
 
         #validate that the node element has been updated
@@ -119,15 +119,20 @@ class LookupsTests(object):
 
     @test(groups=['check-delete-lookup'], depends_on_groups=['check-lookups-query','check-post-lookup','check-patch-lookup'])
     def delete_lookup(self):
-        """ Testing DELETE """
+        """ Testing DELETE /:id """
+        #Validate that the lookup is there before it is deleted
+        Lookups().api1_1_lookups_id_get(self.id)
+        rsp = self.__client.last_response
+        assert_equal(200, rsp.status, message=rsp.reason)
+
+        #delete the lookup
         LOG.info("The lookup ID to be deleted is "+ self.id)
         Lookups().api1_1_lookups_id_delete(self.id)
         rsp = self.__client.last_response
         assert_equal(200, rsp.status, message=rsp.reason)
 
         #Validate that the lookup has been deleted and the returned value is an empty list
-        Lookups().api1_1_lookups_get(self.lookup.get("macAddress"))
-        rsp = loads(self.__client.last_response.data)
-        assert_equal(len (rsp),0)
-
-
+        try:
+            Lookups().api1_1_lookups_id_get(self.id)
+        except Exception,e:
+           assert_equal(404,e.status)
