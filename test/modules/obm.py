@@ -41,8 +41,7 @@ class obmSettings(object):
                         'password':passwd,
                         'host': mac
                     }
-                }
-                ]
+                }]
             }
             LOG.info('Creating ipmi obm-settings for node {0} \n {1}'.format(uid,setting))
             try:
