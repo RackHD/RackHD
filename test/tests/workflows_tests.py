@@ -26,7 +26,7 @@ class WorkflowsTests(object):
         self.__client = config.api_client
         self.workflowDict = {
                                 "friendlyName": "Shell Commands Hwtest_1",
-                               "injectableName": "Graph.ShellCommands.Hwtest",
+                               "injectableName": "Graph.post.test",
                                 "tasks": [{"taskName": "Task.Trigger.Send.Finish"}]
                             }
 
@@ -67,16 +67,18 @@ class WorkflowsTests(object):
         """ Testing PUT:/workflows:/library """
 
         #Making sure that there is no workflowTask with the same name from previous test runs
+        Workflows().api1_1_workflows_library_get()
         rawj =  json.loads(self.__client.last_response.data)
         listLen =len(rawj)
-        inList = False
+        workflowIndex = 0
 
         for i, val in enumerate (rawj):
-            if ( self.workflowDict['injectableName'] ==  str (rawj[i].get('injectableName')) or inList ):
-                inList = True
+            if ( self.workflowDict['injectableName'] ==  str (rawj[i].get('injectableName')) ):
                 fnameList = str (rawj[i].get('friendlyName')).split('_')
                 suffix= int (fnameList[1]) + 1
                 self.workflowDict['friendlyName']= fnameList[0]+ '_' + str(suffix)
+                workflowIndex = i
+                break
 
         #adding/updating  a workflow task
         LOG.info ("Adding workflow task : " +  str(self.workflowDict))
@@ -87,9 +89,8 @@ class WorkflowsTests(object):
         #Validating the content is as expected
         Workflows().api1_1_workflows_library_get()
         rawj=  json.loads(self.__client.last_response.data)
-        #LOG.info("the json is : "+ str(rawj))
         listLen =len(json.loads(self.__client.last_response.data))
-        readWorkflowTask= rawj[listLen-1]
+        readWorkflowTask= rawj[workflowIndex]
         readFriendlyName= readWorkflowTask.get('friendlyName')
         readInjectableName  = readWorkflowTask.get('injectableName')
         assert_equal(readFriendlyName,self.workflowDict.get('friendlyName'))
@@ -102,7 +103,7 @@ class WorkflowsTests(object):
         assert_equal(200,self.__client.last_response.status)
         assert_equal(self.workflowDict.get('friendlyName'),str(json.loads(self.__client.last_response.data)[0].get('friendlyName')))
 
-    @test(groups=['workflows_library_identifier_get', 'test_node_workflows_post'])
+    @test(groups=['workflows_library_identifier_get', 'test_node_workflows_post'],depends_on_groups=['workflows_put'])
     def test_node_workflows_post(self):
         """Testing node POST:id/workflows"""
         Nodes().api1_1_nodes_get()
@@ -112,10 +113,24 @@ class WorkflowsTests(object):
             if n.get('type') == 'compute':
                 Nodes().api1_1_nodes_identifier_workflows_post(n.get('id'),name='Graph.noop-example',body={})
                 returnedWorkflowID=str(json.loads(self.__client.last_response.data).get("id"))
+
                 #wait for the workflow to finsih
-                time.sleep(1)
-                Workflows().api1_1_workflows_identifier_get(returnedWorkflowID)
-                postedWorkflow=  json.loads(self.__client.last_response.data)
-                status= postedWorkflow.get("_status")
+                sleepTimeIncrement = 1
+                waitedtime =0
+                timeOut = 16
+                i =0
+                for  i in range (timeOut) :
+                    time.sleep(sleepTimeIncrement)
+                    Workflows().api1_1_workflows_identifier_get(returnedWorkflowID)
+                    postedWorkflow=  json.loads(self.__client.last_response.data)
+                    status= postedWorkflow.get("_status")
+                    LOG.info('Attempting to check the status of the posted workflow after {0} sec(s)'.format(i))
+                    if  status != "valid":
+                        break
+                    if status is "valid":
+                        waitedtime =  waitedtime + sleepTimeIncrement
+                    if i==(timeOut-1):
+                        LOG.info ("Timed out after :"+ str(i))
+
                 assert_equal(status,"succeeded")
 
