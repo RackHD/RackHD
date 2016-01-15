@@ -75,7 +75,6 @@ class WorkflowsTests(object):
                 fnameList = str (rawj[i].get('friendlyName')).split('_')
                 suffix= int (fnameList[1]) + 1
                 self.workflowDict['friendlyName']= fnameList[0]+ '_' + str(suffix)
-                workflowIndex = i
                 break
 
         #adding/updating  a workflow task
@@ -91,11 +90,12 @@ class WorkflowsTests(object):
         for i, var  in enumerate (rawj):
             if ( self.workflowDict['injectableName'] ==  str (rawj[i].get('injectableName')) ):
                 foundInsertedWorkflow = True
-                readWorkflowTask= rawj[workflowIndex]
+                readWorkflowTask= rawj[i]
                 readFriendlyName= readWorkflowTask.get('friendlyName')
                 readInjectableName  = readWorkflowTask.get('injectableName')
                 assert_equal(readFriendlyName,self.workflowDict.get('friendlyName'))
                 assert_equal(readInjectableName,self.workflowDict.get('injectableName'))
+
 
         assert_equal(foundInsertedWorkflow, True)
 
