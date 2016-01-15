@@ -69,10 +69,8 @@ class WorkflowsTests(object):
         #Making sure that there is no workflowTask with the same name from previous test runs
         Workflows().api1_1_workflows_library_get()
         rawj =  json.loads(self.__client.last_response.data)
-        listLen =len(rawj)
-        workflowIndex = 0
 
-        for i, val in enumerate (rawj):
+        for i, var  in enumerate (rawj):
             if ( self.workflowDict['injectableName'] ==  str (rawj[i].get('injectableName')) ):
                 fnameList = str (rawj[i].get('friendlyName')).split('_')
                 suffix= int (fnameList[1]) + 1
@@ -89,12 +87,17 @@ class WorkflowsTests(object):
         #Validating the content is as expected
         Workflows().api1_1_workflows_library_get()
         rawj=  json.loads(self.__client.last_response.data)
-        listLen =len(json.loads(self.__client.last_response.data))
-        readWorkflowTask= rawj[workflowIndex]
-        readFriendlyName= readWorkflowTask.get('friendlyName')
-        readInjectableName  = readWorkflowTask.get('injectableName')
-        assert_equal(readFriendlyName,self.workflowDict.get('friendlyName'))
-        assert_equal(readInjectableName,self.workflowDict.get('injectableName'))
+        foundInsertedWorkflow = False
+        for i, var  in enumerate (rawj):
+            if ( self.workflowDict['injectableName'] ==  str (rawj[i].get('injectableName')) ):
+                foundInsertedWorkflow = True
+                readWorkflowTask= rawj[workflowIndex]
+                readFriendlyName= readWorkflowTask.get('friendlyName')
+                readInjectableName  = readWorkflowTask.get('injectableName')
+                assert_equal(readFriendlyName,self.workflowDict.get('friendlyName'))
+                assert_equal(readInjectableName,self.workflowDict.get('injectableName'))
+
+        assert_equal(foundInsertedWorkflow, True)
 
     @test(groups=['workflows_library_identifier_get'], depends_on_groups=['workflows_put'])
     def test_workflows_library_identifier_get(self):
