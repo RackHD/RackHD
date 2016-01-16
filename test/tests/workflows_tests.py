@@ -118,22 +118,19 @@ class WorkflowsTests(object):
                 returnedWorkflowID=str(json.loads(self.__client.last_response.data).get("id"))
 
                 #wait for the workflow to finsih
-                sleepTimeIncrement = 1
-                waitedtime =0
-                timeOut = 16
-                i =0
-                for  i in range (timeOut) :
+                sleepTimeIncrement = 5
+                timeOut = 15
+                i = 0
+                for i in range (timeOut) :
                     time.sleep(sleepTimeIncrement)
                     Workflows().api1_1_workflows_identifier_get(returnedWorkflowID)
-                    postedWorkflow=  json.loads(self.__client.last_response.data)
-                    status= postedWorkflow.get("_status")
+                    postedWorkflow = json.loads(self.__client.last_response.data)
+                    status = postedWorkflow.get("_status")
                     LOG.info('Attempting to check the status of the posted workflow after {0} sec(s)'.format(i))
-                    if  status != "valid":
+                    if status != "valid":
                         break
-                    if status is "valid":
-                        waitedtime =  waitedtime + sleepTimeIncrement
+                    LOG.info('Curent status {0}'.format(status))
                     if i==(timeOut-1):
                         LOG.info ("Timed out after :"+ str(i))
-
-                assert_equal(status,"succeeded")
+                    assert_equal(status,"succeeded")
 
