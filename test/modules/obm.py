@@ -67,13 +67,13 @@ class obmSettings(object):
                             if self._set_ipmi(uid) == False:
                                 err.append('Error setting IPMI OBM settings for node {0}'.format(uid))
                             else:
-                                LOG.info('Successful')
+                                LOG.info('Setting IPMI OBM settings successful')
                     if service_type == 'snmp-obm-service' and node_type != 'enclosure':
                         if len(self.check_nodes('snmp-obm-service', uuid=uuid)) > 0:
                             if self._set_snmp(uid) == False:
                                 err.append('Error setting SNMP OBM settings for node {0}'.format(uid))
                             else:
-                                LOG.info('Successful')
+                                LOG.info('Setting SNMP OBM settings successful')
         for e in err:
             LOG.error(e)
         return err

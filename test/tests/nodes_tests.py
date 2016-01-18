@@ -1,6 +1,9 @@
 from config.settings import *
+from config.amqp import *
 from modules.logger import Log
+from modules.amqp import Worker
 from on_http import NodesApi as Nodes
+from on_http import WorkflowsApi as Workflows
 from on_http import rest
 from datetime import datetime
 from proboscis.asserts import assert_equal
@@ -10,16 +13,17 @@ from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
 from proboscis import SkipTest
 from proboscis import test
-from json import dumps, loads
+from json import loads
 
 LOG = Log(__name__)
-
 
 @test(groups=['nodes.tests'])
 class NodesTests(object):
 
     def __init__(self):
         self.__client = config.api_client
+        self.__worker = None
+        self.__discovery_duration = None
         self.__test_nodes = [
             {
                 'autoDiscover': 'false',
@@ -64,21 +68,61 @@ class NodesTests(object):
             }
         ]
 
-    @test(groups=['nodes.test', 'test-nodes'])
+    def check_node_count(self):
+        Nodes().api1_1_nodes_get()
+        nodes = loads(self.__client.last_response.data)
+        if len(nodes) == NODE_COUNT:
+            return True
+        return False
+
+    @test(groups=['nodes.discovery.test'])
+    def test_nodes_discovery(self):
+        """ Testing Graph.Discovery completion """
+        if self.check_node_count():
+            LOG.warning('Nodes already discovered!')
+            return
+        self.__discovery_duration = datetime.now()
+        LOG.info('Wait start time: {0}'.format(self.__discovery_duration))
+        self.__worker = Worker(queue=QUEUE_GRAPH_FINISH,callbacks=[self.handle_graph_finish])
+        self.__worker.start()
+
+    def handle_graph_finish(self,body,message):
+        routeId = message.delivery_info.get('routing_key').split('graph.finished.')[1]
+        assert_not_equal(routeId,None)
+        Workflows().api1_1_workflows_get()
+        workflows = loads(self.__client.last_response.data)
+        for w in workflows:
+            definition = w['definition']
+            injectableName = definition.get('injectableName') 
+            if injectableName == 'Graph.SKU.Discovery':
+                graphId = w['context'].get('graphId')
+                if graphId == routeId:
+                    options = definition.get('options')
+                    nodeid = options['defaults'].get('nodeId')
+                    status = w['_status']
+                    if status == 'succeeded':
+                        duration = datetime.now() - self.__discovery_duration
+                        LOG.info('Graph.Finish - target: {0}, status: {1}, route: {2}, duration: {3}'.format(nodeid,status,routeId,duration))
+                        break
+        message.ack()
+        if self.check_node_count():
+            self.__worker.stop()
+            self.__worker = None
+
+    @test(groups=['nodes.test', 'test-nodes'], depends_on_groups=['nodes.discovery.test'])
     def test_nodes(self):
         """ Testing GET:/nodes """
         Nodes().api1_1_nodes_get()
-        nodes = dumps(self.__client.last_response.data)
-        LOG.info(nodes)
-        assert_equal(200, self.__client.last_response.status)
-        assert_not_equal(0, len(nodes), message='Node list was empty!')
+        nodes = loads(self.__client.last_response.data)
+        LOG.debug(nodes,json=True)
+        assert_equal(NODE_COUNT,len(nodes))
 
     @test(groups=['test-node-id'], depends_on_groups=['test-nodes'])
     def test_node_id(self):
         """ Testing GET:/nodes/:id """
         Nodes().api1_1_nodes_get()
         nodes = loads(self.__client.last_response.data)
-        LOG.info(nodes)
+        LOG.debug(nodes,json=True)
         codes = []
         for n in nodes:
             LOG.info(n)
@@ -106,7 +150,7 @@ class NodesTests(object):
         """ Testing GET:/nodes/:id/obm """
         Nodes().api1_1_nodes_get()
         nodes = loads(self.__client.last_response.data)
-        LOG.info(nodes)
+        LOG.debug(nodes,json=True)
         codes = []
         for n in nodes:
             if n.get('name') == 'test_compute_node':
