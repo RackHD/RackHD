@@ -1,10 +1,11 @@
-
 import json
 from config.settings import *
+from config.amqp import *
 from on_http import WorkflowsApi as Workflows
 from on_http import NodesApi as Nodes
 from on_http import rest
 from modules.logger import Log
+from modules.amqp import Worker
 from datetime import datetime
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
@@ -24,11 +25,12 @@ class WorkflowsTests(object):
 
     def __init__(self):
         self.__client = config.api_client
+        self.__task_worker = None
         self.workflowDict = {
-                                "friendlyName": "Shell Commands Hwtest_1",
-                               "injectableName": "Graph.post.test",
-                                "tasks": [{"taskName": "Task.Trigger.Send.Finish"}]
-                            }
+            "friendlyName": "Shell Commands Hwtest_1",
+            "injectableName": "Graph.post.test",
+            "tasks": [{"taskName": "Task.Trigger.Send.Finish"}]
+        }
 
     @test(groups=['workflows.tests', 'workflows_get'])
     def test_workflows_get(self):
@@ -114,26 +116,31 @@ class WorkflowsTests(object):
 
         for n in nodes:
             if n.get('type') == 'compute':
-                Nodes().api1_1_nodes_identifier_workflows_post(n.get('id'),name='Graph.noop-example',body={})
-                returnedWorkflowID=str(json.loads(self.__client.last_response.data).get("id"))
+                id = n.get('id')
+                assert_not_equal(id,None)
+                LOG.info('starting amqp listener for node {0}'.format(id))
+                self.__task_worker=Worker(queue=QUEUE_GRAPH_FINISH,
+                                    callbacks=[self.handle_graph_finish])
+                Nodes().api1_1_nodes_identifier_workflows_active_delete(id)
+                Nodes().api1_1_nodes_identifier_workflows_post(id,name='Graph.noop-example',body={})
+                self.__task_worker.start()
 
-                #wait for the workflow to finsih
-                sleepTimeIncrement = 1
-                waitedtime =0
-                timeOut = 16
-                i =0
-                for  i in range (timeOut) :
-                    time.sleep(sleepTimeIncrement)
-                    Workflows().api1_1_workflows_identifier_get(returnedWorkflowID)
-                    postedWorkflow=  json.loads(self.__client.last_response.data)
-                    status= postedWorkflow.get("_status")
-                    LOG.info('Attempting to check the status of the posted workflow after {0} sec(s)'.format(i))
-                    if  status != "valid":
+
+    def handle_graph_finish(self,body,message):
+        routeId = message.delivery_info.get('routing_key').split('graph.finished.')[1]
+        assert_not_equal(routeId,None)
+        Workflows().api1_1_workflows_get()
+        workflows = loads(self.__client.last_response.data)
+        message.ack()
+        for w in workflows:
+            injectableName = w['definition'].get('injectableName') 
+            if injectableName == 'Graph.noop-example':
+                graphId = w['context'].get('graphId')
+                if graphId == routeId:
+                    nodeid = w['context']['target']
+                    status = w['_status']
+                    if status == 'succeeded':
+                        LOG.info('{0} - target: {1}, status: {2}, route: {3}'.format(injectableName,nodeid,status,routeId))
+                        self.__task_worker.stop()
                         break
-                    if status is "valid":
-                        waitedtime =  waitedtime + sleepTimeIncrement
-                    if i==(timeOut-1):
-                        LOG.info ("Timed out after :"+ str(i))
-
-                assert_equal(status,"succeeded")
 
