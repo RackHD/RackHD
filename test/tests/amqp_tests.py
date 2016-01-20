@@ -50,7 +50,6 @@ class AMQPTests(object):
         """ Testing AMQP on.task.ipmi.sel.result """
         Nodes().api1_1_nodes_get()
         nodes = loads(self.__client.last_response.data)
-        assert_equal(len(nodes),NODE_COUNT)
         self.__threadTasks = []
         for node in nodes:
             id = node.get('id')
@@ -72,7 +71,6 @@ class AMQPTests(object):
         """ Testing AMQP on.task.ipmi.sdr.result """
         Nodes().api1_1_nodes_get()
         nodes = loads(self.__client.last_response.data)
-        assert_equal(len(nodes),NODE_COUNT)
         self.__threadTasks = []
         for node in nodes:
             id = node.get('id')
@@ -94,7 +92,6 @@ class AMQPTests(object):
         """ Testing AMQP on.task.ipmi.chassis.result """
         Nodes().api1_1_nodes_get()
         nodes = loads(self.__client.last_response.data)
-        assert_equal(len(nodes),NODE_COUNT)
         self.__threadTasks = []
         for node in nodes:
             id = node.get('id')

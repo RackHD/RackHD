@@ -10,7 +10,6 @@ API_VERSION = '1.1'
 
 HOST_IP = os.getenv('RACKHD_HOST','localhost')
 HOST_PORT = os.getenv('RACKHD_PORT','9090')
-NODE_COUNT = int(os.getenv('RACKHD_NODE_COUNT', '2'))
 CRED_FILE = '.passwd'
 
 # Global logger setup: CRITICAL < ERROR < WARNING < INFO < DEBUG
