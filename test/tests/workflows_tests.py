@@ -106,7 +106,7 @@ class WorkflowsTests(object):
         assert_equal(200,self.__client.last_response.status)
         assert_equal(self.workflowDict.get('friendlyName'),str(json.loads(self.__client.last_response.data)[0].get('friendlyName')))
 
-    @test(groups=['workflows_library_identifier_get', 'test_node_workflows_post'],depends_on_groups=['workflows_put'])
+    # @test(groups=['workflows_library_identifier_get', 'test_node_workflows_post'],depends_on_groups=['workflows_put'])
     def test_node_workflows_post(self):
         """Testing node POST:id/workflows"""
         Nodes().api1_1_nodes_get()
