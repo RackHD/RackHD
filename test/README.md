@@ -1,48 +1,48 @@
 # Running Integration Tests
 
 
-## setup
+## Setup
+
+    NOTE: virtualenv version used 1.11.4 (Ubuntu). Using virtualenv is optional here but suggested.
 
     virtualenv .venv
     sudo pip install -r requirements.txt
     
-    echo "deb https://dl.bintray.com/rackhd/debian trusty main" | sudo tee -a /etc/apt/sources.list.d/rackhd-trusty.list
-    sudo apt-get update
-    sudo apt-get install -y --force-yes python-on-http
+## Running the tests
 
-## running the tests
-
-run Vagrant environment
+Run Vagrant environment
 
     cd ../example
     vagrant up
     vagrant ssh dev -c "sudo nf start"
     cd ../test
 
-run the tests
+Run the tests
 
     python run.py
 
-## optional settings
+## Optional settings
 
 Log levels
     
-    export RACKHD_TEST_LOGLVL=[CRITICAL|ERROR|WARNING|INFO|DEBUG]
-    NOTE: CRITICAL < ERROR < WARNING < INFO < DEBUG    
+    NOTE: CRITICAL < ERROR < WARNING < INFO < DEBUG
+
+    export RACKHD_TEST_LOGLVL=[CRITICAL|ERROR|WARNING|INFO|DEBUG default=WARNING]
 
 API host/port 
 
-    export RACKHD_HOST=[host ip]
-    export RACKHD_PORT=[host port]
+    export RACKHD_HOST=[host ip default=localhost]
+    export RACKHD_PORT=[host port default=9090]
 
 AMQP URL
 
-    export RACKHD_AMQP_URL=[amqp://<url>:<port>]
+    export RACKHD_AMQP_URL=[amqp://<url>:<port> default=amqp://localhost:9091]
 
 To reset the default target BMC user/password 
+
+    NOTE: only prompts for user/password when .passwd file is missing
 
     cd ~/RackHD/test/
     rm .passwd
     python run.py
     <enter BMC username and password>
-    NOTE: only prompts for user/password when .passwd file is missing

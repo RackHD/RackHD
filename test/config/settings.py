@@ -52,8 +52,7 @@ def get_bmc_cred():
 
 # Initial bmc passwd file if it doesn't exist
 if os.path.isfile(CRED_FILE) is False:
-    if 0 == len(DEFAULT_BMC_USER) and 0 == len(DEFAULT_BMC_PASS):
-        DEFAULT_BMC_USER = raw_input('BMC username: ')
-        DEFAULT_BMC_PASS = getpass('BMC password: ')
-    set_bmc_cred(DEFAULT_BMC_USER,DEFAULT_BMC_PASS)
+    BMC_USER = raw_input('BMC username: ')
+    BMC_PASS = getpass('BMC password: ')
+    set_bmc_cred(BMC_USER,BMC_PASS)
 
