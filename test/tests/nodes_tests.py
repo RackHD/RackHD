@@ -24,6 +24,7 @@ class NodesTests(object):
         self.__client = config.api_client
         self.__worker = None
         self.__discovery_duration = None
+        self.__discovered = 0
         self.__test_nodes = [
             {
                 'autoDiscover': 'false',
@@ -68,17 +69,20 @@ class NodesTests(object):
             }
         ]
 
-    def check_node_count(self):
+    def check_compute_count(self):
         Nodes().api1_1_nodes_get()
         nodes = loads(self.__client.last_response.data)
-        if len(nodes) == NODE_COUNT:
-            return True
-        return False
+        count = 0
+        for n in nodes:
+            type = n.get('type')
+            if type == 'compute':
+                count += 1
+        return count
 
     @test(groups=['nodes.discovery.test'])
     def test_nodes_discovery(self):
         """ Testing Graph.Discovery completion """
-        if self.check_node_count():
+        if self.check_compute_count():
             LOG.warning('Nodes already discovered!')
             return
         self.__discovery_duration = datetime.now()
@@ -88,7 +92,6 @@ class NodesTests(object):
 
     def handle_graph_finish(self,body,message):
         routeId = message.delivery_info.get('routing_key').split('graph.finished.')[1]
-        assert_not_equal(routeId,None)
         Workflows().api1_1_workflows_get()
         workflows = loads(self.__client.last_response.data)
         for w in workflows:
@@ -97,25 +100,29 @@ class NodesTests(object):
             if injectableName == 'Graph.SKU.Discovery':
                 graphId = w['context'].get('graphId')
                 if graphId == routeId:
-                    options = definition.get('options')
-                    nodeid = options['defaults'].get('nodeId')
-                    status = w['_status']
+                    status = body.get('status')
                     if status == 'succeeded':
+                        options = definition.get('options')
+                        nodeid = options['defaults'].get('nodeId')
                         duration = datetime.now() - self.__discovery_duration
-                        LOG.info('Graph.Finish - target: {0}, status: {1}, route: {2}, duration: {3}'.format(nodeid,status,routeId,duration))
+                        LOG.info('{0} - target: {1}, status: {2}, route: {3}, duration: {4}'
+                                .format(injectableName,nodeid,status,routeId,duration))
+                        self.__discovered += 1
+                        message.ack()
                         break
-        message.ack()
-        if self.check_node_count():
+        check = self.check_compute_count()
+        if check and check == self.__discovered:
             self.__worker.stop()
             self.__worker = None
+            self.__discovered = 0
 
-    @test(groups=['nodes.test', 'test-nodes'], depends_on_groups=['nodes.discovery.test'])
+    @test(groups=['test-nodes'], depends_on_groups=['nodes.discovery.test'])
     def test_nodes(self):
         """ Testing GET:/nodes """
         Nodes().api1_1_nodes_get()
         nodes = loads(self.__client.last_response.data)
         LOG.debug(nodes,json=True)
-        assert_equal(NODE_COUNT,len(nodes))
+        assert_not_equal(0, len(nodes), message='Node list was empty!')
 
     @test(groups=['test-node-id'], depends_on_groups=['test-nodes'])
     def test_node_id(self):
