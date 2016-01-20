@@ -108,7 +108,7 @@ class WorkflowsTests(object):
         assert_equal(200,self.__client.last_response.status)
         assert_equal(self.workflowDict.get('friendlyName'),str(json.loads(self.__client.last_response.data)[0].get('friendlyName')))
 
-    # @test(groups=['workflows_library_identifier_get', 'test_node_workflows_post'],depends_on_groups=['workflows_put'])
+    @test(groups=['workflows_library_identifier_get', 'test_node_workflows_post'],depends_on_groups=['workflows_put'])
     def test_node_workflows_post(self):
         """Testing node POST:id/workflows"""
         Nodes().api1_1_nodes_get()
@@ -138,7 +138,7 @@ class WorkflowsTests(object):
                 graphId = w['context'].get('graphId')
                 if graphId == routeId:
                     nodeid = w['context']['target']
-                    status = w['_status']
+                    status = body['status']
                     if status == 'succeeded':
                         LOG.info('{0} - target: {1}, status: {2}, route: {3}'.format(injectableName,nodeid,status,routeId))
                         self.__task_worker.stop()
