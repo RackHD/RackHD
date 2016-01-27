@@ -15,6 +15,11 @@
     "httpEnabled": true,
     "httpFileServiceRoot": "./static/files",
     "httpFileServiceType": "FileSystem",
+    "httpProxies": [{
+        "localPath": "/coreos",
+        "server": "http://stable.release.core-os.net",
+        "remotePath": "/amd64-usr/current/"
+    }],
     "httpStaticRoot": "/opt/monorail/static/http",
     "httpsBindAddress": "0.0.0.0",
     "httpsBindPort": 8443,
@@ -22,6 +27,7 @@
     "httpsEnabled": false,
     "httpsKey": "data/dev-key.pem",
     "httpsPfx": null,
+    "minLogLevel": 3,
     "mongo": "mongodb://localhost/pxe",
     "sharedKey": "qxfO2D3tIJsZACu7UA6Fbw0avowo8r79ALzn+WeuC8M=",
     "statsd": "127.0.0.1:8125",

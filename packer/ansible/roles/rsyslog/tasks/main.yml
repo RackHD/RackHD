@@ -1,0 +1,4 @@
+---
+- name: Override rsyslog to not start automatically
+  copy: src=override dest=/etc/init/rsyslog.override
+  sudo: yes

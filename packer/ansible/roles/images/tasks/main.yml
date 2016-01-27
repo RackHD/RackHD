@@ -10,12 +10,7 @@
    - initrd.img-3.13.0-32-generic
    - vmlinuz-3.13.0-32-generic
 
-
-- shell: df -h
-  register: df_echo
-- debug: msg="{{df_echo.stdout}}"
-
-- name: retrieve the latest ipxe bootloaders from bintray
+- name: retrieve the latest bootloaders from bintray
   get_url: url="https://bintray.com/artifact/download/rackhd/binary/ipxe/{{ item }}"
            dest="/home/vagrant/src/on-tftp/static/tftp/{{ item }}"
            validate_certs=no
@@ -24,48 +19,4 @@
    - monorail.ipxe
    - monorail-efi32-snponly.efi
    - monorail-efi64-snponly.efi
-
-- name: retrieve the latest syslinux bootloaders from bintray
-  get_url: url="https://bintray.com/artifact/download/rackhd/binary/syslinux/{{ item }}"
-           dest="/home/vagrant/src/on-tftp/static/tftp/{{ item }}"
-           validate_certs=no
-           force=yes
-  with_items:
-   - undionly.kkpxe
-
-- shell: echo 'df -h'
-  register: df_echo
-- debug: msg="{{df_echo.stdout}}"
-
-- name: make CoreOS directory for hosting CoreOS demonstration booting
-  file: path=/home/vagrant/src/on-http/static/http/coreos state=directory
-
-- name: retrieve CoreOS kernel and initrd
-  get_url: url="http://stable.release.core-os.net/amd64-usr/current/{{ item }}"
-           dest="/home/vagrant/src/on-http/static/http/coreos/{{ item }}"
-           force=yes
-  with_items:
-   - coreos_production_pxe.vmlinuz
-   - coreos_production_pxe_image.cpio.gz
-
-
-- shell: df -h
-  register: df_echo
-- debug: msg="{{df_echo.stdout}}"
-
-# hacks for install CoreOS demo - to be replaced with proxy functionality
-- name: make CoreOS directory for hosting CoreOS demonstration booting
-  file: path=/home/vagrant/src/on-http/static/http/coreos/835.9.0 state=directory
-
-- name: retrieve CoreOS kernel and initrd
-  get_url: url="http://stable.release.core-os.net/amd64-usr/current/{{ item }}"
-           dest="/home/vagrant/src/on-http/static/http/coreos/835.9.0/{{ item }}"
-           force=yes
-  with_items:
-   - coreos_production_image.bin.bz2
-   - coreos_production_image.bin.bz2.sig
-
-
-- shell: df -h
-  register: df_echo
-- debug: msg="{{df_echo.stdout}}"
+   - undionly.kpxe
