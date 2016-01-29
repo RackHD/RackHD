@@ -1,4 +1,4 @@
-example/.vagrant
+.vagrant
 example/config/monorail_rack.cfg
 example/bin/pxe*
 *.vdi
@@ -25,3 +25,5 @@ pip-delete-this-directory.txt
 .tox
 .venv
 .passwdc
+
+.DS_Store
