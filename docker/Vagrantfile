@@ -1,7 +1,3 @@
-######################
-# Vagrant File Start #
-######################
-
 VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
@@ -16,25 +12,21 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             v.customize ["modifyvm", :id, "--nicpromisc2", "allow-all"]
         end
 
-        # Create a public network, which generally matched to bridged network.
-        # Bridged networks make the machine appear as another physical device on
-        # your network.
-        # target.vm.network :public_network
-
         target.vm.network "private_network", ip: "172.31.128.1", virtualbox__intnet: "closednet"
-        # target.vm.network "forwarded_port", guest: 15672, host: 15672
-        # target.vm.network "forwarded_port", guest: 27017, host: 27017
-        # target.vm.network "forwarded_port", guest: 5000, host: 5000
-        # target.vm.network "forwarded_port", guest: 5672, host: 5672
-        target.vm.network "forwarded_port", guest: 8080, host: 8080
-        # target.vm.network "forwarded_port", guest: 8443, host: 8443
-        # target.vm.network "forwarded_port", guest: 9200, host: 9200
-        # target.vm.network "forwarded_port", guest: 9300, host: 9300
+        target.vm.network "forwarded_port", guest: 27017, host: 27017
 
-        # If true, then any SSH connections made will enable agent forwarding.
-        # Default value: false
-        # target.ssh.forward_agent = true
+        target.vm.network "forwarded_port", guest: 15672, host: 15672
+        target.vm.network "forwarded_port", guest: 5672, host: 5672
+
+        target.vm.network "forwarded_port", guest: 5601, host: 5601
+
+        target.vm.network "forwarded_port", guest: 80, host: 9090
+        target.vm.network "forwarded_port", guest: 443, host: 9999
+
+        target.vm.network "forwarded_port", guest: 9200, host: 9200
+        target.vm.network "forwarded_port", guest: 9300, host: 9300
 
         target.vm.synced_folder "..", "/RackHD"
+        config.vm.synced_folder '.', '/vagrant', disabled: true
     end
 end

@@ -1,3 +1,52 @@
+# DB & MSG
+
+mongo:
+  image: mongo:latest
+  ports:
+    - "27017:27017"
+
+rabbitmq: # 5672, 15672, 25672
+  privileged: true
+  image: rabbitmq:management
+  net: "host"
+
+# RackHD
+
+on-taskgraph: # 67, 67/udp
+  privileged: true
+  env_file: docker.env
+  image: on-taskgraph
+  net: "host"
+  volumes:
+    - /RackHD/docker/isc-dhcp-server/defaults:/etc/defaults
+    - /RackHD/docker/isc-dhcp-server/config:/etc/dhcp
+
+on-http: # 80, 443
+  privileged: true
+  env_file: docker.env
+  image: on-http
+  net: "host"
+
+on-dhcp-proxy: # 68, 68/udp, 4011
+  privileged: true
+  env_file: docker.env
+  image: on-dhcp-proxy
+  net: "host"
+
+on-tftp: # 69, 69/udp
+  privileged: true
+  env_file: docker.env
+  image: on-tftp
+  net: "host"
+
+on-syslog: # 514, 514/udp
+  privileged: true
+  env_file: docker.env
+  image: on-syslog
+  net: "host"
+
+# ELK
+
 elasticsearch:
   image: elasticsearch:latest
   command: elasticsearch -Des.network.host=0.0.0.0
@@ -15,98 +64,10 @@ logstash:
     - "8125:8125/udp"
   links:
     - elasticsearch
-    - rabbitmq
-    - on-http
 
-mongo:
-  image: mongo:latest
+kibana:
+  image: kibana:latest
   ports:
-    - "27017:27017"
-
-rabbitmq:
-  image: rabbitmq:latest
-  ports:
-    - "15672:15672" # management port (guest:guest)
-    # - "25672:25672" # cluster port
-    - "5672:5672"   # amqp port
-  # environment:
-  #   - "RABBITMQ_NODENAME=my-rabbit"
-
-on-taskgraph:
-  privileged: true
-  env_file: docker.env
-  environment:
-    amqp: "amqp://localhost"
-    mongo: "mongodb://localhost/rackdh"
-    statsd: "127.0.0.1:8125"
-  image: on-taskgraph
-  net: "host"
-  # ports:
-  #   - "67:67"
-  #   - "67:67/udp"
-  #   - "172.31.128.1:67:67"
-  #   - "172.31.128.1:67:67/udp"
-
-on-http:
-  env_file: docker.env
-  image: on-http
-  ports:
-    - "8080:80"
-    - "8443:443"
-    - "172.31.128.1:80:80"
-    # - "172.31.128.1:443:443"
+    - "5601:5601"
   links:
-    - mongo
-    - rabbitmq
-  extra_hosts:
-    - "on-http:127.0.0.1"
-
-on-dhcp-proxy:
-  privileged: true
-  env_file: docker.env
-  environment:
-    amqp: "amqp://localhost"
-    mongo: "mongodb://localhost/rackdh"
-    statsd: "127.0.0.1:8125"
-  image: on-dhcp-proxy
-  net: "host"
-  # ports:
-  #   - "68:68"
-  #   - "68:68/udp"
-  #   - "4011:4011"
-    # - "172.31.128.1:68:68"
-    # - "172.31.128.1:68:68/udp"
-    # - "172.31.128.1:4011:4011"
-
-on-tftp:
-  privileged: true
-  env_file: docker.env
-  environment:
-    amqp: "amqp://localhost"
-    mongo: "mongodb://localhost/rackdh"
-    statsd: "127.0.0.1:8125"
-  image: on-tftp
-  net: "host"
-  # ports:
-  #   - "69:69"
-  #   - "69:69/udp"
-  #   - "172.31.128.1:69:69"
-  #   - "172.31.128.1:69:69/udp"
-  # links:
-  #   - on-http
-  #   - mongo
-  #   - rabbitmq
-  # extra_hosts:
-  #   - "mongo:127.0.0.1"
-  #   - "on-http:127.0.0.1"
-  #   - "rabbitmq:127.0.0.1"
-
-on-syslog:
-  env_file: docker.env
-  image: on-syslog
-  ports:
-    - "514:514"
-  links:
-    - on-http
-    - mongo
-    - rabbitmq
+    - elasticsearch
