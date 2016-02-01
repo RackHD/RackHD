@@ -10,7 +10,7 @@ REPOS="on-core on-dhcp-proxy on-http on-syslog on-tftp on-taskgraph"
 for repo in ${REPOS}; do
     if [ -d "${SCRIPT_DIR}/../${repo}" ]; then
         pushd "${SCRIPT_DIR}/../${repo}"
-          docker build -t $repo --no-cache=false .
+          docker build -t roland/$repo --no-cache=false .
         popd
     fi
 done
