@@ -22,3 +22,6 @@
 [submodule "on-imagebuilder"]
 	path = on-imagebuilder
 	url = https://github.com/RackHD/on-imagebuilder.git
+[submodule "on-tools"]
+	path = on-tools
+	url = https://github.com/RackHD/on-tools
