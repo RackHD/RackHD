@@ -12,6 +12,30 @@ rabbitmq: # 5672, 15672, 25672
 
 # RackHD
 
+on-dhcp-proxy: # 68, 68/udp, 4011
+  privileged: true
+  env_file: docker.env
+  image: roland/on-dhcp-proxy
+  net: "host"
+
+on-http: # 80, 443
+  privileged: true
+  env_file: docker.env
+  image: roland/on-http
+  net: "host"
+
+on-statsd: # 8125, 8125/udp
+  privileged: true
+  env_file: docker.env
+  image: roland/on-statsd
+  net: "host"
+
+on-syslog: # 514, 514/udp
+  privileged: true
+  env_file: docker.env
+  image: roland/on-syslog
+  net: "host"
+
 on-taskgraph: # 67, 67/udp
   privileged: true
   env_file: docker.env
@@ -21,28 +45,10 @@ on-taskgraph: # 67, 67/udp
     - /RackHD/docker/isc-dhcp-server/defaults:/etc/defaults
     - /RackHD/docker/isc-dhcp-server/config:/etc/dhcp
 
-on-http: # 80, 443
-  privileged: true
-  env_file: docker.env
-  image: roland/on-http
-  net: "host"
-
-on-dhcp-proxy: # 68, 68/udp, 4011
-  privileged: true
-  env_file: docker.env
-  image: roland/on-dhcp-proxy
-  net: "host"
-
 on-tftp: # 69, 69/udp
   privileged: true
   env_file: docker.env
   image: roland/on-tftp
-  net: "host"
-
-on-syslog: # 514, 514/udp
-  privileged: true
-  env_file: docker.env
-  image: roland/on-syslog
   net: "host"
 
 # ELK
@@ -61,7 +67,6 @@ logstash:
     - /RackHD/docker/logstash/config:/etc/logstash/conf.d
   ports:
     - "5000:5000"
-    - "8125:8125/udp"
   links:
     - elasticsearch
 
