@@ -6,7 +6,7 @@ VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
-    # MONORAIL SERVER
+    # RackHD SERVER
     config.vm.define "dev" do |target|
         target.vm.box = "rackhd/rackhd"
         target.vm.provider "virtualbox" do |v|
@@ -15,12 +15,35 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             v.customize ["modifyvm", :id, "--nicpromisc2", "allow-all"]
         end
 
+        # Sync optional local workspace directory to the vagrant instances src/ path.
+        # REPO is optional when WORKSPACE is defined, used for synchronizing single RackHD repos 
+        # otherwise it assumes all service repos have been cloned and built under the WORKSPACE path.
+        if ENV['WORKSPACE']
+	  if ENV['REPO'] == "on-tasks"
+            target.vm.synced_folder "#{ENV['WORKSPACE']}/#{ENV['REPO']}", "/home/vagrant/src/on-taskgraph/node_modules/on-tasks/"
+            target.vm.synced_folder "#{ENV['WORKSPACE']}/#{ENV['REPO']}", "/home/vagrant/src/on-http/node_modules/on-tasks/"
+          elsif ENV['REPO'] == "on-core"
+            target.vm.synced_folder "#{ENV['WORKSPACE']}/#{ENV['REPO']}", "/home/vagrant/src/on-taskgraph/node_modules/on-core/"
+            target.vm.synced_folder "#{ENV['WORKSPACE']}/#{ENV['REPO']}", "/home/vagrant/src/on-http/node_modules/on-core/"
+            target.vm.synced_folder "#{ENV['WORKSPACE']}/#{ENV['REPO']}", "/home/vagrant/src/on-tftp/node_modules/on-core/"
+            target.vm.synced_folder "#{ENV['WORKSPACE']}/#{ENV['REPO']}", "/home/vagrant/src/on-dhcp-proxy/node_modules/on-core/"
+          else
+            target.vm.synced_folder "#{ENV['WORKSPACE']}/#{ENV['REPO']}", "/home/vagrant/src/#{ENV['REPO']}"
+          end
+        end 
+
         # Create a public network, which generally matched to bridged network.
         # Bridged networks make the machine appear as another physical device on
         # your network.
         # target.vm.network :public_network
 
-        target.vm.network "private_network", ip: "172.31.128.1", virtualbox__intnet: "closednet"
+        # Specify optional interface to bridge when wanting to expose the instance to an 
+        # external network.  Useful for when discovering nodes externally.
+        if ENV['BRIDGE_INTF']
+           target.vm.network "public_network", ip: "172.31.128.1", bridge: "#{ENV['BRIDGE_INTF']}"
+        else
+           target.vm.network "private_network", ip: "172.31.128.1", virtualbox__intnet: "closednet"
+        end
         target.vm.network "forwarded_port", guest: 8080, host: 9090
         target.vm.network "forwarded_port", guest: 5672, host: 9091
         target.vm.network "forwarded_port", guest: 9080, host: 9092
