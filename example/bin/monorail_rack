@@ -7,8 +7,9 @@
 # INCLUDE CONFIG #
 ##################
 SCRIPT_DIR=$(cd $(dirname $0) && pwd)
+set -o allexport
 source $SCRIPT_DIR/../config/monorail_rack.cfg
-
+set +o allexport
 
 ############
 # GET OPTS #
@@ -50,9 +51,9 @@ vagrant up dev
 # DEPLOY PXE CLIENTS #
 ######################
 
-if [ $pxe_count ]
+if [ $PXE_COUNT ]
   then
-    for (( i=1; i <= $pxe_count; i++ ))
+    for (( i=1; i <= $PXE_COUNT; i++ ))
       do
         vmName="pxe-$i"
         if [[ ! -e $vmName.vdi ]]; then # check to see if PXE vm already exists
