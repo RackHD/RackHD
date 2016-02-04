@@ -18,10 +18,9 @@ Exposed Services:
 * http://127.0.0.1:9090/ui - RackHD UI
 * http://127.0.0.1:9200/ - Elasticsearch
 
-## Development workflow
+## Rebuilding images for development
 
 ```
-$ ./checkout_submodules.bash  # Checkout submodule Docker branches
 $ ./build_images.bash         # Build RackHD Docker images
 $ docker-compose restart      # Restart RackHD containers.
 ```

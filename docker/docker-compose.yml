@@ -15,31 +15,31 @@ rabbitmq: # 5672, 15672, 25672
 on-dhcp-proxy: # 68, 68/udp, 4011
   privileged: true
   env_file: docker.env
-  image: roland/on-dhcp-proxy
+  image: rackhd/on-dhcp-proxy
   net: "host"
 
 on-http: # 80, 443
   privileged: true
   env_file: docker.env
-  image: roland/on-http
+  image: rackhd/on-http
   net: "host"
 
 on-statsd: # 8125, 8125/udp
   privileged: true
   env_file: docker.env
-  image: roland/on-statsd
+  image: rackhd/on-statsd
   net: "host"
 
 on-syslog: # 514, 514/udp
   privileged: true
   env_file: docker.env
-  image: roland/on-syslog
+  image: rackhd/on-syslog
   net: "host"
 
 on-taskgraph: # 67, 67/udp
   privileged: true
   env_file: docker.env
-  image: roland/on-taskgraph
+  image: rackhd/on-taskgraph
   net: "host"
   volumes:
     - /RackHD/docker/isc-dhcp-server/defaults:/etc/defaults
@@ -48,7 +48,7 @@ on-taskgraph: # 67, 67/udp
 on-tftp: # 69, 69/udp
   privileged: true
   env_file: docker.env
-  image: roland/on-tftp
+  image: rackhd/on-tftp
   net: "host"
 
 # ELK
