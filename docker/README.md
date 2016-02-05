@@ -1,5 +1,7 @@
 # RackHD on Docker instructions
 
+Copyright 2016, EMC, Inc.
+
 Install Docker Toolbox on your system. See https://www.docker.com/products/docker-toolbox
 
 This has only been tested on Mac OS X.

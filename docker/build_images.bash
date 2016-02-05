@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Copyright 2016, EMC, Inc.
+
 # enable to see script debug output
 set -x
 
