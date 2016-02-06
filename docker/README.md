@@ -8,9 +8,9 @@ This has only been tested on Mac OS X.
 
 ```
 $ cd RackHD/docker
-$ vagrant up b2d              # Spin up custom boot2docker vm
-$ . export_docker_host.bash   # Point docker host to b2d vm
-$ docker-compose up           # Run RackHD on Docker with ELK
+$ vagrant up b2d              # Spin up custom boot2docker vm.
+$ . export_docker_host.bash   # Point docker host to b2d vm.
+$ docker-compose up           # Run RackHD on Docker with ELK.
 ```
 
 Exposed Services:
@@ -23,8 +23,9 @@ Exposed Services:
 ## Rebuilding images for development
 
 ```
-$ ./build_images.bash         # Build RackHD Docker images
-$ docker-compose restart      # Restart RackHD containers.
+$ ../scripts/reset_submodules.bash  # Fetch latest submodules.
+$ ./build_images.bash               # Build RackHD Docker images.
+$ docker-compose restart            # Restart RackHD containers.
 ```
 
 #### Using docker on the EMC network:

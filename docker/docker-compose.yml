@@ -8,73 +8,78 @@ mongo:
     - "27017:27017"
 
 rabbitmq: # 5672, 15672, 25672
-  privileged: true
   image: rabbitmq:management
   net: "host"
+  privileged: true
 
 # RackHD
 
 on-dhcp-proxy: # 68, 68/udp, 4011
-  privileged: true
-  env_file: docker.env
   image: rackhd/on-dhcp-proxy
   net: "host"
+  privileged: true
+  volumes:
+    - /RackHD/docker/monorail:/opt/monorail
 
 on-http: # 80, 443
-  privileged: true
-  env_file: docker.env
   image: rackhd/on-http
   net: "host"
+  privileged: true
+  volumes:
+    - /RackHD/docker/monorail:/opt/monorail
 
 on-statsd: # 8125, 8125/udp
-  privileged: true
-  env_file: docker.env
   image: rackhd/on-statsd
   net: "host"
+  privileged: true
+  volumes:
+    - /RackHD/docker/monorail:/opt/monorail
 
 on-syslog: # 514, 514/udp
-  privileged: true
-  env_file: docker.env
   image: rackhd/on-syslog
   net: "host"
+  privileged: true
+  volumes:
+    - /RackHD/docker/monorail:/opt/monorail
 
 on-taskgraph: # 67, 67/udp
-  privileged: true
-  env_file: docker.env
   image: rackhd/on-taskgraph
   net: "host"
+  privileged: true
   volumes:
-    - /RackHD/docker/isc-dhcp-server/defaults:/etc/defaults
-    - /RackHD/docker/isc-dhcp-server/config:/etc/dhcp
+    - /RackHD/docker/dhcp/config:/etc/dhcp
+    - /RackHD/docker/dhcp/defaults:/etc/defaults
+    - /RackHD/docker/monorail:/opt/monorail
 
 on-tftp: # 69, 69/udp
-  privileged: true
-  env_file: docker.env
   image: rackhd/on-tftp
   net: "host"
+  privileged: true
+  volumes:
+    - /RackHD/docker/monorail:/opt/monorail
 
 # ELK
 
 elasticsearch:
-  image: elasticsearch:latest
   command: elasticsearch -Des.network.host=0.0.0.0
+  image: elasticsearch:latest
   ports:
     - "9200:9200"
     - "9300:9300"
 
 logstash:
-  image: logstash:latest
   command: logstash -f /etc/logstash/conf.d/logstash.conf
-  volumes:
-    - /RackHD/docker/logstash/config:/etc/logstash/conf.d
-  ports:
-    - "5000:5000"
+  image: logstash:latest
   links:
     - elasticsearch
+  ports:
+    - "5000:5000"
+  volumes:
+    - /RackHD/docker/logstash/config:/etc/logstash/conf.d
 
 kibana:
   image: kibana:latest
-  ports:
-    - "5601:5601"
   links:
     - elasticsearch
+  ports:
+    - "5601:5601"
