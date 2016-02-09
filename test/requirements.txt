@@ -6,3 +6,4 @@ proboscis==1.2.6.0
 requests==2.9.0
 nose==1.3.7
 on-http>=1.0.0
+on_http_redfish_1_0>=1.0.0

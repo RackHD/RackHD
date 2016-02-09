@@ -1,11 +1,11 @@
 import json
-from config.settings import *
+from config.api1_1_config import *
 from config.amqp import *
 from on_http import WorkflowsApi as Workflows
 from on_http import NodesApi as Nodes
 from on_http import rest
 from modules.logger import Log
-from modules.amqp import Worker
+from modules.amqp import AMQPWorker
 from datetime import datetime
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
@@ -119,7 +119,7 @@ class WorkflowsTests(object):
                 id = n.get('id')
                 assert_not_equal(id,None)
                 LOG.info('starting amqp listener for node {0}'.format(id))
-                self.__task_worker=Worker(queue=QUEUE_GRAPH_FINISH,
+                self.__task_worker=AMQPWorker(queue=QUEUE_GRAPH_FINISH,
                                     callbacks=[self.handle_graph_finish])
                 Nodes().api1_1_nodes_identifier_workflows_active_delete(id)
                 Nodes().api1_1_nodes_identifier_workflows_post(id,name='Graph.noop-example',body={})

@@ -38,6 +38,19 @@ AMQP URL
 
     export RACKHD_AMQP_URL=[amqp://<url>:<port> default=amqp://localhost:9091]
 
+Specify test groups
+    
+    Use the nosetest --group option to test a specific group:
+
+    Run only v1.1 API related tests:
+    python run.py --group=api-v1.1
+
+    Run only v2.0 API related tests:
+    python run.py --group=api-v2.0
+
+    Run only Redfish 1.0 compliant API related tests:
+    python run.py --group=api-redfish-1.0
+
 To reset the default target BMC user/password 
 
     NOTE: only prompts for user/password when .passwd file is missing

@@ -1,4 +1,4 @@
-from config.settings import *
+from config.api1_1_config import *
 from on_http import LookupsApi as Lookups
 from on_http import NodesApi as Nodes
 from modules.logger import Log
