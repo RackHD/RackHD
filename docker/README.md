@@ -4,7 +4,7 @@ Copyright 2016, EMC, Inc.
 
 **Prerequisites:**
   * Install Vagrant on your system. See https://www.vagrantup.com/docs/installation/
-    NOTE: Make sure you install version 1.9.1 -- https://github.com/docker/toolbox/releases/tag/v1.9.1j
+      NOTE: Make sure you install version 1.10
   * Install Docker Toolbox on your system. See https://www.docker.com/products/docker-toolbox
 
 ```
