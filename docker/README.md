@@ -9,7 +9,7 @@ Copyright 2016, EMC, Inc.
 
 ```
 $ cd RackHD/docker
-$ vagrant up b2d              # Spin up custom boot2docker vm.
+$ ./docker_vm_up.bash         # Spin up custom boot2docker vm using vagrant.
 $ . export_docker_host.bash   # Point docker host to b2d vm.
 $ docker-compose up           # Run RackHD on Docker with ELK.
 ```
@@ -60,7 +60,7 @@ Avoid binding to any of the ports RackHD or ELK uses:
 
 ```
 $ ../scripts/reset_submodules.bash  # Fetch latest submodules.
-$ ./build_images.bash               # Build RackHD Docker images.
+$ docker-compose build              # Build RackHD Docker images.
 $ docker-compose restart            # Restart RackHD containers.
 ```
 

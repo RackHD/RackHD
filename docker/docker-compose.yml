@@ -1,85 +1,159 @@
 # Copyright 2016, EMC, Inc.
 
-# DB & MSG
+version: '2'
 
-mongo:
-  image: mongo:latest
-  ports:
-    - "27017:27017"
+services:
 
-rabbitmq: # 5672, 15672, 25672
-  image: rabbitmq:management
-  net: "host"
-  privileged: true
+  mongo:
+    image: mongo:latest
+    network_mode: "host"
+    ports:
+      - "27017:27017"
+    privileged: true
 
-# RackHD
+  rabbitmq: # 5672, 15672
+    image: rabbitmq:management
+    network_mode: "host"
+    privileged: true
 
-on-dhcp-proxy: # 68, 68/udp, 4011
-  image: rackhd/on-dhcp-proxy
-  net: "host"
-  privileged: true
-  volumes:
-    - /RackHD/docker/monorail:/opt/monorail
+  dhcp: # 67/udp
+    image: rackhd/isc-dhcp-server
+    build: "./dhcp"
+    network_mode: "host"
+    privileged: true
+    volumes:
+      - "./dhcp/leases:/var/lib/dhcp"
+      - "./dhcp/config:/etc/dhcp"
+      - "./dhcp/defaults:/etc/defaults"
 
-on-http: # 80, 443
-  image: rackhd/on-http
-  net: "host"
-  privileged: true
-  volumes:
-    - /RackHD/docker/monorail:/opt/monorail
+  files:
+    build: "./files"
+    image: "rackhd/files"
+    network_mode: "host"
+    privileged: true
+    volumes:
+      - "./files/mount:/RackHD/files"
 
-on-statsd: # 8125, 8125/udp
-  image: rackhd/on-statsd
-  net: "host"
-  privileged: true
-  volumes:
-    - /RackHD/docker/monorail:/opt/monorail
+  # RackHD services
 
-on-syslog: # 514, 514/udp
-  image: rackhd/on-syslog
-  net: "host"
-  privileged: true
-  volumes:
-    - /RackHD/docker/monorail:/opt/monorail
+  core:
+    build: "../on-core"
+    image: rackhd/on-core:latest
+    command: "/bin/echo exit"
 
-on-taskgraph: # 67, 67/udp
-  image: rackhd/on-taskgraph
-  net: "host"
-  privileged: true
-  volumes:
-    - /RackHD/docker/dhcp/config:/etc/dhcp
-    - /RackHD/docker/dhcp/defaults:/etc/defaults
-    - /RackHD/docker/monorail:/opt/monorail
+  dhcp-proxy: # 68/udp, 4011
+    build: "../on-dhcp-proxy"
+    depends_on:
+      - dhcp
+      - logstash
+      - mongo
+      - rabbitmq
+      - statsd
+    image: rackhd/on-dhcp-proxy:latest
+    network_mode: "host"
+    privileged: true
+    volumes:
+      - "./monorail:/opt/monorail"
 
-on-tftp: # 69, 69/udp
-  image: rackhd/on-tftp
-  net: "host"
-  privileged: true
-  volumes:
-    - /RackHD/docker/monorail:/opt/monorail
+  http: # 9090, 9080
+    build: "../on-http"
+    depends_on:
+      - files
+      - logstash
+      - mongo
+      - rabbitmq
+      - statsd
+    image: rackhd/on-http:latest
+    network_mode: "host"
+    privileged: true
+    volumes:
+      - "./files/mount/common:/RackHD/on-http/static/http/common"
+      - "./monorail:/opt/monorail"
 
-# ELK
+  statsd: # 8125/udp
+    build: "../on-statsd"
+    depends_on:
+      - elasticsearch
+      - logstash
+      - mongo
+      - rabbitmq
+    image: rackhd/on-statsd:latest
+    network_mode: "host"
+    privileged: true
+    volumes:
+      - "./monorail:/opt/monorail"
 
-elasticsearch:
-  command: elasticsearch -Des.network.host=0.0.0.0
-  image: elasticsearch:latest
-  ports:
-    - "9200:9200"
-    - "9300:9300"
+  syslog: # 514/udp
+    build: "../on-syslog"
+    depends_on:
+      - mongo
+      - logstash
+      - rabbitmq
+      - statsd
+    image: rackhd/on-syslog:latest
+    network_mode: "host"
+    privileged: true
+    volumes:
+      - "./monorail:/opt/monorail"
 
-logstash:
-  command: logstash -f /etc/logstash/conf.d/logstash.conf
-  image: logstash:latest
-  links:
-    - elasticsearch
-  ports:
-    - "5000:5000"
-  volumes:
-    - /RackHD/docker/logstash/config:/etc/logstash/conf.d
+  taskgraph:
+    build: "../on-taskgraph"
+    depends_on:
+      - dhcp
+      - logstash
+      - mongo
+      - rabbitmq
+      - syslog
+      - statsd
+    image: rackhd/on-taskgraph:latest
+    network_mode: "host"
+    privileged: true
+    volumes:
+      - "./dhcp/leases:/var/lib/dhcp"
+      - "./monorail:/opt/monorail"
 
-kibana:
-  image: kibana:latest
-  links:
-    - elasticsearch
-  ports:
-    - "5601:5601"
+  tftp: # 69/udp
+    build: "../on-tftp"
+    depends_on:
+      - files
+      - logstash
+      - mongo
+      - rabbitmq
+      - statsd
+      - syslog
+    image: rackhd/on-tftp:latest
+    network_mode: "host"
+    privileged: true
+    volumes:
+      - "./files/mount:/RackHD/on-tftp/static/tftp"
+      - "./monorail:/opt/monorail"
+
+  # ELK services
+
+  elasticsearch: # 9200, 9300
+    command: elasticsearch -Des.network.host=0.0.0.0
+    depends_on:
+      - rabbitmq
+    image: elasticsearch:latest
+    network_mode: "host"
+    privileged: true
+
+  logstash: # 5000
+    command: logstash -f /etc/logstash/conf.d/logstash.conf
+    depends_on:
+      - elasticsearch
+      - rabbitmq
+    image: logstash:latest
+    network_mode: "host"
+    privileged: true
+    volumes:
+      - "./logstash/config:/etc/logstash/conf.d"
+
+  kibana: # 5601
+    depends_on:
+      - elasticsearch
+    image: kibana:latest
+    network_mode: "host"
+    privileged: true
+    volumes:
+      - "./kibana/config:/opt/kibana/config"
