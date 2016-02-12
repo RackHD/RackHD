@@ -10,6 +10,9 @@
 [submodule "on-taskgraph"]
 	path = on-taskgraph
 	url = https://github.com/RackHD/on-taskgraph.git
+[submodule "on-statsd"]
+	path = on-statsd
+	url = https://github.com/RackHD/on-statsd.git
 [submodule "on-syslog"]
 	path = on-syslog
 	url = https://github.com/RackHD/on-syslog.git

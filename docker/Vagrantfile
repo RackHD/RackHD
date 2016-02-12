@@ -1,0 +1,34 @@
+# Copyright 2016, EMC, Inc.
+
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+    # Boot 2 Docker
+    config.vm.define "b2d" do |target|
+        target.vm.box = "blinkreaction/boot2docker"
+        target.vm.provider "virtualbox" do |v|
+            v.memory = 4096
+            v.cpus = 4
+            v.customize ["modifyvm", :id, "--nictype1", "virtio"]
+            v.customize ["modifyvm", :id, "--nicpromisc2", "allow-all"]
+        end
+
+        target.vm.network "private_network", ip: "172.31.128.1", virtualbox__intnet: "closednet"
+        target.vm.network "forwarded_port", guest: 27017, host: 27017
+
+        target.vm.network "forwarded_port", guest: 15672, host: 15672
+        target.vm.network "forwarded_port", guest: 5672, host: 5672
+
+        target.vm.network "forwarded_port", guest: 5601, host: 5601
+
+        target.vm.network "forwarded_port", guest: 8080, host: 9090
+        target.vm.network "forwarded_port", guest: 8090, host: 9091
+
+        target.vm.network "forwarded_port", guest: 9200, host: 9200
+        target.vm.network "forwarded_port", guest: 9300, host: 9300
+
+        target.vm.synced_folder "..", "/RackHD"
+        config.vm.synced_folder '.', '/vagrant', disabled: true
+    end
+end
