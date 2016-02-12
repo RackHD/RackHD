@@ -166,7 +166,7 @@ for rebooting the `pxe-1` virtual machine.
 ### UNPACKING AN OS INSTALL ISO
 
 For example, you can [manually download the ESXi installation ISO](https://www.vmware.com/go/download-vspherehypervisor)
-or download a [CentOS 7 Installation ISO](http://mirror.umd.edu/centos/7/isos/x86_64/CentOS-7-x86_64-DVD-1503-01.iso).
+or download a [CentOS 7 Installation ISO](http://mirrors.mit.edu/centos/7/isos/x86_64/CentOS-7-x86_64-DVD-1511.iso).
 
 Copy it into the `examples` directory and then you can unpack it in vagrant:
 
@@ -179,7 +179,7 @@ Copy it into the `examples` directory and then you can unpack it in vagrant:
 `vagrant ssh`:
 
     cd /tmp
-    wget http://mirror.umd.edu/centos/7/isos/x86_64/CentOS-7-x86_64-DVD-1503-01.iso
+    wget http://mirrors.mit.edu/centos/7/isos/x86_64/CentOS-7-x86_64-DVD-1511.iso
     # 4GB
     sudo python ~/src/on-http/data/templates/setup_iso.py /tmp/CentOS-7-x86_64*.iso /var/mirrors --link=/home/vagrant/src
 
