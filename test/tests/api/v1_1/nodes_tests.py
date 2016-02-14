@@ -1,7 +1,7 @@
-from config.settings import *
+from config.api1_1_config import *
 from config.amqp import *
 from modules.logger import Log
-from modules.amqp import Worker
+from modules.amqp import AMQPWorker
 from on_http import NodesApi as Nodes
 from on_http import WorkflowsApi as Workflows
 from on_http import rest
@@ -87,7 +87,7 @@ class NodesTests(object):
             return
         self.__discovery_duration = datetime.now()
         LOG.info('Wait start time: {0}'.format(self.__discovery_duration))
-        self.__worker = Worker(queue=QUEUE_GRAPH_FINISH,callbacks=[self.handle_graph_finish])
+        self.__worker = AMQPWorker(queue=QUEUE_GRAPH_FINISH,callbacks=[self.handle_graph_finish])
         self.__worker.start()
 
     def handle_graph_finish(self,body,message):

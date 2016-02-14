@@ -1,5 +1,5 @@
-from config.settings import *
-from modules.obm import obmSettings
+from config.api1_1_config import *
+from obm_settings import obmSettings
 from on_http import ObmsApi as Obms
 from on_http import NodesApi as Nodes
 from on_http import rest

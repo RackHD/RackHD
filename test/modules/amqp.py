@@ -16,7 +16,7 @@ Class to abstract AMQP consumer event handling
 :param max_retries: Number of connection attempts
 :param max_error: Max number of errored connection recovery attempts
 """
-class Worker(ConsumerMixin):
+class AMQPWorker(ConsumerMixin):
     def __init__(self, **kwargs):
         self.__callbacks = kwargs.get('callbacks',self.on_message)
         self.__amqp_url = kwargs.get('amqp_url',AMQP_URL)
@@ -54,6 +54,7 @@ class Worker(ConsumerMixin):
 
     def start(self):
         LOG.info('Starting AMQP worker {0}'.format(self.__queue))
+        self.should_stop = False
         self.run()
 
     def stop(self):
