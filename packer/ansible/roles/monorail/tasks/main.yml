@@ -4,5 +4,5 @@
   sudo: yes
 
 - name: Load monorail conf onto guest
-  copy: src=monorail.json dest=/opt/monorail/config.json
+  copy: src=config.json dest=/opt/monorail/config.json
   sudo: yes
