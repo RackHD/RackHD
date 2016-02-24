@@ -10,6 +10,7 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_not_equal
+from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_true
 from proboscis import SkipTest
 from proboscis import test
@@ -331,14 +332,14 @@ class NodesTests(object):
     @test(groups=['node_workflows_del_active'], depends_on_groups=['node_workflows_active'])
     def test_node_workflows_del_active(self):
         """Testing node DELETE:id/workflows/active"""
-        resps = []
         Nodes().api1_1_nodes_get()
         nodes = loads(self.__client.last_response.data)
         for n in nodes:
             if n.get('type') == 'compute':
-                Nodes().api1_1_nodes_identifier_workflows_active_delete(n.get('id'))
-                resps.append(self.__client.last_response.data)
-        for resp in resps:
-            assert_not_equal(0, len(loads(resp)), message='No active Workflows found for Node')
+                id = n.get('id')
+                assert_is_not_none(id)
+                Nodes().api1_1_nodes_identifier_workflows_active_delete(id)
+                assert_equal(0, len(self.__client.last_response.data), 
+                        message='No active Workflows found for Node {0}'.format(id))
         assert_raises(rest.ApiException, Nodes().api1_1_nodes_identifier_workflows_active_delete, 'fooey')
 
