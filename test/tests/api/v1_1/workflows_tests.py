@@ -45,8 +45,8 @@ class WorkflowsTests(object):
         # Getting the identifier of the first workflow in order to validate the get-id function
         Workflows().api1_1_workflows_get()
         rawj=  json.loads(self.__client.last_response.data)
-        identifier=rawj[0].get("id")
-        Workflows().api1_1_workflows_identifier_get(identifier)
+        instanceId=rawj[0].get("instanceId")
+        Workflows().api1_1_workflows_identifier_get(instanceId)
         assert_equal(200,self.__client.last_response.status)
 
     @test(groups=['workflows_get_id'],depends_on_groups=['workflows_get'])
@@ -57,19 +57,12 @@ class WorkflowsTests(object):
         except Exception,e:
             assert_equal(404,e.status, message = 'status should be 404')
 
-    @test(groups=['workflows.tests', 'workflows_library_get'])
-    def test_workflows_library_get(self):
-        """ Testing GET:/library"""
-        Workflows().api1_1_workflows_library_get()
-        assert_equal(200,self.__client.last_response.status)
-        assert_not_equal(0, len(json.loads(self.__client.last_response.data)), message='Active workflows list was empty!')
-
     @test(groups=['workflows_put'], depends_on_groups=['workflows_library_get'])
     def test_workflows_put(self):
         """ Testing PUT:/workflows:/library """
 
         #Making sure that there is no workflowTask with the same name from previous test runs
-        Workflows().api1_1_workflows_library_get()
+        Workflows().api1_1_workflows_library_identifier_get('*')
         rawj =  json.loads(self.__client.last_response.data)
 
         for i, var  in enumerate (rawj):
@@ -86,7 +79,7 @@ class WorkflowsTests(object):
         assert_equal(200,resp.status)
 
         #Validating the content is as expected
-        Workflows().api1_1_workflows_library_get()
+        Workflows().api1_1_workflows_library_identifier_get('*')
         rawj=  json.loads(self.__client.last_response.data)
         foundInsertedWorkflow = False
         for i, var  in enumerate (rawj):
@@ -106,7 +99,7 @@ class WorkflowsTests(object):
         """ Testing GET:/library:/identifier"""
         Workflows().api1_1_workflows_library_identifier_get(self.workflowDict.get('injectableName'))
         assert_equal(200,self.__client.last_response.status)
-        assert_equal(self.workflowDict.get('friendlyName'),str(json.loads(self.__client.last_response.data)[0].get('friendlyName')))
+        assert_equal(self.workflowDict.get('friendlyName'),str(json.loads(self.__client.last_response.data).get('friendlyName')))
 
     @test(groups=['workflows_library_identifier_get', 'test_node_workflows_post'],depends_on_groups=['workflows_put'])
     def test_node_workflows_post(self):
@@ -121,7 +114,10 @@ class WorkflowsTests(object):
                 LOG.info('starting amqp listener for node {0}'.format(id))
                 self.__task_worker=AMQPWorker(queue=QUEUE_GRAPH_FINISH,
                                     callbacks=[self.handle_graph_finish])
-                Nodes().api1_1_nodes_identifier_workflows_active_delete(id)
+                try:
+                    Nodes().api1_1_nodes_identifier_workflows_active_delete(id)
+                except Exception,e:
+                    assert_equal(404,e.status, message = 'status should be 404')
                 Nodes().api1_1_nodes_identifier_workflows_post(id,name='Graph.noop-example',body={})
                 self.__task_worker.start()
 
@@ -133,7 +129,7 @@ class WorkflowsTests(object):
         workflows = loads(self.__client.last_response.data)
         message.ack()
         for w in workflows:
-            injectableName = w['definition'].get('injectableName') 
+            injectableName = w['definition'].get('injectableName')
             if injectableName == 'Graph.noop-example':
                 graphId = w['context'].get('graphId')
                 if graphId == routeId:
@@ -143,4 +139,3 @@ class WorkflowsTests(object):
                         LOG.info('{0} - target: {1}, status: {2}, route: {3}'.format(injectableName,nodeid,status,routeId))
                         self.__task_worker.stop()
                         break
-

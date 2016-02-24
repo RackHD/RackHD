@@ -23,7 +23,13 @@ class WorkflowTasksTests(object):
 
     def __init__(self):
         self.__client = config.api_client
-        self.workflowTaskDict ={"friendlyName": "fn_1","injectableName": "in_1"}
+        self.workflowTaskDict ={
+            "friendlyName": "fn_1",
+            "injectableName": "in_1",
+            "implementsTask": "im_1",
+            "options": {},
+            "properties": {}
+        }
 
 
     @test(groups=['workflowTasks.tests', 'workflowTasks_library_get'])
@@ -53,8 +59,6 @@ class WorkflowTasksTests(object):
                 self.workflowTaskDict['friendlyName']= fnameList[0]+ '_' + str(suffix)
                 inameList = str (rawj[i].get('injectableName')).split('_')
                 self.workflowTaskDict['injectableName']= inameList[0]+ '_' + str(suffix)
-
-
 
         #adding a workflow task
         LOG.info ("Adding workflow task : " +  str(self.workflowTaskDict))
