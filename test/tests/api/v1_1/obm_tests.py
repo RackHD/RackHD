@@ -1,8 +1,8 @@
 from config.api1_1_config import *
 from obm_settings import obmSettings
-from on_http import ObmsApi as Obms
-from on_http import NodesApi as Nodes
-from on_http import rest
+from on_http_api1_1 import ObmsApi as Obms
+from on_http_api1_1 import NodesApi as Nodes
+from on_http_api1_1 import rest
 from modules.logger import Log
 from datetime import datetime
 from proboscis.asserts import assert_equal
@@ -47,24 +47,24 @@ class OBMTests(object):
     @test(groups=['obm.tests', 'create-node-id-obm-identify'], depends_on_groups=['check-obm'])
     def test_node_id_obm_identify_create(self):
         """ Testing POST:/nodes/:id/obm/identify """
-        Nodes().api1_1_nodes_get()
+        Nodes().nodes_get()
         nodes = loads(self.__client.last_response.data)
         codes = []
         data = {"value": "true"}
         for n in nodes:
             if n.get('type') == 'compute':
                 uuid = n.get('id')
-                Nodes().api1_1_nodes_identifier_obm_identify_post(uuid, data)
+                Nodes().nodes_identifier_obm_identify_post(uuid, data)
                 rsp = self.__client.last_response
                 codes.append(rsp)
         for c in codes:
             assert_equal(200, c.status, message=c.reason)
-        assert_raises(rest.ApiException, Nodes().api1_1_nodes_identifier_obm_identify_post, 'fooey', data)
+        assert_raises(rest.ApiException, Nodes().nodes_identifier_obm_identify_post, 'fooey', data)
 
     @test(groups=['obm.tests', 'test-obms'])
     def test_obm_library(self):
         """ Testing GET:/obms/library """
-        Obms().api1_1_obms_library_get()
+        Obms().obms_library_get()
         obms = loads(self.__client.last_response.data)
         services = [t.get('service') for t in obms]
         assert_equal(200, self.__client.last_response.status)
@@ -73,12 +73,12 @@ class OBMTests(object):
     @test(groups=['obm.tests', 'test-obms-identifier'])
     def test_obm_library_identifier(self):
         """ Testing GET:/obms/library/:id """
-        Obms().api1_1_obms_library_get()
+        Obms().obms_library_get()
         obms = loads(self.__client.last_response.data)
         codes = []
         services = [t.get('service') for t in obms]
         for n in services:
-            Obms().api1_1_obms_library_identifier_get(n)
+            Obms().obms_library_identifier_get(n)
             codes.append(self.__client.last_response)
         assert_not_equal(0, len(obms), message='OBM list was empty!')
         for c in codes:

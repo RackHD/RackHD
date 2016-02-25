@@ -3,8 +3,8 @@ from config.api1_1_config import *
 from modules.amqp import AMQPWorker
 from modules.worker import WorkerThread, WorkerTasks
 from modules.logger import Log
-from on_http import NodesApi as Nodes
-from on_http import PollersApi as Pollers
+from on_http_api1_1 import NodesApi as Nodes
+from on_http_api1_1 import PollersApi as Pollers
 from threading import Thread
 from datetime import datetime
 from proboscis.asserts import assert_is_not_none
@@ -35,7 +35,7 @@ class AMQPTests(object):
             if task.id == id:
                 workId = body['value'].get('workItemId')
                 assert_is_not_none(workId)
-                Pollers().api1_1_pollers_identifier_get(workId)
+                Pollers().pollers_identifier_get(workId)
                 poller = loads(self.__client.last_response.data)
                 config = poller.get('config')
                 assert_is_not_none(config)
@@ -51,7 +51,7 @@ class AMQPTests(object):
           depends_on_groups=['check-obm'])
     def check_sel_task(self):
         """ Testing AMQP on.task.ipmi.sel.result """
-        Nodes().api1_1_nodes_get()
+        Nodes().nodes_get()
         nodes = loads(self.__client.last_response.data)
         self.__tasks = []
         for node in nodes:
@@ -71,7 +71,7 @@ class AMQPTests(object):
           depends_on_groups=['amqp.tests.sel'])
     def check_sdr_task(self):
         """ Testing AMQP on.task.ipmi.sdr.result """
-        Nodes().api1_1_nodes_get()
+        Nodes().nodes_get()
         nodes = loads(self.__client.last_response.data)
         self.__tasks = []
         for node in nodes:
@@ -91,7 +91,7 @@ class AMQPTests(object):
           depends_on_groups=['amqp.tests.sdr'])
     def check_chassis_task(self):
         """ Testing AMQP on.task.ipmi.chassis.result """
-        Nodes().api1_1_nodes_get()
+        Nodes().nodes_get()
         nodes = loads(self.__client.last_response.data)
         self.__tasks = []
         for node in nodes:

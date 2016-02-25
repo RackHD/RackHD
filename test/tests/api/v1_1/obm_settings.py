@@ -1,6 +1,6 @@
 from config.api1_1_config import *
-from on_http import NodesApi as Nodes
-from on_http import rest
+from on_http_api1_1 import NodesApi as Nodes
+from on_http_api1_1 import rest
 from modules.logger import Log
 from json import dumps, loads
 
@@ -20,13 +20,13 @@ class obmSettings(object):
     def _set_ipmi(self, uid):
         user, passwd = get_bmc_cred()
         mac = None
-        Nodes().api1_1_nodes_identifier_catalogs_source_get(uid,'bmc')
+        Nodes().nodes_identifier_catalogs_source_get(uid,'bmc')
         rsp = self.__client.last_response
         bmc = loads(rsp.data)
         if 'data' in bmc:
             mac = bmc['data'].get('MAC Address')
         else:
-            Nodes().api1_1_nodes_identifier_catalogs_source_get(uid,'rmm')
+            Nodes().nodes_identifier_catalogs_source_get(uid,'rmm')
             rsp = self.__client.last_response
             rmm = loads(rsp.data)
             if 'data' in rmm:
@@ -45,7 +45,7 @@ class obmSettings(object):
             }
             LOG.info('Creating ipmi obm-settings for node {0} \n {1}'.format(uid,setting))
             try:
-                Nodes().api1_1_nodes_identifier_patch(uid,setting)
+                Nodes().nodes_identifier_patch(uid,setting)
             except rest.ApiException as e:
                 LOG.error(e)
                 return False
@@ -55,7 +55,7 @@ class obmSettings(object):
 
     def setup_nodes(self, service_type, uuid=None):
         err = []
-        Nodes().api1_1_nodes_get()
+        Nodes().nodes_get()
         nodes = loads(self.__client.last_response.data)
         for n in nodes:
             node_type = n.get('type')
@@ -79,7 +79,7 @@ class obmSettings(object):
 
     def check_nodes(self, service_type, uuid=None):
         retval = []
-        Nodes().api1_1_nodes_get()
+        Nodes().nodes_get()
         nodes = loads(self.__client.last_response.data)
         for n in nodes:
             node_type = n.get('type')
