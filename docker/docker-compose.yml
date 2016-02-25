@@ -2,13 +2,15 @@
 
 version: '2'
 
+volumes:
+  dhcp-leases:
+    external: false
+
 services:
 
-  mongo:
+  mongo: # 27017
     image: mongo:latest
     network_mode: "host"
-    ports:
-      - "27017:27017"
     privileged: true
 
   rabbitmq: # 5672, 15672
@@ -22,7 +24,7 @@ services:
     network_mode: "host"
     privileged: true
     volumes:
-      - "./dhcp/leases:/var/lib/dhcp"
+      - "dhcp-leases:/var/lib/dhcp"
       - "./dhcp/config:/etc/dhcp"
       - "./dhcp/defaults:/etc/defaults"
 
@@ -36,10 +38,10 @@ services:
 
   # RackHD services
 
-  core:
-    build: "../on-core"
-    image: rackhd/on-core:latest
-    command: "/bin/echo exit"
+  # core:
+  #   build: "../on-core"
+  #   image: rackhd/on-core:latest
+  #   command: "/bin/echo exit"
 
   dhcp-proxy: # 68/udp, 4011
     build: "../on-dhcp-proxy"
@@ -109,7 +111,7 @@ services:
     network_mode: "host"
     privileged: true
     volumes:
-      - "./dhcp/leases:/var/lib/dhcp"
+      - "dhcp-leases:/var/lib/dhcp"
       - "./monorail:/opt/monorail"
 
   tftp: # 69/udp

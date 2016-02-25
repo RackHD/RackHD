@@ -1,8 +1,6 @@
 .vagrant
-docker/dhcp/leases
 docker/files/mount
-docker/tls/*.pem
-docker/tls/hostnames
+docker/tls
 example/config/monorail_rack.cfg
 example/bin/pxe*
 *.vdi
