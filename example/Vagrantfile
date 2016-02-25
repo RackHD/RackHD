@@ -30,6 +30,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
           else
             target.vm.synced_folder "#{ENV['WORKSPACE']}/#{ENV['REPO']}", "/home/vagrant/src/#{ENV['REPO']}"
           end
+          if ENV['CONFIG_DIR']
+            target.vm.synced_folder "#{ENV['WORKSPACE']}/#{ENV['CONFIG_DIR']}", "/home/vagrant/opt/monorail/"
+          end
         end 
 
         # Create a public network, which generally matched to bridged network.
