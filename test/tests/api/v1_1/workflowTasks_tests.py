@@ -1,8 +1,7 @@
-
 import json
 from config.api1_1_config import *
-from on_http import WorkflowTasksApi as WorkflowTasks
-from on_http import rest
+from on_http_api1_1 import WorkflowApi as WorkflowTasks
+from on_http_api1_1 import rest
 from modules.logger import Log
 from datetime import datetime
 from proboscis.asserts import assert_equal
@@ -23,6 +22,7 @@ class WorkflowTasksTests(object):
 
     def __init__(self):
         self.__client = config.api_client
+        self.__workflows = None
         self.workflowTaskDict ={
             "friendlyName": "fn_1",
             "injectableName": "in_1",
@@ -32,10 +32,10 @@ class WorkflowTasksTests(object):
         }
 
 
-    @test(groups=['workflowTasks.tests', 'workflowTasks_library_get'])
+    @test(groups=['workflowTasks_library_get'])
     def test_workflowTasks_library_get(self):
         """ Testing GET:/tasks/library"""
-        WorkflowTasks().api1_1_workflows_tasks_library_get()
+        WorkflowTasks().workflows_tasks_library_get()
         assert_equal(200,self.__client.last_response.status)
         assert_not_equal(0, len(json.loads(self.__client.last_response.data)), message='Workflow tasks list was empty!')
 
@@ -44,7 +44,7 @@ class WorkflowTasksTests(object):
     def test_workflowTasks_put(self):
         """ Testing PUT:/workflowTasks """
         #Get the number of workflowTasks before we add one
-        WorkflowTasks().api1_1_workflows_tasks_library_get()
+        WorkflowTasks().workflows_tasks_library_get()
         workflowTasksBefore = len(json.loads(self.__client.last_response.data))
 
         #Making sure that there is no workflowTask with the same name from previous test runs
@@ -62,12 +62,12 @@ class WorkflowTasksTests(object):
 
         #adding a workflow task
         LOG.info ("Adding workflow task : " +  str(self.workflowTaskDict))
-        WorkflowTasks().api1_1_workflows_tasks_put(body=self.workflowTaskDict)
+        WorkflowTasks().workflows_tasks_put(body=self.workflowTaskDict)
         resp= self.__client.last_response
         assert_equal(200,resp.status)
 
         #Getting the number of profiles after we added one
-        WorkflowTasks().api1_1_workflows_tasks_library_get()
+        WorkflowTasks().workflows_tasks_library_get()
         workflowTasksAfter = len(json.loads(self.__client.last_response.data))
         resp= self.__client.last_response
         assert_equal(200,resp.status, message=resp.reason)

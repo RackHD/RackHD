@@ -1,8 +1,8 @@
 
 import json
 from config.api1_1_config import *
-from on_http import ProfilesApi as Profiles
-from on_http import rest
+from on_http_api1_1 import ProfilesApi as Profiles
+from on_http_api1_1 import rest
 from modules.logger import Log
 from datetime import datetime
 from proboscis.asserts import assert_equal
@@ -31,7 +31,7 @@ class ProfilesTests(object):
     @test(groups=['profiles.tests', 'profile_library_get'])
     def test_profiles_library_get(self):
         """ Testing GET:/library"""
-        Profiles().api1_1_profiles_library_get()
+        Profiles().profiles_library_get()
         assert_equal(200,self.__client.last_response.status)
         assert_not_equal(0, len(json.loads(self.__client.last_response.data)), message='Profile list was empty!')
 
@@ -40,7 +40,7 @@ class ProfilesTests(object):
     def test_profiles_put(self):
         """ Testing PUT:/nodes """
         #Get the number of profiles before we add one
-        Profiles().api1_1_profiles_library_get()
+        Profiles().profiles_library_get()
         profilesBefore = len(json.loads(self.__client.last_response.data))
 
         #Make sure that there is no profile with the same name from previous test runs
@@ -62,12 +62,12 @@ class ProfilesTests(object):
 
         #add a profile
         LOG.info('Adding a profile named= {0}'.format(self.addedName))
-        Profiles().api1_1_profiles_library_identifier_put(self.addedName,body=self.addedContents)
+        Profiles().profiles_library_identifier_put(self.addedName,body=self.addedContents)
         resp= self.__client.last_response
         assert_equal(200,resp.status)
 
         #Get the number of profiles after we added one
-        Profiles().api1_1_profiles_library_get()
+        Profiles().profiles_library_get()
         profilesAfter = len(json.loads(self.__client.last_response.data))
         resp= self.__client.last_response
         assert_equal(200,resp.status, message=resp.reason)
@@ -89,7 +89,7 @@ class ProfilesTests(object):
     def test_profiles_library_identifier_get_putdependent(self):
         """ Testing GET:/library/:id"""
 
-        Profiles().api1_1_profiles_library_identifier_get(self.addedName)
+        Profiles().profiles_library_identifier_get(self.addedName)
         readDict=  json.loads(self.__client.last_response.data)
         readContents  = readDict.get('contents')
         LOG.info('Reading the profile that was added,  {0}'.format(self.addedName))
@@ -98,7 +98,7 @@ class ProfilesTests(object):
     @test(groups=['profiles_library_identifier'])
     def test_profiles_library_identifier_get(self):
         """ Testing GET:/library/:id"""
-        Profiles().api1_1_profiles_library_identifier_get( "boilerplate.ipxe")
+        Profiles().profiles_library_identifier_get( "boilerplate.ipxe")
         readDict=  json.loads(self.__client.last_response.data)
         readName  = readDict.get('name')
         LOG.info('Reading the profile that was added,  {0}'.format(readName))
@@ -108,7 +108,7 @@ class ProfilesTests(object):
     def test_profiles_library_identifier_negative_get(self):
         """ Negative Testing GET:/library/:id"""
         try:
-            Profiles().api1_1_profiles_library_identifier_get('wrongProfileName')
+            Profiles().profiles_library_identifier_get('wrongProfileName')
         except Exception,e:
            assert_equal(404,e.status, message = 'status should be 404')
 

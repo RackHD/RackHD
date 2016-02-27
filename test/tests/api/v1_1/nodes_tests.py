@@ -2,9 +2,9 @@ from config.api1_1_config import *
 from config.amqp import *
 from modules.logger import Log
 from modules.amqp import AMQPWorker
-from on_http import NodesApi as Nodes
-from on_http import WorkflowsApi as Workflows
-from on_http import rest
+from on_http_api1_1 import NodesApi as Nodes
+from on_http_api1_1 import WorkflowApi as Workflows
+from on_http_api1_1 import rest
 from datetime import datetime
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
@@ -71,7 +71,7 @@ class NodesTests(object):
         ]
 
     def check_compute_count(self):
-        Nodes().api1_1_nodes_get()
+        Nodes().nodes_get()
         nodes = loads(self.__client.last_response.data)
         count = 0
         for n in nodes:
@@ -93,7 +93,7 @@ class NodesTests(object):
 
     def handle_graph_finish(self,body,message):
         routeId = message.delivery_info.get('routing_key').split('graph.finished.')[1]
-        Workflows().api1_1_workflows_get()
+        Workflows().workflows_get()
         workflows = loads(self.__client.last_response.data)
         for w in workflows:
             definition = w['definition']
@@ -120,7 +120,7 @@ class NodesTests(object):
     @test(groups=['test-nodes'], depends_on_groups=['nodes.discovery.test'])
     def test_nodes(self):
         """ Testing GET:/nodes """
-        Nodes().api1_1_nodes_get()
+        Nodes().nodes_get()
         nodes = loads(self.__client.last_response.data)
         LOG.debug(nodes,json=True)
         assert_not_equal(0, len(nodes), message='Node list was empty!')
@@ -128,7 +128,7 @@ class NodesTests(object):
     @test(groups=['test-node-id'], depends_on_groups=['test-nodes'])
     def test_node_id(self):
         """ Testing GET:/nodes/:id """
-        Nodes().api1_1_nodes_get()
+        Nodes().nodes_get()
         nodes = loads(self.__client.last_response.data)
         LOG.debug(nodes,json=True)
         codes = []
@@ -136,34 +136,34 @@ class NodesTests(object):
             LOG.info(n)
             if n.get('type') == 'compute':
                 uuid = n.get('id')
-                Nodes().api1_1_nodes_identifier_get(uuid)
+                Nodes().nodes_identifier_get(uuid)
                 rsp = self.__client.last_response
                 codes.append(rsp)
         assert_not_equal(0, len(codes), message='Failed to find compute node Ids')
         for c in codes:
             assert_equal(200, c.status, message=c.reason)
-        assert_raises(rest.ApiException, Nodes().api1_1_nodes_identifier_get, 'fooey')
+        assert_raises(rest.ApiException, Nodes().nodes_identifier_get, 'fooey')
 
     @test(groups=['create-node'], depends_on_groups=['test-node-id'])
     def test_node_create(self):
         """ Verify POST:/nodes/ """
         for n in self.__test_nodes:
             LOG.info('Creating node (name={0})'.format(n.get('name')))
-            Nodes().api1_1_nodes_post(n)
+            Nodes().nodes_post(n)
             rsp = self.__client.last_response
             assert_equal(201, rsp.status, message=rsp.reason)
 
     @test(groups=['test-node-id-obm'], depends_on_groups=['create-node'])
     def test_node_id_obm(self):
         """ Testing GET:/nodes/:id/obm """
-        Nodes().api1_1_nodes_get()
+        Nodes().nodes_get()
         nodes = loads(self.__client.last_response.data)
         LOG.debug(nodes,json=True)
         codes = []
         for n in nodes:
             if n.get('name') == 'test_compute_node':
                 uuid = n.get('id')
-                Nodes().api1_1_nodes_identifier_obm_get(uuid)
+                Nodes().nodes_identifier_obm_get(uuid)
                 rsp = self.__client.last_response
                 LOG.info('OBM setting for node ID {0} is {1}'.format(uuid, rsp.data))
                 codes.append(rsp)
@@ -171,26 +171,26 @@ class NodesTests(object):
         assert_not_equal(0, len(codes), message='Failed to find compute node Ids')
         for c in codes:
             assert_equal(200, c.status, message=c.reason)
-        assert_raises(rest.ApiException, Nodes().api1_1_nodes_identifier_obm_get, 'fooey')
+        assert_raises(rest.ApiException, Nodes().nodes_identifier_obm_get, 'fooey')
 
     @test(groups=['patch-node'], depends_on_groups=['test-node-id-obm'])
     def test_node_patch(self):
         """ Verify PATCH:/nodes/:id """
         data = {"name": 'fake_name_test'}
-        Nodes().api1_1_nodes_get()
+        Nodes().nodes_get()
         nodes = loads(self.__client.last_response.data)
         codes = []
         for n in nodes:
             if n.get('name') == 'test_compute_node':
                 uuid = n.get('id')
-                Nodes().api1_1_nodes_identifier_patch(uuid, data)
+                Nodes().nodes_identifier_patch(uuid, data)
                 rsp = self.__client.last_response
                 test_nodes = loads(self.__client.last_response.data)
                 assert_equal(test_nodes.get('name'), 'fake_name_test', 'Oops patch failed')
                 codes.append(rsp)
                 LOG.info('Restoring name to "test_compute_node"')
                 correct_data = {"name": 'test_compute_node'}
-                Nodes().api1_1_nodes_identifier_patch(uuid, correct_data)
+                Nodes().nodes_identifier_patch(uuid, correct_data)
                 rsp = self.__client.last_response
                 restored_nodes = loads(self.__client.last_response.data)
                 assert_equal(restored_nodes.get('name'), 'test_compute_node', 'Oops restoring failed')
@@ -198,14 +198,14 @@ class NodesTests(object):
         assert_not_equal(0, len(codes), message='Failed to find compute node Ids')
         for c in codes:
             assert_equal(200, c.status, message=c.reason)
-        assert_raises(rest.ApiException, Nodes().api1_1_nodes_identifier_patch, 'fooey', data)
+        assert_raises(rest.ApiException, Nodes().nodes_identifier_patch, 'fooey', data)
 
     @test(groups=['delete-node'], depends_on_groups=['patch-node'])
     def test_node_delete(self):
         """ Testing DELETE:/nodes/:id """
         codes = []
         test_names = []
-        Nodes().api1_1_nodes_get()
+        Nodes().nodes_get()
         nodes = loads(self.__client.last_response.data)
         test_names = [t.get('name') for t in self.__test_nodes]
         for n in nodes:
@@ -213,39 +213,42 @@ class NodesTests(object):
             if name in test_names:
                 uuid = n.get('id')
                 LOG.info('Deleting node {0} (name={1})'.format(uuid, name))
-                Nodes().api1_1_nodes_identifier_delete(uuid)
+                Nodes().nodes_identifier_delete(uuid)
                 codes.append(self.__client.last_response)
 
         assert_not_equal(0, len(codes), message='Delete node list empty!')
         for c in codes:
             assert_equal(200, c.status, message=c.reason)
-        assert_raises(rest.ApiException, Nodes().api1_1_nodes_identifier_delete, 'fooey')
+        assert_raises(rest.ApiException, Nodes().nodes_identifier_delete, 'fooey')
 
     @test(groups=['create-whitelist-node'], depends_on_groups=['delete-node'])
     def test_whitelist_node_create(self):
         """ Verify POST:/nodes/:mac/dhcp/whitelist """
-        Nodes().api1_1_nodes_get()
+        Nodes().nodes_get()
         nodes = loads(self.__client.last_response.data)
+        macList = []
         for n in nodes:
-            for i in n:
-                if i == 'identifiers':
-                    if len(n[i]) > 0:
-                        macaddress = n[i]
-                        LOG.info('Posting macaddress {0}' .format(macaddress))
+            type = n.get('type')
+            assert_is_not_none(type)
+            if type == 'compute':
+                idList = n.get('identifiers')
+                assert_is_not_none(idList)
+                if len(idList) > 0:
+                    macList.append(idList[0]) # grab the first mac
 
-
-        for address in macaddress:
-            Nodes().api1_1_nodes_macaddress_dhcp_whitelist_post(address, n)
-            rsp = self.__client.last_response
-            assert_equal(201, rsp.status, message=rsp.reason)
-            macaddress_parsed = loads(rsp.data.replace("-", ":"))
-            if macaddress_parsed[len(macaddress_parsed)-1] == macaddress[len(macaddress)-1]:
-                LOG.info("Verfied the macaddress on whitelist")
+        for addr in macList:
+            LOG.info('whitelisting MAC address {0}'.format(addr))
+            Nodes().nodes_macaddress_dhcp_whitelist_post(addr,body={})
+            data = loads(self.__client.last_response.data)
+            assert_not_equal(0, len(data))
+            addrParsed = data[0].replace("-", ":")
+            LOG.info(addrParsed)
+            LOG.info(addr)
 
     @test(groups=['delete-whitelist-node'], depends_on_groups=['create-whitelist-node'])
     def test_whitelist_node_delete(self):
         """ Verify Delete:/nodes/:mac/dhcp/whitelist """
-        Nodes().api1_1_nodes_get()
+        Nodes().nodes_get()
         nodes = loads(self.__client.last_response.data)
         for n in nodes:
             for i in n:
@@ -255,7 +258,7 @@ class NodesTests(object):
 
         macaddress_to_delete = macaddress[len(macaddress)-1]
         LOG.info('Deleting macaddress {0}' .format(macaddress_to_delete))
-        Nodes().api1_1_nodes_macaddress_dhcp_whitelist_delete(macaddress_to_delete)
+        Nodes().nodes_macaddress_dhcp_whitelist_delete(macaddress_to_delete)
         rsp = self.__client.last_response
         assert_equal(204, rsp.status, message=rsp.reason)
 
@@ -263,83 +266,83 @@ class NodesTests(object):
     def test_node_catalogs(self):
         """ Testing GET id:/catalogs """
         resps = []
-        Nodes().api1_1_nodes_get()
+        Nodes().nodes_get()
         nodes = loads(self.__client.last_response.data)
         for n in nodes:
             if n.get('type') == 'compute':
-                Nodes().api1_1_nodes_identifier_catalogs_get( n.get('id'))
+                Nodes().nodes_identifier_catalogs_get( n.get('id'))
                 resps.append(self.__client.last_response.data)
         for resp in resps:
             assert_not_equal(0, len(loads(resp)), message='Node catalog is empty!')
-        assert_raises(rest.ApiException, Nodes().api1_1_nodes_identifier_catalogs_get, 'fooey')
+        assert_raises(rest.ApiException, Nodes().nodes_identifier_catalogs_get, 'fooey')
 
     @test(groups=['catalog_source'], depends_on_groups=['catalog_nodes'])
     def test_node_catalogs_bysource(self):
         """ Testing GET id:/catalogs/source """
         resps = []
-        Nodes().api1_1_nodes_get()
+        Nodes().nodes_get()
         nodes = loads(self.__client.last_response.data)
         for n in nodes:
             if n.get('type') == 'compute':
-                Nodes().api1_1_nodes_identifier_catalogs_source_get( n.get('id'),'bmc')
+                Nodes().nodes_identifier_catalogs_source_get( n.get('id'),'bmc')
                 resps.append(self.__client.last_response)
         for resp in resps:
             assert_equal(200,resp.status, message=resp.reason)
-        assert_raises(rest.ApiException, Nodes().api1_1_nodes_identifier_catalogs_source_get, 'fooey','bmc')
+        assert_raises(rest.ApiException, Nodes().nodes_identifier_catalogs_source_get, 'fooey','bmc')
 
     @test(groups=['node_workflows'], depends_on_groups=['catalog_source'])
     def test_node_workflows_get(self):
         """Testing node GET:id/workflows"""
         resps = []
-        Nodes().api1_1_nodes_get()
+        Nodes().nodes_get()
         nodes = loads(self.__client.last_response.data)
         for n in nodes:
             if n.get('type') == 'compute':
-                Nodes().api1_1_nodes_identifier_workflows_get(n.get('id'))
+                Nodes().nodes_identifier_workflows_get(n.get('id'))
                 resps.append(self.__client.last_response.data)
         for resp in resps:
             assert_not_equal(0, len(loads(resp)), message='No Workflows found for Node')
-        assert_raises(rest.ApiException, Nodes().api1_1_nodes_identifier_workflows_get, 'fooey')
+        assert_raises(rest.ApiException, Nodes().nodes_identifier_workflows_get, 'fooey')
 
     @test(groups=['node_post_workflows'], depends_on_groups=['node_workflows'])
     def test_node_workflows_post(self):
         """Testing node POST:id/workflows"""
         resps = []
-        Nodes().api1_1_nodes_get()
+        Nodes().nodes_get()
         nodes = loads(self.__client.last_response.data)
         for n in nodes:
             if n.get('type') == 'compute':
-                Nodes().api1_1_nodes_identifier_workflows_post(n.get('id'),name='Graph.Discovery',body={})
+                Nodes().nodes_identifier_workflows_post(n.get('id'),'Graph.Discovery',body={})
                 resps.append(self.__client.last_response.data)
         for resp in resps:
             assert_not_equal(0, len(loads(resp)), message='No Workflows found for Node')
-        assert_raises(rest.ApiException, Nodes().api1_1_nodes_identifier_workflows_post, 'fooey','Graph.Discovery',{})
+        assert_raises(rest.ApiException, Nodes().nodes_identifier_workflows_post, 'fooey','Graph.Discovery',body={})
 
     @test(groups=['node_workflows_active'], depends_on_groups=['node_post_workflows'])
     def test_node_workflows_active(self):
         """Testing node GET:id/workflows/active"""
         resps = []
-        Nodes().api1_1_nodes_get()
+        Nodes().nodes_get()
         nodes = loads(self.__client.last_response.data)
         for n in nodes:
             if n.get('type') == 'compute':
-                Nodes().api1_1_nodes_identifier_workflows_active_get(n.get('id'))
+                Nodes().nodes_identifier_workflows_active_get(n.get('id'))
                 resps.append(self.__client.last_response.data)
         for resp in resps:
             assert_not_equal(0, len(loads(resp)), message='No active Workflows found for Node')
-        assert_raises(rest.ApiException, Nodes().api1_1_nodes_identifier_workflows_active_get, 'fooey')
+        assert_raises(rest.ApiException, Nodes().nodes_identifier_workflows_active_get, 'fooey')
 
     @test(groups=['node_workflows_del_active'], depends_on_groups=['node_workflows_active'])
     def test_node_workflows_del_active(self):
         """Testing node DELETE:id/workflows/active"""
-        Nodes().api1_1_nodes_get()
+        Nodes().nodes_get()
         nodes = loads(self.__client.last_response.data)
         for n in nodes:
             if n.get('type') == 'compute':
                 id = n.get('id')
                 assert_is_not_none(id)
-                Nodes().api1_1_nodes_identifier_workflows_active_delete(id)
+                Nodes().nodes_identifier_workflows_active_delete(id)
                 assert_equal(0, len(self.__client.last_response.data), 
                         message='No active Workflows found for Node {0}'.format(id))
-        assert_raises(rest.ApiException, Nodes().api1_1_nodes_identifier_workflows_active_delete, 'fooey')
+        assert_raises(rest.ApiException, Nodes().nodes_identifier_workflows_active_delete, 'fooey')
 
