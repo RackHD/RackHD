@@ -8,8 +8,10 @@ ADD https://bintray.com/artifact/download/rackhd/binary/ipxe/monorail-efi64-snpo
     /RackHD/downloads/monorail-efi64-snponly.efi
 ADD https://bintray.com/artifact/download/rackhd/binary/ipxe/monorail.ipxe \
     /RackHD/downloads/monorail.ipxe
-ADD https://bintray.com/artifact/download/rackhd/binary/ipxe/undionly.kpxe \
-    /RackHD/downloads/undionly.kpxe
+
+ADD https://bintray.com/artifact/download/rackhd/binary/syslinux/undionly.kkpxe \
+    /RackHD/downloads/undionly.kkpxe
+
 
 RUN mkdir -p /RackHD/downloads/common
 
