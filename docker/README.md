@@ -1,68 +1,82 @@
-# RackHD on Docker instructions.
+# Using Docker to run RackHD along with ELK.
 
 Copyright 2016, EMC, Inc.
 
+## On Mac OS X.
+
 **Prerequisites:**
-  * Install Vagrant on your system. See https://www.vagrantup.com/docs/installation/
-    NOTE: Make sure you install version 1.9.1 -- https://github.com/docker/toolbox/releases/tag/v1.9.1j
-  * Install Docker Toolbox on your system. See https://www.docker.com/products/docker-toolbox
+  * Install Vagrant. See https://www.vagrantup.com/docs/installation/
+  * Install Docker Toolbox. See https://www.docker.com/products/docker-toolbox
 
 ```
 $ cd RackHD/docker
-$ vagrant up b2d              # Spin up custom boot2docker vm.
+$ ./docker_vm_up.bash         # Spin up boot2docker.iso vagrant box.
 $ . export_docker_host.bash   # Point docker host to b2d vm.
-$ docker-compose up           # Run RackHD on Docker with ELK.
+$ docker-compose up           # Run RackHD and ELK.
 ```
 
-Exposed Services:
-* http://127.0.0.1:15672/ - RabbitMQ Managment
-* http://127.0.0.1:5601/ - Kibana
-* http://127.0.0.1:9090/docs - RackHD Docs
-* http://127.0.0.1:9090/ui - RackHD UI
-* http://127.0.0.1:9200/ - Elasticsearch
+## On a Linux host.
 
-## Running on Linux host with Docker.
 
-Make sure you clone the RackHD repo to the system root: `/RackHD`. Or create a symbolic link.
-
-This is required because the volumes in the `docker-compose.yml` assume that RackHD is located at the root. The reason for this is to allow the mounts to work within a vagrant VM. If you look at the `docker/Vagrantfile` you'll see the RackHD repo is shared a shared directory.
-
-No need to have vagrant installed unless you want to run the RackHD docker containers in a VM on Linux.
-
-Both `docker` and `docker-compose` are still required.
+**Prerequisites:**
+  * docker v1.10
+  * docker-compose v1.6
 
 ```
-$ cd /RackHD/docker
-$ docker-compose start
+$ cd RackHD/docker
+$ docker-compose pull         # Download prebuilt docker images.
+$ docker-compose start        # Run RackHD and ELK.
 ```
 
-Warning: This will run `dhcpd` on `eth1`, however you can change the configuration at `/RackHD/docker/dhcp/config/dhcpd.conf` and `/RackHD/docker/dhcp/defaults/isc-dhcp-server`. Restart `rackhd/on-taskgraph` and the changes will take effect.
+## Once RackHD and ELK are running.
 
-Avoid binding to any of the ports RackHD or ELK uses:
-  * 67
-  * 68
-  * 69
-  * 514
-  * 4011
-  * 5000
-  * 5601
-  * 5672
-  * 8080
-  * 8090
-  * 8125
-  * 9200
-  * 9300
-  * 15672
-  * 25672
-  * 27017
+Open http://127.0.0.1:9090 in a web browser.
 
-## Rebuilding images for development.
+The `index.html` file being service is located at: `RackHD/docker/monorail/static/http`.
+
+You can actually edit this file and refresh your browser to see your changes.
+
+## How to change RackHD config.
+
+Simply edit the `RackHD/docker/monorail/config.json` file and restart your containers.
+
+```
+docker-compose restart        # Restart RackHD and ELK.
+```
+
+## Rebuild RackHD images for development.
+
+It is recommended that you uncomment the `core` RackHD service before developing RackHD. This service doesn't need to run but it should be rebuilt before other RackHD images are built.
 
 ```
 $ ../scripts/reset_submodules.bash  # Fetch latest submodules.
-$ ./build_images.bash               # Build RackHD Docker images.
-$ docker-compose restart            # Restart RackHD containers.
+$ docker-compose build              # Build RackHD Docker images.
+$ docker-compose kill               # Force stop running RackHD/ELK containers.
+$ docker-compose rm -f              # Remove previous RackHD/ELK containers.
+$ docker-compose create             # Create new RackHD/ELK containers.
+$ docker-compose start              # Run RackHD and ELK.
+$ docker-compose logs               # Show docker logs.
 ```
 
-#### Using docker on the EMC network:
+## DHCP Server runs by default.
+
+By default this will run `dhcpd` on `eth1`, however you can change the configuration at `RackHD/docker/dhcp/config/dhcpd.conf` and `RackHD/docker/dhcp/defaults/isc-dhcp-server`.
+
+Restart `rackhd/isc-dhcp-server` and the changes will take effect.
+
+The `dhcpd.leases` file is shared between docker containers using a docker volume.
+
+You can disable the DHCP server by commenting it out the `docker-compose.yml` file.
+
+Or after you've started all containers you can run:
+
+```
+$ docker-compose kill dhcp    # Stop the DHCP server.
+```
+
+## Shared on-http and on-tftp files.
+
+The `rackhd/files` image shares `on-http` and `on-tftp` file downloads with the host machine. **Experimental**
+
+## Using docker on the EMC network:
 https://github.com/emccode/training/tree/master/docker-workshops/docker-platform-intro/lab1-your-first-container#for-emc-employees-only

@@ -1,4 +1,6 @@
 .vagrant
+docker/files/mount
+docker/tls
 example/config/monorail_rack.cfg
 example/bin/pxe*
 *.vdi
