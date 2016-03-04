@@ -16,3 +16,5 @@ PXE_COUNT=1
 # Select single repo to be synchronized with the vagrant instance (optional, requires WORKSPACE to be set).
 # REPO=on-http
 
+# Select directory for customized config file (optional, requires WORKSPACE to be set).
+# CONFIG_DIR=packer\ansible\roles\monorail\files\auth_config

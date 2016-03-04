@@ -7,6 +7,7 @@ from profiles_tests import ProfilesTests
 from config_tests import ConfigTests
 from workflowTasks_tests import WorkflowTasksTests
 from workflows_tests import WorkflowsTests
+from auth_tests import AuthTests
 
 tests = [
     'nodes.tests',
@@ -16,5 +17,6 @@ tests = [
     'profiles.tests'
     'config.tests',
     'workflowTasks.tests',
-    'workflows.tests'
+    'workflows.tests',
+    'auth.tests'
 ]
