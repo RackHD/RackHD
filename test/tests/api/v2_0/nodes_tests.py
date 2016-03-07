@@ -76,7 +76,7 @@ class NodesTests(object):
         }
 
     def check_compute_count(self):
-        Api().nodes_get_all();
+        Api().nodes_get_all()
         nodes = loads(self.__client.last_response.data)
         count = 0
         for n in nodes:
@@ -125,7 +125,7 @@ class NodesTests(object):
     @test(groups=['test-nodes-api2'], depends_on_groups=['nodes.api2.discovery.test'])
     def test_nodes(self):
         """ Testing GET:/api/2.0/nodes """
-        Api().nodes_get_all();
+        Api().nodes_get_all()
         nodes = loads(self.__client.last_response.data)
         LOG.debug(nodes,json=True)
         assert_not_equal(0, len(nodes), message='Node list was empty!')
@@ -133,15 +133,15 @@ class NodesTests(object):
     @test(groups=['test-node-id-api2'], depends_on_groups=['test-nodes-api2'])
     def test_node_id(self):
         """ Testing GET:/api/2.0/nodes/:id """
-        Api().nodes_get_all();
+        Api().nodes_get_all()
         nodes = loads(self.__client.last_response.data)
         LOG.debug(nodes,json=True)
         codes = []
         for n in nodes:
-            LOG.info(n)
+            LOG.info(n,json=True)
             if n.get('type') == 'compute':
                 uuid = n.get('id')
-                Api().nodes_get_by_id(identifier=uuid);
+                Api().nodes_get_by_id(identifier=uuid)
                 rsp = self.__client.last_response
                 codes.append(rsp)
         assert_not_equal(0, len(codes), message='Failed to find compute node Ids')
@@ -154,14 +154,14 @@ class NodesTests(object):
         """ Testing POST:/api/2.0/nodes/ """
         for n in self.__test_nodes:
             LOG.info('Creating node (name={0})'.format(n.get('name')))
-            Api().nodes_post(identifiers=n);
+            Api().nodes_post(identifiers=n)
             rsp = self.__client.last_response
             assert_equal(201, rsp.status, message=rsp.reason)
 
     @test(groups=['test-node-id-obm-api2'], depends_on_groups=['create-node-api2'])
     def test_node_id_obm(self):
         """ Testing GET:/api/2.0/nodes/:id/obm """
-        Api().nodes_get_all();
+        Api().nodes_get_all()
         nodes = loads(self.__client.last_response.data)
         LOG.debug(nodes,json=True)
         codes = []
@@ -182,20 +182,20 @@ class NodesTests(object):
     def test_node_patch(self):
         """ Testing PATCH:/api/2.0/nodes/:id """
         data = {"name": 'fake_name_test'}
-        Api().nodes_get_all();
+        Api().nodes_get_all()
         nodes = loads(self.__client.last_response.data)
         codes = []
         for n in nodes:
             if n.get('name') == 'test_compute_node':
                 uuid = n.get('id')
-                Api().nodes_patch_by_id(identifier=uuid,body=data);
+                Api().nodes_patch_by_id(identifier=uuid,body=data)
                 rsp = self.__client.last_response
                 test_nodes = loads(self.__client.last_response.data)
                 assert_equal(test_nodes.get('name'), 'fake_name_test', 'Oops patch failed')
                 codes.append(rsp)
                 LOG.info('Restoring name to "test_compute_node"')
                 correct_data = {"name": 'test_compute_node'}
-                Api().nodes_patch_by_id(identifier=uuid,body=correct_data);
+                Api().nodes_patch_by_id(identifier=uuid,body=correct_data)
                 rsp = self.__client.last_response
                 restored_nodes = loads(self.__client.last_response.data)
                 assert_equal(restored_nodes.get('name'), 'test_compute_node', 'Oops restoring failed')
@@ -218,7 +218,7 @@ class NodesTests(object):
             if name in test_names:
                 uuid = n.get('id')
                 LOG.info('Deleting node {0} (name={1})'.format(uuid, name))
-                Api().nodes_del_by_id(identifier=uuid);
+                Api().nodes_del_by_id(identifier=uuid)
                 codes.append(self.__client.last_response)
 
         assert_not_equal(0, len(codes), message='Delete node list empty!')
@@ -248,7 +248,7 @@ class NodesTests(object):
         nodes = loads(self.__client.last_response.data)
         for n in nodes:
             if n.get('type') == 'compute':
-                Api().nodes_get_catalog_source_by_id(identifier=n.get('id'), source='bmc');
+                Api().nodes_get_catalog_source_by_id(identifier=n.get('id'), source='bmc')
                 resps.append(self.__client.last_response)
         for resp in resps:
             assert_equal(200,resp.status, message=resp.reason)
@@ -310,7 +310,7 @@ class NodesTests(object):
                         message='No active Workflows found for Node {0}'.format(id))
         assert_raises(rest.ApiException, Api().nodes_del_active_workflow_by_id, 'fooey')
 
-    @test(groups=['node_tags_patch'])#, depends_on_groups=['nodes.api2.discovery.test'])
+    @test(groups=['node_tags_patch'], depends_on_groups=['node_workflows_del_active-api2'])
     def test_node_tags_patch(self):
         """ Testing PATCH:/api/2.0/nodes/:id/tags """
         codes = []
