@@ -228,14 +228,14 @@ packer and [atlas](http://atlas.hashicorp.com).
 ```
 # monorail_rack.cfg
 # used to customize default deployment
-# edit $pxe_count to change the amount of virtualbox PXE-booting clients are created when running
+# edit $PXE_COUNT to change the amount of virtualbox PXE-booting clients are created when running
 # the monorail_rack setup script.
 
 # deployment variables
-pxe_count=1
+PXE_COUNT=1
 ```
 
-Changing the number of `pxe_count` within the running configuration script will
+Changing the number of `PXE_COUNT` within the running configuration script will
 effect how many headless pxe clients are created when running the monorail_rack
 setup script.
 
