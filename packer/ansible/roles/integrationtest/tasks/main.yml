@@ -1,0 +1,6 @@
+---
+- name: install integration test requirements
+  apt: pkg={{ item }} state=installed
+  with_items:
+    - python-virtualenv
+  sudo: yes

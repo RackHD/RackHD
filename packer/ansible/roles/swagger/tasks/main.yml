@@ -11,3 +11,8 @@
   shell: git clone --branch v2.1.5 https://github.com/swagger-api/swagger-codegen.git
   args:
     chdir: /home/vagrant/src/on-http
+
+- name: Build the codegen tooling
+  shell: mvn package
+  args:
+    chdir: /home/vagrant/src/on-http/swagger-codegen
