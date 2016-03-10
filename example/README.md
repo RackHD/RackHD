@@ -17,7 +17,7 @@ and [Ansible](http://docs.ansible.com/ansible/intro_installation.html)
 installed onto your system in order to use this script.
 
 **NOTE**: Do not use Vagrant 1.8.0, as the private network settings don't appear
-to be working correctly. Bug filed upstream with Vagrant at 
+to be working correctly. Bug filed upstream with Vagrant at
 https://github.com/mitchellh/vagrant/issues/6730.
 
 
@@ -261,3 +261,28 @@ README and is set up to host the UI externally to the RackHD. Follow the
 README instructions in that repository to run the application, and you can
 change the settings while running to point to this instance of RackHD at
 `https://localhost:9090/`
+
+# Running Integration Tests
+
+* create the vagrant demo setup and update code to the latest version
+
+`vagrant ssh`:
+
+    cd ~/src
+    ./scripts/clean_all.bash && ./scripts/reset_submodules.bash && ./scripts/link_install_locally.bash
+    cd ~
+    sudo nf start
+
+* log in to the same VM with another shell and start the tests
+
+`vagrant ssh`:
+
+    cd ~/src/test
+    virtualenv .venv
+    source .venv/bin/activate
+    pip install -r requirements.txt
+    RACKHD_PORT=8080 RACKHD_AMQP_URL=amqp://localhost python run.py
+
+* start a PXE booting VM on the `closednet` to trigger the tests to complete
+
+    VBoxManage startvm pxe-1 --type gui
