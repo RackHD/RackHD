@@ -105,7 +105,7 @@ class LookupsTests(object):
         try:
             Lookups().lookups_post(self.lookup)
         except Exception,e:
-           assert_equal(500,e.status, message = 'status should be 505')
+           assert_equal(400,e.status, message = 'status should be 400')
 
     @test(groups=['check-patch-lookup'],depends_on_groups=['check-lookups-query','check-post-lookup','check-post-lookup-negativeTesting'])
     def patch_lookup(self):
