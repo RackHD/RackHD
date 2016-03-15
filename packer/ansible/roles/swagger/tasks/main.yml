@@ -1,0 +1,18 @@
+---
+- name: Install Maven and Swagger build Tools
+  apt: pkg={{ item }} state=installed
+  with_items:
+    - openjdk-7-jdk
+    - maven
+    - libkrb5-dev
+  sudo: yes
+
+- name: Grab Swagger CodeGen Tooling
+  shell: git clone --branch v2.1.5 https://github.com/swagger-api/swagger-codegen.git
+  args:
+    chdir: /home/vagrant/src/on-http
+
+- name: Build the codegen tooling
+  shell: mvn package
+  args:
+    chdir: /home/vagrant/src/on-http/swagger-codegen

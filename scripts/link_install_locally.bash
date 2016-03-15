@@ -60,3 +60,16 @@ for repo in ${REPOS}; do
     fi
     popd
 done
+
+# last set, generate documentation
+pushd "${SCRIPT_DIR}/../on-http"
+    npm run apidoc
+    ./install-swagger-ui.sh
+    ./install-web-ui.sh
+    git clone --branch v2.1.5 https://github.com/swagger-api/swagger-codegen.git
+    pushd ./swagger-codegen && mvn package && popd
+    java -jar ./swagger-codegen/modules/swagger-codegen-cli/target/swagger-codegen-cli.jar generate -i static/monorail.yml -o on-http-api1.1 -l python --additional-properties packageName=on_http_api1_1
+    java -jar ./swagger-codegen/modules/swagger-codegen-cli/target/swagger-codegen-cli.jar generate -i static/monorail-2.0.yaml -o on-http-api2.0 -l python --additional-properties packageName=on_http_api2_0
+    java -jar ./swagger-codegen/modules/swagger-codegen-cli/target/swagger-codegen-cli.jar generate -i static/redfish.yaml -o on-http-redfish-1.0 -l python --additional-properties packageName=on_http_redfish_1_0
+popd
+
