@@ -74,8 +74,8 @@ class PollersTests(object):
             data = loads(self.__client.last_response.data)
 
             assert_equal(200, result.status, message=result.reason)
-            assert_equal(data, poller)
-
+            for key in ['pollInterval', 'paused', 'type', 'config']:
+                assert_equal(data[key], poller[key])
         try:
             Api().pollers_id_get(identifier='does_not_exist')
         except ApiException as e:
