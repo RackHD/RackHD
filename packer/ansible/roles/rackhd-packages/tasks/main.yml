@@ -3,6 +3,9 @@
 - shell: "apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 379CE192D401AB61"
   sudo: yes
 
+# apt_repository apparently requires this to run in Ansible 1.5
+- apt: pkg=python-pycurl state=present
+
 - apt_repository: repo="deb https://dl.bintray.com/rackhd/debian trusty main"
                   state=present
   sudo: yes
