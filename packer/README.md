@@ -23,6 +23,19 @@ enable:
 
     packer build -only=virtualbox-iso template-packages.json
 
+
+## To use ansible roles to install locally
+
+    sudo apt-get install ansible
+
+and then:
+
+    ansible-playbook -c local -i "local," rackhd_package.yml
+
+or
+
+    ansible-playbook -c local -i "local," rackhd_local.yml
+
 ### License notes
 
 These scripts and templates are under an MPL-2.0 license due to leveraging
