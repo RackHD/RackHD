@@ -1,0 +1,27 @@
+---
+- name: retrieve apt-key from bintray
+  apt_key: keyserver=keyserver.ubuntu.com id=379CE192D401AB61
+  sudo: yes
+
+- apt_repository: repo="deb https://dl.bintray.com/rackhd/debian trusty main"
+                  state=present
+  sudo: yes
+
+- name: Install RackHD Packages
+  apt: pkg="{{ item }}" state=latest
+  with_items:
+    - on-dhcp-proxy
+    - on-http
+    - on-taskgraph
+    - on-tftp
+    - on-syslog
+  sudo: yes
+
+- file: path=""/etc/default/{{ item }}"" state=touch
+  with_items:
+    - on-dhcp-proxy
+    - on-http
+    - on-taskgraph
+    - on-tftp
+    - on-syslog
+  sudo: yes

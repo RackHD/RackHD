@@ -7,18 +7,21 @@ homebrew:
     brew install packer
 
 or retrieving it from the download available at https://www.packer.io/downloads.html
+The builds are pre-configured with post-processors to push the results to
+ATLAS, and need relevant configuration set in environment variables to
+enable:
 
-## To build locally
+    export ATLAS_USERNAME=${USER}
+    export ATLAS_NAME=rackhd
+    export ATLAS_TOKEN="..........................."
+
+## To build locally (using code from source)
 
     packer build -only=virtualbox-iso template.json
-    packer push -name=$ATLAS_USERNAME/rackhd template.json
 
-## To build with ATLAS
+## To build locally (using pre-built debian packages)
 
-Set up your ATLAS_USERNAME and ATLAS_TOKEN environment variables
-with your username and API access token from Atlas, then invoke:
-
-    packer push -name=$ATLAS_USERNAME/rackhd template.json
+    packer build -only=virtualbox-iso template-packages.json
 
 ### License notes
 

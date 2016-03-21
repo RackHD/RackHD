@@ -1,5 +1,5 @@
 ---
-- name: Install Build Tools
+- name: Install NodeJS Packages
   apt: pkg={{ item }} state=installed
   with_items:
     - nodejs
