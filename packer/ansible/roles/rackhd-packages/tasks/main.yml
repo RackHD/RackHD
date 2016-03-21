@@ -1,6 +1,6 @@
 ---
-- name: retrieve apt-key from bintray
-  apt_key: keyserver=keyserver.ubuntu.com id=379CE192D401AB61
+# vagrant ansible uses 1.5, which doesn't have the keyserver option enabled
+- shell: "apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 379CE192D401AB61"
   sudo: yes
 
 - apt_repository: repo="deb https://dl.bintray.com/rackhd/debian trusty main"
@@ -17,7 +17,7 @@
     - on-syslog
   sudo: yes
 
-- file: path=""/etc/default/{{ item }}"" state=touch
+- file: path="/etc/default/{{ item }}" state=touch
   with_items:
     - on-dhcp-proxy
     - on-http
