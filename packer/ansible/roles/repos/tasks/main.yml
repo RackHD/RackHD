@@ -2,20 +2,34 @@
 - name: Init git submodules
   shell: git submodule init
   args:
-    chdir: /home/vagrant/src
+    chdir: "{{ ansible_env.HOME }}/src/"
   sudo: yes
 
 - name: Populate git submodules
   shell: git submodule update
   args:
-    chdir: /home/vagrant/src
+    chdir: "{{ ansible_env.HOME }}/src/"
+  sudo: yes
+
+- name: Update git repos with latest
+  shell: git fetch --all --prune
+  args:
+    chdir: "{{ ansible_env.HOME }}/src/{{ item }}"
+  with_items:
+    - on-core
+    - on-tasks
+    - on-http
+    - on-tftp
+    - on-dhcp-proxy
+    - on-taskgraph
+    - on-syslog
   sudo: yes
 
 - name: Reset to the branch specified
   shell: git reset --hard {{ branch }}
   when: branch is defined
   args:
-    chdir: /home/vagrant/src/{{ item }}
+    chdir: "{{ ansible_env.HOME }}/src/{{ item }}"
   with_items:
     - on-core
     - on-tasks
@@ -29,30 +43,22 @@
 - name: clean any local installation
   shell: './src/scripts/clean_all.bash'
   args:
-    chdir: /home/vagrant
-
-- shell: df -h
-  register: df_echo
-- debug: msg="{{df_echo.stdout}}"
+    chdir: "{{ ansible_env.HOME }}"
 
 - name: Link and install locally
   shell: './src/scripts/link_install_locally.bash'
   args:
-    chdir: /home/vagrant
+    chdir: "{{ ansible_env.HOME }}"
 
 - name: Make common static directory
-  file: path=/home/vagrant/src/on-http/static/http/common state=directory
+  file: path={{ ansible_env.HOME }}/src/on-http/static/http/common state=directory
 
 - name: Npm install apidoc
   shell: 'npm install apidoc'
   args:
-    chdir: /home/vagrant/src/on-http
+    chdir: "{{ ansible_env.HOME }}/src/on-http"
 
 - name: Render API docs for local reference
   shell: 'npm run apidoc'
   args:
-    chdir: /home/vagrant/src/on-http
-
-- shell: df -h
-  register: df_echo
-- debug: msg="{{df_echo.stdout}}"
+    chdir: "{{ ansible_env.HOME }}/src/on-http"
