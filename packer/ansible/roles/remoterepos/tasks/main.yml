@@ -56,3 +56,9 @@
   shell: "npm run apidoc"
   args:
     chdir: "{{ ansible_env.HOME }}/src/on-http"
+
+- name: set HTTP static directory for RackHD
+  set_fact: http_static_directory="{{ ansible_env.HOME }}/src/on-http/static/http"
+
+- name: set TFTP static directory for RackHD
+  set_fact: tftp_static_directory="{{ ansible_env.HOME }}/src/on-tftp/static/tftp"

@@ -1,7 +1,15 @@
 ---
+- file: path="{{ http_static_directory }}/common" state=directory
+        owner="{{ ansible_env.USER }}" mode=0755
+  sudo: yes
+
+- file: path="{{ tftp_static_directory }}" state=directory
+        owner="{{ ansible_env.USER }}" mode=0755
+  sudo: yes
+
 - name: retrieve microkernel and overlays from bintray
   get_url: url="https://bintray.com/artifact/download/rackhd/binary/builds/{{ item }}"
-           dest="{{ ansible_env.HOME }}/src/on-http/static/http/common/{{ item }}"
+           dest="{{ http_static_directory }}/common/{{ item }}"
            validate_certs=no
            force=yes
   with_items:
@@ -12,7 +20,7 @@
 
 - name: retrieve the latest bootloaders from bintray
   get_url: url="https://bintray.com/artifact/download/rackhd/binary/ipxe/{{ item }}"
-           dest="{{ ansible_env.HOME }}/src/on-tftp/static/tftp/{{ item }}"
+           dest="{{ tftp_static_directory }}/{{ item }}"
            validate_certs=no
            force=yes
   with_items:
@@ -22,7 +30,7 @@
 
 - name: retrieve the latest syslinux bootloader from bintray
   get_url: url="https://bintray.com/artifact/download/rackhd/binary/syslinux/{{ item }}"
-           dest="{{ ansible_env.HOME }}/src/on-tftp/static/tftp/{{ item }}"
+           dest="{{ tftp_static_directory }}/{{ item }}"
            validate_certs=no
            force=yes
   with_items:
