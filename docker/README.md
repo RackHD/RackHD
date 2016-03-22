@@ -20,7 +20,7 @@ $ docker-compose up           # Run RackHD and ELK.
 
 **Prerequisites:**
   * docker v1.10
-  * docker-compose v1.6
+  * ~~docker-compose v1.6~~ (Recommended but not required.)
 
 ```
 $ cd RackHD/docker
@@ -78,5 +78,35 @@ $ docker-compose kill dhcp    # Stop the DHCP server.
 
 The `rackhd/files` image shares `on-http` and `on-tftp` file downloads with the host machine. **Experimental**
 
-## Using docker on the EMC network:
+## Using Docker on the EMC network:
+If you're trying to run this example inside the EMC see:
 https://github.com/emccode/training/tree/master/docker-workshops/docker-platform-intro/lab1-your-first-container#for-emc-employees-only
+
+## Discovering a VirtualBox VM in RackHD.
+
+This example is meant to run on Mac OS X or if you're using VirtualBox to run RackHD on Docker.
+
+```
+$ NAME=pxe-1 ./create_pxe_vm.bash   # Creates PXE VM in VirtualBox.
+```
+
+Now start `pxe-1` from VirtualBox. You should see it boot and auto automatically get discovered and catalogs by RackHD.
+
+If the VM boots and is not discovered make sure you used './docker_vm_up.bash' to setup your `boot2docker.iso` VM. Otherwise it will not discover your PXE VM.
+
+## Troubleshoot common Vagrant issues.
+  If running `./docker_vm_up.bash` fails:
+    * By default the b2d vagrant vm exposes all related ports. Some of which are only necessary for development and debugging. You can disable any ports you do not wish to use, or change the which port on the host they map too.
+    * Ensure you have the right version of Vagrant for VirtualBox. Later versions of VirtualBox require a more recent version of Vagrant.
+
+## Running this example without `docker-compose`.
+
+For convenience there are alternative scripts you can use instead of `docker-compose`.
+
+```
+$ ./scripts/compose_services.bash    # Run all RackHD/ELK docker containers.
+$ ./scripts/follow_services.bash     # Follow all RackHD/ELK logs.
+$ ./scripts/restart_services.bash    # Restart all RackHD/ELK docker containers.
+$ ./scripts/stop_services.bash       # Stop all RackHD/ELK docker containers.
+$ ./scripts/remove_services.bash     # Remove all RackHD/ELK docker containers
+```

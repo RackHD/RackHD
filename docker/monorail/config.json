@@ -37,11 +37,6 @@
     "httpFileServiceType": "FileSystem",
     "httpProxies": [
       {
-          "localPath": "/common",
-          "server": "https://bintray.com",
-          "remotePath": "/artifact/download/rackhd/binary/builds/"
-      },
-      {
         "localPath": "/coreos",
         "server": "http://stable.release.core-os.net",
         "remotePath": "/amd64-usr/current/"
