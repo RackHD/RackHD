@@ -3,6 +3,10 @@
       "name": "",
       "vcs": true
     },
+    "variables": {
+        "atlas_username": "{{ env `ATLAS_USERNAME` }}",
+        "atlas_name": "{{ env `ATLAS_NAME` }}"
+    },
     "provisioners": [
         {
             "type": "shell",
