@@ -17,7 +17,6 @@
     - on-dhcp-proxy
     - on-taskgraph
     - on-syslog
-  sudo: yes
 
 - name: Reset to the branch specified
   shell: git reset --hard {{ branch }}
@@ -32,7 +31,6 @@
     - on-dhcp-proxy
     - on-taskgraph
     - on-syslog
-  sudo: yes
 
 - name: Npm install Repos
   npm: path="{{ ansible_env.HOME }}/src/{{ item }}"
