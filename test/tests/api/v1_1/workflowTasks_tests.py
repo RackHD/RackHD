@@ -39,17 +39,19 @@ class WorkflowTasksTests(object):
         assert_equal(200,self.__client.last_response.status)
         assert_not_equal(0, len(json.loads(self.__client.last_response.data)), message='Workflow tasks list was empty!')
 
+    def __get_data(self):
+        return loads(self.__client.last_response.data)
 
     @test(groups=['workflowTasks_library_put'], depends_on_groups=['workflowTasks_library_get'])
     def test_workflowTasks_put(self):
         """ Testing PUT:/workflowTasks """
         #Get the number of workflowTasks before we add one
         WorkflowTasks().workflows_tasks_library_get()
-        workflowTasksBefore = len(json.loads(self.__client.last_response.data))
+        data = self.__get_data()
+        workflowTasksBefore = len(data)
 
         #Making sure that there is no workflowTask with the same name from previous test runs
-        rawj=  json.loads(self.__client.last_response.data)
-        listLen =len(json.loads(self.__client.last_response.data))
+        rawj = data
         inList = False
         for i, val in enumerate (rawj):
             if ( self.workflowTaskDict['friendlyName'] ==  str (rawj[i].get('friendlyName')) or inList ):
@@ -60,27 +62,29 @@ class WorkflowTasksTests(object):
                 inameList = str (rawj[i].get('injectableName')).split('_')
                 self.workflowTaskDict['injectableName']= inameList[0]+ '_' + str(suffix)
 
+        LOG.debug(rawj, json=True)
+
         #adding a workflow task
-        LOG.info ("Adding workflow task : " +  str(self.workflowTaskDict))
+        LOG.info("Adding workflow task: ")
+        LOG.info(self.workflowTaskDict, json=True)
         WorkflowTasks().workflows_tasks_put(body=self.workflowTaskDict)
-        resp= self.__client.last_response
+        resp = self.__client.last_response
         assert_equal(200,resp.status)
 
         #Getting the number of profiles after we added one
         WorkflowTasks().workflows_tasks_library_get()
-        workflowTasksAfter = len(json.loads(self.__client.last_response.data))
-        resp= self.__client.last_response
+        data = self.__get_data()
+        resp = self.__client.last_response
+        workflowTasksAfter = len(data)
         assert_equal(200,resp.status, message=resp.reason)
 
         #Validating that the profile has been added
         assert_equal(workflowTasksAfter,workflowTasksBefore+1)
 
         #Validating the content is as expected
-        rawj=  json.loads(self.__client.last_response.data)
-        listLen =len(json.loads(self.__client.last_response.data))
-        readWorkflowTask= rawj[len(rawj)-1]
-        readFriendlyName= readWorkflowTask.get('friendlyName')
-        readInjectableName  = readWorkflowTask.get('injectableName')
+        readWorkflowTask = data[len(data)-1]
+        readFriendlyName = readWorkflowTask.get('friendlyName')
+        readInjectableName = readWorkflowTask.get('injectableName')
         assert_equal(readFriendlyName,self.workflowTaskDict.get('friendlyName'))
         assert_equal(readInjectableName,self.workflowTaskDict.get('injectableName'))
 

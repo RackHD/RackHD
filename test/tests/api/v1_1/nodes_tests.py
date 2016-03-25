@@ -12,9 +12,11 @@ from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_true
+from proboscis.asserts import fail
 from proboscis import SkipTest
 from proboscis import test
 from json import loads
+from time import sleep
 
 LOG = Log(__name__)
 
@@ -69,10 +71,34 @@ class NodesTests(object):
                 }]
             }
         ]
+    
+    def __get_data(self):
+        return loads(self.__client.last_response.data)
+
+    def __get_workflow_status(self, id):
+        Nodes().nodes_identifier_workflows_active_get(id)
+        status = self.__client.last_response.status
+        if status == 200:
+            data = self.__get_data()
+            status = data.get('_status')
+            assert_is_not_none(status)
+        return status
+
+    def __post_workflow(self, id, graph_name, data):
+        status = self.__get_workflow_status(id)
+        if status != 'pending' and status != 'running':
+            Nodes().nodes_identifier_workflows_post(id,graph_name,body=data)
+        timeout = 20
+        while status != 'pending' and status != 'running' and timeout != 0:
+            LOG.warning('Workflow status for Node {0} (status={1},timeout={2})'.format(id,status,timeout))
+            status = self.__get_workflow_status(id)
+            sleep(1)
+            timeout -= 1
+        return timeout
 
     def check_compute_count(self):
         Nodes().nodes_get()
-        nodes = loads(self.__client.last_response.data)
+        nodes = self.__get_data()
         count = 0
         for n in nodes:
             type = n.get('type')
@@ -94,7 +120,7 @@ class NodesTests(object):
     def handle_graph_finish(self,body,message):
         routeId = message.delivery_info.get('routing_key').split('graph.finished.')[1]
         Workflows().workflows_get()
-        workflows = loads(self.__client.last_response.data)
+        workflows = self.__get_data()
         for w in workflows:
             definition = w['definition']
             injectableName = definition.get('injectableName') 
@@ -121,7 +147,7 @@ class NodesTests(object):
     def test_nodes(self):
         """ Testing GET:/nodes """
         Nodes().nodes_get()
-        nodes = loads(self.__client.last_response.data)
+        nodes = self.__get_data()
         LOG.debug(nodes,json=True)
         assert_not_equal(0, len(nodes), message='Node list was empty!')
 
@@ -129,7 +155,7 @@ class NodesTests(object):
     def test_node_id(self):
         """ Testing GET:/nodes/:id """
         Nodes().nodes_get()
-        nodes = loads(self.__client.last_response.data)
+        nodes = self.__get_data()
         LOG.debug(nodes,json=True)
         codes = []
         for n in nodes:
@@ -157,7 +183,7 @@ class NodesTests(object):
     def test_node_id_obm(self):
         """ Testing GET:/nodes/:id/obm """
         Nodes().nodes_get()
-        nodes = loads(self.__client.last_response.data)
+        nodes = self.__get_data()
         LOG.debug(nodes,json=True)
         codes = []
         for n in nodes:
@@ -178,21 +204,21 @@ class NodesTests(object):
         """ Verify PATCH:/nodes/:id """
         data = {"name": 'fake_name_test'}
         Nodes().nodes_get()
-        nodes = loads(self.__client.last_response.data)
+        nodes = self.__get_data()
         codes = []
         for n in nodes:
             if n.get('name') == 'test_compute_node':
                 uuid = n.get('id')
                 Nodes().nodes_identifier_patch(uuid, data)
                 rsp = self.__client.last_response
-                test_nodes = loads(self.__client.last_response.data)
+                test_nodes = self.__get_data()
                 assert_equal(test_nodes.get('name'), 'fake_name_test', 'Oops patch failed')
                 codes.append(rsp)
                 LOG.info('Restoring name to "test_compute_node"')
                 correct_data = {"name": 'test_compute_node'}
                 Nodes().nodes_identifier_patch(uuid, correct_data)
                 rsp = self.__client.last_response
-                restored_nodes = loads(self.__client.last_response.data)
+                restored_nodes = self.__get_data()
                 assert_equal(restored_nodes.get('name'), 'test_compute_node', 'Oops restoring failed')
                 codes.append(rsp)
         assert_not_equal(0, len(codes), message='Failed to find compute node Ids')
@@ -206,7 +232,7 @@ class NodesTests(object):
         codes = []
         test_names = []
         Nodes().nodes_get()
-        nodes = loads(self.__client.last_response.data)
+        nodes = self.__get_data()
         test_names = [t.get('name') for t in self.__test_nodes]
         for n in nodes:
             name = n.get('name')
@@ -225,7 +251,7 @@ class NodesTests(object):
     def test_whitelist_node_create(self):
         """ Verify POST:/nodes/:mac/dhcp/whitelist """
         Nodes().nodes_get()
-        nodes = loads(self.__client.last_response.data)
+        nodes = self.__get_data()
         macList = []
         for n in nodes:
             type = n.get('type')
@@ -239,7 +265,7 @@ class NodesTests(object):
         for addr in macList:
             LOG.info('whitelisting MAC address {0}'.format(addr))
             Nodes().nodes_macaddress_dhcp_whitelist_post(addr,body={})
-            data = loads(self.__client.last_response.data)
+            data = self.__get_data()
             assert_not_equal(0, len(data))
             addrParsed = data[0].replace("-", ":")
             LOG.info(addrParsed)
@@ -249,7 +275,7 @@ class NodesTests(object):
     def test_whitelist_node_delete(self):
         """ Verify Delete:/nodes/:mac/dhcp/whitelist """
         Nodes().nodes_get()
-        nodes = loads(self.__client.last_response.data)
+        nodes = self.__get_data()
         for n in nodes:
             for i in n:
                 if i == 'identifiers':
@@ -267,13 +293,13 @@ class NodesTests(object):
         """ Testing GET id:/catalogs """
         resps = []
         Nodes().nodes_get()
-        nodes = loads(self.__client.last_response.data)
+        nodes = self.__get_data()
         for n in nodes:
             if n.get('type') == 'compute':
                 Nodes().nodes_identifier_catalogs_get( n.get('id'))
-                resps.append(self.__client.last_response.data)
+                resps.append(self.__get_data())
         for resp in resps:
-            assert_not_equal(0, len(loads(resp)), message='Node catalog is empty!')
+            assert_not_equal(0, len(resp), message='Node catalog is empty!')
         assert_raises(rest.ApiException, Nodes().nodes_identifier_catalogs_get, 'fooey')
 
     @test(groups=['catalog_source'], depends_on_groups=['catalog_nodes'])
@@ -281,7 +307,7 @@ class NodesTests(object):
         """ Testing GET id:/catalogs/source """
         resps = []
         Nodes().nodes_get()
-        nodes = loads(self.__client.last_response.data)
+        nodes = self.__get_data()
         for n in nodes:
             if n.get('type') == 'compute':
                 Nodes().nodes_identifier_catalogs_source_get( n.get('id'),'bmc')
@@ -295,13 +321,13 @@ class NodesTests(object):
         """Testing node GET:id/workflows"""
         resps = []
         Nodes().nodes_get()
-        nodes = loads(self.__client.last_response.data)
+        nodes = self.__get_data()
         for n in nodes:
             if n.get('type') == 'compute':
                 Nodes().nodes_identifier_workflows_get(n.get('id'))
-                resps.append(self.__client.last_response.data)
+                resps.append(self.__get_data())
         for resp in resps:
-            assert_not_equal(0, len(loads(resp)), message='No Workflows found for Node')
+            assert_not_equal(0, len(resp), message='No Workflows found for Node')
         assert_raises(rest.ApiException, Nodes().nodes_identifier_workflows_get, 'fooey')
 
     @test(groups=['node_post_workflows'], depends_on_groups=['node_workflows'])
@@ -309,40 +335,46 @@ class NodesTests(object):
         """Testing node POST:id/workflows"""
         resps = []
         Nodes().nodes_get()
-        nodes = loads(self.__client.last_response.data)
+        nodes = self.__get_data()
         for n in nodes:
             if n.get('type') == 'compute':
-                Nodes().nodes_identifier_workflows_post(n.get('id'),'Graph.Discovery',body={})
-                resps.append(self.__client.last_response.data)
+                id = n.get('id')
+                timeout = self.__post_workflow(id,'Graph.Discovery',{})
+                if timeout > 0:
+                    data = self.__get_data()
+                resps.append({'data': data, 'id':id})
         for resp in resps:
-            assert_not_equal(0, len(loads(resp)), message='No Workflows found for Node')
+            assert_not_equal(0, len(resp['data']), 
+                message='No Workflows found for Node {0}'.format(resp['id']))
         assert_raises(rest.ApiException, Nodes().nodes_identifier_workflows_post, 'fooey','Graph.Discovery',body={})
 
     @test(groups=['node_workflows_active'], depends_on_groups=['node_post_workflows'])
     def test_node_workflows_active(self):
         """Testing node GET:id/workflows/active"""
-        resps = []
-        Nodes().nodes_get()
-        nodes = loads(self.__client.last_response.data)
-        for n in nodes:
-            if n.get('type') == 'compute':
-                Nodes().nodes_identifier_workflows_active_get(n.get('id'))
-                resps.append(self.__client.last_response.data)
-        for resp in resps:
-            assert_not_equal(0, len(loads(resp)), message='No active Workflows found for Node')
+        # test_node_workflows_post verifies the same functionality
+        self.test_node_workflows_post()
         assert_raises(rest.ApiException, Nodes().nodes_identifier_workflows_active_get, 'fooey')
 
     @test(groups=['node_workflows_del_active'], depends_on_groups=['node_workflows_active'])
     def test_node_workflows_del_active(self):
         """Testing node DELETE:id/workflows/active"""
         Nodes().nodes_get()
-        nodes = loads(self.__client.last_response.data)
+        nodes = self.__get_data()
         for n in nodes:
             if n.get('type') == 'compute':
                 id = n.get('id')
-                assert_is_not_none(id)
-                Nodes().nodes_identifier_workflows_active_delete(id)
-                assert_equal(0, len(self.__client.last_response.data), 
-                        message='No active Workflows found for Node {0}'.format(id))
+                timeout = 5
+                done = False
+                while timeout > 0 and done == False:
+                    if 0 == self.__post_workflow(id,'Graph.Discovery',{}):
+                        fail('Timed out waiting for graph to start!')
+                    try:
+                        Nodes().nodes_identifier_workflows_active_delete(id)
+                        done = True
+                    except rest.ApiException as e:
+                        if e.status != 404:
+                            raise e
+                        timeout -= 1
         assert_raises(rest.ApiException, Nodes().nodes_identifier_workflows_active_delete, 'fooey')
+
 
