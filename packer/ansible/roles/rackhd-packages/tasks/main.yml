@@ -1,0 +1,37 @@
+---
+# vagrant ansible uses 1.5, which doesn't have the keyserver option enabled
+- shell: "apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 379CE192D401AB61"
+  sudo: yes
+
+# apt_repository apparently requires this to run in Ansible 1.5
+- apt: pkg=python-pycurl state=present
+  sudo: yes
+
+- apt_repository: repo="deb https://dl.bintray.com/rackhd/debian trusty main"
+                  state=present
+  sudo: yes
+
+- name: Install RackHD Packages
+  apt: pkg="{{ item }}" state=latest
+  with_items:
+    - on-dhcp-proxy
+    - on-http
+    - on-taskgraph
+    - on-tftp
+    - on-syslog
+  sudo: yes
+
+- file: path="/etc/default/{{ item }}" state=touch
+  with_items:
+    - on-dhcp-proxy
+    - on-http
+    - on-taskgraph
+    - on-tftp
+    - on-syslog
+  sudo: yes
+
+- name: set HTTP static directory for RackHD
+  set_fact: http_static_directory="/var/renasar/on-http/static/http"
+
+- name: set TFTP static directory for RackHD
+  set_fact: tftp_static_directory="/var/renasar/on-tftp/static/tftp"

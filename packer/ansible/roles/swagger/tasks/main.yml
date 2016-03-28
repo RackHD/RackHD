@@ -10,9 +10,9 @@
 - name: Grab Swagger CodeGen Tooling
   shell: git clone --branch v2.1.5 https://github.com/swagger-api/swagger-codegen.git
   args:
-    chdir: /home/vagrant/src/on-http
+    chdir: "{{ ansible_env.HOME }}/src/on-http"
 
 - name: Build the codegen tooling
   shell: mvn package
   args:
-    chdir: /home/vagrant/src/on-http/swagger-codegen
+    chdir: "{{ ansible_env.HOME }}/src/on-http/swagger-codegen"

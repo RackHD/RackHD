@@ -5,11 +5,11 @@
   sudo: yes
 
 - name: Install n
-  shell: yes | N_PREFIX=/home/vagrant/n /tmp/n-install
+  shell: "yes | N_PREFIX={{ ansible_env.HOME }}/n /tmp/n-install"
   sudo: yes
   when: download_n|changed
 
 - name: Install node
-  shell: /home/vagrant/n/bin/n {{ node_version | default('0.10.37') }}
+  shell: "{{ ansible_env.HOME }}/n/bin/n {{ node_version | default('0.10.37') }}"
   sudo: yes
   when: download_n|changed

@@ -74,15 +74,18 @@ local machine.
 
 To view the list of nodes that has been discovered:
 
-    $ curl http://localhost:9090/api/1.1/nodes | python -m json.tool
+    curl http://localhost:9090/api/1.1/nodes | python -m json.tool
 
 
 View the list of catalogs logged into RackHD:
 
-    $ curl http://localhost:9090/api/1.1/catalogs | python -m json.tool
-
+    curl http://localhost:9090/api/1.1/catalogs | python -m json.tool
 
 (both of these should result in empty lists in a brand new installation)
+
+To view a list of all the existing workflows already in the RackHD definitions:
+
+    curl http://localhost:9090/api/1.1/workflows/library/* | python -m json.tool
 
 ### Install a default workflow for Virtualbox VMs and a SKUs definition
 
@@ -149,7 +152,6 @@ directory, you should be able to log in using:
     cp ~/src/on-http/data/rackhd_rsa ~/.ssh/id_rsa
     chmod 0400 ~/.ssh/id_rsa
     ssh core@172.31.128.2
-
 
 ## USING OTHER WORKFLOWS
 

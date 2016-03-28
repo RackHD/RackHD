@@ -3,10 +3,10 @@
   shell: npm install -g foreman
   sudo: yes
 
-- name: Copy foreman .env file to /home/vagrant/
-  copy: src=.env dest=/home/vagrant
+- name: Copy foreman .env file to home directory
+  copy: src=.env dest="{{ ansible_env.HOME }}"
   sudo: yes
 
-- name: Copy foreman Procfile to /home/vagrant/
-  copy: src=Procfile dest=/home/vagrant
+- name: Copy foreman Procfile to home directory
+  copy: src=Procfile dest="{{ ansible_env.HOME }}"
   sudo: yes
