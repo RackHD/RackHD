@@ -33,7 +33,7 @@
     "httpProxies": [{
         "localPath": "/coreos",
         "server": "http://stable.release.core-os.net",
-        "remotePath": "/amd64-usr/current/"
+        "remotePath": "/amd64-usr"
     }],
     "httpStaticRoot": "/opt/monorail/static/http",
     "minLogLevel": 3,
