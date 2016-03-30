@@ -89,10 +89,10 @@ class NodesTests(object):
                 assert_is_not_none(status)
         return status
         
-    def __post_workflow(self, id, graph_name, data):
+    def __post_workflow(self, id, graph_name):
         status = self.__get_workflow_status(id)
         if status != 'pending' and status != 'running':
-            Api().nodes_post_workflow_by_id(identifier=id, name=graph_name, body=data)
+            Api().nodes_post_workflow_by_id(identifier=id, name=graph_name, body={'name': graph_name})
         timeout = 20
         while status != 'pending' and status != 'running' and timeout != 0:
             LOG.warning('Workflow status for Node {0} (status={1},timeout={2})'.format(id,status,timeout))
@@ -303,7 +303,7 @@ class NodesTests(object):
         for n in nodes:
             if n.get('type') == 'compute':
                 id = n.get('id')
-                timeout = self.__post_workflow(id,'Graph.Discovery',{})
+                timeout = self.__post_workflow(id,'Graph.Discovery')
                 if timeout > 0:
                     data = self.__get_data()
                 resps.append({'data': data, 'id':id})
@@ -330,7 +330,7 @@ class NodesTests(object):
                 timeout = 5
                 done = False
                 while timeout > 0 and done == False:
-                    if 0 == self.__post_workflow(id,'Graph.Discovery',{}):
+                    if 0 == self.__post_workflow(id,'Graph.Discovery'):
                         fail('Timed out waiting for graph to start!')
                     try:
                         Api().nodes_del_active_workflow_by_id(identifier=id)
