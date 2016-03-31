@@ -1,0 +1,18 @@
+---
+- hosts: test_machine
+  tasks:
+    - name: Create log directory
+      file: path={{ test_machine_log_path }}
+            state=directory
+
+- hosts: rackhd
+  tasks:
+    - name: Stop data collection daemon
+      command: ./collect_data.sh -o stop chdir=/tmp
+
+    - name: fetch data from target machine
+      synchronize: src=/tmp/benchmark_log/
+                   dest={{ test_machine_log_path }}/{{ test_case_name }}
+                   mode=pull
+                   recursive=yes
+                   archive=yes

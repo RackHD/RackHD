@@ -9,3 +9,4 @@ pexpect==3.3
 on-http_api1_1>=1.0.0
 on-http_api2_0>=1.0.0
 on_http_redfish_1_0>=1.0.0
+ansible==1.8.4

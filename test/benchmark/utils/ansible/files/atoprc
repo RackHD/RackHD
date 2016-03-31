@@ -1,0 +1,4 @@
+flags   g
+linelen    120
+procname      mongod\|node\|beam.smp\|dhcpd
+ownprocline   PID:20 SYSCPU:15 USRCPU:15 VSIZE:12 RSIZE:12 RDDSK:1 WRDSK:1 RNET:12 SNET:12 RNETBW:12 SNETBW:12 SORTITEM:12 CMD:12
