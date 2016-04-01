@@ -133,12 +133,14 @@ services:
   # ELK services
 
   elasticsearch: # 9200, 9300
-    command: elasticsearch -Des.network.host=0.0.0.0
+    command: elasticsearch
     depends_on:
       - rabbitmq
     image: elasticsearch:latest
     network_mode: "host"
     privileged: true
+    volumes:
+      - "./elasticsearch/config:/usr/share/elasticsearch/config"
 
   logstash: # 5000
     command: logstash -f /etc/logstash/conf.d/logstash.conf

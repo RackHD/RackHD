@@ -16,22 +16,22 @@
     "gatewayaddr": "172.31.128.1",
     "httpDocsRoot": "./build/apidoc",
     "httpEndpoints": [
-        {
-            "address": "0.0.0.0",
-            "port": 9090,
-            "httpsEnabled": false,
-            "proxiesEnabled": true,
-            "authEnabled": false,
-            "routers": "northbound-api-router"
-        },
-        {
-            "address": "0.0.0.0",
-            "port": 9080,
-            "httpsEnabled": false,
-            "proxiesEnabled": true,
-            "authEnabled": false,
-            "routers": "southbound-api-router"
-        }
+      {
+          "address": "0.0.0.0",
+          "port": 9090,
+          "httpsEnabled": false,
+          "proxiesEnabled": true,
+          "authEnabled": false,
+          "routers": "northbound-api-router"
+      },
+      {
+          "address": "0.0.0.0",
+          "port": 9080,
+          "httpsEnabled": false,
+          "proxiesEnabled": true,
+          "authEnabled": false,
+          "routers": "southbound-api-router"
+      }
     ],
     "httpFileServiceRoot": "./static/files",
     "httpFileServiceType": "FileSystem",
@@ -40,6 +40,11 @@
         "localPath": "/coreos",
         "server": "http://stable.release.core-os.net",
         "remotePath": "/amd64-usr/current/"
+      },
+      {
+        "localPath": "/centos",
+        "server": "http://mirror.centos.org/",
+        "remotePath": "/centos/"
       }
     ],
     "httpStaticRoot": "/opt/monorail/static/http",
