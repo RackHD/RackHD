@@ -25,6 +25,7 @@
            force=yes
   with_items:
    - monorail.ipxe
+   - monorail-undionly.kpxe
    - monorail-efi32-snponly.efi
    - monorail-efi64-snponly.efi
 
