@@ -21,7 +21,7 @@ class ConfigTests(object):
     @test(groups=['config_api2.tests', 'api2_check-config'])
     def check_server_config(self):
         """Testing GET:api/2.0/config to get server configuration"""
-        Api().get_config()
+        Api().config_get()
         rsp = self.__client.last_response
         assert_equal(200, rsp.status, message=rsp.reason)
 
@@ -30,15 +30,15 @@ class ConfigTests(object):
         """Testing PATCH:api/2.0/config to patch a specific configuration item"""
         test_pwd = {"PWD": "/this/is/a/test/for/patch_config"}
         LOG.info("Patch PWD with a test path")
-        Api().patch_config(config = test_pwd)
+        Api().config_patch(config = test_pwd)
         server_config = loads(self.__client.last_response.data)
         assert_equal(server_config.get('PWD'),'/this/is/a/test/for/patch_config', 'Oops patch config failed')
         LOG.info("Doing a check config with test PWD")
-        Api().get_config()
+        Api().config_get()
         rsp = self.__client.last_response
         assert_equal(200, rsp.status, message=rsp.reason)
         LOG.info("Restoring PWD config after patch test")
-        Api().patch_config(config = {"PWD": "/var/renasar/on-http"})
+        Api().config_patch(config = {"PWD": "/var/renasar/on-http"})
         rsp = self.__client.last_response
         assert_equal(200, rsp.status, message=rsp.reason)
 
