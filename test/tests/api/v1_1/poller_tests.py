@@ -4,14 +4,8 @@ from modules.logger import Log
 from on_http_api1_1 import NodesApi as Nodes
 from on_http_api1_1 import PollersApi as Pollers
 from on_http_api1_1 import TemplatesApi as Templates
-# from on_http_api1_1 import rest
-# from datetime import datetime
 from proboscis.asserts import assert_equal
-# from proboscis.asserts import assert_false
-# from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_not_equal
-# from proboscis.asserts import assert_is_not_none
-# from proboscis.asserts import assert_true
 from proboscis import SkipTest
 from proboscis import test
 from json import loads
@@ -47,7 +41,7 @@ class PollerTests(object):
                 samples.append(data[0])
 
         for sample in samples:
-            count = 18 # Wait for 2 mins (poller interval is 1 min)
+            count = 18 # Wait for 3 mins (poller interval is 1 min)
             while valid == False:
                 try:
                     Templates().pollers_identifier_data_get(sample.get('id'))

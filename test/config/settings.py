@@ -23,23 +23,28 @@ LOGGER_LVL = os.getenv('RACKHD_TEST_LOGLVL', 'WARNING')
 logging.basicConfig(level=LOGLEVELS[LOGGER_LVL], format=LOGFORMAT)
 
 # Obfuscate credentials
-def set_bmc_cred(user,password):
-    u = b64encode(user)
-    p = b64encode(password)
-    with open(CRED_FILE,'w+') as file:
-        out = \
-        'BMC_USER="{0}"\n'.format(u) + \
-        'BMC_PASS="{0}"'.format(p)
+def set_b64_cred(cred):
+    out = ''
+    with open(CRED_FILE,'a+') as file:
+        for (k, v) in cred.items():
+            new_v = b64encode(v)
+            out += '{0}="{1}"\n'.format(k, new_v)
         file.write(out)
 
 # Unobfuscate credentials
-def get_bmc_cred():
+def get_b64_cred(req):
     creds = load_source('creds',CRED_FILE)
-    return b64decode(creds.BMC_USER), b64decode(creds.BMC_PASS)
+    rsp = []
+    for key in req:
+        rsp.append(b64decode(getattr(creds, key)))
 
-# Initial bmc passwd file if it doesn't exist
+    return rsp
+
+def get_bmc_cred():
+    return get_b64_cred(["BMC_USER", "BMC_PASS"])
+
+# Initial cred file to log bmc password information if it doesn't exist
 if os.path.isfile(CRED_FILE) is False:
-    BMC_USER = raw_input('BMC username: ')
-    BMC_PASS = getpass('BMC password: ')
-    set_bmc_cred(BMC_USER,BMC_PASS)
-
+    bmc_user = raw_input('BMC username: ')
+    bmc_pass = getpass('BMC password: ')
+    set_b64_cred({"BMC_USER":bmc_user, "BMC_PASS":bmc_pass})
