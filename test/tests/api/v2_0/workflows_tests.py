@@ -17,7 +17,6 @@ from proboscis import test
 from json import dumps, loads
 import time
 
-
 LOG = Log(__name__)
 
 @test(groups=['workflows_api2.tests'])
@@ -86,6 +85,7 @@ class WorkflowsTests(object):
         """ Negative Testing GET:/workflows/identifier"""
         try:
             Api().workflows_get_by_id("WrongIdentifier")
+            assert_equal(404, self.__client.last_response.status, message='status should be 404. No exception raised')
         except Exception,e:
             assert_equal(404,e.status, message = 'status should be 404')
 
@@ -133,7 +133,7 @@ class WorkflowsTests(object):
 
         assert_equal(foundInsertedWorkflow, True)
 
-    @test(groups=['workflows_graphs_get_name_api2'],
+    @test(groups=['test_workflows_graphs_get_by_name_api2'],
           depends_on_groups=['workflows_graphs_put_api2'])
     def test_workflows_library_id_get(self):
         """ Testing GET:/workflows/graphs/injectableName"""
@@ -142,7 +142,7 @@ class WorkflowsTests(object):
         rawj = json.loads(self.__client.last_response.data)
         assert_equal(self.workflowDict.get('friendlyName'), str(rawj[0].get('friendlyName')))
 
-    @test(groups=['test_workflows_graphs_put_name_api2'],
+    @test(groups=['test_workflows_graphs_put_by_name_api2'],
           depends_on_groups=['workflows_graphs_get_name_api2'])
     def test_workflows_graphs_name_put(self):
         """Testing PUT:/workflows/graphs"""
@@ -156,7 +156,7 @@ class WorkflowsTests(object):
         rawj = json.loads(self.__client.last_response.data)
         assert_equal(self.workflowDict2.get('friendlyName'), str(rawj[0].get('friendlyName')))
 
-    @test(groups=['test_workflows_graphs_delete_name_api2'],
+    @test(groups=['test_workflows_graphs_delete_by_name_api2'],
           depends_on_groups=['test_workflows_graphs_put_name_api2'])
     def test_workflows_graphs_delete(self):
         """Testing DELETE:/workflows/graphs/injectableName"""
@@ -210,4 +210,3 @@ class WorkflowsTests(object):
                                  format(injectableName,nodeid,status,routeId))
                         self.__task_worker.stop()
                         break
-

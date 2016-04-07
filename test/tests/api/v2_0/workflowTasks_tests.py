@@ -11,8 +11,6 @@ import json
 
 LOG = Log(__name__)
 
-
-
 @test(groups=['workflowTasks_api2.tests'])
 class WorkflowTasksTests(object):
 
@@ -78,8 +76,3 @@ class WorkflowTasksTests(object):
         readInjectableName  = readWorkflowTask.get('injectableName')
         assert_equal(readFriendlyName,self.workflowTaskDict.get('friendlyName'))
         assert_equal(readInjectableName,self.workflowTaskDict.get('injectableName'))
-
-
-
-
-
