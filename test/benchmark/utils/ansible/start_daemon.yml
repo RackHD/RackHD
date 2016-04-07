@@ -1,0 +1,13 @@
+---
+- hosts: rackhd
+  tasks:
+    - name: Clean log files if any
+      file: path=/tmp/benchmark_log state=absent
+
+    - name: Create log directory
+      file: path=/tmp/benchmark_log state=directory mode=0755
+
+    - name: Start script to collect footprint data
+      shell: ./collect_data.sh -o start -i {{ data_interval }}
+      args:
+        chdir: /tmp/
