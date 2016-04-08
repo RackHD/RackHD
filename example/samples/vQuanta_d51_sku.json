@@ -1,0 +1,15 @@
+{
+    "name": "vQuanta D51 SKU",
+    "discoveryGraphName": "Graph.DefaultVQuanta.InstallCentOS",
+    "discoveryGraphOptions": {},
+    "rules": [
+        {
+            "path": "dmi.System Information.Product Name",
+            "equals": "D51B-2U (dual 10G LoM)"
+        },
+        {
+            "path": "dmi.System Information.Serial Number",
+            "equals": "SerialNumber"
+        }
+    ]
+}

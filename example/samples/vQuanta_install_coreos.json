@@ -1,0 +1,28 @@
+{
+    "friendlyName": "vQuanta D51 Default Install CoreOS",
+    "injectableName": "Graph.DefaultVQuanta.InstallCoreOS",
+    "tasks": [
+        {
+            "label": "create-ipmi-obm-settings",
+            "taskDefinition": {
+                "friendlyName": "Create IPMI OBM settings",
+                "injectableName": "Task.Obm.Ipmi.CreateSettings",
+                "implementsTask": "Task.Base.Obm.Ipmi.CreateSettings",
+                "options": {
+                    "ipmichannel": null,
+                    "user": "admin",
+                    "password": "admin"
+                },
+                "properties": {
+                }
+            }
+        },
+        {
+            "label": "install-coreos",
+            "taskName": "Task.Os.Install.CoreOS",
+            "waitOn": {
+                "create-ipmi-obm-settings": "succeeded"
+            }
+        }
+    ]
+}

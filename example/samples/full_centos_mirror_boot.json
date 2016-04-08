@@ -5,11 +5,16 @@
             "obmServiceName": "noop-obm-service"
         },
         "install-os": {
-            "repo": "{{api.server}}/centos/7/os/x86_64",
+            "repo": "{{api.server}}/Centos/7.0",
             "rootPassword": "root",
             "hostname": "demoCentOS",
             "domain": "vagrantup.com",
-            "dnsServers": [ "8.8.8.8" ],
+            "dnsServers": [ "8.8.8.8", "8.8.4.4" ],
+            "users": [{
+                "name": "rackhd",
+                "password": "rackhd123",
+                "uid": 1010
+                }],
             "networkDevices": [
                 {
                     "device": "eth0",
