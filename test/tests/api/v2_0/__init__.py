@@ -4,11 +4,15 @@ from nodes_tests import NodesTests
 from catalogs_tests import CatalogsTests
 from pollers_tests import PollersTests
 from obm_tests import OBMTests
+from workflows_tests import WorkflowsTests
+from workflowTasks_tests import WorkflowTasksTests
 
 tests = [
     'nodes_api2.tests',
     'config_api2.tests',
     'catalogs_api2.tests',
-    'pollers.tests',
-    'obm_api2.tests'
+    'pollers_api2.tests',
+    'obm_api2.tests',
+    'workflows_api2.tests',
+    'workflowTasks_api2.tests'
 ]
