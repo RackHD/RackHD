@@ -143,7 +143,7 @@ class WorkflowsTests(object):
         assert_equal(self.workflowDict.get('friendlyName'), str(rawj[0].get('friendlyName')))
 
     @test(groups=['test_workflows_graphs_put_by_name_api2'],
-          depends_on_groups=['workflows_graphs_get_name_api2'])
+          depends_on_groups=['workflows_graphs_get_by_name_api2'])
     def test_workflows_graphs_name_put(self):
         """Testing PUT:/workflows/graphs"""
         # Test updating a graph
@@ -157,7 +157,7 @@ class WorkflowsTests(object):
         assert_equal(self.workflowDict2.get('friendlyName'), str(rawj[0].get('friendlyName')))
 
     @test(groups=['test_workflows_graphs_delete_by_name_api2'],
-          depends_on_groups=['test_workflows_graphs_put_name_api2'])
+          depends_on_groups=['test_workflows_graphs_put_by_name_api2'])
     def test_workflows_graphs_delete(self):
         """Testing DELETE:/workflows/graphs/injectableName"""
         Api().workflows_get_graphs_by_name(self.workflowDict.get('injectableName'))
