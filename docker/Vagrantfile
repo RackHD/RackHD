@@ -6,6 +6,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     # Boot 2 Docker
     config.vm.define "b2d" do |target|
         target.vm.box = "dduportal/boot2docker"
+        target.vm.box_version = "1.10.0"
 
         target.vm.provider "virtualbox" do |v|
             v.memory = 4096
