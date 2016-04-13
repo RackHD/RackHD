@@ -15,6 +15,15 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             v.customize ["modifyvm", :id, "--nicpromisc2", "allow-all", "--ioapic", "on"]
         end
 
+        # NOTE: virtualbox shared folder syncing can be quite slow, but shared folders
+        # can be configured as NFS mounts to the host instead. 
+        # To do so, append: `, type: "nfs"` to all of the target.vm.synced_folder commands
+        # below, then on the host system, run `sudo nfsd start`.
+        # Additionally, uncomment the below configuration:
+
+        # For NFS mounts, a host only network is needed. Feel free to change the IP.
+        # target.vm.network "private_network", ip: "192.168.50.4"
+
         # Sync optional local workspace directory to the vagrant instances src/ path.
         # REPO is optional when WORKSPACE is defined, used for synchronizing single RackHD repos
         # otherwise it assumes all service repos have been cloned and built under the WORKSPACE path.
