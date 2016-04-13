@@ -12,7 +12,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         target.vm.provider "virtualbox" do |v|
             v.memory = 4096
             v.cpus = 4
-            v.customize ["modifyvm", :id, "--nicpromisc2", "allow-all"]
+            v.customize ["modifyvm", :id, "--nicpromisc2", "allow-all", "--ioapic", "on"]
         end
 
         # Sync optional local workspace directory to the vagrant instances src/ path.
@@ -58,7 +58,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         target.ssh.forward_agent = true
 
         target.vm.provision "shell", inline: <<-SHELL
-          service isc-dhcp-server start
+          sudo service isc-dhcp-server start
         #   service rsyslog stop
         #   echo manual | sudo tee /etc/init/rsyslog.override
         SHELL
