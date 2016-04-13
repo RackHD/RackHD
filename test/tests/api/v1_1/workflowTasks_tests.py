@@ -48,7 +48,6 @@ class WorkflowTasksTests(object):
         #Get the number of workflowTasks before we add one
         WorkflowTasks().workflows_tasks_library_get()
         data = self.__get_data()
-        workflowTasksBefore = len(data)
 
         #Making sure that there is no workflowTask with the same name from previous test runs
         rawj = data
@@ -75,14 +74,21 @@ class WorkflowTasksTests(object):
         WorkflowTasks().workflows_tasks_library_get()
         data = self.__get_data()
         resp = self.__client.last_response
-        workflowTasksAfter = len(data)
         assert_equal(200,resp.status, message=resp.reason)
 
+        #search for the newly added workflow task
+        rawj = data
+        found = False
+        for i, val in enumerate (rawj):
+            if ( self.workflowTaskDict['friendlyName'] ==  str (rawj[i].get('friendlyName')) ):
+                found = True;
+                foundIdx = i
+
         #Validating that the profile has been added
-        assert_equal(workflowTasksAfter,workflowTasksBefore+1)
+        assert_true(found, message='Could not find new workflow task!')
 
         #Validating the content is as expected
-        readWorkflowTask = data[len(data)-1]
+        readWorkflowTask = data[foundIdx]
         readFriendlyName = readWorkflowTask.get('friendlyName')
         readInjectableName = readWorkflowTask.get('injectableName')
         assert_equal(readFriendlyName,self.workflowTaskDict.get('friendlyName'))
