@@ -13,10 +13,10 @@
            validate_certs=no
            force=yes
   with_items:
-   - discovery.overlay.cpio.gz
-   - base.trusty.3.16.0-25-generic.squashfs.img
-   - initrd.img-3.16.0-25-generic
-   - vmlinuz-3.16.0-25-generic
+   - discovery.3.19.0-56-generic.overlay.cpio.gz
+   - base.trusty.3.19.0-56-generic.squashfs.img
+   - initrd.img-3.19.0-56-generic
+   - vmlinuz-3.19.0-56-generic
 
 - name: retrieve the latest bootloaders from bintray
   get_url: url="https://bintray.com/artifact/download/rackhd/binary/ipxe/{{ item }}"
