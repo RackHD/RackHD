@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>RackHD Benchmark Report</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="../static/main.css" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="../static/bootstrap/css/bootstrap.min.css">
+    <script src="../static/jquery.min.js"></script>
+    <script src="../static/bootstrap/js/bootstrap.min.js"></script>
+        
+    <!--
+    For production (minified) code, use:
+    <script type="text/javascript" src="dygraph-combined.js"></script>
+    -->
+    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/dygraph/1.1.1/dygraph-combined.js"></script>
+    <script type="text/javascript" src="smooth-plotter.js"></script>
+    
+    <!-- Data for chart -->
+    <script type="text/javascript" src="../data/snet.js"></script>
+    
+    <!-- Data for Table -->
+    <script type="text/javascript" src="../data/summary.js"></script>
+    <script type="text/javascript" src="../data/case_info.js"></script>
+    
+</head>
+<body>
+    <header>
+        <h2>RackHD Benchmark Report - SNET</h2>
+    </header>
+    <div class="container">
+        <div class="well well-sm" style="margin-top:70px">
+            <ul class="fa-ul">
+              <p id="case_name"><b>Case Name: </b></p>
+              <p id="case_log_path"><b>Case Log Path: </b></p>
+              <p id="case_start_time"><b>Case Start Time: </b></p>
+              <p id="case_end_time"><b>Case End Time: </b></p>
+              <p id="node_finish_time"><b>Node Finish Time: </b></p>
+            </ul>
+            <p><a href="summary.html">Back to Summary Report</a></p>
+        </div>
+        <div class="panel panel-info" style="width:100%; min-width: 800px;">
+            <div class="panel panel-success">
+                <a href="#" class="list-group-item active">
+                SNET Report
+                </a>
+                <table class="table table-hover" style="width:100%; min-width: 800px;">
+                    <thead>
+                        <th style="width:20%">Process</th>
+                        <th style="width:20%">Max</th>
+                        <th style="width:20%">Min</th>
+                        <th style="width:20%">Avg</th>
+                        <th style="width:20%">Sum</th>
+                    </thead>
+                    <tbody id="usrcpubody" name="usrcpubody">
+                    </tbody>   
+                </table>
+            </div>
+            <div id="usrcpu_div" style="height: 400px;"></div>
+        </div>
+    </div>
+    
+    <script type="text/javascript">
+    var case_data = case_info["log path"].split("-");
+    var snet_data = eval("snet_data_"+case_data[0]+"_"+case_data[1]);
+    var atop_statistics = eval("atop_statistics_"+case_data[0]+"_"+case_data[1]);
+    
+    $(document).ready(function(){
+        $("#case_name").append(case_info["case name"]);
+        $("#case_log_path").append(case_info["log path"]);
+        $("#case_start_time").append(case_info["time marker"]["start"]);
+        $("#case_end_time").append(case_info["time marker"]["end"]);
+        $("#node_finish_time").append(case_info["time marker"]["node finish"]);
+        $.each(atop_statistics, function(i, val){
+            if(i=="SNET"){
+                $.each(val, function(process, value){
+                    var tr = document.createElement('tr');
+                    var td0 = document.createElement('td');
+                    td0.innerHTML = process;
+                    var td1 = document.createElement('td');
+                    td1.innerHTML = value["max"];
+                    var td2 = document.createElement('td');
+                    td2.innerHTML = value["min"];
+                    var td3 = document.createElement('td');
+                    td3.innerHTML = value["avg"].toFixed(2);
+                    var td4 = document.createElement('td');
+                    td4.innerHTML = value["sum"];
+                    
+                    tr.appendChild(td0);
+                    tr.appendChild(td1);
+                    tr.appendChild(td2);
+                    tr.appendChild(td3);
+                    tr.appendChild(td4);
+                    
+                    $('#usrcpubody').append(tr);
+                })
+            }
+            
+        });
+    });
+
+    
+    smoothPlotter.smoothing = 1;
+    function zeropad(x) {
+        return (x < 10) ? '0' + x : x;
+      }
+      
+    gu = new Dygraph(document.getElementById("usrcpu_div"),
+        snet_data,
+        {
+          rollPeriod: 1,
+          legend: 'always',
+          title: 'TCP/UDP Packages Sent Report',
+          titleHeight: 32,
+          ylabel: 'mili-second (ms)',
+          xlabel: 'Seconds (from test start)',
+          labelsDivStyles: {
+          'text-align': 'right',
+          'background': 'none'
+          },
+          axes: {
+                x: {
+                  axisLabelWidth: 70,
+                  axisLabelFormatter: function(d, gran) {
+                    return zeropad(d.getHours()) + ":"
+                        + zeropad(d.getMinutes()) + ":"
+                        + zeropad(d.getSeconds());
+                  }
+                }
+          },
+          strokeWidth: 2,
+          customBars: false,
+          logscale: false
+        });
+
+    annotations = [];
+    annotations.push( {
+          series: 'on-http',
+          x: "2016-03-11 07:19:13",
+          shortText: 'S',
+          text: 'Start of discovery',
+          icon: 'start.png',
+          width: 18,
+          height: 23,
+          tickHeight: 4,
+          attachAtBottom: true
+        } )
+    annotations.push( {
+          series: 'on-http',
+          x: "2016-03-11 08:11:17",
+          shortText: 'E',
+          text: 'End of discovery',
+          icon: 'stop.png',
+          width: 18,
+          height: 23,
+          tickHeight: 4,
+          attachAtBottom: true
+        } )
+    gs.setAnnotations(annotations);
+    </script>
+</body>
+</html>
