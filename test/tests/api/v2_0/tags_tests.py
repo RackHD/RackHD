@@ -97,13 +97,14 @@ class TagsTests(object):
         Api().nodes_get_all()
         nodes = self.__get_data()
         for n in nodes:
-            Api().delete_tag(tag_name=n.get('id'))
-            rsp = self.__client.last_response
-            assert_equal(204, rsp.status, message=rsp.reason)
-            Api().get_all_tags()
-            rsp = self.__client.last_response
-            updated_tags = self.__get_data()
-            assert_equal(200, rsp.status, message=rsp.reason)
+            if n.get('type') == 'compute':
+                Api().delete_tag(tag_name=n.get('id'))
+                rsp = self.__client.last_response
+                assert_equal(204, rsp.status, message=rsp.reason)
+                Api().get_all_tags()
+                rsp = self.__client.last_response
+                updated_tags = self.__get_data()
+                assert_equal(200, rsp.status, message=rsp.reason)
         assert_equal([],updated_tags, message='Tags were not deleted successfully')
 
 
