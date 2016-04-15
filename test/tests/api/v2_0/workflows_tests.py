@@ -26,13 +26,13 @@ class WorkflowsTests(object):
         self.__client = config.api_client
         self.__task_worker = None
         self.workflowDict = {
-            "friendlyName": "Shell Commands Hwtest_1",
-            "injectableName": "Graph.post.test",
+            "friendlyName": "Shell Commands API 2.0 Hwtest_1",
+            "injectableName": "Graph.post.test.api2",
             "tasks": [{"taskName": "Task.Trigger.Send.Finish"}]
         }
         self.workflowDict2 = {
-            "friendlyName": "Shell Commands Hwtest_2",
-            "injectableName": "Graph.post.test",
+            "friendlyName": "Shell Commands API 2.0 Hwtest_2",
+            "injectableName": "Graph.post.test.api2",
             "tasks": [{"taskName": "Task.Trigger.Send.Finish"}]
         }
 
@@ -89,7 +89,7 @@ class WorkflowsTests(object):
         except Exception,e:
             assert_equal(404,e.status, message = 'status should be 404')
 
-    @test(groups=['test_workflows_graphs_get_api2'])
+    @test(groups=['workflows_graphs_get_api2'])
     def test_workflows_graphs_get(self):
         """Testing GET:/workflows/graphs"""
         Api().workflows_get_graphs()
@@ -133,7 +133,7 @@ class WorkflowsTests(object):
 
         assert_equal(foundInsertedWorkflow, True)
 
-    @test(groups=['test_workflows_graphs_get_by_name_api2'],
+    @test(groups=['workflows_graphs_get_by_name_api2'],
           depends_on_groups=['workflows_graphs_put_api2'])
     def test_workflows_library_id_get(self):
         """ Testing GET:/workflows/graphs/injectableName"""
@@ -142,7 +142,7 @@ class WorkflowsTests(object):
         rawj = json.loads(self.__client.last_response.data)
         assert_equal(self.workflowDict.get('friendlyName'), str(rawj[0].get('friendlyName')))
 
-    @test(groups=['test_workflows_graphs_put_by_name_api2'],
+    @test(groups=['workflows_graphs_put_by_name_api2'],
           depends_on_groups=['workflows_graphs_get_by_name_api2'])
     def test_workflows_graphs_name_put(self):
         """Testing PUT:/workflows/graphs"""
@@ -156,8 +156,8 @@ class WorkflowsTests(object):
         rawj = json.loads(self.__client.last_response.data)
         assert_equal(self.workflowDict2.get('friendlyName'), str(rawj[0].get('friendlyName')))
 
-    @test(groups=['test_workflows_graphs_delete_by_name_api2'],
-          depends_on_groups=['test_workflows_graphs_put_by_name_api2'])
+    @test(groups=['workflows_graphs_delete_by_name_api2'],
+          depends_on_groups=['workflows_graphs_put_by_name_api2'])
     def test_workflows_graphs_delete(self):
         """Testing DELETE:/workflows/graphs/injectableName"""
         Api().workflows_get_graphs_by_name(self.workflowDict.get('injectableName'))
@@ -168,7 +168,7 @@ class WorkflowsTests(object):
         Api().workflows_get_graphs_by_name(self.workflowDict.get('injectableName'))
         assert_equal(0, len(json.loads(self.__client.last_response.data)))
 
-    @test(groups=['test_node_workflows_post_api2'],
+    @test(groups=['node_workflows_post_api2'],
             depends_on_groups=['workflows_graphs_put_api2', 'delete_all_active_workflows_api2'])
     def test_node_workflows_post(self):
         """Testing POST:/nodes/id/workflows"""
