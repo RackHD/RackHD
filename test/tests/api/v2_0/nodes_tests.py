@@ -351,9 +351,12 @@ class NodesTests(object):
         nodes = loads(rsp.data)
         codes.append(rsp)
         for n in nodes:
+            LOG.info(n, json=True)
             Api().nodes_patch_tag_by_id(identifier=n.get('id'), body=self.__test_tags)
+            LOG.info('Creating tag (name={0})'.format(self.__test_tags))
             rsp = self.__client.last_response
             codes.append(rsp)
+            LOG.info(n.get('id'));
         for c in codes:
             assert_equal(200, c.status, message=c.reason)
         assert_raises(rest.ApiException, Api().nodes_patch_tag_by_id, 'fooey',body=self.__test_tags)
@@ -400,4 +403,28 @@ class NodesTests(object):
         for c in codes:
             assert_equal(200, c.status, message=c.reason)
         assert_raises(rest.ApiException, Api().nodes_del_tag_by_id, 'fooey',tag_name=['tag'])
+
+
+    @test(groups=['nodes_tag_masterDelete'], depends_on_groups=['node_tags_delete'])
+    def test_node_tags_masterDel(self):
+        """ Testing DELETE:api/2.0/nodes/tags/:tagName """
+        codes = []
+        self.test_node_tags_patch()
+        t = 'tag3'
+        LOG.info("Check to make sure invalid tag is not deleted")
+        Api().nodes_master_del_tag_by_id(tag_name=t)
+        rsp = self.__client.last_response
+        codes.append(rsp)
+        updated_node = loads(rsp.data)
+        assert_equal([], updated_node, message= "masterDel API deleted an invalid node ")
+        LOG.info("Test to check valid tags are deleted")
+        for t in self.__test_tags.get('tags'):
+            Api().nodes_master_del_tag_by_id(tag_name=t)
+            rsp = self.__client.last_response
+            codes.append(rsp)
+            updated_node = loads(rsp.data)
+            LOG.info("Printing nodes list")
+            LOG.info(updated_node)
+        for c in codes:
+            assert_equal(200, c.status, message=c.reason)
 

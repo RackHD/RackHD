@@ -6,6 +6,7 @@ from pollers_tests import PollersTests
 from obm_tests import OBMTests
 from workflows_tests import WorkflowsTests
 from workflowTasks_tests import WorkflowTasksTests
+from tags_tests import TagsTests
 
 tests = [
     'nodes_api2.tests',
@@ -15,4 +16,7 @@ tests = [
     'obm_api2.tests',
     'workflows_api2.tests',
     'workflowTasks_api2.tests'
+    'pollers.tests',
+    'tags_api2.tests',
+    'obm_api2.tests'
 ]
