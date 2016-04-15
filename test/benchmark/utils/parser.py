@@ -627,12 +627,12 @@ def parse_atop(filename, proc_list):
 # output will be look like:
 # 20160323_032739_compare_list =
 # {
-#     ["20160323_032739",
-#      "20160323_032812",
-#      "20160323_032923"]
+#     "20160323_032739" : ["case1", "case2"],
+#     "20160323_032812" : ["case1", "case2"],
+#     "20160323_032923" : ["case1", "case2"]
 # }
 def write_compare_list_to_js(log_dir_str, case_information, output_filename):
-    result_list = {"result list": []}
+    result_list = {}
     timestamp = case_information["log path"].replace('-', '_')
 
     # scan compare list
@@ -641,7 +641,12 @@ def write_compare_list_to_js(log_dir_str, case_information, output_filename):
     for name in os.listdir(path_par_par):
         pathname = os.path.join(path_par_par, name)
         if not os.path.isfile(pathname):
-            result_list["result list"].append(name)
+            result_list[name] = []
+            # further scan each folder to get a list of test cases
+            for case_name in os.listdir(pathname):
+                case_pathname = os.path.join(pathname, case_name)
+                if not os.path.isfile(pathname):
+                    result_list[name].append(case_name)
 
     with open(output_filename, 'w') as f:
         f.write('var ' + 'compare_list_' + timestamp + ' = \n')
