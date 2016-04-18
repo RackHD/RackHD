@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>RackHD Benchmark Report</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="../static/css/main.css" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="../static/bootstrap/css/bootstrap.min.css">
+    <script src="../static/jquery/1.11.3/jquery.min.js"></script>
+    <script src="../static/bootstrap/js/bootstrap.min.js"></script>
+            
+    <script type="text/javascript" src="../static/dygraph/1.1.1/dygraph-combined.js"></script>
+
+    <script type="text/javascript" src="../data/atop_summary.js"></script>
+    <script type="text/javascript" src="../data/atop_summary.js"></script>
+    <script type="text/javascript" src="../data/case_info.js"></script>
+    <script type="text/javascript" src="config.js"></script>
+</head>
+<body>
+    <header>
+        <h2 id="headline">RackHD Benchmark Report</h2>
+    </header>
+    <div class="container">
+        <div class="well well-sm" style="margin-top:70px">
+            <ul class="fa-ul">
+              <p id="case_name"><b>Case Name: </b></p>
+              <p id="case_log_path"><b>Case Log Path: </b></p>
+              <p id="case_start_time"><b>Case Start Time: </b></p>
+              <p id="case_end_time"><b>Case End Time: </b></p>
+              <p id="node_finish_time"><b>Node Finish Time: </b></p>
+            </ul>
+            <p><a href="summary.html">Back to Summary Report</a></p>
+        </div>
+        <div class="panel panel-info" style="width:100%; min-width: 800px;">
+            <div class="panel panel-success">
+                <a href="#" id="table-header" class="list-group-item active">Report</a>
+                <table class="table table-hover" style="width:100%; min-width: 800px;">
+                    <thead>
+                        <th style="width:20%">Process</th>
+                        <th style="width:20%">Max</th>
+                        <th style="width:20%">Min</th>
+                        <th style="width:20%">Avg</th>
+                        <th style="width:20%">Sum</th>
+                    </thead>
+                    <tbody id="measure_body" name="measure_body">
+                    </tbody>   
+                </table>
+            </div>
+            <div id="table-div" style="height: 400px;"></div>
+        </div>
+    </div>
+    
+    <script type="text/javascript">
+
+    $(document).ready(function(){
+        var measure = getQueryStringParams('measure');
+        loadDataJs(measure);
+
+        $("#headline").text("RackHD Benchmark Report - " + measure);
+
+        var case_data = case_info["log path"].split("-");
+        var atop_statistics = eval("atop_statistics_"+case_data[0]+"_"+case_data[1]);
+        var measure_data = eval(measure.toLowerCase() +
+                "_data_" +
+                case_data[0] +
+                "_"+case_data[1]);
+
+        $("#case_name").append(case_info["case name"]);
+        $("#case_log_path").append(case_info["log path"]);
+        $("#case_start_time").append(case_info["time marker"]["start"]);
+        $("#case_end_time").append(case_info["time marker"]["end"]);
+        $("#node_finish_time").append(case_info["time marker"]["node finish"]);
+
+        $("#table-header").text(measure + " Report");
+                
+        $.each(atop_statistics, function(i, val){
+            if(i=="CPU"){
+                $.each(val, function(process, value){
+                    var tr = document.createElement('tr');
+                    var td0 = document.createElement('td');
+                    td0.innerHTML = process;
+                    var td1 = document.createElement('td');
+                    td1.innerHTML = value["max"];
+                    var td2 = document.createElement('td');
+                    td2.innerHTML = value["min"];
+                    var td3 = document.createElement('td');
+                    td3.innerHTML = value["avg"].toFixed(2);
+                    var td4 = document.createElement('td');
+                    td4.innerHTML = "N/A";
+                    
+                    tr.appendChild(td0);
+                    tr.appendChild(td1);
+                    tr.appendChild(td2);
+                    tr.appendChild(td3);
+                    tr.appendChild(td4);
+                    
+                    $('#measure_body').append(tr);
+                })
+            }
+            
+        });
+
+    showGraph(measure_data,
+            getConfiguration(configuration, measure, 'Short Description'),
+            getConfiguration(configuration, measure, 'unit'));
+    });
+    
+    function zeropad(x) {
+        return (x < 10) ? '0' + x : x;
+      }
+
+    function showGraph(grap_data, description, unit) {
+        gs = new Dygraph(document.getElementById("table-div"),
+                grap_data,
+                {
+                    rollPeriod: 1,
+                    legend: 'always',
+                    title: description,
+                    titleHeight: 32,
+                    ylabel: unit,
+                    xlabel: 'Time',
+                    labelsDivStyles: {
+                        'text-align': 'right',
+                        'background': 'none'
+                    },
+                    axes: {
+                        x: {
+                            axisLabelWidth: 70,
+                            axisLabelFormatter: function (d, gran) {
+                                return zeropad(d.getHours()) + ":"
+                                        + zeropad(d.getMinutes()) + ":"
+                                        + zeropad(d.getSeconds());
+                            }
+                        }
+                    },
+                    strokeWidth: 1,
+                    customBars: false,
+                    logscale: false
+                });
+    }
+
+    function getQueryStringParams(param){
+        var page_url = window.location.search.substring(1);
+        var page_vars = page_url.split('&');
+        for(var i = 0; i < page_vars.length; i++)
+        {
+            var param_name = page_vars[i].split('=');
+            if (param_name[0] == param) {
+                return param_name[1];
+            }
+        }
+    }
+
+    function loadDataJs(measure){
+        var script_path = "../data/" + measure.toLowerCase() + ".js";
+        var node_head = $("head");
+        var script_element = document.createElement('script');
+        script_element.setAttribute('type', 'text/javascript');
+        script_element.setAttribute('src', script_path);
+        node_head.append(script_element); //synchronize load
+    }
+
+    function getConfiguration(configuration, measure, key){
+        var value;
+        $.each(configuration, function(group, measure_obj){
+            if(measure_obj.hasOwnProperty(measure)){
+                value = measure_obj[measure][key];
+            }
+        });
+
+        return value;
+    }
+</script>
+</body>
+</html>

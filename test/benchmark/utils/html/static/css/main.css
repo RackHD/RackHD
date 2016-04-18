@@ -1,0 +1,108 @@
+/* page layout styles */
+:root {
+    --compare-element-color: mediumblue;
+    --multi-cell-divider-color: #e6e6e6;
+    --highlight-cell-color: #fcf8e3;
+    --diff-better-color: green;
+    --diff-worse-color: red;
+}
+
+*{
+    margin:0;
+    padding:0;
+}
+header {
+    background-color:#212121;
+    box-shadow: 0 -1px 2px #111111;
+    display:block;
+    height:70px;
+    position:fixed;
+    width:100%;
+    z-index:100;
+}
+header h2{
+    font-size:25px;
+    font-weight:normal;
+    color: white;
+    left:40%;
+    margin-left:-400px;
+    padding:0 0;
+    position:absolute;
+    width:540px;
+    position: fixed;
+}
+header a.stuts,a.stuts:visited{
+    border:none;
+    text-decoration:none;
+    color:#fcfcfc;
+    font-size:14px;
+    left:50%;
+    line-height:31px;
+    margin:23px 0 0 110px;
+    position:absolute;
+    top:0;
+}
+header .stuts span {
+    font-size:22px;
+    font-weight:bold;
+    margin-left:5px;
+}
+div.tooltip-inner {
+    text-align: left;
+    -webkit-border-radius: 0px;
+    -moz-border-radius: 0px;
+    border-radius: 0px;
+    margin-bottom: 6px;
+    font-size: 14px;
+    max-width: 410px;
+    width: 410px;
+}
+
+.diff_worse {
+    width:100%;
+    color: var(--diff-worse-color);
+    background-color: #f8fff8;
+    /*border-top: solid 1px var(--multi-cell-divider-color);*/
+}
+
+.diff_better {
+    width:100%;
+    color: var(--diff-better-color);
+    background-color: #f8fff8;
+    /*border-top: solid 1px var(--multi-cell-divider-color);*/
+}
+
+.compared {
+    width:100%;
+    color: var(--compare-element-color);
+    background-color: #f8f8ff;
+    /*border-top: solid 1px var(--multi-cell-divider-color);*/
+}
+
+.highlight_cell {
+    background-color: var(--highlight-cell-color);
+    font-weight: bold;
+}
+
+.legend-div {
+    width: 150px;
+    float: right;
+    text-align: right;
+}
+
+.legend-div span{
+    border: solid 1px black;
+}
+
+.table-squeezed>tbody>tr>td {
+    padding: 5px 0;
+    text-indent: 5px;
+}
+
+.table-align-right>tbody>tr>td {
+    text-align: right;
+}
+
+.table-align-left>tbody>tr>td {
+    text-align: left;
+}

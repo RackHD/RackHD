@@ -18,6 +18,7 @@ filename_mongo_disk_summary_js = "db_disk_summary.js"
 filename_mongo_document_js = "db_document.js"
 filename_caseinfo_js = "case_info.js"
 filename_compare_list_js = "compare_list.js"
+filename_process_list_js = "process_list.js"
 
 # The column line definition on the atop log file
 ATOP_LINE_COL = [
@@ -654,6 +655,14 @@ def write_compare_list_to_js(log_dir_str, case_information, output_filename):
         f.write(json_str)
     pass
 
+def write_process_list_to_js(pro_list, case_information, output_filename):
+    timestamp = case_information["log path"].replace('-', '_')
+    with open(output_filename, 'w') as f:
+        f.write('var ' + 'process_list_' + timestamp + ' = \n')
+        json_str = json.dumps(pro_list, indent=4)
+        f.write(json_str)
+    pass
+
 # The overall parser.
 # specify log_dir as the absolute directory where all the log files resides.
 # parsed output file will be placed at a folder called 'data' under log_dir
@@ -681,6 +690,10 @@ def parse(log_dir):
     # parse process list
     pathname_process = os.path.join(log_dir, filename_process)
     process_list = parse_process_list(pathname_process)
+
+    # print to js log file
+    pathname_process_list_js = os.path.join(output_dir, filename_process_list_js)
+    write_process_list_to_js(process_list, case_info, pathname_process_list_js)
 
     # parse atop log file
     pathname_atop = os.path.join(log_dir, filename_atop)
