@@ -13,6 +13,6 @@ tests = [
     'redfish.task_service.tests',
     'redfish.registry.tests',
     'redfish.schema.tests',
-    'redfish.session_service.tests',
-    'redfish.event_service.tests'
+    'redfish.event_service.tests',
+    'redfish.session_service.tests'
 ]
