@@ -1,9 +1,12 @@
+from config.auth import *
+from config.settings import *
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from logger import Log
 from worker import WorkerThread, WorkerTasks
 import SocketServer
 import signal
 import thread
+import pxssh
 from json import loads
 
 LOG = Log(__name__)
@@ -47,6 +50,19 @@ class Httpd(object):
     def stop(self):
         LOG.info('Stopping httpd server')
         self.httpd.shutdown()
+
+def open_ssh_forward(local_port):
+    session = pxssh.pxssh()
+    session.SSH_OPTS = (session.SSH_OPTS
+                     + " -o 'StrictHostKeyChecking=no'"
+                     + " -o 'UserKnownHostsFile=/dev/null' "
+                     + " -o 'IdentitiesOnly=yes' "
+                     + " -p " + str(SSH_PORT)
+                     + " -R " + str(local_port) + ':localhost:' + str(HTTPD_PORT))
+
+    session.force_password = True
+    session.login(HOST_IP, SSH_USER, SSH_PASSWORD, port=SSH_PORT)
+    return session
         
 def run_server(addr,port):
     global task

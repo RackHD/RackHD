@@ -7,6 +7,7 @@ import os
 HOST_IP = os.getenv('RACKHD_HOST','localhost')
 HOST_PORT = os.getenv('RACKHD_PORT','9090')
 HOST_PORT_AUTH = os.getenv('RACKHD_PORT_AUTH','9093')
+HTTPD_PORT = os.getenv('RACKHD_HTTPD_PORT', '9010')
 
 CRED_FILE = '.passwd'
 

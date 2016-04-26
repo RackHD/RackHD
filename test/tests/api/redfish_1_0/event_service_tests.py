@@ -1,6 +1,7 @@
 from config.redfish1_0_config import *
+from config.settings import *
 from on_http_redfish_1_0 import RedfishvApi as redfish
-from modules.httpd import Httpd, BaseHandler
+from modules.httpd import Httpd, BaseHandler, open_ssh_forward
 from modules.logger import Log
 from modules.worker import WorkerThread, WorkerTasks
 from proboscis.asserts import assert_equal
@@ -21,7 +22,7 @@ LOG = Log(__name__)
 class EventServiceTests(object):
     def __init__(self):
         self.__client = config.api_client
-        self.__httpd_port = 9010
+        self.__httpd_port = 9995
         
     def __get_data(self):
         return loads(self.__client.last_response.data)
@@ -83,12 +84,17 @@ class EventServiceTests(object):
     def test_submit_test_event(self):
         """ Testing POST /EventService/SubmitTestEvent  """
         global task
-        server = Httpd(port=self.__httpd_port, handler_class=self.EventServiceHandler)
+        server = Httpd(port=int(HTTPD_PORT), handler_class=self.EventServiceHandler)
         task = WorkerThread(server,'httpd')
         worker = WorkerTasks(tasks=[task], func=self.__httpd_start)
         worker.run()
+        
+        # forward port for services running on a guest host
+        session = open_ssh_forward(self.__httpd_port) 
+        
         redfish().test_event(body={})
-        worker.wait_for_completion()
+        worker.wait_for_completion(timeout_sec=60)
+        session.logout()
         assert_false(task.timeout, message='timeout waiting for task {0}'.format(task.id))
    
     @test(groups=['redfish.subscriptions_collection'], \
