@@ -17,6 +17,7 @@ class WorkerThread(object):
         self.thread = None
         self.running = False
         self.start_time = 0
+        self.timeout = False
 
 """
 Class to construct a threaded worker
@@ -37,18 +38,19 @@ class WorkerTasks(object):
     def __wait(self, timeout_sec):
         while len(self.__tasks):
             for task in self.__tasks:
-                if not task.running:
-                    self.__stop(task)
                 elapsed_time = int(time.mktime(datetime.now().timetuple()) - task.start_time)
-                if elapsed_time >= timeout_sec:
+                if timeout_sec != -1 and elapsed_time >= timeout_sec:
                     LOG.error('subtask timeout after {0} seconds, (id={1}), stopping..' \
                         .format(elapsed_time,task.id))
                     task.worker.stop()
                     task.running = False
+                    task.timeout = True
+                if not task.running:
+                    self.__stop(task)
             time.sleep(1)
 
     def __stop(self, task):
-        LOG.info('stopping subtask for id {0}'.format(task.id))
+        LOG.info('stopping subtask for {0}'.format(task.id))
         task.thread.join()
         try:
             self.__tasks.remove(task)

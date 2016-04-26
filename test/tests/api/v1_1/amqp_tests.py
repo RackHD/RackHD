@@ -8,6 +8,7 @@ from on_http_api1_1 import PollersApi as Pollers
 from threading import Thread
 from datetime import datetime
 from proboscis.asserts import assert_is_not_none
+from proboscis.asserts import assert_false
 from proboscis import SkipTest
 from proboscis import test
 from json import dumps,loads
@@ -66,6 +67,8 @@ class AMQPTests(object):
         tasks = WorkerTasks(tasks=self.__tasks, func=self.__task_thread)
         tasks.run()
         tasks.wait_for_completion()
+        for task in self.__tasks:
+            assert_false(task.timeout, message='timeout waiting for task {0}'.format(task.id))
 
     @test(groups=['amqp.tests.sdr'], \
           depends_on_groups=['amqp.tests.sel'])
@@ -86,6 +89,8 @@ class AMQPTests(object):
         tasks = WorkerTasks(tasks=self.__tasks, func=self.__task_thread)
         tasks.run()
         tasks.wait_for_completion()
+        for task in self.__tasks:
+            assert_false(task.timeout, message='timeout waiting for task {0}'.format(task.id))
         
     @test(groups=['amqp.tests.chassis'], \
           depends_on_groups=['amqp.tests.sdr'])
@@ -106,3 +111,5 @@ class AMQPTests(object):
         tasks = WorkerTasks(tasks=self.__tasks, func=self.__task_thread)
         tasks.run()
         tasks.wait_for_completion()
+        for task in self.__tasks:
+            assert_false(task.timeout, message='timeout waiting for task {0}'.format(task.id))
