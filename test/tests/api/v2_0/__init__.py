@@ -8,6 +8,7 @@ from workflows_tests import WorkflowsTests
 from workflowTasks_tests import WorkflowTasksTests
 from tags_tests import TagsTests
 from schema_tests import SchemaTests
+from lookups_tests import LookupsTests
 
 tests = [
     'nodes_api2.tests',
@@ -20,5 +21,5 @@ tests = [
     'pollers.tests',
     'tags_api2.tests',
     'obm_api2.tests',
-    'schemas_api2.tests'
+    'lookups_api2.tests'
 ]
