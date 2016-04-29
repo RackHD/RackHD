@@ -170,7 +170,7 @@ for rebooting the `pxe-1` virtual machine.
 For example, you can [manually download the ESXi installation ISO](https://www.vmware.com/go/download-vspherehypervisor)
 or download a [CentOS 7 Installation ISO](http://mirrors.mit.edu/centos/7/isos/x86_64/CentOS-7-x86_64-DVD-1511.iso).
 
-**NOTE:** Below, we show two methods (A&B) of insuring we have the iso file properly placed to be referenced by our helper script.
+**NOTE:** Below, we show two methods (A&B) of ensuring we have the iso file properly placed to be referenced by our helper script.
 
 
 ---
@@ -189,10 +189,8 @@ sudo python ~/src/on-tools/scripts/setup_iso.py /vagrant/VMware-VMvisor-Installe
 
 `vagrant ssh`:
 ```
-cd /tmp
-wget http://mirrors.mit.edu/centos/7/isos/x86_64/CentOS-7-x86_64-DVD-1511.iso
 # 4GB
-sudo python ~/src/on-tools/scripts/setup_iso.py /tmp/CentOS-7-x86_64*.iso /opt/monorail/static/http --link=/home/vagrant/src
+sudo python ~/src/on-tools/scripts/setup_iso.py http://mirrors.mit.edu/centos/7/isos/x86_64/CentOS-7-x86_64-DVD-1511.iso /opt/monorail/static/http --link=/home/vagrant/src
 ```
 The CentOS installer wants a bit more memory easily available for the
 installation than we default our test VM towards, so we recommend updating
@@ -209,7 +207,7 @@ And then invoking the workflow to install CentOS you just unpacked
 
     cd ~/src/rackhd/example
 
-    # first post obm settings (out of bound management) for the node. In this example we
+    # first post obm settings (out of band management) for the node. In this example we
     # set this to be empty because our pxe-client has no obm.
 
     curl -H "Content-Type: application/json" \
