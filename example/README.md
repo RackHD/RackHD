@@ -170,37 +170,55 @@ for rebooting the `pxe-1` virtual machine.
 For example, you can [manually download the ESXi installation ISO](https://www.vmware.com/go/download-vspherehypervisor)
 or download a [CentOS 7 Installation ISO](http://mirrors.mit.edu/centos/7/isos/x86_64/CentOS-7-x86_64-DVD-1511.iso).
 
-Copy it into the `examples` directory and then you can unpack it in vagrant:
+**NOTE:** Below, we show two methods (A&B) of ensuring we have the iso file properly placed to be referenced by our helper script.
+
+
+---
+**A.** Copy the iso into the `examples` directory within the RacKHD directory and then you can unpack it in vagrant:
 
 `vagrant ssh`:
+```    
+sudo python ~/src/on-tools/scripts/setup_iso.py /vagrant/VMware-VMvisor-Installer-*.x86_64.iso /opt/monorail/static/http --link=/home/vagrant/src
+```
 
-    sudo mkdir /var/mirrors
-    sudo python ~/src/on-http/data/templates/setup_iso.py /vagrant/VMware-VMvisor-Installer-*.x86_64.iso /var/mirrors --link=/home/vagrant/src
 
+---
+**B.** Below shows downloading an iso file directly onto the server.
+
+**NOTE:** We continue with a CentOS install to complete the instructions.
 
 `vagrant ssh`:
-
-    cd /tmp
-    wget http://mirrors.mit.edu/centos/7/isos/x86_64/CentOS-7-x86_64-DVD-1511.iso
-    # 4GB
-    sudo python ~/src/on-http/data/templates/setup_iso.py /tmp/CentOS-7-x86_64*.iso /var/mirrors --link=/home/vagrant/src
-
+```
+# 4GB
+sudo python ~/src/on-tools/scripts/setup_iso.py http://mirrors.mit.edu/centos/7/isos/x86_64/CentOS-7-x86_64-DVD-1511.iso /opt/monorail/static/http --link=/home/vagrant/src
+```
 The CentOS installer wants a bit more memory easily available for the
 installation than we default our test VM towards, so we recommend updating
 it to 2GB of RAM with the following commands:
 
-    VBoxManage controlvm poweroff pxe-1
+    VBoxManage controlvm pxe-1 poweroff
     VBoxManage modifyvm pxe-1 --memory 2048;
-    VBoxManage controlvm poweron pxe-1
+    VBoxManage startvm pxe-1 --type gui
 
 And then invoking the workflow to install CentOS you just unpacked
 
+    # make sure you're in the example directory to reference the sample JSON correctly and
+    # use the correct nodeid.
+
     cd ~/src/rackhd/example
-    # make sure you're in the example directory to reference the sample JSON correctly
+
+    # first post obm settings (out of band management) for the node. In this example we
+    # set this to be empty because our pxe-client has no obm.
+
+    curl -H "Content-Type: application/json" \
+    -X POST —-data @samples/noop_body.json \
+    http://localhost:9090/api/1.1/nodes/<insertTheNodeId>/obm | python -m json.tool
+
+    # next post the workflow
 
     curl -H "Content-Type: application/json" \
     -X POST --data @samples/centos_iso_boot.json \
-    http://localhost:9090/api/1.1/nodes/566af6c77c5de76d1530d1f3/workflows | python -m json.tool
+    http://localhost:9090/api/1.1/nodes/<insertTheNodeId>/workflows | python -m json.tool
 
 You can see the example stanza for posting a workflow with options at
 [samples/centos_iso_boot.json](samples/centos_iso_boot.json).
