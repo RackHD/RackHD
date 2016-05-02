@@ -113,6 +113,7 @@ class PollersTests(object):
             Api().pollers_post(poller)
             result = self.__client.last_response
             data = loads(self.__client.last_response.data)
+            poller['config'].pop('password', None)
 
             assert_equal(201, result.status, message=result.reason)
             for key in poller.keys():
