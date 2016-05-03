@@ -1,6 +1,7 @@
 from proboscis import register
 from proboscis import TestProgram
 import modules.httpd as httpd
+import modules.amqp as amqp
 import argparse
 import sys
 
@@ -18,12 +19,21 @@ def run_tests():
 
 if __name__ == '__main__':
     # avoid eating valid proboscis args
-    if len(sys.argv) > 1 and sys.argv[1] == '--httpd': 
+    if len(sys.argv) > 1:
         parser = argparse.ArgumentParser()
-        parser.add_argument('--httpd', action='store_const', const=True)
-        parser.add_argument('-a', '--address', default='0.0.0.0', required=False)
-        parser.add_argument('-p', '--port', default=80, required=False)
-        args = parser.parse_args()
-        httpd.run_server(args.address,args.port)
-        sys.exit(0)
+        if sys.argv[1] == '--httpd': 
+            parser.add_argument('--httpd', action='store_const', const=True)
+            parser.add_argument('-a', '--address', default='0.0.0.0', required=False)
+            parser.add_argument('-p', '--port', default=80, required=False)
+            args = parser.parse_args()
+            httpd.run_server(args.address,args.port)
+            sys.exit(0)
+        if sys.argv[1] == '--amqp':
+            parser.add_argument('--amqp', action='store_const', const=True)
+            parser.add_argument('-e', '--exchange', default='on.events', required=False)
+            parser.add_argument('-q', '--queue', default='poller.alert', required=False)
+            parser.add_argument('-r', '--key', default='poller.alert.#', required=False)
+            args = parser.parse_args()
+            amqp.run_listener(amqp.make_queue_obj(args.exchange,args.queue,args.key))
+            sys.exit(0)
     run_tests()

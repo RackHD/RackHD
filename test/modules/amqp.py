@@ -5,6 +5,8 @@ from json import dumps, loads
 from threading import Thread
 from kombu.mixins import ConsumerMixin
 from kombu import BrokerConnection
+from modules.worker import WorkerThread, WorkerTasks
+import signal, sys
 
 LOG = Log('kombu')
 
@@ -61,4 +63,17 @@ class AMQPWorker(ConsumerMixin):
         LOG.info('Stopping AMQP worker {0}'.format(self.__queue))
         self.should_stop = True        
 
+def run_listener(q):
+    log = Log(__name__,level='INFO')
+    log.info('Run AMQP listener until ctrl-c input\n {0}'.format(q))
+    def thread_func(worker,id):
+        worker.start()
+    def signal_handler(signum,stack):
+        sys.exit(0)
+    signal.signal(signal.SIGINT, signal_handler)
+    worker = AMQPWorker(queue=q)
+    task = WorkerThread(worker,'amqp')
+    tasks = WorkerTasks(tasks=[task], func=thread_func)
+    tasks.run()
+    tasks.wait_for_completion(timeout_sec=-1)
 
