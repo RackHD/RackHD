@@ -2,6 +2,7 @@ import os
 import re
 import datetime
 import json
+import shutil
 
 # Log files to be parsed
 filename_atop = "cpu_mem_net_disk.log"
@@ -19,6 +20,9 @@ filename_mongo_document_js = "db_document.js"
 filename_caseinfo_js = "case_info.js"
 filename_compare_list_js = "compare_list.js"
 filename_process_list_js = "process_list.js"
+
+# Place to find html file
+path_html = "/tmp/on-tools/footprint-benchmark/html/"
 
 # The column line definition on the atop log file
 ATOP_LINE_COL = [
@@ -663,6 +667,17 @@ def write_process_list_to_js(pro_list, case_information, output_filename):
         f.write(json_str)
     pass
 
+def copy_html_to_output_dir(output_dir):
+    for folder in ['report', 'static']:
+        path_src = os.path.join(path_html, folder)
+        path_dest = os.path.join(output_dir, folder)
+        try:
+            shutil.copytree(path_src, path_dest)
+        except Exception:
+            exception_msg = 'Error generating html reports, check source dir at: ' + \
+                         path_src + ' ,destination dir at: ' + path_dest
+            raise RuntimeError(exception_msg)
+
 # The overall parser.
 # specify log_dir as the absolute directory where all the log files resides.
 # parsed output file will be placed at a folder called 'data' under log_dir
@@ -736,6 +751,8 @@ def parse(log_dir):
     pathname_compare_list_js = os.path.join(output_dir, filename_compare_list_js)
     write_compare_list_to_js(log_dir, case_info, pathname_compare_list_js)
 
+    # Copy html file to output dir
+    copy_html_to_output_dir(log_dir)
 
 if __name__ == '__main__':
     parse(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'test_dir'))
