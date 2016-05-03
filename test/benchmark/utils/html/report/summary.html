@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>RackHD Benchmark Report</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="../static/bootstrap/css/bootstrap.min.css">
+    <link href="../static/css/main.css" rel="stylesheet" type="text/css">
+    <script src="../static/jquery/1.11.3/jquery.min.js"></script>
+    <script src="../static/bootstrap/js/bootstrap.min.js"></script>
+
+    <!-- Data for Table -->
+    <script type="text/javascript" src="../data/atop_summary.js"></script>
+    <script type="text/javascript" src="../data/db_disk_summary.js"></script>
+    <script type="text/javascript" src="../data/db_doc_summary.js"></script>
+    <script type="text/javascript" src="../data/case_info.js"></script>
+    <script type="text/javascript" src="../data/process_list.js"></script>
+    <script type="text/javascript" src="../data/compare_list.js"></script>
+    <script type="text/javascript" src="config.js"></script>
+    <script type="text/javascript" id="compare_data" src=""></script>
+
+    <script type="text/javascript">
+        $(document).ready(function(){
+            var compare = false;
+            var show_diff = false;
+            var show_compared_data = true;
+            var case_data = case_info["log path"].split("-");
+            var atop_statistics = eval("atop_statistics_"+case_data[0]+"_"+case_data[1]);
+            var mongo_disk_statistics = eval("mongo_disk_statistics_"+case_data[0]+"_"+case_data[1]);
+            var mongo_document_statistics = eval("mongo_document_statistics_"+case_data[0]+"_"+case_data[1]);
+            var compare_list = eval("compare_list_"+case_data[0]+"_"+case_data[1]);
+            var process_list = eval("process_list_"+case_data[0]+"_"+case_data[1]);
+
+            $("#compare-assist").hide();
+
+            $.each(compare_list, function(key, value){
+                $('#sel_timestamp')
+                        .append($('<option></option>>')
+                                .attr("value", key)
+                                .text(key));
+            });
+
+            updateCaseSel(compare_list);
+
+            $("#sel_timestamp").change(function(){
+                updateCaseSel(compare_list)
+            });
+
+            updateSummaryTable($('#case_summary_table'),
+                    process_list,
+                    configuration,
+                    atop_statistics);
+
+            updateDbDiskTable($('#mongo_disk_statistics_table'), mongo_disk_statistics);
+
+            updateDbDocTable($('#mongo_document_statistics_table'), mongo_document_statistics);
+
+            $("#compare_btn").click(function(){
+                $("#compare-assist").show();
+                var node_head = $("head");
+                compare = true;
+                var target_timestamp = $("#sel_timestamp").val();
+                var target_case = $("#sel_case option:selected").text();
+                var target_script_names = ["atop_summary.js", "db_disk_summary.js", "db_doc_summary.js"];
+
+                $.each(target_script_names, function(i, script){
+                    var target_script_path = "../../../" + target_timestamp + "/" + target_case + '/data/' + script;
+                    var script_element = document.createElement('script');
+                    script_element.setAttribute('type', 'text/javascript');
+                    script_element.setAttribute('src', target_script_path);
+                    node_head.append(script_element); //synchronize load
+                });
+
+                var compare_target_atop = eval("atop_statistics_" + target_timestamp.replace('-', '_'));
+                var compare_target_db_disk = eval("mongo_disk_statistics_" + target_timestamp.replace('-', '_'));
+                var compare_target_db_doc = eval("mongo_document_statistics_" + target_timestamp.replace('-', '_'));
+
+                updateSummaryTable($('#case_summary_table'),
+                        process_list,
+                        configuration,
+                        atop_statistics,
+                        compare_target_atop);
+
+                updateDbDiskTable($('#mongo_disk_statistics_table'),
+                        mongo_disk_statistics, compare_target_db_disk);
+
+                updateDbDocTable($('#mongo_document_statistics_table'),
+                        mongo_document_statistics, compare_target_db_doc);
+
+                $(".compared").show();
+                $(".diff_better").hide();
+                $(".diff_worse").hide();
+            });
+
+            $("#show_diff_checkbox").click(function(){
+                show_diff = !show_diff;
+                if(show_diff){
+                    $(".diff_better").show();
+                    $(".diff_worse").show();
+                }
+                else {
+                    $(".diff_better").hide();
+                    $(".diff_worse").hide();
+                }
+            });
+
+            $("#show_target_checkbox").click(function(){
+                show_compared_data = !show_compared_data;
+                if(show_compared_data){
+                    $(".compared").show();
+                }
+                else {
+                    $(".compared").hide();
+                }
+            });
+
+            $("#case_name").append(case_info["case name"]);
+            $("#case_log_path").append(case_info["log path"]);
+            $("#case_start_time").append(case_info["time marker"]["start"]);
+            $("#case_end_time").append(case_info["time marker"]["end"]);
+            $("#node_finish_time").append(case_info["time marker"]["node finish"]);
+        });
+
+        function getSUMorMAX(dict){
+            if(dict.hasOwnProperty('sum')){
+                return dict["sum"];
+            }
+            else{
+                return dict["max"];
+            }
+        }
+
+        function getTotal(atop_statistics, datatype){
+            list = ["on-syslog", "on-tftp", "on-dhcp-proxy", "beam.smp", "on-taskgraph", "on-http", "dhcpd", "mongod"];
+            result = 0;
+            $.each(list, function(index, data){
+                result = result + getSUMorMAX(atop_statistics[datatype][data]);
+            });
+            return result;
+        }
+
+        function formatNumber(value, unit){
+            if(unit=="%")
+            {
+                return value;
+            }
+            else if(unit=="pkg")
+            {
+                return addComma(value.toString());
+            }
+            else
+            {
+                return shortNumber(value, unit);
+            }
+        }
+
+        function addComma(str) {
+            if(str.length <= 3){
+                return str;
+            }
+            else {
+                return addComma(str.substr(0,str.length-3))+','+str.substr(str.length-3);
+            }
+        }
+
+        function upgradeUnit(unit){
+            switch (unit)
+            {
+                case "byte":
+                    unit =  "K";
+                    break;
+                case "bps":
+                    unit =  "K";
+                    break;
+                case "K":
+                    unit =  "M";
+                    break;
+                case "M":
+                    unit = "G";
+                    break;
+                case "G":
+                    unit = "T";
+                    break;
+                case "ms":
+                    unit = "s";
+                    break;
+                case "s":
+                    unit = "m";
+                    break;
+                case "m":
+                    unit = "h";
+                    break;
+                case "h":
+                    unit = "d";
+                    break;
+                default:
+                    unit = unit;
+            }
+            return unit;
+        }
+
+        function shortNumber(value, unit){
+            length = (value.toString().split(".")[0]).length;
+            if(length<4){
+                if(unit == "byte" || unit == "bps") {
+                    return value;
+                }
+                else {
+                    return value +" "+ unit;
+                }
+            }
+            else
+            {
+                result = (value/1000).toFixed(1);
+                newunit = upgradeUnit(unit);
+                return shortNumber(result, newunit);
+            }
+        }
+
+        function loadCase(arr){
+            $("#sel_case").empty();
+            $(arr).each(function(i){
+                $("#sel_case").append($('<option></option>')
+                        .attr("value", i)
+                        .text(arr[i]));
+            });
+            $("#sel_case").val(0);
+        }
+
+        function updateCaseSel(dict) {
+            var select = $("#sel_timestamp option:selected").val();
+            loadCase(dict[select]);
+        }
+
+        function updateSummaryTable(table, process_list, configuration, statistic_src, statistic_dest){
+            table.empty();
+            table.append(createSummaryTableHeader(process_list));
+            table.append(createSummaryTableBody(configuration,
+                    process_list,
+                    statistic_src,
+                    statistic_dest));
+            spanGroupColumn(table);
+
+            $('[data-toggle="tooltip"]').tooltip();
+        }
+
+        function createSummaryTableHeader(pro_list){
+            var tr = $("<tr></tr>");
+            tr.append("<td><b>Group</b></td>");
+            tr.append("<td><b>Measures</b></td>");
+
+            $.each(pro_list, function(pid, process_name){
+                var content = $("<b></b>").text(process_name);
+                var td_item = $("<td></td>");
+                td_item.append(content);
+                tr.append(td_item);
+            });
+
+            tr.append("<td class='highlight_cell'><b>Total</b></td>");
+            tr.append("<td><b>Graph Report</b></td>");
+            return tr;
+        }
+
+        function createSummaryTableBody(config,
+                                        pro_list,
+                                        statistic_src,
+                                        statistic_dest){
+            var tr_array = [];
+            $.each(config, function(type, details){
+                $.each(details, function(datatype, dataconfig){
+                    var tr = document.createElement('tr');
+                    var td_group = document.createElement('td');
+                    td_group.innerHTML = type;
+                    var td_subgroup = document.createElement('td');
+                    var subgroup_alink = document.createElement('a');
+                    subgroup_alink.setAttribute("href", "#");
+                    subgroup_alink.setAttribute("data-toggle", "tooltip");
+                    subgroup_alink.setAttribute("data-html", "true");
+                    subgroup_alink.setAttribute("data-placement", "right");
+                    subgroup_alink.setAttribute("title", "<p align='left' style='width:400px;'>"+dataconfig["Description"]+"</p>");
+
+                    if(dataconfig["unit"] == "ms"){
+                        subgroup_alink.innerHTML = dataconfig["Summary Description"] + " (time)";
+                    }
+                    else{
+                        subgroup_alink.innerHTML = dataconfig["Summary Description"] + " (" + dataconfig["unit"] + ")";
+                    }
+                    td_subgroup.appendChild(subgroup_alink);
+                    tr.appendChild(td_group);
+                    tr.appendChild(td_subgroup);
+
+                    $.each(pro_list, function(pid, process_name){
+                        var value_src = getSUMorMAX(statistic_src[datatype][process_name]);
+
+                        if(typeof statistic_dest !== 'undefined') {
+                            var value_dest = getSUMorMAX(statistic_dest[datatype][process_name]);
+                            var value_diff = value_dest - value_src;
+                        }
+
+                        tr.appendChild(
+                                createTableCell(false,
+                                        dataconfig["unit"],
+                                        value_src, value_dest, value_diff));
+                    });
+
+                    var data_src = getProcessSum(statistic_src, dataconfig, datatype);
+
+                    if(data_src === "N/A"){
+                        if(typeof statistic_dest !== 'undefined'){
+                            tr.appendChild(createTableCellHtml(true, "N/A", "N/A", "N/A"));
+                        }
+                        else {
+                            tr.appendChild(createTableCellHtml(true, "N/A"));
+                        }
+                    }
+                    else {
+                        if(typeof statistic_dest !== 'undefined') {
+                            var data_dest = getProcessSum(statistic_dest, dataconfig, datatype);
+                            var data_diff = data_dest - data_src;
+                        }
+                        tr.appendChild(createTableCell(true, dataconfig["unit"], data_src, data_dest, data_diff));
+                    }
+
+                    var report_html_src = "<a href=detail.html?measure=" + datatype + ">" + "Report</a>";
+                    if(typeof statistic_dest !== 'undefined') {
+                        var report_html_dest = "<a href=../../../" +
+                                $("#sel_timestamp option:selected").text() +
+                                "/" +
+                                $("#sel_case option:selected").text() +
+                                "/report" +
+                                "/detail.html?measure=" +
+                                datatype +
+                                ">" + "Report</a>";
+                    }
+                    tr.appendChild(createTableCellHtml(false, report_html_src, report_html_dest, ''));
+
+                    tr_array.push(tr);
+                });
+            });
+            return tr_array;
+        }
+
+        function spanGroupColumn(table){
+            var rowCount = table.find("tr").length;
+            var flagRow = table.find("tr:eq("+rowCount+")").find("td:eq(0)").html();
+            var sp = 0;
+            for(var i = rowCount; i >=0; i--) {
+                var tempRow = table.find("tr:eq("+i+")");
+                if(flagRow == tempRow.find("td:eq(0)").html()) {
+                    tempRow.find("td:eq(0)").remove();
+                }
+                else {
+                    $("<td/>").attr("rowspan", rowCount-i-sp).html(flagRow).prependTo(tempRow.parent().find("tr:eq("+(i+1)+")"));
+                    flagRow = tempRow.find("td:eq(0)").html();
+                    sp = rowCount-i;
+                    if(i != 0) {
+                        tempRow.find("td:eq(0)").remove();
+                    }
+                }
+            }
+        }
+
+        function getProcessSum(statistic, config, measure){
+            if(config["sum"]==false){
+                return("N/A");
+            }
+            else{
+                return(getTotal(statistic, measure));
+            }
+        }
+
+        function createTableCell(is_highlight, unit, val_src, val_dest, val_diff){
+            var html_src = formatNumber(val_src, unit);
+            var sign = "";
+            var html_dest, html_diff;
+            if(typeof val_dest !== 'undefined') {
+                html_dest = formatNumber(val_dest, unit);
+
+                if (val_diff < 0) {
+                    sign = "-";
+                }
+
+                html_diff = sign + formatNumber(Math.abs(val_diff), unit);
+            }
+            return createTableCellHtml(is_highlight, html_src, html_dest, html_diff);
+        }
+
+        function createTableCellHtml(is_highlight, html_src, html_dest, html_diff){
+            var td = document.createElement('td');
+            td.style.padding = '0 px';
+
+            var div_src = document.createElement('div');
+            div_src.innerHTML = html_src;
+            td.appendChild(div_src);
+
+            if(is_highlight) {
+                td.className += " highlight_cell";
+                div_src.className += " highlight_cell";
+            }
+
+            if(typeof html_dest !== 'undefined') {
+                var div_dest = document.createElement('div');
+                div_dest.innerHTML = html_dest;
+                div_dest.className += " compared";
+                td.appendChild(div_dest);
+
+                var div_diff = document.createElement('div');
+                div_diff.innerHTML = html_diff;
+
+                if (html_diff[0] === '-' || html_diff === '0' || html_diff === 'N/A') {
+                    div_diff.className += " diff_better";
+                }
+                else {
+                    div_diff.className += " diff_worse";
+                }
+
+                if(is_highlight) {
+                    div_dest.className += " highlight_cell";
+                    div_diff.className += " highlight_cell";
+                }
+                td.appendChild(div_diff);
+            }
+            return td
+        }
+
+        function createDbTableRow(is_highlight, measure_text, unit, src, dest, diff){
+            var tr = document.createElement('tr');
+
+            if(is_highlight){
+                tr.className += ' highlight_cell';
+            }
+
+            tr.appendChild(createTableCellHtml(is_highlight, measure_text));
+
+            if(typeof src === 'string') {
+                tr.appendChild(createTableCellHtml(is_highlight, src, dest, diff));
+            }
+            else {
+                tr.appendChild(createTableCell(is_highlight, unit, src, dest, diff));
+            }
+            return tr;
+        }
+
+        function updateDbDiskTable(table, statistic_src, statistic_dest){
+            table.empty();
+            table.append(createDbDiskTable(statistic_src, statistic_dest));
+        }
+
+        function createDbDiskTable(statistic_src, statistic_dest){
+            var element_list = [];
+            var thead = document.createElement('tr');
+            thead.innerHTML = '<th>Measures</th><th>Size</th>';
+            element_list.push(thead);
+
+            var db_disk_statistics_total_src = 0;
+            var db_disk_statistics_total_dest = 0;
+            $.each(statistic_src, function(key, val){
+                var size_src = val;
+                db_disk_statistics_total_src = db_disk_statistics_total_src + size_src;
+                if(typeof statistic_dest != 'undefined'){
+                    var size_dest = statistic_dest[key];
+                    var size_diff = size_dest - size_src;
+                    db_disk_statistics_total_dest = db_disk_statistics_total_dest + size_dest;
+                    element_list.push(createDbTableRow(false, key + ' (byte)', 'byte', size_src, size_dest, size_diff));
+                }
+                else {
+                    element_list.push(createDbTableRow(false, key + ' (byte)', 'byte', size_src));
+                }
+            });
+            if(typeof statistic_dest != 'undefined') {
+                var total_diff = db_disk_statistics_total_dest - db_disk_statistics_total_src;
+                element_list.push(
+                        createDbTableRow(true, 'Total (byte)', 'byte',
+                                db_disk_statistics_total_src,
+                                db_disk_statistics_total_dest,
+                                total_diff));
+            }
+            else {
+                element_list.push(
+                        createDbTableRow(true, 'Total (byte)', 'byte',
+                                db_disk_statistics_total_src));
+            }
+            return element_list
+        }
+
+        function updateDbDocTable(table, statistic_src, statistic_dest){
+            table.empty();
+            table.append(createDbDocumentTable(statistic_src, statistic_dest));
+        }
+
+        function createDbDocumentTable(statistic_src, statistic_dest){
+            var element_list = [];
+            var thead = document.createElement('tr');
+            thead.innerHTML = '<th>Measures</th><th>Size</th>';
+            element_list.push(thead);
+
+            var db_doc_statistics_total_src = 0;
+            var db_doc_statistics_total_dest = 0;
+            $.each(statistic_src, function(key, val){
+                size_src = val["max"];
+                db_doc_statistics_total_src = db_doc_statistics_total_src + size_src;
+                if(typeof statistic_dest != 'undefined'){
+                    var size_dest = statistic_dest[key]["max"];
+                    var size_diff = size_dest - size_src;
+                    db_doc_statistics_total_dest = db_doc_statistics_total_dest + size_dest;
+                    element_list.push(createDbTableRow(false, key + ' (byte)', 'byte', size_src, size_dest, size_diff));
+                }
+                else {
+                    element_list.push(createDbTableRow(false, key + ' (byte)', 'byte', size_src));
+                }
+            });
+            if(typeof statistic_dest != 'undefined') {
+                var total_diff = db_doc_statistics_total_dest - db_doc_statistics_total_src;
+                element_list.push(
+                        createDbTableRow(true, 'Total (byte)', 'byte',
+                                db_doc_statistics_total_src,
+                                db_doc_statistics_total_dest,
+                                total_diff));
+            }
+            else {
+                element_list.push(
+                        createDbTableRow(true, 'Total (byte)', 'byte',
+                                db_doc_statistics_total_src));
+            }
+
+            var report_html_src = "<a href='MongoDoc.html"+"'>Report</a>";
+            if(typeof statistic_dest !== 'undefined') {
+                var report_html_dest = "<a href='MongoDoc.html"+"'>Report</a>";
+            }
+            element_list.push(createDbTableRow(false, 'Graph Report', '', report_html_src, report_html_dest, ''));
+
+            return element_list;
+        }
+    </script>
+</head>
+<body>
+
+<nav class="navbar navbar-inverse navbar-fixed-top" style="background-color: #000000">
+    <a class="navbar-brand" href="#" style="color: white">RackHD Benchmark Report</a>
+</nav>
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="well well-sm" style="margin-top:50px">
+                <p id="case_name"><b>Case Name: </b></p>
+                <p id="case_log_path"><b>Case Log Path: </b></p>
+                <p id="case_start_time"><b>Case Start Time: </b></p>
+                <p id="case_end_time"><b>Case End Time: </b></p>
+                <p id="node_finish_time"><b>Node Finish Time: </b></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-12 form-group form-horizontal">
+            <a href="#" class="list-group-item active" style="margin-bottom:10px">
+                Summary Report
+            </a>
+        </div>
+    </div>
+    <div class="row form-group">
+        <div class="col-md-3">
+            <label class="control-label">Choose an earlier log:</label>
+        </div>
+        <div class="col-md-9">
+            <select class="form-control" id="sel_timestamp"></select>
+        </div>
+    </div>
+    <div class="row form-group">
+        <div class="col-md-3">
+            <label class="control-label">Choose a test case:</label>
+        </div>
+        <div class="col-md-9">
+            <select class="form-control" id="sel_case"></select>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-2 col-md-2 col-lg-2 form-group">
+            <button type="button" class="btn btn-primary" id="compare_btn">Compare</button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-sm-12 col-md-12" id="compare-assist">
+            <div class="col-sm-5 col-md-5 col-lg-5">
+                <div class="form-group ">
+                    <label><input type="checkbox" id="show_diff_checkbox"> show diff</label>
+                    <label><input type="checkbox" id="show_target_checkbox" checked="true"> show target data</label>
+                </div>
+            </div>
+            <div class="col-sm-7 col-md-7 col-lg-7" >
+                <div class="form-group pull-right">
+                    <div style="float: right">
+                        <div class="legend-div">Original Data:<span
+                                style="background-color: black">&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                        </div>
+                        <div class="legend-div">Compared Data:<span
+                                style="background-color: var(--compare-element-color)">&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                        </div>
+                    </div>
+                    <div style="float: right">
+                        <div class="legend-div">Delta-Better:<span
+                                style="background-color: var(--diff-better-color)">&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                        </div>
+                        <div class="legend-div">Delta-Worse:<span
+                                style="background-color: var(--diff-worse-color)">&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <a href="#" class="list-group-item active">Summary Report</a>
+            <table class="table table-hover table-squeezed table-align-right" id="case_summary_table"></table>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <a href="#" class="list-group-item active">Mongo Disk Statistics Table</a>
+            <table class="table table-hover table-squeezed table-align-left" id="mongo_disk_statistics_table"></table>
+        </div>
+        <div class="col-md-6">
+            <a href="#" class="list-group-item active">Mongo Document Statistics Table</a>
+            <table class="table table-hover table-squeezed table-align-left" id="mongo_document_statistics_table"></table>
+        </div>
+    </div>
+</div>
+</body>
+</html>
