@@ -161,8 +161,3 @@ class WorkflowsTests(object):
     def test_node_workflows_post(self):
         """Testing node POST:id/workflows"""
         self.post_workflows("Graph.noop-example")
-
-    @test(groups=['test_node_workflows_post_reboot'], depends_on_groups=["test-node-poller"])
-    def test_node_workflows_post_reboot(self):
-        """Testing reboot node POST:id/workflows"""
-        self.post_workflows("Graph.Reboot.Node")

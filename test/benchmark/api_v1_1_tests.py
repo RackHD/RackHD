@@ -1,6 +1,7 @@
 import time
 
 from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_false
 from proboscis import SkipTest
 from proboscis import test
 from proboscis import before_class
@@ -9,18 +10,17 @@ from json import loads
 
 from modules.logger import Log
 from modules.amqp import AMQPWorker
+from modules.worker import WorkerThread, WorkerTasks
 from config.api1_1_config import *
 from config.amqp import *
+from on_http_api1_1 import NodesApi as Nodes
+from on_http_api1_1 import WorkflowApi as Workflows
+from tests.api.v1_1.discovery_tests import DiscoveryTests
+from tests.api.v1_1.poller_tests import PollerTests
 
 from benchmark import ansible_ctl
 from benchmark.utils import parser
 from benchmark.utils.case_recorder import caseRecorder
-
-from on_http_api1_1 import NodesApi as Nodes
-from on_http_api1_1 import WorkflowApi as Workflows
-
-from tests.api.v1_1.poller_tests import PollerTests
-from tests.api.v1_1.nodes_tests import NodesTests
 
 LOG = Log(__name__)
 
@@ -75,7 +75,7 @@ class BenchmarkPollerTests(BenchmarkTests):
 class BenchmarkDiscoveryTests(BenchmarkTests):
     def __init__(self):
         BenchmarkTests.__init__(self,'discovery')
-        self.__task_worker = None
+        self.__task = None
         self.__discovered = 0
 
     @test(groups=["test-bm-discovery-prepare"], depends_on_groups=["test-node-poller"])
@@ -84,13 +84,20 @@ class BenchmarkDiscoveryTests(BenchmarkTests):
         self.prepare_case_env()
 
     @test(groups=["test-bm-discovery"],
-            depends_on_groups=["test-bm-discovery-prepare", "delete_all_node"])
+            depends_on_groups=["test-bm-discovery-prepare", "test_discovery_delete_node"])
     def test_discovery(self):
         """ Wait for discovery finished """
         self.case_recorder.write_event('start all discovery')
-        self.__worker = AMQPWorker(queue=QUEUE_GRAPH_FINISH,
-                                callbacks=[self.handle_discovery_finish])
-        self.__worker.start()
+        self.__task = WorkerThread(AMQPWorker(queue=QUEUE_GRAPH_FINISH, \
+                                              callbacks=[self.handle_discovery_finish]), \
+                                   'benchmark discovery')
+        def start(worker, id):
+            worker.start()
+        tasks = WorkerTasks(tasks=[self.__task], func=start)
+        tasks.run()
+        tasks.wait_for_completion(timeout_sec=1200)
+        assert_false(self.__task.timeout, \
+            message='timeout waiting for task {0}'.format(self.__task.id))
 
     def handle_discovery_finish(self, body, message):
         routeId = message.delivery_info.get('routing_key').split('graph.finished.')[1]
@@ -105,15 +112,15 @@ class BenchmarkDiscoveryTests(BenchmarkTests):
                 if graphId == routeId:
                     status = body.get('status')
                     if status == 'succeeded':
+                        message.ack()
                         self.__discovered += 1
                         self.case_recorder.write_event('finish discovery {0}'
                                 .format(self.__discovered))
                         break
 
-        message.ack()
         if self.node_count == self.__discovered:
-            self.__worker.stop()
-            self.__worker = None
+            self.__task.worker.stop()
+            self.__task.running = False
             self.__discovered = 0
             self.collect_case_data()
             LOG.info('Fetch discovery log finished')
