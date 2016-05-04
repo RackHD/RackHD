@@ -130,7 +130,6 @@ def parse_mongo_disk(input_file):
 def parse_case_info(filename):
     with open(filename, 'r') as f:
         case_info_json = json.load(f)
-    # print(case_info_json)
     return case_info_json
 
 # Parser for CPU time string from ATOP log
@@ -683,7 +682,7 @@ def copy_html_to_output_dir(output_dir):
 # parsed output file will be placed at a folder called 'data' under log_dir
 def parse(log_dir):
     if not os.path.exists(log_dir):
-        # print "log dir " + log_dir + " does not exist"
+        raise RuntimeError('Error: No log data found at: ' + log_dir)
         return
 
     output_dir = os.path.join(log_dir, 'data')

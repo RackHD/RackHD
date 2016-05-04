@@ -39,4 +39,9 @@ class BenchmarkPollerTests(object):
         assert_equal(True, ansible_ctl.collect_data(), message='Failed to collect footprint data!')
         self.__case_recorder.write_end()
 
-        parser.parse(self.__data_path)
+        LOG.info('Parse log and generate html reports')
+        try:
+            parser.parse(self.__data_path)
+        except Exception as err:
+            LOG.info('Error on parsing log or generating reports')
+            LOG.warning(err)
