@@ -7,6 +7,7 @@ from schema_tests import SchemaTests
 from session_service_tests import SessionServiceTests
 from event_service_tests import EventServiceTests
 from account_service_tests import AccountServiceTests
+from managers_tests import ManagersTests
 
 tests = [
     'redfish.chassis.tests',
@@ -16,5 +17,6 @@ tests = [
     'redfish.schema.tests',
     'redfish.event_service.tests',
     'redfish.session_service.tests',
-    'redfish.account_service.tests'
+    'redfish.account_service.tests',
+    'redfish.managers.tests'
 ]
