@@ -95,9 +95,6 @@ class ansibleControl(object):
 
         return hosts
 
-    def __del__(self):
-        os.remove(self.__hosts.name)
-
     def __check_success(self, stats):
         succeed = True
         hosts = stats.processed.keys()
@@ -155,6 +152,9 @@ class ansibleControl(object):
         pb.run()
 
         return self.__check_success(pb.stats)
+
+    def dispose(self):
+        os.remove(self.__hosts.name)
 
     def setup_env(self):
         return self.__run_playbook('setup_env.yml')

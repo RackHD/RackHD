@@ -67,7 +67,7 @@ class BenchmarkPollerTests(BenchmarkTests):
     def test_poller(self):
         """ Wait for 15 mins to let RackHD run pollers """
         self.prepare_case_env()
-        time.sleep(5)
+        time.sleep(900)
         self.collect_case_data()
         LOG.info('Fetch poller log finished')
 

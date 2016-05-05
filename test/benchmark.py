@@ -1,4 +1,5 @@
 import sys
+import os
 import getopt
 from proboscis import register
 from proboscis import TestProgram
@@ -14,7 +15,18 @@ def run_tests(api_ver, selected):
     register(groups=['discovery'], depends_on_groups=['benchmark.discovery'])
 
     if selected == False:
-        TestProgram(groups=['poller','discovery','bootstrap']).run_and_exit()
+        # Three test groups need to run sequentially,
+        # while proboscis schedules tests in different group at a mixed manner.
+        # Adding dependencies among groups is not prefered since they also can be executed along.
+        # So TestProgram needs to be called three times for different groups.
+        # TestProgram calls sys.exit() when finishing, thus subprocess is created for each group.
+        for case in ['poller', 'discovery']:
+            child_pid = os.fork()
+            if (child_pid == 0):
+                TestProgram(groups=[case]).run_and_exit()
+            pid, status = os.waitpid(child_pid, 0)
+
+        benchmark.ansible_ctl.dispose()
     else:
         TestProgram().run_and_exit()
 
