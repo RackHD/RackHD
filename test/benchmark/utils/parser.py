@@ -683,7 +683,6 @@ def copy_html_to_output_dir(output_dir):
 def parse(log_dir):
     if not os.path.exists(log_dir):
         raise RuntimeError('Error: No log data found at: ' + log_dir)
-        return
 
     output_dir = os.path.join(log_dir, 'data')
     if not os.path.exists(output_dir):

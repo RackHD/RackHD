@@ -42,6 +42,6 @@ class BenchmarkPollerTests(object):
         LOG.info('Parse log and generate html reports')
         try:
             parser.parse(self.__data_path)
-        except Exception as err:
-            LOG.info('Error on parsing log or generating reports')
+        except RuntimeError as err:
+            LOG.warning('Error on parsing log or generating reports: ')
             LOG.warning(err)
