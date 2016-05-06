@@ -48,13 +48,13 @@ class DiscoveryTests(object):
                 id = n.get('id')
                 assert_not_equal(id,None)
                 status = self.__get_workflow_status(id)
-                timeout = 20
-                while status == 'pending' and timeout != 0:
-                    LOG.warning('Workflow status for Node {0} (status={1},timeout={2})'.format(id,status,timeout))
+                retries = 20
+                while status == 'pending' and retires != 0:
+                    LOG.warning('Workflow status for Node {0} (status={1},retries={2})'.format(id,status,retries))
                     status = self.__get_workflow_status(id)
                     sleep(5)
-                    timeout -= 1
-                assert_not_equal(0, timeout, message="Workflow didn't end!")
+                    retries -= 1
+                assert_not_equal(0, retries, message="Workflow didn't end!")
 
     @test(groups=['test_discovery_delete_node'],
             depends_on_groups=["test_discovery_reboot_finish", "test-bm-discovery-prepare"])

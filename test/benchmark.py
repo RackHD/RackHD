@@ -40,8 +40,8 @@ if __name__ == '__main__':
     for arg in sys.argv[1:]:
         if arg[:14] == '--api_version=':
             # Remove this arg from array to prevent TestProgram processing it
-            sys.argv = filter(lambda x: x != op+'='+value, sys.argv)
-            api_version = value
+            api_version = arg[14]
+            sys.argv.remove(arg)
         elif arg[:8] == '--group=':
             group_selected = True
 

@@ -32,8 +32,8 @@ class BenchmarkTests(object):
         self.client = config.api_client
         self.node_count = 0
 
-    def prepare_case_env(self):
-        self.node_count = self.check_compute_count()
+    def _prepare_case_env(self):
+        self.node_count = self.__check_compute_count()
         self.case_recorder.write_interval(ansible_ctl.get_data_interval())
         self.case_recorder.write_start()
         self.case_recorder.write_node_number(self.node_count)
@@ -41,13 +41,18 @@ class BenchmarkTests(object):
         assert_equal(True, ansible_ctl.start_daemon(), \
                     message='Failed to start data collection daemon!')
 
-    def collect_case_data(self):
+    def _collect_case_data(self):
         assert_equal(True, ansible_ctl.collect_data(), message='Failed to collect footprint data!')
         self.case_recorder.write_end()
 
-        # parser.parse(self.__data_path)
+        LOG.info('Parse log and generate html reports')
+        try:
+            parser.parse(self.__data_path)
+        except RuntimeError as err:
+            LOG.warning('Error on parsing log or generating reports: ')
+            LOG.warning(err)
 
-    def check_compute_count(self):
+    def __check_compute_count(self):
         Nodes().nodes_get()
         nodes = loads(self.client.last_response.data)
         count = 0
@@ -61,27 +66,27 @@ class BenchmarkTests(object):
 @test(groups=["benchmark.poller"])
 class BenchmarkPollerTests(BenchmarkTests):
     def __init__(self):
-        BenchmarkTests.__init__(self,'poller')
+        BenchmarkTests.__init__(self, 'poller')
 
     @test(groups=["test-bm-poller"], depends_on_groups=["test-node-poller"])
     def test_poller(self):
         """ Wait for 15 mins to let RackHD run pollers """
-        self.prepare_case_env()
+        self._prepare_case_env()
         time.sleep(900)
-        self.collect_case_data()
+        self._collect_case_data()
         LOG.info('Fetch poller log finished')
 
 @test(groups=["benchmark.discovery"])
 class BenchmarkDiscoveryTests(BenchmarkTests):
     def __init__(self):
-        BenchmarkTests.__init__(self,'discovery')
+        BenchmarkTests.__init__(self, 'discovery')
         self.__task = None
         self.__discovered = 0
 
     @test(groups=["test-bm-discovery-prepare"], depends_on_groups=["test-node-poller"])
     def test_prepare_discovery(self):
         """ Prepare discovery """
-        self.prepare_case_env()
+        self._prepare_case_env()
 
     @test(groups=["test-bm-discovery"],
             depends_on_groups=["test-bm-discovery-prepare", "test_discovery_delete_node"])
@@ -122,7 +127,7 @@ class BenchmarkDiscoveryTests(BenchmarkTests):
             self.__task.worker.stop()
             self.__task.running = False
             self.__discovered = 0
-            self.collect_case_data()
+            self._collect_case_data()
             LOG.info('Fetch discovery log finished')
 
 @test(groups=["benchmark.bootstrap"])
