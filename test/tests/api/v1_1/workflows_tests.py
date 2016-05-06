@@ -27,6 +27,7 @@ class WorkflowsTests(object):
     def __init__(self):
         self.__client = config.api_client
         self.__task_worker = None
+        self.__graph_name = None
         self.workflowDict = {
             "friendlyName": "Shell Commands Hwtest_1",
             "injectableName": "Graph.post.test",
@@ -118,13 +119,10 @@ class WorkflowsTests(object):
         assert_equal(200,self.__client.last_response.status)
         assert_equal(self.workflowDict.get('friendlyName'),str(json.loads(self.__client.last_response.data).get('friendlyName')))
 
-
-    @test(groups=['test_node_workflows_post'], \
-            depends_on_groups=['workflows_put', 'delete_all_active_workflows'])
-    def test_node_workflows_post(self):
-        """Testing node POST:id/workflows"""
+    def post_workflows(self, graph_name):
         Nodes().nodes_get()
         nodes = loads(self.__client.last_response.data)
+        self.__graph_name = graph_name
 
         for n in nodes:
             if n.get('type') == 'compute':
@@ -137,9 +135,8 @@ class WorkflowsTests(object):
                     Nodes().nodes_identifier_workflows_active_delete(id)
                 except Exception,e:
                     assert_equal(404,e.status, message = 'status should be 404')
-                Nodes().nodes_identifier_workflows_post(id,name='Graph.noop-example',body={})
+                Nodes().nodes_identifier_workflows_post(id,name=graph_name,body={})
                 self.__task_worker.start()
-
 
     def handle_graph_finish(self,body,message):
         routeId = message.delivery_info.get('routing_key').split('graph.finished.')[1]
@@ -149,7 +146,7 @@ class WorkflowsTests(object):
         message.ack()
         for w in workflows:
             injectableName = w['definition'].get('injectableName')
-            if injectableName == 'Graph.noop-example':
+            if injectableName == self.__graph_name:
                 graphId = w['context'].get('graphId')
                 if graphId == routeId:
                     nodeid = w['context']['target']
@@ -159,3 +156,8 @@ class WorkflowsTests(object):
                         self.__task_worker.stop()
                         break
 
+    @test(groups=['test_node_workflows_post'], \
+            depends_on_groups=['workflows_put', 'delete_all_active_workflows'])
+    def test_node_workflows_post(self):
+        """Testing node POST:id/workflows"""
+        self.post_workflows("Graph.noop-example")

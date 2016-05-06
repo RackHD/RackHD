@@ -1,4 +1,5 @@
 import sys
+import os
 import getopt
 from proboscis import register
 from proboscis import TestProgram
@@ -8,14 +9,24 @@ def run_tests(api_ver, selected):
     if api_ver == '2':
         import benchmark.api_v2_0 as benchmark
     else:
-        import benchmark.api_v1_1 as benchmark
+        import benchmark.api_v1_1_tests
 
-    register(groups=['poller'], depends_on_groups=benchmark.benchmark_poller_tests)
-    register(groups=['discovery'], depends_on_groups=benchmark.benchmark_discovery_tests)
-    register(groups=['bootstrap'], depends_on_groups=benchmark.benchmark_bootstrap_tests)
+    register(groups=['poller'], depends_on_groups=['benchmark.poller'])
+    register(groups=['discovery'], depends_on_groups=['benchmark.discovery'])
 
     if selected == False:
-        TestProgram(groups=['poller','discovery','bootstrap']).run_and_exit()
+        # Three test groups need to run sequentially,
+        # while proboscis schedules tests in different group at a mixed manner.
+        # Adding dependencies among groups is not prefered since they also can be executed along.
+        # So TestProgram needs to be called three times for different groups.
+        # TestProgram calls sys.exit() when finishing, thus subprocess is created for each group.
+        for case in ['poller', 'discovery']:
+            child_pid = os.fork()
+            if (child_pid == 0):
+                TestProgram(groups=[case]).run_and_exit()
+            pid, status = os.waitpid(child_pid, 0)
+
+        benchmark.ansible_ctl.dispose()
     else:
         TestProgram().run_and_exit()
 
@@ -26,19 +37,12 @@ if __name__ == '__main__':
     api_version = "1"
     group_selected = False
 
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], "h", ["api_version=", "group="])
-        for op, value in opts:
-            if op == "--api_version":
-                # Remove this arg from array to prevent TestProgram processing it
-                sys.argv = filter(lambda x: x != op+'='+value, sys.argv)
-                api_version = value
-            if op == '--group':
-                group_selected = True
-            if op == "-h":
-                print "Usage: benchmark.py [--api_version|--group]"
-                exit()
-    except getopt.GetoptError:
-        sys.exit("option or arg is not supported")
+    for arg in sys.argv[1:]:
+        if arg[:14] == '--api_version=':
+            # Remove this arg from array to prevent TestProgram processing it
+            api_version = arg[14]
+            sys.argv.remove(arg)
+        elif arg[:8] == '--group=':
+            group_selected = True
 
     run_tests(api_version, group_selected)

@@ -352,7 +352,7 @@ class NodesTests(object):
                     data = self.__get_data()
                 resps.append({'data': data, 'id':id})
         for resp in resps:
-            assert_not_equal(0, len(resp['data']), 
+            assert_not_equal(0, len(resp['data']),
                 message='No Workflows found for Node {0}'.format(resp['id']))
         assert_raises(rest.ApiException, Nodes().nodes_identifier_workflows_post, 'fooey','Graph.Discovery',body={})
 
@@ -384,5 +384,4 @@ class NodesTests(object):
                             raise e
                         timeout -= 1
         assert_raises(rest.ApiException, Nodes().nodes_identifier_workflows_active_delete, 'fooey')
-
 
