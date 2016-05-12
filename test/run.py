@@ -5,7 +5,7 @@ import modules.amqp as amqp
 import argparse
 import sys
 
-def run_tests():
+def run_tests(group=['smoke-tests']):
 
     import tests.api.v1_1 as api_1_1 
     import tests.api.v2_0 as api_2_0
@@ -14,8 +14,11 @@ def run_tests():
     register(groups=['api-v1.1'], depends_on_groups=api_1_1.tests)
     register(groups=['api-v2.0'], depends_on_groups=api_2_0.tests)
     register(groups=['api-redfish-1.0'], depends_on_groups=api_redfish_1_0.tests)
+    register(groups=['smoke-tests'], depends_on_groups=['api-v1.1','api-v2.0','api-redfish-1.0'])
+    register(groups=['regression-tests'], depends_on_groups=[ 'smoke-tests' ] + \
+        [ test for test in api_1_1.regression_tests + api_2_0.regression_tests ])
 
-    TestProgram().run_and_exit()
+    TestProgram(groups=group).run_and_exit()
 
 if __name__ == '__main__':
     # avoid eating valid proboscis args
@@ -36,4 +39,13 @@ if __name__ == '__main__':
             args = parser.parse_args()
             amqp.run_listener(amqp.make_queue_obj(args.exchange,args.queue,args.key))
             sys.exit(0)
+
+    group = []
+    for v in sys.argv:
+        if 'group' in v:
+            group = v.split('=')[1:]
+    if len(group) > 0:
+        run_tests(group)
+        sys.exit(0)
     run_tests()
+

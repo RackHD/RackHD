@@ -6,6 +6,7 @@
     NOTE: virtualenv version used 1.11.4 (Ubuntu). Using virtualenv is optional here but suggested.
 
     virtualenv .venv
+    source .venv/bin/activate
     sudo pip install -r requirements.txt
     
 ## Running the tests
@@ -19,7 +20,21 @@ Run Vagrant environment
 
 Run the tests
 
+    Defaults to smoke-test group.
+
     python run.py
+
+Run smoke tests
+
+    Runs limited functional test set to validate basic functionality.
+
+    python run.py --group=smoke-tests
+
+Run regression tests
+
+    Runs smoke-tests with an extended functional test set.
+
+    python run.py --group=regression-tests
 
 ## Optional settings
 
