@@ -97,12 +97,17 @@ class ManagersTests(object):
             dataId = member.get('@odata.id')
             assert_is_not_none(dataId)
             dataId = dataId.split('/redfish/v1/Managers/')[1]
-            redfish().get_manager_ethernet_interface(dataId, '0')
-            interface = self.__get_data()
-            LOG.debug(interface,json=True)
-            id = interface.get('Id')
-            assert_equal('0', id, message='unexpected id {0}, expected {1}'.format(id,dataId))
-            ipv4 = interface.get('IPv4Addresses')
-            assert_is_not_none(ipv4)
-            assert_not_equal(0, len(ipv4), message='ipv4 list was empty!')
+            redfish().list_manager_ethernet_interfaces(dataId)
+            managers = self.__get_data();
+            for manager in managers.get('Members'):
+                odata_id = manager.get('@odata.id')
+                req_id = odata_id.split('/redfish/v1/Managers/'+dataId+'/EthernetInterfaces/')[1]
+                redfish().get_manager_ethernet_interface(dataId, req_id)
+                interface = self.__get_data()
+                LOG.debug(interface,json=True)
+                id = interface.get('Id')
+                assert_equal(req_id, id, message='unexpected id {0}, expected {1}'.format(id,dataId))
+                ipv4 = interface.get('IPv4Addresses')
+                assert_is_not_none(ipv4)
+                assert_not_equal(0, len(ipv4), message='ipv4 list was empty!')
 
