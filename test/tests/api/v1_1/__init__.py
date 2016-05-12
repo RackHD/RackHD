@@ -8,6 +8,7 @@ from config_tests import ConfigTests
 from workflowTasks_tests import WorkflowTasksTests
 from workflows_tests import WorkflowsTests
 from auth_tests import AuthTests
+from os_install_tests import OSInstallTests
 
 tests = [
     'nodes.tests',
@@ -19,4 +20,8 @@ tests = [
     'workflowTasks.tests',
     'workflows.tests',
     'auth.tests'
+]
+
+regression_tests = [
+    'os-install.v1.1.tests'
 ]

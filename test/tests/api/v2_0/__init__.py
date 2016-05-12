@@ -26,3 +26,6 @@ tests = [
     'skus_api2.tests',
     'lookups_api2.tests'
 ]
+
+regression_tests = [
+]

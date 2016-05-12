@@ -20,3 +20,6 @@ tests = [
     'redfish.account_service.tests',
     'redfish.managers.tests'
 ]
+
+regression_tests = [
+]
