@@ -15,7 +15,7 @@ from json import dumps,loads
 
 LOG = Log(__name__)
 
-@test(groups=['amqp.tests'])
+@test(groups=['amqp.tests'], depends_on_groups=['obm.tests'])
 class AMQPTests(object):
 
     def __init__(self):
@@ -48,8 +48,7 @@ class AMQPTests(object):
                 task.worker.stop()
                 task.running = False
 
-    @test(groups=['amqp.tests.sel'], \
-          depends_on_groups=['check-obm'])
+    @test(groups=['amqp.tests.sel'])
     def check_sel_task(self):
         """ Testing AMQP on.task.ipmi.sel.result """
         Nodes().nodes_get()
@@ -70,8 +69,7 @@ class AMQPTests(object):
         for task in self.__tasks:
             assert_false(task.timeout, message='timeout waiting for task {0}'.format(task.id))
 
-    @test(groups=['amqp.tests.sdr'], \
-          depends_on_groups=['amqp.tests.sel'])
+    @test(groups=['amqp.tests.sdr'])
     def check_sdr_task(self):
         """ Testing AMQP on.task.ipmi.sdr.result """
         Nodes().nodes_get()
@@ -92,8 +90,7 @@ class AMQPTests(object):
         for task in self.__tasks:
             assert_false(task.timeout, message='timeout waiting for task {0}'.format(task.id))
         
-    @test(groups=['amqp.tests.chassis'], \
-          depends_on_groups=['amqp.tests.sdr'])
+    @test(groups=['amqp.tests.chassis'])
     def check_chassis_task(self):
         """ Testing AMQP on.task.ipmi.chassis.result """
         Nodes().nodes_get()

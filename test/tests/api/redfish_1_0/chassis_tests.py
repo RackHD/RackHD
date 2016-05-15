@@ -14,7 +14,8 @@ from json import loads,dumps
 
 LOG = Log(__name__)
 
-@test(groups=['redfish.chassis.tests'], depends_on_groups=['obm.tests'])
+@test(groups=['redfish.chassis.tests'], \
+    depends_on_groups=['obm.tests', 'amqp.tests'])
 class ChassisTests(object):
 
     def __init__(self):

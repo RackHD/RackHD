@@ -6,6 +6,7 @@ from on_http_api1_1 import NodesApi as Nodes
 from on_http_api1_1 import rest
 from modules.logger import Log
 from modules.amqp import AMQPWorker
+from modules.worker import WorkerThread, WorkerTasks
 from datetime import datetime
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
@@ -13,13 +14,16 @@ from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_true
+from proboscis.asserts import fail
 from proboscis import SkipTest
 from proboscis import test
 from json import dumps, loads
 import time
 
-
 LOG = Log(__name__)
+
+HTTP_NO_CONTENT = 204
+HTTP_NOT_FOUND  = 404
 
 @test(groups=['workflows.tests'])
 class WorkflowsTests(object):
@@ -28,6 +32,8 @@ class WorkflowsTests(object):
         self.__client = config.api_client
         self.__task_worker = None
         self.__graph_name = None
+        self.__tasks = []
+        self.__graph_status = []
         self.workflowDict = {
             "friendlyName": "Shell Commands Hwtest_1",
             "injectableName": "Graph.post.test",
@@ -53,7 +59,8 @@ class WorkflowsTests(object):
         """ Testing GET:/"""
         Workflows().workflows_get()
         assert_equal(200,self.__client.last_response.status)
-        assert_not_equal(0, len(json.loads(self.__client.last_response.data)), message='Active workflows list was empty!')
+        assert_not_equal(0, len(json.loads(self.__client.last_response.data)), \
+            message='Active workflows list was empty!')
 
     @test(groups=['workflows_get_id'],depends_on_groups=['workflows_get'])
     def test_workflows_id_get(self):
@@ -72,7 +79,8 @@ class WorkflowsTests(object):
         try:
             Workflows().nodes_identifier_workflows_get("WrongIdentifier")
         except Exception,e:
-            assert_equal(404,e.status, message = 'status should be 404')
+            assert_equal(HTTP_NOT_FOUND, e.status, \
+                message = 'status should be {0}'.format(HTTP_NOT_FOUND))
 
     def put_workflow(self, workflowDict):
         #adding/updating  a workflow task
@@ -93,7 +101,6 @@ class WorkflowsTests(object):
                 readInjectableName  = readWorkflowTask.get('injectableName')
                 assert_equal(readFriendlyName,workflowDict.get('friendlyName'))
                 assert_equal(readInjectableName,workflowDict.get('injectableName'))
-
         assert_equal(foundInsertedWorkflow, True)
 
     @test(groups=['workflows_put'], depends_on_groups=['workflows_library_get'])
@@ -119,26 +126,64 @@ class WorkflowsTests(object):
         """ Testing GET:/library:/identifier"""
         Workflows().workflows_library_injectable_name_get(self.workflowDict.get('injectableName'))
         assert_equal(200,self.__client.last_response.status)
-        assert_equal(self.workflowDict.get('friendlyName'),str(json.loads(self.__client.last_response.data).get('friendlyName')))
+        assert_equal(self.workflowDict.get('friendlyName'), \
+            str(json.loads(self.__client.last_response.data).get('friendlyName')))
 
-    def post_workflows(self, graph_name):
-        Nodes().nodes_get()
-        nodes = loads(self.__client.last_response.data)
+    def post_workflows(self, graph_name, \
+                       timeout_sec=300, nodes=[], data={}, \
+                       tasks=[], callback=None, run_now=True):
         self.__graph_name = graph_name
+        self.__graph_status = []
+        
+        if len(nodes) == 0:
+            Nodes().nodes_get()
+            for n in loads(self.__client.last_response.data):
+                if n.get('type') == 'compute':
+                    nodes.append(n.get('id'))
+        
+        if callback == None:
+            callback = self.handle_graph_finish
+        
+        for node in nodes:
+            LOG.info('Starting AMQP listener for node {0}'.format(node))
+            worker = AMQPWorker(queue=QUEUE_GRAPH_FINISH, callbacks=[callback])
+            tasks.append(WorkerThread(worker, node))
+            
+            try:
+                Nodes().nodes_identifier_workflows_active_delete(node)
+            except Exception,e:
+                assert_equal(HTTP_NOT_FOUND, e.status, \
+                    message = 'status should be {0}'.format(HTTP_NOT_FOUND))
 
-        for n in nodes:
-            if n.get('type') == 'compute':
-                id = n.get('id')
-                assert_not_equal(id,None)
-                LOG.info('starting amqp listener for node {0}'.format(id))
-                self.__task_worker=AMQPWorker(queue=QUEUE_GRAPH_FINISH,
-                                    callbacks=[self.handle_graph_finish])
-                try:
-                    Nodes().nodes_identifier_workflows_active_delete(id)
-                except Exception,e:
-                    assert_equal(404,e.status, message = 'status should be 404')
-                Nodes().nodes_identifier_workflows_post(id,name=graph_name,body={})
-                self.__task_worker.start()
+            retries = 5
+            Nodes().nodes_identifier_workflows_active_get(node)
+            status = self.__client.last_response.status
+            while status != HTTP_NO_CONTENT and retries != 0:
+                status = self.__client.last_response.status
+                LOG.warning('Workflow status for Node {0} (status={1},retries={2})' \
+                    .format(node, status, retries))
+                sleep(1)
+                retries -= 1
+                Nodes().nodes_identifier_workflows_active_get(node)
+            assert_equal(HTTP_NO_CONTENT, status, \
+                message = 'status should be {0}'.format(HTTP_NO_CONTENT))
+            Nodes().nodes_identifier_workflows_post(node, name=graph_name, body=data)
+        
+        self.__tasks = list(tasks)
+        if run_now:
+            self.run_workflow_tasks(tasks, timeout_sec)
+
+    def run_workflow_tasks(self, tasks, timeout_sec):
+        def thread_func(worker, id):
+            worker.start()
+        worker_tasks = WorkerTasks(tasks=self.__tasks, func=thread_func)
+        worker_tasks.run()
+        worker_tasks.wait_for_completion(timeout_sec=timeout_sec)
+        for task in self.__tasks:
+            assert_false(task.timeout, \
+                message='Timeout for {0}, node {1}'.format(self.__graph_name, task.id))
+        if 'failed' in self.__graph_status:
+            fail('Failure running {0}'.format(self.__graph_name))
 
     def handle_graph_finish(self,body,message):
         routeId = message.delivery_info.get('routing_key').split('graph.finished.')[1]
@@ -153,11 +198,21 @@ class WorkflowsTests(object):
                 if graphId == routeId:
                     nodeid = w['context']['target']
                     status = body['status']
-                    if status == 'succeeded':
-                        LOG.info('{0} - target: {1}, status: {2}, route: {3}'.format(injectableName,nodeid,status,routeId))
-                        self.__task_worker.stop()
+                    if status == 'succeeded' or status == 'failed':
+                        self.__graph_status.append(status)
+                        for task in self.__tasks:
+                            if task.id == nodeid:
+                                task.worker.stop()
+                                task.running = False
+                        msg = '{0} - target: {1}, status: {2}, route: {3}' \
+                            .format(injectableName,nodeid,status,routeId)
+                        if status == 'failed':
+                            LOG.error(msg)
+                            LOG.error(w['tasks'], json=True)
+                        else:
+                            LOG.info(msg)
                         break
-
+        
     @test(groups=['test_node_workflows_post'], \
             depends_on_groups=['workflows_put', 'delete_all_active_workflows'])
     def test_node_workflows_post(self):

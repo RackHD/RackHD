@@ -8,7 +8,7 @@
     virtualenv .venv
     source .venv/bin/activate
     sudo pip install -r requirements.txt
-
+    
 ## Running the tests
 
 Run Vagrant environment
@@ -36,15 +36,15 @@ Run regression tests
 
     python run.py --group=regression-tests
 
-## Optional settings
+## Optional Environment Variables
 
 Log levels
-
+    
     NOTE: CRITICAL < ERROR < WARNING < INFO < DEBUG
 
     export RACKHD_TEST_LOGLVL=[CRITICAL|ERROR|WARNING|INFO|DEBUG default=WARNING]
 
-API host/port
+API host/port 
 
     export RACKHD_HOST=[host ip default=localhost]
     export RACKHD_PORT=[host port default=9090]
@@ -53,7 +53,26 @@ AMQP URL
 
     export RACKHD_AMQP_URL=[amqp://<url>:<port> default=amqp://localhost:9091]
 
-Specify test groups
+OS Installer locations
+
+    Specify specific OS repository path:
+
+    export RACKHD_CENTOS_REPO_PATH=[location to http mirror for all CentOS images]
+    export RACKHD_ESXI_REPO_PATH=[location to http mirror for all ESXi images]
+    export RACKHD_UBUNTU_REPO_PATH=[location to http mirror for all Ubuntu images]
+    export RACKHD_SUSE_REPO_PATH=[location to http mirror for all SUSE images]
+
+    Example: export RACKHD_CENTOS_REPO_PATH=http://ip:port/repo/centos
+
+HTTP proxy configuration (optional):
+
+To define HTTP proxies for accessing remote OS image repositories, see the [RackHD Configuration howto](http://rackhd.readthedocs.io/en/latest/rackhd/configuration.html?highlight=httpProxies#rackhd-configuration)
+
+Specifying test groups
+    
+    To display the entire test plan and available test groups run:
+
+    python run.py --show-plan
 
     Use the nosetest --group option to test a specific group:
 
@@ -66,7 +85,7 @@ Specify test groups
     Run only Redfish 1.0 compliant API related tests:
     python run.py --group=api-redfish-1.0
 
-To reset the default target BMC user/password
+To reset the default target BMC user/password 
 
     NOTE: only prompts for user/password when .passwd file is missing
 

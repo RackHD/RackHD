@@ -22,29 +22,32 @@ class OBMTests(object):
     def __init__(self):
         self.__client = config.api_client 
 
-    @test(groups=['obm.tests', 'set-ipmi-obm'], depends_on_groups=['nodes.tests'])
+    @test(groups=['set-ipmi-obm'], 
+        depends_on_groups=['check-nodes-catalogs.test'])
     def setup_ipmi_obm(self):
         """ Setup IPMI OBM settings with PATCH:/nodes """
         assert_equal(len(obmSettings().setup_nodes(service_type='ipmi-obm-service')), 0)
 
-    @test(groups=['obm.tests', 'check-obm'], depends_on_groups=['set-ipmi-obm'])
+    @test(groups=['check-ipmi-obm'], depends_on_groups=['set-ipmi-obm'])
     def check_ipmi_obm_settings(self):
         """ Checking IPMI OBM settings GET:/nodes """
         assert_equal(len(obmSettings().check_nodes(service_type='ipmi-obm-service')), 0, 
                 message='there are missing IPMI OBM settings!')
     
-    @test(groups=['obm.tests', 'set-snmp-obm'], depends_on_groups=['nodes.tests'])
+    @test(groups=['set-snmp-obm'], \
+        depends_on_groups=['check-nodes-catalogs.test'])
     def setup_snmp_obm(self):
         """ Setup SNMP OBM settings with PATCH:/nodes """
         assert_equal(len(obmSettings().setup_nodes(service_type='snmp-obm-service')), 0)
 
-    @test(groups=['obm.tests', 'check-obm'], depends_on_groups=['set-snmp-obm'])
+    @test(groups=['check-snmp-obm'], depends_on_groups=['set-snmp-obm'])
     def check_snmp_obm_settings(self):
         """ Checking SNMP OBM settings GET:/nodes """
         assert_not_equal(len(obmSettings().check_nodes(service_type='snmp-obm-service')), 0,
                 message='there are missing SNMP OBM settings!')
    
-    @test(groups=['obm.tests', 'create-node-id-obm-identify'], depends_on_groups=['check-obm'])
+    @test(groups=['create-node-id-obm-identify'], \
+        depends_on_groups=['check-ipmi-obm', 'check-snmp-obm'])
     def test_node_id_obm_identify_create(self):
         """ Testing POST:/nodes/:id/obm/identify """
         Nodes().nodes_get()
@@ -61,7 +64,7 @@ class OBMTests(object):
             assert_equal(200, c.status, message=c.reason)
         assert_raises(rest.ApiException, Nodes().nodes_identifier_obm_identify_post, 'fooey', data)
 
-    @test(groups=['obm.tests', 'test-obms'])
+    @test(groups=['test-obm-library.tests'])
     def test_obm_library(self):
         """ Testing GET:/obms/library """
         Obms().obms_library_get()
@@ -70,7 +73,7 @@ class OBMTests(object):
         assert_equal(200, self.__client.last_response.status)
         assert_not_equal(0, len(obms), message='OBM list was empty!')
 
-    @test(groups=['obm.tests', 'test-obms-identifier'])
+    @test(groups=['test-obms-identifier.tests'])
     def test_obm_library_identifier(self):
         """ Testing GET:/obms/library/:id """
         Obms().obms_library_get()
