@@ -1,0 +1,18 @@
+---
+- name: RackHD Throughly Installation Server
+  hosts: local
+  sudo: no
+  roles:
+    - apt
+    - build
+    - git
+    - rabbitmq
+    - mongodb
+    - node-legacy
+    - rackhd-deb-from_src
+    - isc-dhcp-server
+    - monorail
+    - snmptool
+    - ipmitool
+    - images_from_src
+    - integrationtest
