@@ -16,6 +16,7 @@ from config.amqp import *
 from on_http_api1_1 import NodesApi as Nodes
 from on_http_api1_1 import WorkflowApi as Workflows
 from tests.api.v1_1.discovery_tests import DiscoveryTests
+from tests.api.v1_1.os_install_tests import OSInstallTests
 from tests.api.v1_1.poller_tests import PollerTests
 
 from benchmark import ansible_ctl
@@ -30,13 +31,14 @@ class BenchmarkTests(object):
         self.__data_path = ansible_ctl.get_data_path_per_case()
         self.case_recorder = caseRecorder(self.__data_path)
         self.client = config.api_client
-        self.node_count = 0
+        self.__node_count = 0
+        self.__finished = 0
 
     def _prepare_case_env(self):
-        self.node_count = self.__check_compute_count()
+        self.__node_count = self.__check_compute_count()
         self.case_recorder.write_interval(ansible_ctl.get_data_interval())
         self.case_recorder.write_start()
-        self.case_recorder.write_node_number(self.node_count)
+        self.case_recorder.write_node_number(self.__node_count)
 
         assert_equal(True, ansible_ctl.start_daemon(), \
                     message='Failed to start data collection daemon!')
@@ -52,6 +54,45 @@ class BenchmarkTests(object):
             LOG.warning('Error on parsing log or generating reports: ')
             LOG.warning(err)
 
+    def _wait_until_graph_finish(self, graph_name):
+        self.__graph_name = graph_name
+        self.__task = WorkerThread(AMQPWorker(queue=QUEUE_GRAPH_FINISH, \
+                                              callbacks=[self.__handle_graph_finish]), \
+                                   graph_name)
+        def start(worker, id):
+            worker.start()
+        tasks = WorkerTasks(tasks=[self.__task], func=start)
+        tasks.run()
+        tasks.wait_for_completion(timeout_sec=1200)
+        assert_false(self.__task.timeout, \
+            message='timeout waiting for task {0}'.format(self.__task.id))
+
+    def __handle_graph_finish(self, body, message):
+        routeId = message.delivery_info.get('routing_key').split('graph.finished.')[1]
+        Workflows().workflows_get()
+        workflows = loads(self.client.last_response.data)
+
+        for w in workflows:
+            definition = w['definition']
+            injectableName = definition.get('injectableName')
+            if injectableName == self.__graph_name:
+                graphId = w['context'].get('graphId')
+                if graphId == routeId:
+                    status = body.get('status')
+                    if status == 'succeeded':
+                        message.ack()
+                        self.__finished += 1
+                        self.case_recorder.write_event('finish {0} {1}'
+                                .format(self.__graph_name, self.__finished))
+                        break
+
+        if self.__node_count == self.__finished:
+            self.__task.worker.stop()
+            self.__task.running = False
+            self.__finished = 0
+            self._collect_case_data()
+            LOG.info('Fetch {0} log finished'.format(self.__graph_name))
+
     def __check_compute_count(self):
         Nodes().nodes_get()
         nodes = loads(self.client.last_response.data)
@@ -61,7 +102,6 @@ class BenchmarkTests(object):
             if type == 'compute':
                 count += 1
         return count
-
 
 @test(groups=["benchmark.poller"])
 class BenchmarkPollerTests(BenchmarkTests):
@@ -80,8 +120,6 @@ class BenchmarkPollerTests(BenchmarkTests):
 class BenchmarkDiscoveryTests(BenchmarkTests):
     def __init__(self):
         BenchmarkTests.__init__(self, 'discovery')
-        self.__task = None
-        self.__discovered = 0
 
     @test(groups=["test-bm-discovery-prepare"], depends_on_groups=["test-node-poller"])
     def test_prepare_discovery(self):
@@ -93,50 +131,30 @@ class BenchmarkDiscoveryTests(BenchmarkTests):
     def test_discovery(self):
         """ Wait for discovery finished """
         self.case_recorder.write_event('start all discovery')
-        self.__task = WorkerThread(AMQPWorker(queue=QUEUE_GRAPH_FINISH, \
-                                              callbacks=[self.handle_discovery_finish]), \
-                                   'benchmark discovery')
-        def start(worker, id):
-            worker.start()
-        tasks = WorkerTasks(tasks=[self.__task], func=start)
-        tasks.run()
-        tasks.wait_for_completion(timeout_sec=1200)
-        assert_false(self.__task.timeout, \
-            message='timeout waiting for task {0}'.format(self.__task.id))
+        self._wait_until_graph_finish('Graph.SKU.Discovery')
 
-    def handle_discovery_finish(self, body, message):
-        routeId = message.delivery_info.get('routing_key').split('graph.finished.')[1]
-        Workflows().workflows_get()
-        workflows = loads(self.client.last_response.data)
-
-        for w in workflows:
-            definition = w['definition']
-            injectableName = definition.get('injectableName')
-            if injectableName == "Graph.SKU.Discovery":
-                graphId = w['context'].get('graphId')
-                if graphId == routeId:
-                    status = body.get('status')
-                    if status == 'succeeded':
-                        message.ack()
-                        self.__discovered += 1
-                        self.case_recorder.write_event('finish discovery {0}'
-                                .format(self.__discovered))
-                        break
-
-        if self.node_count == self.__discovered:
-            self.__task.worker.stop()
-            self.__task.running = False
-            self.__discovered = 0
-            self._collect_case_data()
-            LOG.info('Fetch discovery log finished')
+    @test(groups=["test-bm-discovery-post"],
+            depends_on_groups=["test_discovery_add_obm"])
+    def test_discovery_post(self):
+        pass
 
 @test(groups=["benchmark.bootstrap"])
 class BenchmarkBootstrapTests(BenchmarkTests):
     def __init__(self):
-        BenchmarkTests.__init__(self,'bootstrap')
-        self.__task_worker = None
-        self.__discovered = 0
+        BenchmarkTests.__init__(self, 'bootstrap')
 
     @test(groups=["test-bm-bootstrap-prepare"], depends_on_groups=["test-node-poller"])
     def test_prepare_bootstrap(self):
-        pass
+        """ Prepare bootstrap """
+        assert_equal(True, ansible_ctl.prepare_bootstrap_env(), \
+                    message='Failed to prepare bootstrap environment!')
+        self._prepare_case_env()
+
+    @test(groups=["test-bm-bootstrap"],
+            depends_on_groups=["test-bm-bootstrap-prepare", "centos7-install.v1.1.test"])
+    def test_bootstrap_centos(self):
+        """ Wait for bootstrap finished """
+        self.case_recorder.write_event('start all bootstrap')
+        self._wait_until_graph_finish('Graph.InstallCentOS')
+        assert_equal(True, ansible_ctl.dispose_bootstrap_env(), \
+            message='Failed to dispose bootstrap environment!')

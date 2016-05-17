@@ -165,6 +165,13 @@ class ansibleControl(object):
     def collect_data(self):
         return self.__run_playbook('collect_data.yml')
 
+    def prepare_bootstrap_env(self):
+        self.__render_varfile_variable('image_server', get_image_server())
+        return self.__run_playbook('prepare_bootstrap_env.yml')
+
+    def dispose_bootstrap_env(self):
+        return self.__run_playbook('dispose_bootstrap_env.yml')
+
     def render_case_name(self, name):
         return self.__render_varfile_variable(self.__config_case_name, name)
 
