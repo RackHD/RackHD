@@ -18,7 +18,7 @@ def run_tests(api_ver, selected):
     if selected == False:
         # Three test groups need to run sequentially,
         # while proboscis schedules tests in different group at a mixed manner.
-        # Adding dependencies among groups is not prefered since they also can be executed separatly.
+        # Adding dependencies among groups is not prefered since they also can be executed separately.
         # So TestProgram needs to be called three times for different groups.
         # TestProgram calls sys.exit() when finishing, thus subprocess is created for each group.
         for case in ['poller', 'discovery', 'bootstrap']:

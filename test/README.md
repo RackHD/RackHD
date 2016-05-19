@@ -85,7 +85,7 @@ Details can be found in WIKI page:
 
 In RackHD, compute nodes have been discovered, and pollers are running
 
-No external AMQP queue with the name "graph.finish" is listening RackHD
+No external AMQP queue with the name "graph.finished" is listening RackHD
 
 Make sure the AMQP port in RackHD machine can be accessed by the test machine.
 If you are not using Vagrant, you can tunnel the port by the following command in RackHD
@@ -100,7 +100,6 @@ and stored in .passwd
 
     localhost username and password: for the machine running the test
     RackHD ssh port, username and password
-    image server: remote address of CentOS image
 
 ###Running the tests
 

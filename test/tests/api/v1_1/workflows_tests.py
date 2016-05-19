@@ -27,8 +27,7 @@ class WorkflowsTests(object):
     def __init__(self):
         self.__client = config.api_client
         self.__task_worker = None
-        self.__graphName = None
-        self.__graphId = None
+        self.__graph_name = None
         self.workflowDict = {
             "friendlyName": "Shell Commands Hwtest_1",
             "injectableName": "Graph.post.test",
@@ -125,7 +124,7 @@ class WorkflowsTests(object):
     def post_workflows(self, graph_name):
         Nodes().nodes_get()
         nodes = loads(self.__client.last_response.data)
-        self.__graphName = graph_name
+        self.__graph_name = graph_name
 
         for n in nodes:
             if n.get('type') == 'compute':
@@ -137,46 +136,27 @@ class WorkflowsTests(object):
                 try:
                     Nodes().nodes_identifier_workflows_active_delete(id)
                 except Exception,e:
-                    assert_equal(404, e.status, message = 'status should be 404')
-
-                # Verify the active workflow has been deleted
-                # If the post workflow API was called immediatly after deleting active workflow,
-                # the API would fail at the first time and retry, though actually the workflow was issued twice
-                # in a consecutive manner, which would bring malfunction of vBMC
-                retries = 5
-                Nodes().nodes_identifier_workflows_active_get(id)
-                status = self.__client.last_response.status
-                while status != 204 and retries != 0:
-                    LOG.warning('Workflow status for Node {0} (status={1},retries={2})'.format(id,status,retries))
-                    sleep(1)
-                    retries -= 1
-                    Nodes().nodes_identifier_workflows_active_get(id)
-                    status = self.__client.last_response.status
-
-                assert_equal(204, status, message = 'status should be 204')
-
+                    assert_equal(404,e.status, message = 'status should be 404')
                 Nodes().nodes_identifier_workflows_post(id,name=graph_name,body={})
-                data = loads(self.__client.last_response.data)
-                self.__graphId = data["context"]['graphId']
                 self.__task_worker.start()
 
     def handle_graph_finish(self,body,message):
         routeId = message.delivery_info.get('routing_key').split('graph.finished.')[1]
         assert_not_equal(routeId,None)
+        Workflows().workflows_get()
+        workflows = loads(self.__client.last_response.data)
         message.ack()
-        if self.__graphId == routeId:
-            # Get workflow information
-            Workflows().workflows_instance_id_get(self.__graphId)
-            data = loads(self.__client.last_response.data)
-            nodeid = data['context']['target']
-            injectableName = data['definition']['injectableName']
-
-            status = body['status']
-            msg = '{0} - target: {1}, status: {2}, route: {3}'.format(injectableName,nodeid,status,routeId)
-            if status == 'succeeded':
-                LOG.info(msg)
-            assert_equal(status, 'succeeded', msg);
-            self.__task_worker.stop()
+        for w in workflows:
+            injectableName = w['definition'].get('injectableName')
+            if injectableName == self.__graph_name:
+                graphId = w['context'].get('graphId')
+                if graphId == routeId:
+                    nodeid = w['context']['target']
+                    status = body['status']
+                    if status == 'succeeded':
+                        LOG.info('{0} - target: {1}, status: {2}, route: {3}'.format(injectableName,nodeid,status,routeId))
+                        self.__task_worker.stop()
+                        break
 
     @test(groups=['test_node_workflows_post'], \
             depends_on_groups=['workflows_put', 'delete_all_active_workflows'])
