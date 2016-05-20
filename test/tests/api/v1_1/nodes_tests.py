@@ -129,9 +129,10 @@ class NodesTests(object):
         routeId = message.delivery_info.get('routing_key').split('graph.finished.')[1]
         Workflows().workflows_get()
         workflows = self.__get_data()
+        message.ack()
         for w in workflows:
             definition = w['definition']
-            injectableName = definition.get('injectableName') 
+            injectableName = definition.get('injectableName')
             if injectableName == 'Graph.SKU.Discovery':
                 graphId = w['context'].get('graphId')
                 if graphId == routeId:
@@ -143,7 +144,6 @@ class NodesTests(object):
                         LOG.info('{0} - target: {1}, status: {2}, route: {3}, duration: {4}'
                                 .format(injectableName,nodeid,status,routeId,duration))
                         self.__discovered += 1
-                        message.ack()
                         break
         check = self.check_compute_count()
         if check and check == self.__discovered:

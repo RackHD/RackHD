@@ -74,6 +74,28 @@ class WorkflowsTests(object):
         except Exception,e:
             assert_equal(404,e.status, message = 'status should be 404')
 
+    def put_workflow(self, workflowDict):
+        #adding/updating  a workflow task
+        LOG.info ("Adding workflow task : " +  str(workflowDict))
+        Workflows().workflows_put(body=workflowDict)
+        resp= self.__client.last_response
+        assert_equal(200,resp.status)
+
+        #Validating the content is as expected
+        Workflows().workflows_library_injectable_name_get('*')
+        rawj=  json.loads(self.__client.last_response.data)
+        foundInsertedWorkflow = False
+        for i, var  in enumerate (rawj):
+            if ( workflowDict['injectableName'] ==  str (rawj[i].get('injectableName')) ):
+                foundInsertedWorkflow = True
+                readWorkflowTask= rawj[i]
+                readFriendlyName= readWorkflowTask.get('friendlyName')
+                readInjectableName  = readWorkflowTask.get('injectableName')
+                assert_equal(readFriendlyName,workflowDict.get('friendlyName'))
+                assert_equal(readInjectableName,workflowDict.get('injectableName'))
+
+        assert_equal(foundInsertedWorkflow, True)
+
     @test(groups=['workflows_put'], depends_on_groups=['workflows_library_get'])
     def test_workflows_put(self):
         """ Testing PUT:/workflows:/library """
@@ -89,27 +111,7 @@ class WorkflowsTests(object):
                 self.workflowDict['friendlyName']= fnameList[0]+ '_' + str(suffix)
                 break
 
-        #adding/updating  a workflow task
-        LOG.info ("Adding workflow task : " +  str(self.workflowDict))
-        Workflows().workflows_put(body=self.workflowDict)
-        resp= self.__client.last_response
-        assert_equal(200,resp.status)
-
-        #Validating the content is as expected
-        Workflows().workflows_library_injectable_name_get('*')
-        rawj=  json.loads(self.__client.last_response.data)
-        foundInsertedWorkflow = False
-        for i, var  in enumerate (rawj):
-            if ( self.workflowDict['injectableName'] ==  str (rawj[i].get('injectableName')) ):
-                foundInsertedWorkflow = True
-                readWorkflowTask= rawj[i]
-                readFriendlyName= readWorkflowTask.get('friendlyName')
-                readInjectableName  = readWorkflowTask.get('injectableName')
-                assert_equal(readFriendlyName,self.workflowDict.get('friendlyName'))
-                assert_equal(readInjectableName,self.workflowDict.get('injectableName'))
-
-
-        assert_equal(foundInsertedWorkflow, True)
+        self.put_workflow(self.workflowDict)
 
     @test(groups=['workflows_library_identifier_get'], \
             depends_on_groups=['workflows_put'])

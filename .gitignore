@@ -9,6 +9,7 @@ example/bin/pxe*
 packer_cache
 .bundle
 .DS_Store
+test/benchmark/utils/ansible/group_vars/benchmark.json
 
 # # python giblets
 # Byte-compiled / optimized / DLL files

@@ -11,6 +11,7 @@ from time import sleep
 
 from tests.api.v1_1.poller_tests import PollerTests
 from tests.api.v1_1.workflows_tests import WorkflowsTests
+from tests.api.v1_1.obm_settings import obmSettings
 
 LOG = Log(__name__)
 
@@ -35,29 +36,29 @@ class DiscoveryTests(object):
     @test(groups=['test_discovery_post_reboot'], depends_on_groups=["test-node-poller"])
     def test_node_workflows_post_reboot(self):
         """Testing reboot node POST:id/workflows"""
-        self.__workflow_instance.post_workflows("Graph.Reboot.Node")
+        workflow = {
+            "friendlyName": "set PXE and reboot node",
+            "injectableName": "Graph.PXE.Reboot",
+            "tasks": [
+                {
+                    "label": "set-boot-pxe",
+                    "taskName": "Task.Obm.Node.PxeBoot",
+                },
+                {
+                    "label": "reboot-start",
+                    "taskName": "Task.Obm.Node.Reboot",
+                    "waitOn": {
+                        "set-boot-pxe": "succeeded"
+                    }
+                }
+            ]
+        }
 
-    @test(groups=['test_discovery_reboot_finish'], depends_on_groups=["test_discovery_post_reboot"])
-    def test_node_workflows_finish(self):
-        """Wait for :id/workflows/active to be updated to empty"""
-        Nodes().nodes_get()
-        nodes = loads(self.__client.last_response.data)
-
-        for n in nodes:
-            if n.get('type') == 'compute':
-                id = n.get('id')
-                assert_not_equal(id,None)
-                status = self.__get_workflow_status(id)
-                retries = 20
-                while status == 'pending' and retires != 0:
-                    LOG.warning('Workflow status for Node {0} (status={1},retries={2})'.format(id,status,retries))
-                    status = self.__get_workflow_status(id)
-                    sleep(5)
-                    retries -= 1
-                assert_not_equal(0, retries, message="Workflow didn't end!")
+        self.__workflow_instance.put_workflow(workflow)
+        self.__workflow_instance.post_workflows("Graph.PXE.Reboot")
 
     @test(groups=['test_discovery_delete_node'],
-            depends_on_groups=["test_discovery_reboot_finish", "test-bm-discovery-prepare"])
+            depends_on_groups=["test_discovery_post_reboot", "test-bm-discovery-prepare"])
     def test_node_delete_all(self):
         """ Testing DELETE all compute nodes """
         codes = []
@@ -67,6 +68,11 @@ class DiscoveryTests(object):
         for n in nodes:
             if n.get('type') == 'compute':
                 uuid = n.get('id')
+                try:
+                    Nodes().nodes_identifier_workflows_active_delete(uuid)
+                except Exception,e:
+                    assert_equal(404, e.status, message = 'status should be 404')
+
                 Nodes().nodes_identifier_delete(uuid)
                 codes.append(self.__client.last_response)
 
@@ -74,3 +80,7 @@ class DiscoveryTests(object):
         for c in codes:
             assert_equal(200, c.status, message=c.reason)
 
+    @test(groups=['test_discovery_add_obm'],
+            depends_on_groups=["test_discovery_delete_node", "test-bm-discovery"])
+    def test_node_add_obm(self):
+        assert_equal(len(obmSettings().setup_nodes(service_type='ipmi-obm-service')), 0)
