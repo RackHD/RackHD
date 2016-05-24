@@ -296,7 +296,8 @@ class NodesTests(object):
         rsp = self.__client.last_response
         assert_equal(204, rsp.status, message=rsp.reason)
 
-    @test(groups=['catalog_nodes'], depends_on_groups=['delete-whitelist-node'])
+    @test(groups=['catalog_nodes', 'check-nodes-catalogs.test'], \
+        depends_on_groups=['nodes.discovery.test'])
     def test_node_catalogs(self):
         """ Testing GET id:/catalogs """
         resps = []
@@ -324,7 +325,7 @@ class NodesTests(object):
             assert_equal(200,resp.status, message=resp.reason)
         assert_raises(rest.ApiException, Nodes().nodes_identifier_catalogs_source_get, 'fooey','bmc')
 
-    @test(groups=['node_workflows'], depends_on_groups=['catalog_source'])
+    @test(groups=['node_workflows'], depends_on_groups=['nodes.discovery.test'])
     def test_node_workflows_get(self):
         """Testing node GET:id/workflows"""
         resps = []
