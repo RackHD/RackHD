@@ -28,6 +28,9 @@ class OSInstallTests(object):
         self.__client = config.api_client
         self.__base = os.getenv('RACKHD_BASE_REPO_URL', \
             'http://{0}:{1}'.format(HOST_IP, HOST_PORT))
+        self.__obm_options = { 
+            'obmServiceName': os.getenv('RACKHD_GLOBAL_OBM_SERVICE_NAME', 'ipmi-obm-service') 
+        }
             
     @before_class()
     def setup(self):
@@ -53,7 +56,10 @@ class OSInstallTests(object):
                     'commands': [ 
                         { 'command': command } 
                     ]
-                }
+                },
+                'set-boot-pxe': self.__obm_options,
+                'reboot-start': self.__obm_options,
+                'reboot-end': self.__obm_options
             }
         }
         self.__post_workflow('Graph.ShellCommands', [], body) 
@@ -75,7 +81,9 @@ class OSInstallTests(object):
                         'kvm': 'undefined', 
                         'version':version,
                         'repo': os_repo
-                    }
+                    },
+                    'set-boot-pxe': self.__obm_options,
+                    'reboot': self.__obm_options
                 }
             } 
         self.__post_workflow(graph_name, nodes, body)
@@ -92,7 +100,9 @@ class OSInstallTests(object):
                         'installDisk': 'firstdisk',
                         'version': version, 
                         'repo': os_repo
-                    }
+                    },
+                    'set-boot-pxe': self.__obm_options,
+                    'reboot': self.__obm_options
                 }
             }
         self.__post_workflow(graph_name, nodes, body)  
@@ -109,7 +119,9 @@ class OSInstallTests(object):
                         'kvm': 'undefined', 
                         'version':version,
                         'repo': os_repo
-                    }
+                    },
+                    'set-boot-pxe': self.__obm_options,
+                    'reboot': self.__obm_options
                 }
             }
         self.__post_workflow(graph_name, nodes, body)
@@ -126,7 +138,9 @@ class OSInstallTests(object):
                         'kvm': 'undefined', 
                         'version':version,
                         'repo': os_repo
-                    }
+                    },
+                    'set-boot-pxe': self.__obm_options,
+                    'reboot': self.__obm_options
                 }
             }
         self.__post_workflow(graph_name, nodes, body)
