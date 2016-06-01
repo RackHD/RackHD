@@ -180,8 +180,9 @@ class WorkflowsTests(object):
         worker_tasks.run()
         worker_tasks.wait_for_completion(timeout_sec=timeout_sec)
         for task in self.__tasks:
-            assert_false(task.timeout, \
-                message='Timeout for {0}, node {1}'.format(self.__graph_name, task.id))
+            if task.timeout: 
+                LOG.error('Timeout for {0}, node {1}'.format(self.__graph_name, task.id))
+                self.__graph_status.append('failed')
         if 'failed' in self.__graph_status:
             fail('Failure running {0}'.format(self.__graph_name))
 
