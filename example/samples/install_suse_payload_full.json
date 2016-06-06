@@ -5,7 +5,7 @@
             "repo": "http://172.31.128.1:9080/opensuse/distribution/leap/42.1/repo/oss/",
             "rootPassword": "RackHDRocks!",
             "hostname": "rackhd-node",
-            "domain": "abc.com",
+            "domain": "example.com",
             "users": [
                 {
                     "name": "rackhd1",
