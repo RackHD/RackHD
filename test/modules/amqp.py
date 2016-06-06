@@ -37,10 +37,12 @@ class AMQPWorker(ConsumerMixin):
         return [consumer(self.__queue, callbacks=self.__callbacks)]
 
     def on_message(self, body, message):
-        out =  'Received message: %r' % dumps(body)
-        out += ' properties: %s' % dumps(message.properties)
-        out += '  delivery_info: %s' % dumps(message.delivery_info)
-        LOG.info(out,json=True)
+        out = {
+            'message':body, 
+            'properties':message.properties, 
+            'delivery_info': message.delivery_info
+        }
+        LOG.info(out, json=True)
         message.ack()
 
     def on_conn_retry(self):
