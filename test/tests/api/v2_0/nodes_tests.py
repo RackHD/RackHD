@@ -80,24 +80,22 @@ class NodesTests(object):
     def __get_data(self):
         return loads(self.__client.last_response.data)
 
-    def __get_workflow_status(self, id):
-        Api().nodes_get_active_workflow_by_id(identifier=id)
-        status = self.__client.last_response.status
-        if status == 200:
-            data = self.__get_data()
-            if data:
-                status = data.get('_status')
-                assert_is_not_none(status)
-        return status
+    def __get_workflow_status(self, id, query ):
+	Api().nodes_get_workflow_by_id(identifier=id, active=query )
+	data = self.__get_data()
+	if len(data) > 0:
+	    status = data[0].get('_status')
+	    return status
+	return 'not running'
         
     def __post_workflow(self, id, graph_name):
-        status = self.__get_workflow_status(id)
+        status = self.__get_workflow_status(id, 'true')
         if status != 'pending' and status != 'running':
             Api().nodes_post_workflow_by_id(identifier=id, name=graph_name, body={'name': graph_name})
         timeout = 20
         while status != 'pending' and status != 'running' and timeout != 0:
             LOG.warning('Workflow status for Node {0} (status={1},timeout={2})'.format(id,status,timeout))
-            status = self.__get_workflow_status(id)
+            status = self.__get_workflow_status(id, 'true')
             sleep(1)
             timeout -= 1
         return timeout
@@ -300,7 +298,10 @@ class NodesTests(object):
                 resps.append(self.__get_data())
         for resp in resps:
             assert_not_equal(0, len(resp), message='No Workflows found for Node')
-        assert_raises(rest.ApiException, Api().nodes_get_workflow_by_id, 'fooey')
+
+	Api().nodes_get_workflow_by_id('fooey')
+        resps_fooey = self.__get_data()
+	assert_equal(len(resps_fooey), 0, message='Should be empty')
 
     @test(groups=['node_post_workflows-api2'], depends_on_groups=['node_workflows-api2'])
     def test_node_workflows_post(self):
@@ -320,16 +321,9 @@ class NodesTests(object):
                 message='No Workflows found for Node {0}'.format(resp['id']))
         assert_raises(rest.ApiException, Api().nodes_post_workflow_by_id, 'fooey',name='Graph.Discovery',body={})
 
-    @test(groups=['node_workflows_active-api2'], depends_on_groups=['node_post_workflows-api2'])
-    def test_node_workflows_active(self):
-        """ Testing GET:/api/2.0/nodes/:id/workflows/active """
-        # test_node_workflows_post verifies the same functionality
-        self.test_node_workflows_post()
-        assert_raises(rest.ApiException, Api().nodes_get_active_workflow_by_id, 'fooey')
-
-    @test(groups=['node_workflows_del_active-api2'], depends_on_groups=['node_workflows_active-api2'])
-    def test_node_workflows_del_active(self):
-        """ Testing DELETE:/api/2.0/nodes/:id/workflows/active """
+    @test(groups=['node_workflows_del_active-api2'], depends_on_groups=['node_post_workflows-api2'])
+    def test_workflows_action(self):
+        """ Testing PUT:/api/2.0/nodes/:id/workflows/action """
         Api().nodes_get_all()
         nodes = self.__get_data()
         for n in nodes:
@@ -341,14 +335,14 @@ class NodesTests(object):
                     if 0 == self.__post_workflow(id,'Graph.Discovery'):
                         fail('Timed out waiting for graph to start!')
                     try:
-                        Api().nodes_del_active_workflow_by_id(identifier=id)
+                        Api().nodes_workflow_action_by_id(id, {'command': 'cancel'})
                         done = True
                     except rest.ApiException as e:
                         if e.status != 404:
                             raise e
                         timeout -= 1
                 assert_not_equal(timeout, 0, message='Failed to delete an active workflow')
-        assert_raises(rest.ApiException, Api().nodes_del_active_workflow_by_id, 'fooey')
+        assert_raises(rest.ApiException, Api().nodes_workflow_action_by_id, 'fooey', {'command': 'test'})
 
     @test(groups=['node_tags_patch'], depends_on_groups=['node_workflows_del_active-api2'])
     def test_node_tags_patch(self):

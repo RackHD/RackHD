@@ -14,7 +14,7 @@ from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_true
 from proboscis import SkipTest
 from proboscis import test
-from json import dumps, loads
+from json import loads
 import time
 
 LOG = Log(__name__)
@@ -46,7 +46,7 @@ class WorkflowsTests(object):
                 id = node.get('id')
                 assert_not_equal(id,None)
                 try:
-                    Api().nodes_del_active_workflow_by_id(id)
+                    Api().nodes_workflow_action_by_id(id, {'command': 'cancel'})
                 except rest.ApiException as err:
                     LOG.warning(err)
 
@@ -183,7 +183,7 @@ class WorkflowsTests(object):
                 self.__task_worker = AMQPWorker(queue=QUEUE_GRAPH_FINISH,
                                     callbacks=[self.handle_graph_finish])
                 try:
-                    Api().nodes_del_active_workflow_by_id(id)
+                    Api().nodes_workflow_action_by_id(id, {'command': 'cancel'})
                 except Exception,e:
                     assert_equal(404,e.status, message='status should be 404')
                 Api().nodes_post_workflow_by_id(id, name='Graph.noop-example', body={})
