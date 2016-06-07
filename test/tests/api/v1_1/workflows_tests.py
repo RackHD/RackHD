@@ -147,7 +147,9 @@ class WorkflowsTests(object):
         for node in nodes:
             LOG.info('Starting AMQP listener for node {0}'.format(node))
             worker = AMQPWorker(queue=QUEUE_GRAPH_FINISH, callbacks=[callback])
-            tasks.append(WorkerThread(worker, node))
+            thread = WorkerThread(worker, node)
+            self.__tasks.append(thread)
+            tasks.append(thread)
             
             try:
                 Nodes().nodes_identifier_workflows_active_delete(node)
@@ -168,11 +170,27 @@ class WorkflowsTests(object):
             assert_equal(HTTP_NO_CONTENT, status, \
                 message = 'status should be {0}'.format(HTTP_NO_CONTENT))
             Nodes().nodes_identifier_workflows_post(node, name=graph_name, body=data)
-        
-        self.__tasks = list(tasks)
         if run_now:
-            self.run_workflow_tasks(tasks, timeout_sec)
-
+            self.run_workflow_tasks(self.__tasks, timeout_sec)
+            
+    def post_unbound_workflow(self, graph_name, \
+                       timeout_sec=300, data={}, \
+                       tasks=[], callback=None, run_now=True):
+        self.__graph_name = graph_name
+        self.__graph_status = []
+        
+        if callback == None:
+            callback = self.handle_graph_finish
+        
+        LOG.info('Starting AMQP listener for {0}'.format(self.__graph_name))
+        worker = AMQPWorker(queue=QUEUE_GRAPH_FINISH, callbacks=[callback])
+        thread = WorkerThread(worker, self.__graph_name)
+        self.__tasks.append(thread)
+        tasks.append(thread)
+        Workflows().workflows_post(graph_name, body=data)
+        if run_now:
+            self.run_workflow_tasks(self.__tasks, timeout_sec)
+            
     def run_workflow_tasks(self, tasks, timeout_sec):
         def thread_func(worker, id):
             worker.start()
@@ -197,7 +215,7 @@ class WorkflowsTests(object):
             if injectableName == self.__graph_name:
                 graphId = w['context'].get('graphId')
                 if graphId == routeId:
-                    nodeid = w['context']['target']
+                    nodeid = w['context'].get('target', injectableName)
                     status = body['status']
                     if status == 'succeeded' or status == 'failed':
                         self.__graph_status.append(status)
@@ -205,13 +223,17 @@ class WorkflowsTests(object):
                             if task.id == nodeid:
                                 task.worker.stop()
                                 task.running = False
-                        msg = '{0} - target: {1}, status: {2}, route: {3}' \
-                            .format(injectableName,nodeid,status,routeId)
+                        msg = {
+                            'graph_name': injectableName,
+                            'target': nodeid,
+                            'status': status,
+                            'route_id': routeId
+                        }
                         if status == 'failed':
-                            LOG.error(msg)
-                            LOG.error(w['tasks'], json=True)
+                            msg['active_task'] = w['tasks']
+                            LOG.error(msg, json=True)
                         else:
-                            LOG.info(msg)
+                            LOG.info(msg, json=True)
                         break
         
     @test(groups=['test_node_workflows_post'], \

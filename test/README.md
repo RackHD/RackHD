@@ -36,39 +36,19 @@ Run regression tests
 
     python run.py --group=regression-tests
 
-## Optional Environment Variables
+## Configuration
 
-Log levels
+    Default configuration options and their definitions are defined in config/config.ini.  
+    Custom config.ini can be specified by using the --config command line parameter:
+
+    python run.py --config=/home/user/config.ini
+
     
-    NOTE: CRITICAL < ERROR < WARNING < INFO < DEBUG
+## HTTP proxy configuration:
 
-    export RACKHD_TEST_LOGLVL=[CRITICAL|ERROR|WARNING|INFO|DEBUG default=WARNING]
+For OS installer related tests, optional HTTP proxies for accessing remote OS image repositories can be defined, see the [RackHD Configuration howto](http://rackhd.readthedocs.io/en/latest/rackhd/configuration.html?highlight=httpProxies#rackhd-configuration)
 
-API host/port 
-
-    export RACKHD_HOST=[host ip default=localhost]
-    export RACKHD_PORT=[host port default=9090]
-
-AMQP URL
-
-    export RACKHD_AMQP_URL=[amqp://<url>:<port> default=amqp://localhost:9091]
-
-OS Installer locations
-
-    Specify specific OS repository path:
-
-    export RACKHD_CENTOS_REPO_PATH=[location to http mirror for all CentOS images]
-    export RACKHD_ESXI_REPO_PATH=[location to http mirror for all ESXi images]
-    export RACKHD_UBUNTU_REPO_PATH=[location to http mirror for all Ubuntu images]
-    export RACKHD_SUSE_REPO_PATH=[location to http mirror for all SUSE images]
-
-    Example: export RACKHD_CENTOS_REPO_PATH=http://ip:port/repo/centos
-
-HTTP proxy configuration (optional):
-
-To define HTTP proxies for accessing remote OS image repositories, see the [RackHD Configuration howto](http://rackhd.readthedocs.io/en/latest/rackhd/configuration.html?highlight=httpProxies#rackhd-configuration)
-
-Specifying test groups
+## Specifying test groups
     
     To display the entire test plan and available test groups run:
 
@@ -85,7 +65,7 @@ Specifying test groups
     Run only Redfish 1.0 compliant API related tests:
     python run.py --group=api-redfish-1.0
 
-To reset the default target BMC user/password 
+## To reset the default target BMC user/password 
 
     NOTE: only prompts for user/password when .passwd file is missing
 

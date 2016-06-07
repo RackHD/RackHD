@@ -2,12 +2,23 @@ from imp import load_source
 from getpass import getpass
 from base64 import b64encode, b64decode
 import logging
-import os
+import os, sys
+import ConfigParser
 
-HOST_IP = os.getenv('RACKHD_HOST','localhost')
-HOST_PORT = os.getenv('RACKHD_PORT','9090')
-HOST_PORT_AUTH = os.getenv('RACKHD_PORT_AUTH','9093')
-HTTPD_PORT = os.getenv('RACKHD_HTTPD_PORT', '9010')
+CONFIG = 'config/config.ini'
+for v in sys.argv:
+    if 'config' in v:
+        CONFIG = v.split('=')[1:]
+config_parser = ConfigParser.RawConfigParser()
+config_parser.read(CONFIG)
+defaults = {}
+for k,v in config_parser.items('DEFAULT'):
+    defaults[k.upper()] = v
+
+HOST_IP = defaults['RACKHD_HOST']
+HOST_PORT = defaults['RACKHD_PORT']
+HOST_PORT_AUTH = defaults['RACKHD_PORT_AUTH']
+HTTPD_PORT = defaults['RACKHD_HTTPD_PORT']
 
 CRED_FILE = '.passwd'
 
@@ -20,7 +31,7 @@ LOGLEVELS = {
     'INFO': logging.INFO,
     'DEBUG': logging.DEBUG
 }
-LOGGER_LVL = os.getenv('RACKHD_TEST_LOGLVL', 'WARNING')
+LOGGER_LVL = defaults['RACKHD_TEST_LOGLVL']
 logging.basicConfig(level=LOGLEVELS[LOGGER_LVL], format=LOGFORMAT)
 
 # Obfuscate credentials
@@ -38,14 +49,31 @@ def get_b64_cred(req):
     rsp = []
     for key in req:
         rsp.append(b64decode(getattr(creds, key)))
-
     return rsp
 
+def get_cred(service):
+    if service == 'bmc':
+        return get_b64_cred(["BMC_USER", "BMC_PASS"])
+    elif service == 'redfish':
+        return get_b64_cred(["REDFISH_USER", "REDFISH_PASS"])
+    else:
+        return None
+
 def get_bmc_cred():
-    return get_b64_cred(["BMC_USER", "BMC_PASS"])
+    return get_cred('bmc')
 
 # Initial cred file to log bmc password information if it doesn't exist
 if os.path.isfile(CRED_FILE) is False:
     bmc_user = raw_input('BMC username: ')
     bmc_pass = getpass('BMC password: ')
-    set_b64_cred({"BMC_USER":bmc_user, "BMC_PASS":bmc_pass})
+    redfish_user = raw_input('Redfish username: ')
+    redfish_pass = getpass('Redfish password: ')
+    creds = {
+        "BMC_USER":bmc_user, 
+        "BMC_PASS":bmc_pass,
+        "REDFISH_USER":redfish_user, 
+        "REDFISH_PASS":redfish_pass
+    }
+    set_b64_cred(creds)
+    
+
