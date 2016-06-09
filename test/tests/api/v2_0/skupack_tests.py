@@ -148,12 +148,12 @@ class SkusTests(object):
 
                 #update the sku rule above (rules[0].name.contains) with a value from the cataloged node
                 node_id = n.get('id')
-                Api().nodes_get_catalog_by_id(identifier=node_id)
+                Api().nodes_get_catalog_source_by_id(identifier=node_id,source='dmi')
                 node_catalog_data =loads(self.__client.last_response.data)
                 #LOG.info('node_manufacturer is  :  {0} '.format((node_catalog_data)))
                 if len(node_catalog_data) > 0:
-                    LOG.info('node_manufacturer is  :  {0} '.format((node_catalog_data)[0].get('data').get("Base Board Information").get("Manufacturer")))
-                    node_manufacturer= (node_catalog_data)[0].get('data').get("Base Board Information").get("Manufacturer").split(" ")[0]
+                    LOG.info('node_manufacturer is  :  {0} '.format(node_catalog_data.get('data').get("Base Board Information").get("Manufacturer")))
+                    node_manufacturer= node_catalog_data.get('data').get("Base Board Information").get("Manufacturer").split(" ")[0]
                     sku['rules'][0]['contains'] = node_manufacturer
 
                     #POST the new sku
@@ -200,10 +200,10 @@ class SkusTests(object):
             if n.get('type') == 'compute':
                 # update the sku rule above (rules[0].name.contains) with a value from the cataloged node
                 node_id = n.get('id')
-                Api().nodes_get_catalog_by_id(identifier=node_id)
-                node_catalog_data = loads(self.__client.last_response.data)
+                Api().nodes_get_catalog_source_by_id(identifier=node_id,source='dmi')
+                node_catalog_data =loads(self.__client.last_response.data)
                 if len(node_catalog_data) > 0:
-                    node_manufacturer = (node_catalog_data)[0].get('data').get("System Information").get("Manufacturer").split(" ")[0]
+                    node_manufacturer = node_catalog_data.get('data').get("System Information").get("Manufacturer").split(" ")[0]
 
 
                     #Post the sku pack
@@ -257,8 +257,8 @@ class SkusTests(object):
         for n in self.__nodes:
             if n.get('type') == 'compute':
                 node_id = n.get('id')
-                Api().nodes_get_catalog_by_id(identifier=node_id)
-                node_catalog_data = loads(self.__client.last_response.data)
+                Api().nodes_get_catalog_source_by_id(identifier=node_id,source='dmi')
+                node_catalog_data =loads(self.__client.last_response.data)
                 if len(node_catalog_data) > 0:
                     # update the sku rule above (rules[0].name.contains) with a value from the cataloged node
                     node_id = n.get('id')

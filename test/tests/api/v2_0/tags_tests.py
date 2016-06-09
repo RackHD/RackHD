@@ -22,6 +22,19 @@ class TagsTests(object):
     def __get_data(self):
         return loads(self.__client.last_response.data)
 
+    def __create_tag_rule(self, id):
+        Api().nodes_get_catalog_source_by_id(identifier=id,source='dmi')
+        updated_catalog = self.__get_data()
+        return {
+            "name": id,
+            "rules": [
+                {
+                    "equals": updated_catalog["data"]["System Information"]["Manufacturer"],
+                    "path": "dmi.System Information.Manufacturer" 
+                }
+            ]
+        }
+
     @test(groups=['create-tag-api2'])
     def test_tag_create(self):
         """ Testing POST:/api/2.0/tags/ """
@@ -29,11 +42,8 @@ class TagsTests(object):
         nodes = self.__get_data()
         for n in nodes:
             if n.get('type') == 'compute':
-                Api().nodes_get_catalog_by_id(identifier=n.get('id'))
-                updated_catalog = self.__get_data()
-                tagsWithRules = {"name": n.get('id'),
-                                 "rules":[{"equals": updated_catalog[0]["data"]["System Information"]["Manufacturer"],
-                                           "path": "dmi.System Information.Manufacturer" }]}
+                tagsWithRules = self.__create_tag_rule(n.get('id'))
+                assert_not_equal(len(tagsWithRules), 0, "Failed to create tag rules")
                 LOG.info(tagsWithRules)
                 Api().create_tag(body=tagsWithRules)
                 tag_data = self.__get_data()
@@ -48,11 +58,8 @@ class TagsTests(object):
         tagsArray = []
         for n in nodes:
             if n.get('type') == 'compute':
-                Api().nodes_get_catalog_by_id(identifier=n.get('id'))
-                updated_catalog = self.__get_data()
-                tagsWithRules = {"name": n.get('id'),
-                                 "rules":[{"equals": updated_catalog[0]["data"]["System Information"]["Manufacturer"],
-                                           "path": "dmi.System Information.Manufacturer" }]}
+                tagsWithRules = self.__create_tag_rule(n.get('id'))
+                assert_not_equal(len(tagsWithRules), 0, "Failed to create tag rules")
                 tagsArray.append(tagsWithRules)
         Api().get_all_tags()
         rsp = self.__client.last_response
