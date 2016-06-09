@@ -20,9 +20,12 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         target.vm.network "forwarded_port", guest: 27017, host: 27017, id: "Mongo DB"
         target.vm.network "forwarded_port", guest: 15672, host: 15672, id: "RabbitMQ Management"
         target.vm.network "forwarded_port", guest: 5672, host: 5672, id: "RabbitMQ AMQP"
-        target.vm.network "forwarded_port", guest: 5601, host: 5601, id: "Kibana UI"
-        target.vm.network "forwarded_port", guest: 9090, host: 9090, id: "RackHD Northbound API"
+
         target.vm.network "forwarded_port", guest: 9080, host: 9080, id: "RackHD Southbound API"
+        target.vm.network "forwarded_port", guest: 9090, host: 9090, id: "RackHD Northbound API"
+        target.vm.network "forwarded_port", guest: 9100, host: 9100, id: "RackHD WebSocket Server"
+
+        target.vm.network "forwarded_port", guest: 5601, host: 5601, id: "Kibana UI"
         target.vm.network "forwarded_port", guest: 9200, host: 9200, id: "Elasticsearch REST API"
         target.vm.network "forwarded_port", guest: 9300, host: 9300, id: "Elasticsearch Native"
 

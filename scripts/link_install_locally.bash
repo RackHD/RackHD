@@ -43,7 +43,7 @@ popd
 
 # third wave, symlink in on-core and on-tasks
 
-REPOS="on-dhcp-proxy on-http on-statsd on-syslog on-tftp on-taskgraph"
+REPOS="on-dhcp-proxy on-http on-statsd on-syslog on-tftp on-taskgraph on-wss"
 for repo in ${REPOS}; do
     pushd "${SCRIPT_DIR}/../${repo}"
     npm install
@@ -72,4 +72,3 @@ pushd "${SCRIPT_DIR}/../on-http"
     java -jar ./swagger-codegen/modules/swagger-codegen-cli/target/swagger-codegen-cli.jar generate -i static/monorail-2.0.yaml -o on-http-api2.0 -l python --additional-properties packageName=on_http_api2_0
     java -jar ./swagger-codegen/modules/swagger-codegen-cli/target/swagger-codegen-cli.jar generate -i static/redfish.yaml -o on-http-redfish-1.0 -l python --additional-properties packageName=on_http_redfish_1_0
 popd
-
