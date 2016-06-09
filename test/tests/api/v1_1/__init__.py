@@ -9,6 +9,7 @@ from workflowTasks_tests import WorkflowTasksTests
 from workflows_tests import WorkflowsTests
 from auth_tests import AuthTests
 from os_install_tests import OSInstallTests
+from redfish_endpoint_tests import RedfishEndpointTests
 
 tests = [
     'nodes.tests',
@@ -19,6 +20,7 @@ tests = [
     'config.tests',
     'workflowTasks.tests',
     'workflows.tests',
+    'redfish-endpoint.v1.1.tests',
     'auth.tests'
 ]
 

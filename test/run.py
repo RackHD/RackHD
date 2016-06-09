@@ -24,6 +24,7 @@ if __name__ == '__main__':
     # avoid eating valid proboscis args
     if len(sys.argv) > 1:
         parser = argparse.ArgumentParser()
+        parser.add_argument('--config', default='config/config.ini', required=False)
         if sys.argv[1] == '--httpd': 
             parser.add_argument('--httpd', action='store_const', const=True)
             parser.add_argument('-a', '--address', default='0.0.0.0', required=False)
