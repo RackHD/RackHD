@@ -16,3 +16,4 @@
     - ipmitool
     - images
     - integrationtest
+    - postgresql
