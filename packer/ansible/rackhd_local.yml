@@ -18,6 +18,7 @@
     - images
     - swagger
     - integrationtest
+    - postgresql
   vars:
 # branch of https://github.com/rackhd/rackhd to be used
     - branch: "master"

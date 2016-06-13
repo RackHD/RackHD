@@ -1,0 +1,14 @@
+---
+- name: Install PostgreSQL
+  apt: pkg={{ item }} state=installed
+  with_items:
+    - postgresql
+    - postgresql-contrib
+  sudo: yes
+
+- name: Set PostgreSQL password
+  shell: sudo -u postgres psql -U postgres -d postgres -c "alter user postgres with password 'postgres';"
+
+- name: Create pxe database
+  shell: sudo -u postgres psql -U postgres -d postgres -c "create database pxe;"
+
