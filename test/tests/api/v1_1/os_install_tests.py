@@ -18,6 +18,7 @@ from proboscis import before_class
 from json import dumps, loads
 
 LOG = Log(__name__)
+DEFAULT_TIMEOUT = 5400
 
 @test(groups=['os-install.v1.1.tests'], \
     depends_on_groups=['amqp.tests'])
@@ -44,7 +45,7 @@ class OSInstallTests(object):
         return loads(self.__client.last_response.data)
     
     def __post_workflow(self, graph_name, nodes, body):
-        workflows().post_workflows(graph_name, timeout_sec=3600, nodes=nodes, data=body)         
+        workflows().post_workflows(graph_name, timeout_sec=DEFAULT_TIMEOUT, nodes=nodes, data=body)         
 
     def __format_drives(self):
         # Clear disk MBR and partitions
@@ -78,12 +79,18 @@ class OSInstallTests(object):
             body = {
                 'options': {
                     'defaults': {
+                        'installDisk': '/dev/sda',
                         'kvm': 'undefined', 
-                        'version':version,
+                        'version': version,
                         'repo': os_repo
                     },
                     'set-boot-pxe': self.__obm_options,
-                    'reboot': self.__obm_options
+                    'reboot': self.__obm_options,
+                    'install-os': {
+                        'schedulerOverrides': {
+                            'timeout': 3600000
+                        }
+                    }
                 }
             } 
         self.__post_workflow(graph_name, nodes, body)
@@ -102,7 +109,12 @@ class OSInstallTests(object):
                         'repo': os_repo
                     },
                     'set-boot-pxe': self.__obm_options,
-                    'reboot': self.__obm_options
+                    'reboot': self.__obm_options,
+                    'install-os': {
+                        'schedulerOverrides': {
+                            'timeout': 3600000
+                        }
+                    }
                 }
             }
         self.__post_workflow(graph_name, nodes, body)  
@@ -116,12 +128,18 @@ class OSInstallTests(object):
             body = {
                 'options': {
                     'defaults': {
+                        'installDisk': '/dev/sda',
                         'kvm': 'undefined', 
-                        'version':version,
+                        'version': version,
                         'repo': os_repo
                     },
                     'set-boot-pxe': self.__obm_options,
-                    'reboot': self.__obm_options
+                    'reboot': self.__obm_options,
+                    'install-os': {
+                        'schedulerOverrides': {
+                            'timeout': 3600000
+                        }
+                    }
                 }
             }
         self.__post_workflow(graph_name, nodes, body)
@@ -135,12 +153,18 @@ class OSInstallTests(object):
             body = {
                 'options': {
                     'defaults': {
+                        'installDisk': '/dev/sda',
                         'kvm': 'undefined', 
-                        'version':version,
+                        'version': version,
                         'repo': os_repo
                     },
                     'set-boot-pxe': self.__obm_options,
-                    'reboot': self.__obm_options
+                    'reboot': self.__obm_options,
+                    'install-ubuntu': {
+                        'schedulerOverrides': {
+                            'timeout': 3600000
+                        }
+                    }
                 }
             }
         self.__post_workflow(graph_name, nodes, body)
