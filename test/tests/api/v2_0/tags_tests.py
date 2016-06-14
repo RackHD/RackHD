@@ -83,11 +83,12 @@ class TagsTests(object):
             Api().get_nodes_by_tag(tag_name=n.get('id'))
             nodesWithTags = self.__get_data()
             for n in nodesWithTags:
-                rsp = self.__client.last_response
-                nodesList = self.__get_data()
-                tagsList = nodesList[0]['tags']
-                checkTag = n.get('id') in tagsList
-                assert_equal(True, checkTag, message=rsp.reason)
+                if n.get('type') == 'compute':
+                    rsp = self.__client.last_response
+                    nodesList = self.__get_data()
+                    tagsList = nodesList[0]['tags']
+                    checkTag = n.get('id') in tagsList
+                    assert_equal(True, checkTag, message=rsp.reason)
 
     @test(groups=['test_tags_delete'], depends_on_groups=['test-nodes-tagname-api2'])
     def test_tags_del(self):
