@@ -36,12 +36,18 @@ services:
     volumes:
       - "./files/mount:/RackHD/files"
 
+  # test:
+  #   build: "../test"
+  #   image: "rackhd/test"
+  #   network_mode: "host"
+  #   privileged: true
+
   # RackHD services
 
-  # core:
-  #   build: "../on-core"
-  #   image: rackhd/on-core:latest
-  #   command: "/bin/echo exit"
+  core:
+    build: "../on-core"
+    image: rackhd/on-core:latest
+    command: "/bin/echo \"exit\""
 
   dhcp-proxy: # 68/udp, 4011
     build: "../on-dhcp-proxy"
@@ -55,6 +61,7 @@ services:
     network_mode: "host"
     privileged: true
     volumes:
+      - "dhcp-leases:/var/lib/dhcp"
       - "./monorail:/opt/monorail"
 
   http: # 9090, 9080
@@ -111,7 +118,6 @@ services:
     network_mode: "host"
     privileged: true
     volumes:
-      - "dhcp-leases:/var/lib/dhcp"
       - "./monorail:/opt/monorail"
 
   tftp: # 69/udp
@@ -128,6 +134,22 @@ services:
     privileged: true
     volumes:
       - "./files/mount:/RackHD/on-tftp/static/tftp"
+      - "./monorail:/opt/monorail"
+
+  wss: # 9100
+    build: "../on-wss"
+    depends_on:
+      - files
+      - http
+      - logstash
+      - mongo
+      - rabbitmq
+      - statsd
+      - syslog
+    image: rackhd/on-wss:latest
+    network_mode: "host"
+    privileged: true
+    volumes:
       - "./monorail:/opt/monorail"
 
   # ELK services

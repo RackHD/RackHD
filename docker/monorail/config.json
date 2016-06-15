@@ -9,6 +9,7 @@
     "authUsername": "admin",
     "broadcastaddr": "172.31.131.255",
     "CIDRNet": "172.31.128.0/22",
+    "dhcpLeasesPath": "/var/lib/dhcp/dhcpd.leases",
     "dhcpGateway": "172.31.128.1",
     "dhcpProxyBindAddress": "0.0.0.0",
     "dhcpProxyBindPort": 4011,
@@ -25,7 +26,7 @@
           "routers": "northbound-api-router"
       },
       {
-          "address": "0.0.0.0",
+          "address": "172.31.128.1",
           "port": 9080,
           "httpsEnabled": false,
           "proxiesEnabled": true,
@@ -55,7 +56,9 @@
     "subnetmask": "255.255.252.0",
     "syslogBindAddress": "0.0.0.0",
     "syslogBindPort": 514,
-    "tftpBindAddress": "0.0.0.0",
+    "tftpBindAddress": "172.31.128.1",
     "tftpBindPort": 69,
-    "tftpRoot": "./static/tftp"
+    "tftpRoot": "./static/tftp",
+    "wssBindAddress": "0.0.0.0",
+    "wssBindPort": 9100
 }
