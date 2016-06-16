@@ -284,17 +284,21 @@ class NodesTests(object):
         """ Verify Delete:/nodes/:mac/dhcp/whitelist """
         Nodes().nodes_get()
         nodes = self.__get_data()
+        macList = []
         for n in nodes:
-            for i in n:
-                if i == 'identifiers':
-                    if len(n[i]) > 0:
-                        macaddress = n[i]
+            type = n.get('type')
+            assert_is_not_none(type)
+            if type == 'compute':
+                idList = n.get('identifiers')
+                assert_is_not_none(idList)
+                if len(idList) > 0:
+                    macList.append(idList[0]) # grab the first mac
 
-        macaddress_to_delete = macaddress[len(macaddress)-1]
-        LOG.info('Deleting macaddress {0}' .format(macaddress_to_delete))
-        Nodes().nodes_macaddress_dhcp_whitelist_delete(macaddress_to_delete)
-        rsp = self.__client.last_response
-        assert_equal(204, rsp.status, message=rsp.reason)
+        for addr in macList:
+            LOG.info('Deleting macaddress {0}' .format(addr))
+            Nodes().nodes_macaddress_dhcp_whitelist_delete(addr)
+            rsp = self.__client.last_response
+            assert_equal(204, rsp.status, message=rsp.reason)
 
     @test(groups=['catalog_nodes', 'check-nodes-catalogs.test'], \
         depends_on_groups=['nodes.discovery.test'])
