@@ -59,27 +59,3 @@ class OBMTests(object):
         for c in codes:
             assert_equal(200, c.status, message=c.reason)
         assert_raises(rest.ApiException, Api().nodes_post_obm_id_by_id, 'fooey', data)
-
-    @test(groups=['obm_api2.tests', 'test-obms_api2'])
-    def test_obm_library(self):
-        """ Testing GET:/obms/library """
-        Api().get_obm_lib()
-        obms = loads(self.__client.last_response.data)
-        services = [t.get('service') for t in obms]
-        assert_equal(200, self.__client.last_response.status)
-        assert_not_equal(0, len(obms), message='OBM list was empty!')
-
-    @test(groups=['obm_api2.tests', 'test-obms-identifier_api2'])
-    def test_obm_library_identifier(self):
-        """ Testing GET:/obms/library/:id """
-        Api().get_obm_lib()
-        obms = loads(self.__client.last_response.data)
-        codes = []
-        services = [t.get('service') for t in obms]
-        for n in services:
-            Api().get_obm_lib_by_id(n)
-            codes.append(self.__client.last_response)
-        assert_not_equal(0, len(obms), message='OBM list was empty!')
-        for c in codes:
-            assert_equal(200, c.status, message=c.reason)
-
