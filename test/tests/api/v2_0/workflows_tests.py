@@ -75,7 +75,7 @@ class WorkflowsTests(object):
         # Getting the identifier of the first workflow in order to validate the get-id function
         Api().workflows_get()
         rawj = json.loads(self.__client.last_response.data)
-        instance_id = rawj[0].get('id')
+        instance_id = rawj[0].get('instanceId')
         assert_is_not_none(instance_id)
         Api().workflows_get_by_id(instance_id)
         assert_equal(200,self.__client.last_response.status)
