@@ -8,7 +8,7 @@
     - git
     - rabbitmq
     - mongodb
-    - node-legacy
+    - node
     - isc-dhcp-server
     - monorail
     - snmptool
@@ -22,5 +22,3 @@
   vars:
 # branch of https://github.com/rackhd/rackhd to be used
     - branch: "master"
-# version of Node.js to use
-    - node_version: "0.10.41"

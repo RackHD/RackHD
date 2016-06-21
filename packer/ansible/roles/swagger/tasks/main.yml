@@ -1,11 +1,21 @@
 ---
-- name: Install Maven and Swagger build Tools
+- name: Install Maven and Swagger build Tools with openjdk-7-jdk
   apt: pkg={{ item }} state=installed
   with_items:
     - openjdk-7-jdk
     - maven
     - libkrb5-dev
   sudo: yes
+  when: ansible_distribution == "Ubuntu" and ansible_distribution_version | int < 16
+
+- name: Install Maven and Swagger build Tools with openjdk-8-jdk
+  apt: pkg={{ item }} state=installed
+  with_items:
+    - openjdk-8-jdk
+    - maven
+    - libkrb5-dev
+  sudo: yes
+  when: ansible_distribution == "Ubuntu" and ansible_distribution_version | int >= 16
 
 - name: Grab Swagger CodeGen Tooling
   shell: git clone --branch v2.1.5 https://github.com/swagger-api/swagger-codegen.git

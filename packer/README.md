@@ -17,7 +17,13 @@ enable:
 
 ## To build locally (using code from source)
 
-    packer build -only=virtualbox-iso template.json
+### Build vagrant box based on Ubuntu 14.04
+
+    packer build -only=virtualbox-iso template-ubuntu-14.04.json
+
+### Build vagrant box based on Ubuntu 16.04
+
+    packer build -only=virtualbox-iso template-ubuntu-16.04.json
 
 ## To build locally (using pre-built debian packages)
 
