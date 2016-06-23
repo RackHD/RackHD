@@ -19,6 +19,14 @@
             "routers": "northbound-api-router"
         },
         {
+            "address": "0.0.0.0",
+            "port": 8443,
+            "httpsEnabled": true,
+            "proxiesEnabled": true,
+            "authEnabled": true,
+            "routers": "northbound-api-router"
+        },
+        {
             "address": "172.31.128.1",
             "port": 9080,
             "httpsEnabled": false,

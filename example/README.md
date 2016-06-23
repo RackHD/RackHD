@@ -88,6 +88,36 @@ To view a list of all the existing workflows already in the RackHD definitions:
 
     curl http://localhost:9090/api/1.1/workflows/library/* | python -m json.tool
 
+### Authentication
+
+An optional authenticated northbound endpoint will be enabled on port 9093.
+Login with the default username/password to retrieve the login token:
+
+    curl -k https://localhost:9093/login -X POST \
+    -H 'Accept:application/json' -H 'Content-Type:application/json' \
+    -d '{"username":"admin","password":"admin123"}' | python -m json.tool
+
+    {
+        "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiYWRtaW4iLCJpYXQiOjE0NjYxMDQ2OTksImV4cCI6MTQ2NjE5MTA5OX0.qRVEP66zCsoOGTXmtbCnMPZ7Pj-E006TKLUNPc_Mk6k"
+    }
+
+
+A PATCH to the /users/<user> API can be made to change the default user password:
+
+    curl -k https://localhost:9093/api/2.0/users/admin -X PATCH \
+    -H "Accept:application/json" -H 'Authorization: JWT <token>' \
+    -d '{"password":"<new_password>"}'
+
+
+A POST to the /users API can be made to add a user.  The role "Administrator" for read/write and "ReadOnly" for readonly access are valid.
+
+    curl -k https://localhost:9093/api/2.0/users/admin -X POST \
+    -H "Accept:application/json" -H 'Authorization: JWT <token>' \
+    -d '{"username":"<username>", "password":"<password>", "role": "Administrator"}'
+
+
+
+
 ### Install a default workflow for Virtualbox VMs and a SKUs definition
 
 This example includes a workflow that we'll use when we identify a "virtualbox"
@@ -302,7 +332,7 @@ change the settings while running to point to this instance of RackHD at
     virtualenv .venv
     source .venv/bin/activate
     pip install -r requirements.txt
-    RACKHD_PORT=8080 RACKHD_AMQP_URL=amqp://localhost python run.py
+    python run.py
 
 * start a PXE booting VM on the `closednet` to trigger the tests to complete
 
