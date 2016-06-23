@@ -16,9 +16,13 @@ from proboscis import test
 from proboscis import after_class
 from proboscis import before_class
 from json import dumps, loads
+import os
 
 LOG = Log(__name__)
 DEFAULT_TIMEOUT = 5400
+ENABLE_FORMAT_DRIVE=False
+if os.getenv('RACKHD_ENABLE_FORMAT_DRIVE', 'false') == 'true': 
+    ENABLE_FORMAT_DRIVE=True
 
 @test(groups=['os-install.v1.1.tests'], \
     depends_on_groups=['amqp.tests'])
@@ -65,7 +69,7 @@ class OSInstallTests(object):
         }
         self.__post_workflow('Graph.ShellCommands', [], body) 
 
-    @test(enabled=False, groups=['format-drives.v1.1.test'])
+    @test(enabled=ENABLE_FORMAT_DRIVE, groups=['format-drives.v1.1.test'])
     def test_format_drives(self):
         """ Drive Format Test """
         self.__format_drives()  
