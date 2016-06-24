@@ -143,9 +143,7 @@ class SkusTests(object):
         self.__nodes = loads(self.__client.last_response.data)
         i =0
         for n in self.__nodes:
-
             if n.get('type') == 'compute':
-
                 #update the sku rule above (rules[0].name.contains) with a value from the cataloged node
                 node_id = n.get('id')
                 Api().nodes_get_catalog_source_by_id(identifier=node_id,source='dmi')
@@ -236,14 +234,16 @@ class SkusTests(object):
                     data = loads(self.__client.last_response.data)
                     assert_equal(200, result.status, message=res.reason)
 
+                    # Check for skupack templates
+                    sku_id = res.json()['id']
+                    Api().templates_meta_get_by_name('template.json', scope=sku_id )
+                    assert_equal(200, self.__client.last_response.status)
+                    assert_equal(1, len(loads(self.__client.last_response.data)))
 
-                    #TODO
-                    #Once the 2.0 temples API route is implemented(/api/2.0/templates/library), validation of the templates
-                    #should be added
-
-                    # TODO
-                    # Once the 2.0 profiles API route is implemented (/api/2.0/profiles/library), validation of the profiles
-                    # should be added
+                    # Check for skupack profiles
+                    Api().profiles_get_metadata_by_name('useless.json', scope=sku_id)
+                    assert_equal(200, self.__client.last_response.status)
+                    assert_equal(1, len(loads(self.__client.last_response.data)))
 
                     """Test DELETE:api/2.0/skus/:identifier/pack"""
                     Api().skus_id_delete_pack(self.__packFolderId)
@@ -318,6 +318,7 @@ class SkusTests(object):
             },
             "workflowRoot": "workflows",
             "taskRoot": "tasks",
+            "httpProfileRoot": "profiles",
             "httpTemplateRoot": "templates",
             "httpStaticRoot": "static"
         }
@@ -399,6 +400,11 @@ class SkusTests(object):
         }
         with open(self.__rootDir + 'templates/template.json', 'w') as f:
             json.dump(self.__template, f)
+        f.close()
+
+        self.__profile = { 'useless': 'a useless profile' }
+        with open(self.__rootDir + 'profiles/useless.json', 'w') as f:
+            json.dump(self.__profile, f)
         f.close()
 
         os.chdir(self.__rootDir )
