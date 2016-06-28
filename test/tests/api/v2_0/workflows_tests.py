@@ -77,14 +77,14 @@ class WorkflowsTests(object):
         rawj = json.loads(self.__client.last_response.data)
         instance_id = rawj[0].get('instanceId')
         assert_is_not_none(instance_id)
-        Api().workflows_get_by_id(instance_id)
+        Api().workflows_get_by_instance_id(instance_id)
         assert_equal(200,self.__client.last_response.status)
 
     @test(groups=['workflows_get_id_api2'],depends_on_groups=['workflows_get_api2'])
     def test_negative_workflows_id_get(self):
         """ Negative Testing GET:/workflows/identifier"""
         try:
-            Api().workflows_get_by_id("WrongIdentifier")
+            Api().workflows_get_by_instance_id("WrongIdentifier")
             assert_equal(404, self.__client.last_response.status, message='status should be 404. No exception raised')
         except Exception,e:
             assert_equal(404,e.status, message = 'status should be 404')

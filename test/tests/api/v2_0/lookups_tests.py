@@ -32,11 +32,11 @@ class LookupsTests(object):
         Api().nodes_get_all()
         nodes = loads(self.__client.last_response.data)
         assert_not_equal(0, len(nodes), message='Node list was empty!')
-        obms = [ n.get('obmSettings') for n in nodes if n.get('obmSettings') is not None ]
+        Api().obms_get()
+        obms = loads(self.__client.last_response.data)
         hosts = []
         for o in obms:
-            for c in o:
-                hosts.append(c.get('config').get('host'))
+            hosts.append(o.get('config').get('host'))
         assert_not_equal(0, len(hosts), message='No OBM hosts were found!')
         for host in hosts:
             Api().lookups_get(q=host)
@@ -50,15 +50,15 @@ class LookupsTests(object):
         Api().nodes_get_all()
         nodes = loads(self.__client.last_response.data)
         assert_not_equal(0, len(nodes), message='Node list was empty!')
-        obms = [ n.get('obmSettings') for n in nodes if n.get('obmSettings') is not None ]
+        Api().obms_get()
+        obms = loads(self.__client.last_response.data)
         assert_not_equal(0, len(obms), message='No OBM settings found!')
         entries = []
         for obm in obms:
-            for cfg in obm:
-                host = cfg.get('config').get('host')
-                Api().lookups_get(q=host)
-                list = loads(self.__client.last_response.data)
-                entries.append(list)
+            host = obm.get('config').get('host')
+            Api().lookups_get(q=host)
+            list = loads(self.__client.last_response.data)
+            entries.append(list)
 
         assert_not_equal(0, len(entries), message='No lookup entries found!')
         for entry in entries:

@@ -65,11 +65,7 @@ class NodesTests(object):
             {
                 'autoDiscover': 'false',
                 'name': 'test_compute_node',
-                'type': 'compute',
-                'obmSettings': [{
-                    'config': {'host': '00:01:02:03:04:05', 'password': 'pass', 'user': 'user'},
-                    'service': 'ipmi-obm-service'
-                }]
+                'type': 'compute'
             }
         ]
     
