@@ -45,7 +45,7 @@ class obmSettings(object):
             }
             LOG.info('Creating ipmi obm-settings for node {0} \n {1}'.format(uid,setting))
             try:
-                Nodes().nodes_identifier_obm_post(uid,setting)
+                Nodes().nodes_identifier_patch(uid,setting)
             except rest.ApiException as e:
                 LOG.error(e)
                 return False
