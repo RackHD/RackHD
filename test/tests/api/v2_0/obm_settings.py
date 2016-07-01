@@ -34,18 +34,17 @@ class obmSettings(object):
         if mac is not None:
             LOG.debug('BMC MAC {0} for {1}'.format(mac,uid))
             setting = {
-                'obmSettings': [{
-                    'service':'ipmi-obm-service',
-                    'config': {
-                        'user':user,
-                        'password':passwd,
-                        'host': mac
-                    }
-                }]
+                'nodeId': uid,
+                'service':'ipmi-obm-service',
+                'config': {
+                    'user':user,
+                    'password':passwd,
+                    'host': mac
+                }
             }
             LOG.info('Creating ipmi obm-settings for node {0} \n {1}'.format(uid,setting))
             try:
-                Api().nodes_patch_by_id(uid,setting)
+                Api().obms_put(setting)
             except rest.ApiException as e:
                 LOG.error(e)
                 return False
@@ -86,7 +85,12 @@ class obmSettings(object):
             uid = n.get('id')
             if uuid is None or uuid == uid:
                 if node_type != 'enclosure':
-                    obm_obj = n.get('obmSettings')
+                    obm_obj = []
+                    Api().obms_get()
+                    all_obms = loads(self.__client.last_response.data)
+                    for obm in all_obms:
+                        if (obm.get('node') == uid):
+                            obm_obj.append(obm)
                     if (obm_obj is None) or (obm_obj is not None and len(obm_obj)== 0):
                         LOG.warning('No OBM settings for node type {0} (id={1})'.format(node_type,uid))
                         retval.append(False)

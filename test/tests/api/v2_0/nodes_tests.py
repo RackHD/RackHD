@@ -66,11 +66,7 @@ class NodesTests(object):
             {
                 'autoDiscover': 'false',
                 'name': 'test_compute_node',
-                'type': 'compute',
-                'obmSettings': [{
-                    'config': {'host': '00:01:02:03:04:05', 'password': 'pass', 'user': 'user'},
-                    'service': 'ipmi-obm-service'
-                }]
+                'type': 'compute'
             }
         ]
         self.__test_tags = {
@@ -189,26 +185,6 @@ class NodesTests(object):
             Api().nodes_post(identifiers=n)
             rsp = self.__client.last_response
             assert_equal(201, rsp.status, message=rsp.reason)
-
-    @test(groups=['test-node-id-obm-api2'], depends_on_groups=['create-node-api2'])
-    def test_node_id_obm(self):
-        """ Testing GET:/api/2.0/nodes/:id/obm """
-        Api().nodes_get_all()
-        nodes = self.__get_data()
-        LOG.debug(nodes,json=True)
-        codes = []
-        for n in nodes:
-            if n.get('name') == 'test_compute_node':
-                uuid = n.get('id')
-                Api().nodes_get_obm_by_id(identifier=uuid)
-                rsp = self.__client.last_response
-                LOG.info('OBM setting for node ID {0} is {1}'.format(uuid, rsp.data))
-                codes.append(rsp)
-
-        assert_not_equal(0, len(codes), message='Failed to find compute node Ids')
-        for c in codes:
-            assert_equal(200, c.status, message=c.reason)
-        assert_raises(rest.ApiException, Api().nodes_get_obm_by_id, 'fooey')
 
     @test(groups=['patch-node-api2'], depends_on_groups=['test-node-id-api2'])
     def test_node_patch(self):
