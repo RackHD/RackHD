@@ -526,7 +526,10 @@ def parse_process_list(filename):
 
 # Return a process name from PID per dict lookup
 def get_process_name(process_dict, pid_str):
-    return process_dict[pid_str]
+    if process_dict.has_key(pid_str):
+        return process_dict[pid_str]
+    else:
+        return None
 
 # Line parser for atop log file
 # Return a list of decoded matrix value:
@@ -619,11 +622,15 @@ def parse_atop(filename, proc_list):
             pid = parsed_line['process']
             process_name = get_process_name(proc_list, pid)
 
+            if not process_name:
+                continue
+
             if process_name not in ret_val:
                 ret_val[process_name] = []
                 continue
 
             ret_val[process_name].append(parsed_line['list'])
+
     return ret_val
 
 # scan for a list of data that can be used for compare
