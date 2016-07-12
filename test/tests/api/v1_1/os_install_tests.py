@@ -35,7 +35,7 @@ class OSInstallTests(object):
         self.__obm_options = { 
             'obmServiceName': defaults.get('RACKHD_GLOBAL_OBM_SERVICE_NAME', \
                 'ipmi-obm-service')
-        }
+	}
             
     @before_class()
     def setup(self):
@@ -84,9 +84,9 @@ class OSInstallTests(object):
                 'options': {
                     'defaults': {
                         'installDisk': '/dev/sda',
-                        'kvm': 'undefined', 
                         'version': version,
-                        'repo': os_repo
+                        'repo': os_repo,
+			'users': [{ 'name': 'onrack', 'password': 'Onr@ck1!', 'uid': 1010 }]
                     },
                     'set-boot-pxe': self.__obm_options,
                     'reboot': self.__obm_options,
@@ -188,7 +188,7 @@ class OSInstallTests(object):
     def test_install_ubuntu(self, nodes=[], options=None):
         """ Testing Ubuntu 14.04 Installer Workflow """
         self.install_ubuntu('trusty')
-        
+       
     @test(enabled=True, groups=['suse-install.v1.1.test'])
     def test_install_suse(self, nodes=[], options=None):
         """ Testing OpenSuse Leap 42.1 Installer Workflow """
@@ -203,3 +203,4 @@ class OSInstallTests(object):
     def test_install_esxi_6(self, nodes=[], options=None):
         """ Testing ESXi 6 Installer Workflow """
         self.install_esxi('6.0')
+
