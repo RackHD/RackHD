@@ -159,9 +159,9 @@ class OSInstallTests(object):
                 'options': {
                     'defaults': {
                         'installDisk': '/dev/sda',
-                        'kvm': 'undefined', 
                         'version': version,
-                        'repo': os_repo
+                        'repo': os_repo,
+                        'users': [{ 'name': 'onrack', 'password': 'Onr@ck1!', 'uid': 1010 }]
                     },
                     'set-boot-pxe': self.__obm_options,
                     'reboot': self.__obm_options,
