@@ -390,7 +390,7 @@ def write_atop_matrix_to_js(matrix_data, case_information, out_dir):
     padding_str = ',\\n\" + \n'
 
     pid_name_list = matrix_data.keys()
-    pid_name_list_str = ",".join(sorted(pid_name_list))
+    pid_name_list_str = ",".join(sorted(pid_name_list)) + ', total'
 
     record_length_list = []
     for pid, pid_record in matrix_data.items():
@@ -412,9 +412,13 @@ def write_atop_matrix_to_js(matrix_data, case_information, out_dir):
 
         for record in range(record_cnt):     # Remove the first record
             line_records = []
+            line_sum = 0
             for pid in sorted(pid_name_list):
                 # print(pid + ' ' + str(record)+ ' ' + ' '+ str(matrix_idx))
-                line_records.append(str(matrix_data[pid][record][matrix_idx]))
+                line_record = str(matrix_data[pid][record][matrix_idx])
+                line_records.append(line_record)
+                line_sum += int(line_record)
+
             if record == (record_cnt - 1):
                 padding = ',\"'
             else:
@@ -422,7 +426,10 @@ def write_atop_matrix_to_js(matrix_data, case_information, out_dir):
 
             current_time = start_time + datetime.timedelta(seconds = record * sample_interval)
             current_time_str = current_time.strftime("%Y-%m-%d %H:%M:%S")
-            line = "\"" + current_time_str + ',' + ",".join(line_records) + padding
+            line = "\"" + current_time_str + ',' \
+                   + ",".join(line_records) \
+                   + ',' + str(line_sum) \
+                   + padding
             file_open.write(line)
 
 # Write parsed atop result to js that can be used for generating graphs in
@@ -678,11 +685,14 @@ def copy_html_to_output_dir(output_dir):
         path_src = os.path.join(path_html, folder)
         path_dest = os.path.join(output_dir, folder)
         try:
+            if os.path.exists(path_dest):
+                shutil.rmtree(path_dest)
             shutil.copytree(path_src, path_dest)
-        except Exception:
+        except Exception as e:
             exception_msg = 'Error generating html reports, check source dir at: ' + \
                          path_src + ' ,destination dir at: ' + path_dest
-            raise RuntimeError(exception_msg)
+            print exception_msg
+            raise RuntimeError(e)
 
 # The overall parser.
 # specify log_dir as the absolute directory where all the log files resides.
@@ -761,4 +771,3 @@ def parse(log_dir):
 
 if __name__ == '__main__':
     parse(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'test_dir'))
-
