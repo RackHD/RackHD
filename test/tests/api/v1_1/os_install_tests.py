@@ -100,7 +100,7 @@ class OSInstallTests(object):
         self.__post_workflow(graph_name, nodes, body)
         
     def install_esxi(self, version, nodes=[], options=None):
-        graph_name = 'Graph.InstallEsx'
+        graph_name = 'Graph.InstallESXi'
         os_repo = defaults.get('RACKHD_ESXI_REPO_PATH', \
             self.__base + '/repo/esxi/{0}'.format(version))
         body = options
