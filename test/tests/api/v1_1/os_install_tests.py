@@ -161,6 +161,10 @@ class OSInstallTests(object):
                         'installDisk': '/dev/sda',
                         'version': version,
                         'repo': os_repo,
+                        'baseUrl':'install/netboot/ubuntu-installer/amd64',
+                        'kargs':{
+                            'live-installer/net-image': os_repo + '/install/filesystem.squashfs'
+                        },
                         'users': [{ 'name': 'onrack', 'password': 'Onr@ck1!', 'uid': 1010 }]
                     },
                     'set-boot-pxe': self.__obm_options,
