@@ -89,7 +89,8 @@ class obmSettings(object):
                     Api().obms_get()
                     all_obms = loads(self.__client.last_response.data)
                     for obm in all_obms:
-                        if (obm.get('node') == uid):
+                        node_ref = obm.get('node')
+                        if node_ref == uid or node_ref.split('/')[-1] == uid:
                             obm_obj.append(obm)
                     if (obm_obj is None) or (obm_obj is not None and len(obm_obj)== 0):
                         LOG.warning('No OBM settings for node type {0} (id={1})'.format(node_type,uid))
