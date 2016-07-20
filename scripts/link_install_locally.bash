@@ -64,6 +64,7 @@ done
 # last set, generate documentation
 pushd "${SCRIPT_DIR}/../on-http"
     npm run apidoc
+    npm run taskdoc
     ./install-swagger-ui.sh
     ./install-web-ui.sh
     git clone --branch v2.1.5 https://github.com/swagger-api/swagger-codegen.git
