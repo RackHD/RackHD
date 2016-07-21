@@ -7,3 +7,4 @@ http: /bin/bash -c "echo running $HTTPDIR/index.js; cd $HTTPDIR && exec sudo nod
 dhcp: /bin/bash -c "echo running $DHCPDIR/index.js; cd $DHCPDIR && exec sudo node index.js | tee /tmp/dhcp-proxy.log"
 tftp: /bin/bash -c "echo running $TFTPDIR/index.js; cd $TFTPDIR && exec sudo node index.js | tee /tmp/tftp.log"
 syslog: /bin/bash -c "echo running $SYSLOGDIR/index.js; cd $SYSLOGDIR && exec sudo node index.js | tee /tmp/syslog.log"
+wss: /bin/bash -c "echo running $WSSDIR/index.js; cd $WSSDIR && exec sudo node index.js | tee /tmp/wss.log"
