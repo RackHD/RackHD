@@ -1,4 +1,9 @@
 ---
+- name: install dev libraries for NPM installs
+  apt: pkg={{ item }} state=installed
+  with_items:
+    - libkrb5-dev
+
 - name: Get RackHD from source
   git: repo=https://github.com/rackhd/rackhd
        dest="{{ ansible_env.HOME }}/src"
