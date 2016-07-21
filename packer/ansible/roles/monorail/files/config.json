@@ -8,7 +8,6 @@
     "dhcpProxyBindAddress": "172.31.128.1",
     "dhcpProxyBindPort": 4011,
     "dhcpSubnetMask": "255.255.252.0",
-    "gatewayaddr": "172.31.128.1",
     "httpEndpoints": [
         {
             "address": "0.0.0.0",
