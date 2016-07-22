@@ -22,6 +22,7 @@
     - on-dhcp-proxy
     - on-taskgraph
     - on-syslog
+    - on-wss
 
 - name: Reset to the branch specified
   shell: git reset --hard {{ branch }}
@@ -36,6 +37,7 @@
     - on-dhcp-proxy
     - on-taskgraph
     - on-syslog
+    - on-wss
 
 - name: Npm install Repos
   npm: path="{{ ansible_env.HOME }}/src/{{ item }}"
@@ -46,6 +48,7 @@
     - on-dhcp-proxy
     - on-taskgraph
     - on-http
+    - on-wss
 
 - name: Make common static directory
   file: path="{{ ansible_env.HOME }}/src/on-http/static/http/common" state=directory
