@@ -14,7 +14,6 @@
     "dhcpProxyBindAddress": "0.0.0.0",
     "dhcpProxyBindPort": 4011,
     "dhcpSubnetMask": "255.255.252.0",
-    "gatewayaddr": "172.31.128.1",
     "httpDocsRoot": "./build/apidoc",
     "httpEndpoints": [
       {
