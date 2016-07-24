@@ -259,10 +259,6 @@ class SkusTests(object):
                     LOG.info("List of Skus after delete sku pack")
                     LOG.info(skus)
                     assert_equal(0, len(skus))
-                    for n in skus:
-                        self.__sku_id  = n.get('id')
-                        LOG.info(self.__sku_id)
-                        assert_is_not_equal(self.__sku_id, sku_id)
                     
                      
     @test(groups=['api2_put_skupack'], depends_on_groups=['api2_post_skupack'])
