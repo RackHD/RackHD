@@ -17,21 +17,13 @@ and [Ansible](http://docs.ansible.com/ansible/intro_installation.html)
 installed onto your system in order to use this script.
 
 **NOTE**: Do not use Vagrant 1.8.0, as the private network settings don't appear
-to be working correctly. Bug filed upstream with Vagrant at
-https://github.com/mitchellh/vagrant/issues/6730. Vagrant 1.8.1 and later resolve this
-issue.
+to be working correctly. Later versions (Vagrant 1.8.1) resolved this issue.
 
-
+We utilize
 [ansible roles](https://github.com/RackHD/RackHD/tree/master/packer/ansible/roles)
-
-We also rely on the projects structure of submodules to link the source
-into the VM (through vagrant). The ansible roles are written to expect the
-source to be autoloaded on the virtual machine with directory mappings
-configured in Vagrantfile:
-
-for example:
-
-        ~/<repos directory>/RackHD/on-http/static/http/common/
+with a [packer template](https://github.com/RackHD/RackHD/blob/master/packer/template.json)
+to pre-build the RackHD VM. If you want to create your own packaged
+installation of RackHD from source, you can start with this for guidance.
 
 The static files that RackHD uses can be built locally using the tools found in
 the on-imagebuilder repository (https://github.com/RackHD/on-imagebuilder),
@@ -40,35 +32,42 @@ bintray from that open source repository's outputs.
 
 ## SET UP INSTRUCTIONS
 
-Clone RackHD repo to your local git directory.
+Clone RackHD repo to your local machine.
 
-    $ git clone https://github.com/RackHD/RackHD
-    $ cd RackHD
+    git clone https://github.com/RackHD/RackHD
+    cd RackHD
+    cd example
+    # create the RackHD instance.
+    vagrant up dev
+    # start the RackHD services
+    vagrant ssh dev -c "sudo nf start"
+
+### LOCAL SOURCE
+
+If you set the environment variables `WORKSPACE` and then either `REPO` and/or
+`CONFIG_DIR`, the Vagrant instance for RackHD will attempt to mount the relevant
+repository locally from your machine. For example, if you had alternative source
+for on-http that you wanted to use, checked out at /Users/heckj/src/on-http,
+you could use:
+
+    export WORKSPACE=/Users/heckj/src
+    export REPO=on-http
+
+to mount that directory within the RackHD Vagrant instance referencing your
+local source.
 
 
-Change into the directory `example`, create config and run the setup command:
-
-    $ cd example
-    $ cp config/monorail_rack.cfg.example config/monorail_rack.cfg
-
-
-Edits can be made to this new file to adjust the number of pxe clients created.
-
-    $ bin/monorail_rack
-
-
-The `monorail_rack` script will auto-start all of the services by default, but you can
-also run them manually if you prefer.
-
-    $ vagrant ssh
-    vagrant:~$ sudo nf start
-
-
-## TESTING
+## Validating RackHD is operational
 
 Once you've started the services, the RackHD API will be available on your local
-machine through port 9090. For example, you should be able to view the RackHD
+machine through port 9090. For example, you should be able to view the RackHD 1.1
 API documentation that's set up with the service at http://localhost:9090/docs.
+The RackHD 2.0 and Redfish API online documentation are available at
+http://localhost:9090/swagger-ui/.
+
+You can also utilize the Github pages hosted version of the RackHD developer GUI
+by opening your browser to http://rackhd.github.io/on-web-ui. The defaults for
+this UI will attempt to connect to your locally running instance.
 
 You can also interact with the APIs using curl from the command line of your
 local machine.
@@ -82,11 +81,13 @@ View the list of catalogs logged into RackHD:
 
     curl http://localhost:9090/api/1.1/catalogs | python -m json.tool
 
+
 (both of these should result in empty lists in a brand new installation)
 
 To view a list of all the existing workflows already in the RackHD definitions:
 
     curl http://localhost:9090/api/1.1/workflows/library/* | python -m json.tool
+
 
 ### Authentication
 
@@ -111,18 +112,15 @@ A PATCH to the /users/<user> API can be made to change the default user password
 
 A POST to the /users API can be made to add a user.  The role "Administrator" for read/write and "ReadOnly" for readonly access are valid.
 
-    curl -k https://localhost:9093/api/2.0/users/admin -X POST \
+    curl -k https://localhost:9093/api/2.0/users -X POST \
     -H "Accept:application/json" -H 'Authorization: JWT <token>' \
     -d '{"username":"<username>", "password":"<password>", "role": "Administrator"}'
 
+### Install a default workflow for virtual Quanta VMs and a SKUs definition
 
-
-
-### Install a default workflow for Virtualbox VMs and a SKUs definition
-
-This example includes a workflow that we'll use when we identify a "virtualbox"
+This example includes a workflow that we'll use when we identify a "virtual quanta"
 SKU with RackHD. This workflow sets up no-op out of band management settings
-for a demo and triggers an installation of CoreOS as a default flow to run
+for a demo and triggers an installation of CentOS as a default flow to run
 once the "virtualbox" SKU has been identified. We'll load it into our library
 of workflows:
 
@@ -130,9 +128,12 @@ of workflows:
     # make sure you're in the example directory to reference the sample JSON correctly
 
     curl -H "Content-Type: application/json" \
-    -X PUT --data @samples/virtualbox_install_coreos.json \
+    -X PUT --data @samples/vQuanta_install_centos.json \
     http://localhost:9090/api/1.1/workflows
 
+    curl -H "Content-Type: application/json" \
+    -X PUT --data @samples/vQuanta_install_coreos.json \
+    http://localhost:9090/api/1.1/workflows
 
 To enable that workflow, we also need to include a SKU definition that includes
 the option of another workflow to run once the SKU has been identified. This
@@ -143,7 +144,7 @@ identify a SKU and run another workflow if specified.
     # make sure you're in the example directory to reference the sample JSON correctly
 
     curl -H "Content-Type: application/json" \
-    -X POST --data @samples/virtualbox_sku.json \
+    -X POST --data @samples/vQuanta_d51_sku.json \
     http://localhost:9090/api/1.1/skus
 
 
@@ -153,36 +154,37 @@ View the current SKU definitions:
 
     [
         {
-            "createdAt": "2015-11-21T00:46:04.068Z",
-            "discoveryGraphName": "Graph.DefaultVirtualBox.InstallCoreOS",
+            "createdAt": "2016-04-28T20:05:56.975Z",
+            "discoveryGraphName": "Graph.DefaultVQuanta.InstallCentOS",
             "discoveryGraphOptions": {},
-            "id": "564fbecc1dee9e7d2f1d33ca",
-            "name": "Noop OBM settings for VirtualBox nodes",
+            "id": "57226d24fc06c6b414cf1027",
+            "name": "vQuanta D51 SKU",
             "rules": [
                 {
-                    "equals": "VirtualBox",
+                    "equals": "D51B-2U (dual 10G LoM)",
                     "path": "dmi.System Information.Product Name"
+                },
+                {
+                    "equals": "SerialNumber",
+                    "path": "dmi.System Information.Serial Number"
                 }
             ],
-            "updatedAt": "2015-11-21T00:46:04.068Z"
+            "updatedAt": "2016-04-28T20:05:56.975Z"
         }
     ]
 
-Once you've added those definitions, you can start up the test "PXE-1" virtual machine
-using the command:
+### Set up and activate the virtual hardware
 
-    VBoxManage startvm pxe-1 --type gui
+We can use a simulated Quanta D51 levering [InfraSim](https://github.com/InfraSim/InfraSim)
+to work with RackHD APIs. To set up and active this machine:
 
-You should see the VM PXE boot, get discovered, and ultimately get CoreOS
-installed. The installation workflow included in the RackHD system installs
-with a default SSH key that's included in our repositories. From the `example`
-directory, you should be able to log in using:
+    vagrant up quanta_d51
 
-`vagrant ssh`:
+You can see the Quanta d51 control with the vBMC quanta simulator by using VNC
+to connect to 127.0.0.1:15901 (or 127.0.0.1 display 10001). You can log into
+the VM hosting this simulation with the default credentials of "root"/"root"
+and the IPMI credentials that it's providing on `closednet` are "admin"/"admin".
 
-    cp ~/src/on-http/data/rackhd_rsa ~/.ssh/id_rsa
-    chmod 0400 ~/.ssh/id_rsa
-    ssh core@172.31.128.2
 
 ## USING OTHER WORKFLOWS
 
@@ -203,14 +205,22 @@ or download a [CentOS 7 Installation ISO](http://mirrors.mit.edu/centos/7/isos/x
 
 **NOTE:** Below, we show two methods (A&B) of ensuring we have the iso file properly placed to be referenced by our helper script.
 
+Mirror Site: http://mirror.centos.org/centos/7/os/x86_64/
 
 ---
-**A.** Copy the iso into the `examples` directory within the RacKHD directory and then you can unpack it in vagrant:
+**A.** Copy the iso into the `examples` directory within the RackHD source directory and then unpack it in using Vagrant's access to the local filesystem:
 
-`vagrant ssh`:
-```    
-sudo python ~/src/on-tools/scripts/setup_iso.py /vagrant/VMware-VMvisor-Installer-*.x86_64.iso /opt/monorail/static/http --link=/home/vagrant/src
-```
+Copy it into the `examples` directory and then you can unpack it in vagrant:
+
+`cd ~/src/rackhd/examples`
+
+`wget http://mirrors.mit.edu/centos/7/isos/x86_64/CentOS-7-x86_64-DVD-1511.iso`
+_NOTE_: this is a 4GB download.
+
+`vagrant ssh dev`:
+
+    sudo mkdir -p /var/mirrors
+    sudo python ~/src/on-tools/scripts/setup_iso.py /vagrant/CentOS-7-x86_64-DVD-1511.iso /var/mirrors --link=/home/vagrant/src
 
 
 ---
@@ -218,18 +228,13 @@ sudo python ~/src/on-tools/scripts/setup_iso.py /vagrant/VMware-VMvisor-Installe
 
 **NOTE:** We continue with a CentOS install to complete the instructions.
 
-`vagrant ssh`:
-```
-# 4GB
-sudo python ~/src/on-tools/scripts/setup_iso.py http://mirrors.mit.edu/centos/7/isos/x86_64/CentOS-7-x86_64-DVD-1511.iso /opt/monorail/static/http --link=/home/vagrant/src
-```
-The CentOS installer wants a bit more memory easily available for the
-installation than we default our test VM towards, so we recommend updating
-it to 2GB of RAM with the following commands:
+`vagrant ssh dev`:
 
-    VBoxManage controlvm pxe-1 poweroff
-    VBoxManage modifyvm pxe-1 --memory 2048;
-    VBoxManage startvm pxe-1 --type gui
+    sudo mkdir -p /var/mirrors
+    cd /tmp
+    wget http://mirrors.mit.edu/centos/7/isos/x86_64/CentOS-7-x86_64-DVD-1511.iso
+    # 4GB download!
+    sudo python ~/src/on-tools/scripts/setup_iso.py /tmp/CentOS-7-x86_64*.iso /var/mirrors --link=/home/vagrant/src
 
 And then invoking the workflow to install CentOS you just unpacked
 
@@ -317,7 +322,7 @@ change the settings while running to point to this instance of RackHD at
 
 * create the vagrant demo setup and update code to the latest version
 
-`vagrant ssh`:
+`vagrant ssh dev`:
 
     cd ~/src
     ./scripts/clean_all.bash && ./scripts/reset_submodules.bash && ./scripts/link_install_locally.bash
@@ -326,7 +331,7 @@ change the settings while running to point to this instance of RackHD at
 
 * log in to the same VM with another shell and start the tests
 
-`vagrant ssh`:
+`vagrant ssh dev`:
 
     cd ~/src/test
     virtualenv .venv
@@ -336,4 +341,4 @@ change the settings while running to point to this instance of RackHD at
 
 * start a PXE booting VM on the `closednet` to trigger the tests to complete
 
-    VBoxManage startvm pxe-1 --type gui
+    vagrant up quanta_d51

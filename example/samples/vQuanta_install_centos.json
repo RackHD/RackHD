@@ -1,0 +1,46 @@
+{
+    "friendlyName": "vQuanta D51 Default Install CentOS",
+    "injectableName": "Graph.DefaultVQuanta.InstallCentOS",
+    "options": {
+      "defaults": {
+        "version": "7",
+        "dnsServers": ["8.8.8.8", "8.8.4.4"],
+        "repo": "{{api.server}}/Centos/7.0",
+        "rootPassword": "rootpassword",
+        "users": [{
+          "name": "rackhd",
+          "password": "rackhd123",
+          "uid": 1010
+        }]
+        },
+      "install-centos": {
+        "schedulerOverrides": {
+          "timeout": 3600000
+        }
+      }
+    },
+    "tasks": [
+        {
+            "label": "create-ipmi-obm-settings",
+            "taskDefinition": {
+                "friendlyName": "Create IPMI OBM settings",
+                "injectableName": "Task.Obm.Ipmi.CreateSettings",
+                "implementsTask": "Task.Base.Obm.Ipmi.CreateSettings",
+                "options": {
+                    "ipmichannel": null,
+                    "user": "admin",
+                    "password": "admin"
+                },
+                "properties": {
+                }
+            }
+        },
+        {
+            "label": "install-coreos",
+            "taskName": "Task.Os.Install.CentOS",
+            "waitOn": {
+                "create-ipmi-obm-settings": "succeeded"
+            }
+        }
+    ]
+}
