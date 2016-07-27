@@ -380,9 +380,9 @@ class NodesTests(object):
             for t in self.__test_tags.get('tags'):
                 assert_true(t not in updated_node.get('tags'), message= "Tag " + t + " was not deleted" )
         for c in get_codes:
-            assert_equal(200, c.status)
+            assert_equal(200, c.status, message=c.reason)
         for c in del_codes:
-            assert_equal(204, c.status)
+            assert_equal(204, c.status, message=c.reason)
           
         assert_raises(rest.ApiException, Api().nodes_del_tag_by_id, 'fooey',tag_name=['tag'])
 
