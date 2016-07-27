@@ -131,10 +131,6 @@ of workflows:
     -X PUT --data @samples/vQuanta_install_centos.json \
     http://localhost:9090/api/1.1/workflows
 
-    curl -H "Content-Type: application/json" \
-    -X PUT --data @samples/vQuanta_install_coreos.json \
-    http://localhost:9090/api/1.1/workflows
-
 To enable that workflow, we also need to include a SKU definition that includes
 the option of another workflow to run once the SKU has been identified. This
 takes advantage of the `Graph.SKU.Discovery` workflow, which will attempt to
