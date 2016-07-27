@@ -146,7 +146,7 @@ identify a SKU and run another workflow if specified.
 
 View the current SKU definitions:
 
-`curl http://localhost:9090/api/1.1/skus | python -m json.tool`
+`curl http://localhost:9090/api/2.0/skus | python -m json.tool`
 
     [
         {
