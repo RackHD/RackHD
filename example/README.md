@@ -128,7 +128,7 @@ of workflows:
     # make sure you're in the example directory to reference the sample JSON correctly
 
     curl -H "Content-Type: application/json" \
-    -X PUT --data @samples/vQuanta_install_centos.json \
+    -X PUT --data @samples/vQuanta_default_workflow.json \
     http://localhost:9090/api/2.0/workflows/graphs
 
 To enable that workflow, we also need to include a SKU definition that includes
