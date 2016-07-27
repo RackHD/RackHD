@@ -129,7 +129,7 @@ of workflows:
 
     curl -H "Content-Type: application/json" \
     -X PUT --data @samples/vQuanta_install_centos.json \
-    http://localhost:9090/api/1.1/workflows
+    http://localhost:9090/api/2.0/workflows/graphs
 
 To enable that workflow, we also need to include a SKU definition that includes
 the option of another workflow to run once the SKU has been identified. This
@@ -141,7 +141,7 @@ identify a SKU and run another workflow if specified.
 
     curl -H "Content-Type: application/json" \
     -X POST --data @samples/vQuanta_d51_sku.json \
-    http://localhost:9090/api/1.1/skus
+    http://localhost:9090/api/2.0/skus
 
 
 View the current SKU definitions:
