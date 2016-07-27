@@ -113,7 +113,7 @@ class SkusTests(object):
 
         Api().skus_id_delete(identifier = self.__sku_id)
         result = self.__client.last_response
-        assert_equal(200, result.status, message=result.reason)
+        assert_equal(204, result.status, message=result.reason)
 
         try:
             Api().skus_id_get(identifier = self.__sku_id)
@@ -187,7 +187,7 @@ class SkusTests(object):
                     LOG.info("Deleting the added sku")
                     Api().skus_id_delete(identifier=sku_id)
                     result = self.__client.last_response
-                    assert_equal(200, result.status, message=result.reason)
+                    assert_equal(204, result.status, message=result.reason)
             i = i +1
 
     @test(groups=['api2_post_skupack'], depends_on_groups=['api2_get_sku_nodes'])
@@ -257,9 +257,7 @@ class SkusTests(object):
                         assert_equal(None, n.get('httpProfileRoot'))
                     Api().skus_id_delete(self.__packFolderId)
                     result = self.__client.last_response
-                    assert_equal(200, result.status, message=result.reason)
-                    data = loads(result.data)
-                    LOG.info("ID of the deleted sku pack is:   "+ data.get('id'))
+                    assert_equal(204, result.status, message=result.reason)
                     # check to see if sku contents are cleaned up
                     Api().skus_get()
                     skus = loads(self.__client.last_response.data)

@@ -127,7 +127,7 @@ class LookupsTests(object):
         LOG.info("The lookup ID to be deleted is "+ self.id)
         Api().lookups_del_by_id(self.id)
         rsp = self.__client.last_response
-        assert_equal(200, rsp.status, message=rsp.reason)
+        assert_equal(204, rsp.status)
 
         #Validate that the lookup has been deleted and the returned value is an empty list
         try:

@@ -164,7 +164,7 @@ class WorkflowsTests(object):
         rawj = json.loads(self.__client.last_response.data)
         assert_equal(self.workflowDict2.get('friendlyName'), str(rawj[0].get('friendlyName')))
         Api().workflows_delete_graphs_by_name(self.workflowDict.get('injectableName'))
-        assert_equal(200,self.__client.last_response.status)
+        assert_equal(204,self.__client.last_response.status)
         Api().workflows_get_graphs_by_name(self.workflowDict.get('injectableName'))
         assert_equal(0, len(json.loads(self.__client.last_response.data)))
 
