@@ -44,7 +44,6 @@ class SkusTests(object):
         assert_equal(200, rsp.status, message=rsp.reason)
         data = loads(self.__client.last_response.data)
 
-
     @test(groups=[ 'api2_post_skus'], depends_on_groups=['api2_check-skus'])
     def post_sku(self):
         """Test POST:api/2.0/skus"""
@@ -203,7 +202,6 @@ class SkusTests(object):
                 if len(node_catalog_data) > 0:
                     node_manufacturer = node_catalog_data.get('data').get("System Information").get("Manufacturer").split(" ")[0]
 
-
                     #Post the sku pack
                     self.generateTarball(node_manufacturer)
                     self.__file = {'file': open(self.__skuPackTarball, 'rb')}
@@ -244,13 +242,32 @@ class SkusTests(object):
                     Api().profiles_get_metadata_by_name('useless.json', scope=sku_id)
                     assert_equal(200, self.__client.last_response.status)
                     assert_equal(1, len(loads(self.__client.last_response.data)))
-
+                    
                     """Test DELETE:api/2.0/skus/:identifier/pack"""
+                    Api().skus_get()
+                    skus = loads(self.__client.last_response.data)
+                    LOG.info("Printing Sku from get skus before a delete sku pack")
+                    LOG.info(skus)
                     Api().skus_id_delete_pack(self.__packFolderId)
+                    # check to see if skuPack related key is None after the delete pack 
+                    Api().skus_get()
+                    skus = loads(self.__client.last_response.data)
+                    for n in skus:
+                        LOG.info(n.get('httpProfileRoot'))
+                        assert_equal(None, n.get('httpProfileRoot'))
                     Api().skus_id_delete(self.__packFolderId)
                     result = self.__client.last_response
                     assert_equal(200, result.status, message=result.reason)
-
+                    data = loads(result.data)
+                    LOG.info("ID of the deleted sku pack is:   "+ data.get('id'))
+                    # check to see if sku contents are cleaned up
+                    Api().skus_get()
+                    skus = loads(self.__client.last_response.data)
+                    LOG.info("List of Skus after delete sku pack")
+                    LOG.info(skus)
+                    assert_equal(0, len(skus))
+                    
+                     
     @test(groups=['api2_put_skupack'], depends_on_groups=['api2_post_skupack'])
     def put_skupack(self):
         """Test PUT:api/2.0/skus/pack"""
