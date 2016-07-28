@@ -231,7 +231,7 @@ class NodesTests(object):
 
         assert_not_equal(0, len(codes), message='Delete node list empty!')
         for c in codes:
-            assert_equal(200, c.status, message=c.reason)
+            assert_equal(204, c.status, message=c.reason)
         assert_raises(rest.ApiException, Api().nodes_del_by_id, 'fooey')
 
     @test(groups=['catalog_nodes-api2'], depends_on_groups=['delete-whitelist-node-api2'])
@@ -362,24 +362,28 @@ class NodesTests(object):
     @test(groups=['node_tags_delete'], depends_on_groups=['node_tags_get'])
     def test_node_tags_del(self):
         """ Testing DELETE:api/2.0/nodes/:id/tags/:tagName """
-        codes = []
+        get_codes = []
+        del_codes = []
         Api().nodes_get_all()
         rsp = self.__client.last_response
         nodes = loads(rsp.data)
-        codes.append(rsp)
+        get_codes.append(rsp)
         for n in nodes:
             for t in self.__test_tags.get('tags'):
                 Api().nodes_del_tag_by_id(identifier=n.get('id'), tag_name=t)
                 rsp = self.__client.last_response
-                codes.append(rsp)
+                del_codes.append(rsp)
             Api().nodes_get_by_id(identifier=n.get('id'))
             rsp = self.__client.last_response
-            codes.append(rsp)
+            get_codes.append(rsp)
             updated_node = loads(rsp.data)
             for t in self.__test_tags.get('tags'):
                 assert_true(t not in updated_node.get('tags'), message= "Tag " + t + " was not deleted" )
-        for c in codes:
+        for c in get_codes:
             assert_equal(200, c.status, message=c.reason)
+        for c in del_codes:
+            assert_equal(204, c.status, message=c.reason)
+          
         assert_raises(rest.ApiException, Api().nodes_del_tag_by_id, 'fooey',tag_name=['tag'])
 
 
@@ -393,16 +397,11 @@ class NodesTests(object):
         Api().nodes_master_del_tag_by_id(tag_name=t)
         rsp = self.__client.last_response
         codes.append(rsp)
-        updated_node = loads(rsp.data)
-        assert_equal([], updated_node, message= "masterDel API deleted an invalid node ")
         LOG.info("Test to check valid tags are deleted")
         for t in self.__test_tags.get('tags'):
             Api().nodes_master_del_tag_by_id(tag_name=t)
             rsp = self.__client.last_response
             codes.append(rsp)
-            updated_node = loads(rsp.data)
-            LOG.info("Printing nodes list")
-            LOG.info(updated_node)
         for c in codes:
-            assert_equal(200, c.status, message=c.reason)
+            assert_equal(204, c.status, message=c.reason)
 
