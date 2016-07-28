@@ -31,8 +31,23 @@ check_NIC(){
     NIC_IP=$( ifconfig $NIC_Name | grep "inet addr" | awk -F: '{print $2}' | awk '{print $1}' )
 
     if [[ ! "$NIC_IP" == '172.31.128.1' ]]; then
-        echo "[Error] default RackHD configure files takes eth1 with IP 172.31.128.1 as control NIC port.RackHD may not function well if you left all config as default !"
-        exit -4
+	echo -n "Do you want this script to force set your $NIC_Name IP to 172.31.128.1 ? (type \"yes\" to force set, others to abort) > "
+	read willing_to_force_ip
+	if  [[ "$willing_to_force_ip" == 'yes' ]]; then
+		sudo echo "\
+		auto $NIC_Name
+		iface eth1 inet static
+		address 172.31.128.1
+		netmask 255.255.252.0" >> /etc/network/interfaces
+		echo "[INFO] will restart your $NIC_Name..."
+		ifdown $NIC_Name
+		ifup $NIC_Name
+		New_IP= $( ifconfig $NIC_Name | grep "inet addr" | awk -F: '{print $2}' | awk '{print $1}' )
+		echo "Your $NIC_Name new IP address is $New_IP"
+	else
+	        echo "[Error] default RackHD configure files takes eth1 with IP 172.31.128.1 as control NIC port.RackHD may not function well if you left all config as default !"
+	        exit -4
+	fi
     fi
 }
 
@@ -49,7 +64,8 @@ check_install_nodejs(){
         NODEJS_VER=$(nodejs --version | sed s/v//)
         if [[ "$NODEJS_VER" < "4.0" ]] ; then
             # Remove Old NodeJS
-            #sudo apt-get remove nodejs nodejs-legacy
+            echo "[INFO] removing old version [$NODEJS_VER] of NodeJS..."
+            sudo apt-get -y remove nodeijs nodejs-legacy
             do_install=true;
         else
             do_install=false;
