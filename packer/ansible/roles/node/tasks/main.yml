@@ -1,10 +1,16 @@
 ---
 
-- name: Setup nodejs source for installing node v4 
-  shell: curl -sL https://deb.nodesource.com/setup_4.x | sudo -E bash -
-
-- name: Install node v4
-  apt: pkg={{ item }} state=installed
-  with_items:
+- name: Ensure nodesource key
+  apt_key: id={{ nodesource_key_id }} url="{{ nodesource_key }}" state=present
+  tags:
     - nodejs
-  sudo: yes
+
+- name: Create the nodesource repo
+  apt_repository: repo="{{ nodesource_repo }}" state=present
+  tags:
+    - nodejs
+
+- name: Install nodejs
+  apt: name={{nodejs_package}} state=installed
+  tags:
+    - nodejs

@@ -1,0 +1,20 @@
+# Global variables for rackhd installation
+
+rackhd_keyserver: hkp://keyserver.ubuntu.com:80
+rackhd_key_id: 379CE192D401AB61
+rackhd_repo: deb https://dl.bintray.com/rackhd/debian trusty main
+
+rackhd_packages:
+  - on-dhcp-proxy
+  - on-http
+  - on-syslog
+  - on-taskgraph
+  - on-tftp
+rackhd_services:
+  - on-http
+  - on-dhcp-proxy
+  - on-taskgraph
+  - on-tftp
+
+rackhd_http_static_directory: /var/renasar/on-http/static/http
+rackhd_tftp_static_directory: /var/renasar/on-tftp/static/tftp

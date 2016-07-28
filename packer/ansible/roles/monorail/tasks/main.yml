@@ -2,7 +2,18 @@
 - name: Create directory for monorail config file
   file: path=/opt/monorail/ state=directory mode=0777
   sudo: yes
+  tags:
+    - monorail
 
-- name: Load monorail conf onto guest
-  copy: src=config.json dest=/opt/monorail/config.json
-  sudo: yes
+- name: monorail.json template
+  template: src=templates/monorail.json.j2 dest=/opt/monorail/config.json owner=root group=root mode=0644
+  register: monorailjson
+  tags:
+    - monorail
+
+- name: restart rackhd start services
+  service: name={{ item }} state=restarted
+  with_items: "{{ rackhd_services }}"
+  when: monorailjson.changed
+  tags:
+    - monorail
