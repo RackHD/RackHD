@@ -1,0 +1,82 @@
+# vagrant specific variables
+
+monorail:
+  CIDRNet: "192.168.37.0/24"
+  amqp: "amqp://localhost"
+  apiServerAddress: "192.168.37.2"
+  apiServerPort: 9080
+  broadcastaddr: "192.168.37.255"
+  dhcpGateway: "192.168.37.2"
+  dhcpProxyBindAddress: "192.168.37.2"
+  dhcpProxyBindPort: 4011
+  dhcpSubnetMask: "255.255.255.0"
+  httpEndpoints:
+    - address: "0.0.0.0"
+      port: 8080
+      httpsEnabled: false
+      proxiesEnabled: true
+      authEnabled: false
+      routers: "northbound-api-router"
+    - address: "0.0.0.0"
+      port: 8443
+      httpsEnabled: true
+      proxiesEnabled: true
+      authEnabled: true
+      routers: "northbound-api-router"
+    - address: "192.168.37.2"
+      port: 9080
+      httpsEnabled: false
+      proxiesEnabled: true
+      authEnabled: false
+      routers: "southbound-api-router"
+  httpDocsRoot: "./build/apidoc"
+  httpFileServiceRoot: "./static/files"
+  httpFileServiceType: "FileSystem"
+  httpProxies:
+    - localPath: "/coreos"
+      server: "http://stable.release.core-os.net"
+      remotePath: "/amd64-usr"
+  httpStaticRoot: "/opt/monorail/static/http"
+  minLogLevel: 2
+  authUsername: "admin"
+  authPasswordHash: "KcBN9YobNV0wdux8h0fKNqi4uoKCgGl/j8c6YGlG7iA0PB3P9ojbmANGhDlcSBE0iOTIsYsGbtSsbqP4wvsVcw=="
+  authPasswordSalt: "zlxkgxjvcFwm0M8sWaGojh25qNYO8tuNWUMN4xKPH93PidwkCAvaX2JItLA3p7BSCWIzkw4GwWuezoMvKf3UXg=="
+  authTokenSecret: "RackHDRocks!"
+  authTokenExpireIn: 86400
+  mongo: "mongodb://localhost/pxe"
+  sharedKey: "qxfO2D3tIJsZACu7UA6Fbw0avowo8r79ALzn+WeuC8M="
+  statsd: "127.0.0.1:8125"
+  subnetmask: "255.255.255.0"
+  syslogBindAddress: "192.168.37.2"
+  syslogBindPort: 514
+  tftpBindAddress: "192.168.37.2"
+  tftpBindPort: 69
+  tftpRoot: "./static/tftp"
+
+
+isc_dhcpd_settings:
+    algorithm: HMAC-MD5
+    ddns-update-style: none
+    default-lease-time: '600'
+    discovered_file: /etc/dhcp/discovered.conf
+    domain-name: vagrant.lab
+    domain-name-servers:
+        - 10.131.144.15
+        - 10.131.144.16
+    ignore-client-uids: 'true'
+    log-facility: local7
+    max-lease-time: '7200'
+    omapi-key: rackhd
+    omapi-port: '7911'
+    secret: wu7R2IsVY5fpUF0dXK+1FHjar+NnQR3cfw3y47k7RaNR22gf3oOgn5TuGcYARR6Focn9bvZMRVrI1LBpzvsE/Q==
+    static_hosts: {}
+    subnets:
+      192.168.37.0:
+        authoritative: true
+        broadcast-address: false
+        end_ip: 192.168.37.230
+        mtu: false
+        netmask: 255.255.255.0
+        routers: false
+        start_ip: 192.168.37.220
+        vendor-class-identifier: '"PXEClient"'
