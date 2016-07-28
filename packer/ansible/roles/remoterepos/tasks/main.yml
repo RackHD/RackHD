@@ -3,6 +3,7 @@
   apt: pkg={{ item }} state=installed
   with_items:
     - libkrb5-dev
+  sudo: yes
 
 - name: Get RackHD from source
   git: repo=https://github.com/rackhd/rackhd
