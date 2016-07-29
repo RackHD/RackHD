@@ -4,6 +4,7 @@
   with_items:
     - libkrb5-dev
     - unzip
+  sudo: yes
 
 - name: Get RackHD from source
   git: repo=https://github.com/rackhd/rackhd
