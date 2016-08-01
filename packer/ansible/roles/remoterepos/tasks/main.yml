@@ -25,6 +25,8 @@
     - on-taskgraph
     - on-syslog
     - on-wss
+    - on-tools
+    - on-imagebuilder
 
 - name: Reset to the branch specified
   shell: git reset --hard {{ branch }}
@@ -40,6 +42,8 @@
     - on-taskgraph
     - on-syslog
     - on-wss
+    - on-tools
+    - on-imagebuilder
 
 - name: Npm install Repos
   npm: path="{{ ansible_env.HOME }}/src/{{ item }}"
@@ -60,8 +64,13 @@
   args:
     chdir: "{{ ansible_env.HOME }}/src/on-http"
 
-- name: Render API docs for local reference
+- name: Render 1.1 API docs for local reference
   shell: "npm run apidoc"
+  args:
+    chdir: "{{ ansible_env.HOME }}/src/on-http"
+
+- name: Generate hosted task documentation
+  shell: "npm run taskdoc"
   args:
     chdir: "{{ ansible_env.HOME }}/src/on-http"
 

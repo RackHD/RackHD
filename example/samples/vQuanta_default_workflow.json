@@ -1,6 +1,6 @@
 {
-    "friendlyName": "vQuanta D51 Default Install CentOS",
-    "injectableName": "Graph.DefaultVQuanta.InstallCentOS",
+    "friendlyName": "vQuanta D51 Default Workflow",
+    "injectableName": "Graph.vQuanta.Default",
     "options": {
       "defaults": {
         "version": "7",
@@ -33,13 +33,6 @@
                 },
                 "properties": {
                 }
-            }
-        },
-        {
-            "label": "install-coreos",
-            "taskName": "Task.Os.Install.CentOS",
-            "waitOn": {
-                "create-ipmi-obm-settings": "succeeded"
             }
         }
     ]
