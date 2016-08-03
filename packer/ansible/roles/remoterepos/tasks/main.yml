@@ -70,16 +70,9 @@
     chdir: "{{ ansible_env.HOME }}/src/on-http"
 
 - name: Npm install dependencies for task documentation
-  shell: "npm install {{ item }}"
+  shell: "npm install"
   args:
     chdir: "{{ ansible_env.HOME }}/src/on-http"
-  with_items:
-    - supertest
-    - sinon
-    - sinon-as-promised
-    - chai
-    - chai-as-promised
-    - sinon-chai
 
 - name: Generate hosted task documentation
   shell: "npm run taskdoc"
