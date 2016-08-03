@@ -77,6 +77,7 @@
     - supertest
     - sinon
     - sinon-as-promised
+    - chai
 
 - name: Generate hosted task documentation
   shell: "npm run taskdoc"
