@@ -69,15 +69,14 @@
   args:
     chdir: "{{ ansible_env.HOME }}/src/on-http"
 
-- name: Npm install supertest
-  shell: "npm install supertest"
+- name: Npm install dependencies for task documentation
+  shell: "npm install {{ item }}"
   args:
     chdir: "{{ ansible_env.HOME }}/src/on-http"
-
-- name: Npm install sinon
-  shell: "npm install sinon"
-  args:
-    chdir: "{{ ansible_env.HOME }}/src/on-http"
+  with_items:
+    - supertest
+    - sinon
+    - sinon-as-promised
 
 - name: Generate hosted task documentation
   shell: "npm run taskdoc"
