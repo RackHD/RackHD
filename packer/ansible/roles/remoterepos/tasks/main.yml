@@ -74,6 +74,11 @@
   args:
     chdir: "{{ ansible_env.HOME }}/src/on-http"
 
+- name: Npm install sinon
+  shell: "npm install sinon"
+  args:
+    chdir: "{{ ansible_env.HOME }}/src/on-http"
+
 - name: Generate hosted task documentation
   shell: "npm run taskdoc"
   args:
