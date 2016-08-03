@@ -4,10 +4,21 @@ set -x
 ########################################################################################################
 #
 #  this script is based on RackHD document "Ubuntu Package Based Installation"
-#
 #  http://rackhd.readthedocs.io/en/latest/rackhd/ubuntu_package_installation.html 
 #
 #
+#  What Does This Script Do:
+#
+#  (1) Get control nic port from user input via stdin
+#  (2) Check the nic name. force set to 172.31.128.1 to eth1 , with user agreement via typing 'yes' on stdin
+#  (3) inspect the NodeJS version, upgrade to NodeJS 4.x if older
+#  (4) install some debian-packages as RackHD prerequisite
+#  (5) install RackHD debian packages
+#  (6) Update DHCP configuration in /etc/dhcp/dhcpd.conf, to enable RackHD as DHCP server on eth1 for 172.31.128.x IP range
+#  (7) create some dummy file under /etc/default/, to let upstart works well
+#  (8) create RackHD config file
+#  (9) Copy images/binaries from bintray to static folder on RackHD application
+#  (10) start RackHD services
 #########################################################################################################
 
 
