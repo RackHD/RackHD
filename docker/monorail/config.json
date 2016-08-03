@@ -39,7 +39,7 @@
       {
         "localPath": "/coreos",
         "server": "http://stable.release.core-os.net",
-        "remotePath": "/amd64-usr/current/"
+        "remotePath": "/amd64-usr/"
       },
       {
         "localPath": "/centos",
