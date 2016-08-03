@@ -69,6 +69,9 @@
   args:
     chdir: "{{ ansible_env.HOME }}/src/on-http"
 
+- name: Npm install supertest
+  shell: "npm install supertest"
+	
 - name: Generate hosted task documentation
   shell: "npm run taskdoc"
   args:
