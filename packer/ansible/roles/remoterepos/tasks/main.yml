@@ -78,6 +78,7 @@
     - sinon
     - sinon-as-promised
     - chai
+    - chai-as-promised
 
 - name: Generate hosted task documentation
   shell: "npm run taskdoc"
