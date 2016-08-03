@@ -1,10 +1,11 @@
 #!/bin/bash
 #
+set -x
 ########################################################################################################
 #
 #  this script is based on RackHD document "Ubuntu Package Based Installation"
 #
-#  http://rackhd.readthedocs.io/en/latest/rackhd2.0/ubuntu_package_installation.html?highlight=install
+#  http://rackhd.readthedocs.io/en/latest/rackhd/ubuntu_package_installation.html 
 #
 #
 #########################################################################################################
@@ -13,7 +14,7 @@
 #############################################
 #  Check you have 2 NIC
 #  eth0 for the public network - providing access to RackHD APIs, and providing routed (layer3) access to out of band network for machines under management
-# eth1 for dhcp/pxe to boot/configure the machines
+#  eth1 for dhcp/pxe to boot/configure the machines
 #
 #
 # Parameter #1 ($1) is the NIC name of the control port for RacKHD
