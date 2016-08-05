@@ -148,15 +148,13 @@ class PollersTests(object):
         """Test GET:/api/2.0/pollers/:identifier/data"""
         all_pollers = self._pollers + self._created_pollers
         for poller in all_pollers:
-            try:
-                Api().pollers_data_get(poller['id'])
-                result = self.__client.last_response
-
-                assert_true(poller.get('lastFinished', False))
-                assert_equal(200, result.status, message=result.reason)
-            except ApiException as e:
-                assert_false(poller.get('lastFinished', False))
-                assert_equal(404, e.status)
+            Api().pollers_data_get(poller['id'])
+            result = self.__client.last_response
+            assert_true(result.status == 200 or result.status == 204, message=result.reason)
+            if result.status == 200:
+                assert_true(len(result.data) > 0, 'Poller data length should be non-zero')
+            else:
+                assert_equal(len(result.data), 0, 'Poller data should have 0 length')
 
     @test(groups=['pollers_api2.tests', 'api2_current_data_get_pollers'],
           depends_on_groups=['api2_get_pollers', 'api2_data_get_pollers'])
@@ -164,15 +162,13 @@ class PollersTests(object):
         """Test GET:/api/2.0/pollers/:identifier/data/current"""
         all_pollers = self._pollers + self._created_pollers
         for poller in all_pollers:
-            try:
-                Api().pollers_current_data_get(poller['id'])
-                result = self.__client.last_response
-
-                assert_true(poller.get('lastFinished', False))
-                assert_equal(200, result.status, message=result.reason)
-            except ApiException as e:
-                assert_false(poller.get('lastFinished', False))
-                assert_equal(404, e.status)
+            Api().pollers_data_get(poller['id'])
+            result = self.__client.last_response
+            assert_true(result.status == 200 or result.status == 204, message=result.reason)
+            if result.status == 200:
+                assert_true(len(result.data) > 0, 'Poller data length should be non-zero')
+            else:
+                assert_equal(len(result.data), 0, 'Poller data should have 0 length')
 
     @test(groups=['pollers_api2.tests', 'api2_delete_pollers'],
           depends_on_groups=['api2_current_data_get_pollers'])
