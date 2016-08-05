@@ -1,13 +1,22 @@
 #!/bin/bash
 #
-set -x
+set -e
 ########################################################################################################
 #
-#  this script is based on RackHD document "Ubuntu Package Based Installation"
-#  http://rackhd.readthedocs.io/en/latest/rackhd/ubuntu_package_installation.html 
+# 1.NOTE:  ** MUST READ **
+#
+#   Before using this script, please read the short "Prerequisites" session about nic setup in:  http://rackhd.readthedocs.io/en/latest/rackhd/ubuntu_package_installation.html
+#
+# 2.Usage:
+#
+#  run in Linux shell : wget -qO- https://raw.githubusercontent.com/RackHD/RackHD/one-key-quick-install/example/install_rackhd.sh | sudo bash
+#
+#  Then following the prompt, input the nic name for as RackHD's control network port.
+#  the whole progress will take 20~30 minutes, depends on your network condition and machine performance.
 #
 #
-#  What Does This Script Do:
+#
+# 3.What Does This Script Do:
 #
 #  (1) Get control nic port from user input via stdin
 #  (2) Check the nic name. force set to 172.31.128.1 to eth1 , with user agreement via typing 'yes' on stdin
@@ -19,13 +28,21 @@ set -x
 #  (8) create RackHD config file
 #  (9) Copy images/binaries from bintray to static folder on RackHD application
 #  (10) start RackHD services
+#
+#
+#
+# 4.Reference:
+#
+#  this script is based on RackHD document "Ubuntu Package Based Installation"
+#  http://rackhd.readthedocs.io/en/latest/rackhd/ubuntu_package_installation.html 
+#
 #########################################################################################################
 
 
 #############################################
-#  Check you have 2 NIC
+#  Check if you have 2 NIC as below:
 #  eth0 for the public network - providing access to RackHD APIs, and providing routed (layer3) access to out of band network for machines under management
-#  eth1 for dhcp/pxe to boot/configure the machines
+#  eth1 for dhcp/pxe to boot/configure the machines. and IP configurated as static ( 172.31.128.0/22 )
 #
 #
 # Parameter #1 ($1) is the NIC name of the control port for RacKHD
@@ -209,12 +226,9 @@ copy_RackHD_static_bins(){
     cd /var/renasar/on-http/static/http/common
 
     for file in $(echo "\
-        base.trusty.3.13.0-32-generic.squashfs.img \
         base.trusty.3.16.0-25-generic.squashfs.img \
         discovery.overlay.cpio.gz \
-        initrd.img-3.13.0-32-generic \
         initrd.img-3.16.0-25-generic \
-        vmlinuz-3.13.0-32-generic \
         vmlinuz-3.16.0-25-generic");do
     wget "https://dl.bintray.com/rackhd/binary/builds/$file"
     done
