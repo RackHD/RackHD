@@ -15,6 +15,7 @@ from proboscis import SkipTest
 from proboscis import test
 from proboscis import after_class
 from proboscis import before_class
+from proboscis.asserts import fail
 from json import dumps, loads
 import os
 
@@ -177,6 +178,33 @@ class OSInstallTests(object):
                 }
             }
         self.__post_workflow(graph_name, nodes, body)
+    
+    def install_windowsServer2012(self, version, nodes=[], options=None):
+        graph_name = 'Graph.InstallWindowsServer'
+        os_repo = defaults.get('RACKHD_SMB_WINDOWS_REPO_PATH', none)
+        if None == os_repo:
+            fail('user must set RACKHD_SMB_WINDOWS_REPO_PATH')
+        body = options
+        if body == None:
+        # The value of the productkey below is not a valid product key. It is a KMS client key that was generated to run the workflows without requiring a real product key. This key is 
+        # available to public on the Microsoft site.
+            body = {
+                'options': {
+                    'defaults': {
+                        'productkey': 'D2N9P-3P6X9-2R39C-7RTCD-MDVJX',
+                        'smbUser':  defaults.get('RACKHD_SMB_USER' , 'onrack'),
+                        'smbPassword':  defaults.get('RACKHD_SMB_PASSWORD' , 'onrack'),
+                        'completionUri': 'winpe-kickstart.ps1',
+                        'smbRepo': os_repo,
+                        'repo' : defaults.get('RACKHD_WINPE_REPO_PATH',  \
+                            self.__base + '/repo/winpe')
+                    },
+                    'firstboot-callback-uri-wait':{
+                        'completionUri': 'renasar-ansible.pub'
+                    }
+                }
+            }
+        self.__post_workflow(graph_name, nodes, body)
 
     @test(enabled=True, groups=['centos-6-5-install.v1.1.test'])
     def test_install_centos_6(self):
@@ -207,4 +235,9 @@ class OSInstallTests(object):
     def test_install_esxi_6(self, nodes=[], options=None):
         """ Testing ESXi 6 Installer Workflow """
         self.install_esxi('6.0')
+        
+    @test(enabled=True, groups=['windowsServer2012-install.v1.1.test'])
+    def test_install_windowsServer2012(self, nodes=[], options=None):
+        """ Testing Windows Server 2012 Installer Workflow """
+        self.install_windowsServer2012('10.40') 
 
