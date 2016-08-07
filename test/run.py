@@ -5,6 +5,7 @@ import modules.amqp as amqp
 import argparse
 import sys
 
+
 def run_tests(group=['smoke-tests']):
 
     import tests.api.v1_1 as api_1_1 
