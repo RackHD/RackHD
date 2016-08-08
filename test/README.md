@@ -98,7 +98,6 @@ following parameters are also required at the first time user issuing the test,
 and stored in .passwd
 
     localhost username and password: for the machine running the test
-    RackHD ssh port, username and password
 
 ###Running the tests
 

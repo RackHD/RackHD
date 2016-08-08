@@ -5,6 +5,7 @@ import json
 from modules.logger import Log
 
 from config.benchmark_config import *
+from config.auth import *
 from ansible.playbook import PlayBook
 from ansible.inventory import Inventory
 from ansible import callbacks
@@ -76,16 +77,16 @@ class ansibleControl(object):
             rackhd
         """
 
-        local_usr, local_pw, rackhd_pt, rackhd_usr, rackhd_pw = get_ansible_auth()
+        local_usr, local_pw = get_ansible_auth()
 
         inventory_template = jinja2.Template(inventory)
         rendered_inventory = inventory_template.render({
             'local_pwd': local_pw,
             'rackhd_ip_address': HOST_IP,
-            'rackhd_ssh_port': rackhd_pt,
-            'rackhd_ssh_user': rackhd_usr,
-            'rackhd_ssh_pwd': rackhd_pw,
-            'rackhd_sudo_pwd': rackhd_pw
+            'rackhd_ssh_port': SSH_PORT,
+            'rackhd_ssh_user': SSH_USER,
+            'rackhd_ssh_pwd': SSH_PASSWORD,
+            'rackhd_sudo_pwd': SSH_PASSWORD
         })
 
         # Create a temporary file and write the template string to it
