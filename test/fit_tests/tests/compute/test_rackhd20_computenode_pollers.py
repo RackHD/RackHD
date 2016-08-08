@@ -11,7 +11,7 @@ import sys
 import subprocess
 
 # set path to common libraries
-sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/common")
+sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test/fit_tests/common")
 import fit_common
 import test_api_utils
 
@@ -180,7 +180,7 @@ class rackhd20_computenode_pollers(fit_common.unittest.TestCase):
                 poller_id = poller_dict[poller]["poller_id"]
                 if fit_common.VERBOSITY >= 2:
                     print "\nPoller: {}  ID: {} ".format(poller, str(poller_id))
-                monurl = "/api/common/pollers/" + str(poller_id) + "/data/current"
+                monurl = "/api/test/fit_tests/common/pollers/" + str(poller_id) + "/data/current"
                 mondata = fit_common.rackhdapi(url_cmd=monurl)
                 if mondata['status'] not in [200, 201, 202, 204]:
                     errorlist.append("Error: Node {} Poller_ID {} Failed to get current poller data, status {}".format(node, poller_id, mondata['status']))
@@ -207,7 +207,7 @@ class rackhd20_computenode_pollers(fit_common.unittest.TestCase):
                 poller_id = poller_dict[poller]["poller_id"]
                 if fit_common.VERBOSITY >= 2:
                     print "\nPoller: {}  ID: {} ".format(poller, str(poller_id))
-                monurl = "/api/common/pollers/" + str(poller_id) + "/data/current"
+                monurl = "/api/test/fit_tests/common/pollers/" + str(poller_id) + "/data/current"
                 mondata = fit_common.rackhdapi(url_cmd=monurl)
                 if mondata['status'] == 200:
                     if fit_common.VERBOSITY >= 2:

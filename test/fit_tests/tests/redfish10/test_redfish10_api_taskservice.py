@@ -9,7 +9,7 @@ import os
 import sys
 import subprocess
 import json
-sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/common")
+sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test/fit_tests/common")
 import fit_common
 
 
@@ -329,7 +329,7 @@ class redfish10_api_task_suite(fit_common.unittest.TestCase):
             print("\n\t{0}".format(msg))
 
         supported_tasks = []
-        get_task_url = "/api/common/workflows/tasks/library"
+        get_task_url = "/api/test/fit_tests/common/workflows/tasks/library"
         mon_data = fit_common.rackhdapi(url_cmd=get_task_url)
         if mon_data['status'] != 200:
             print 'No data returned from monorail, status = {0}'.format(mon_data['status'])

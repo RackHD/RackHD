@@ -44,7 +44,7 @@ ARGS_LIST = \
 }
 
 # Get top level path via git
-TEST_PATH = subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/"
+TEST_PATH = subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test/fit_tests/"
 CONFIG_PATH = TEST_PATH + ARGS_LIST["config"] + "/"
 if ARGS_LIST["config"] != 'config':
     print "**** Using config file path:", ARGS_LIST["config"]
