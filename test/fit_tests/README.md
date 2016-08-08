@@ -85,7 +85,7 @@ The -stack or -ora argument can be omitted when running on the server or applian
 
 This example will run the smoke test from the appliance node:
 
-    python run_tests.py -test autotest/run_rackhd_installer.py
+    python run_tests.py -test tests -group smoke
 
 
 Alternatively tests can be run directly from nose. Runtime parameters such as ORA address must be set in the environment.
