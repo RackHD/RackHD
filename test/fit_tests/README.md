@@ -80,14 +80,20 @@ This example will run the RackHD installer onto stack 1 via the wrapper script:
 
     ./run_tests.py -stack 1 -test autotest/run_rackhd_installer.py
 
+
+The -stack or -ora argument can be omitted when running on the server or appliance. The test defaults to localhost:8080 for API calls.
+
+This example will run the smoke test from the appliance node:
+
+    ./run_tests.py -test autotest/run_rackhd_installer.py
+
+
 Alternatively tests can be run directly from nose. Runtime parameters such as ORA address must be set in the environment.
 
 The following example will run all the entire test harness from a third party machine to ORA at 192.168.1.1:
 
     export ORA=192.168.1.1
     nosetests -s tests
-
-The -stack or -ora argument can be omitted when running on the server or appliance. The test defaults to localhost:8080 for API calls.
 
 
 ## Running individual tests
