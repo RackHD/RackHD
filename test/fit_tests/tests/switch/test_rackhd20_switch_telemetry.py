@@ -40,9 +40,6 @@ def get_switches():
     return nodelist
 
 NODELIST = get_switches()
-if NODELIST == []:
-    print "No switches found on stack"
-    sys.exit(0)
 
 def get_rackhd_nodetype(nodeid):
     nodetype = ""
@@ -67,7 +64,7 @@ def get_rackhd_nodetype(nodeid):
 
 from nose.plugins.attrib import attr
 @attr(all=True, regression=True)
-
+@fit_common.unittest.skipIf(NODELIST == [],"No switches defined, skipping test.")
 class rackhd11_switch_telemetry(fit_common.unittest.TestCase):
     def test_poller_snmp_state(self):
         msg = "Description: Display poller snmp-interface-state."

@@ -39,10 +39,6 @@ def get_switches():
 
 
 NODELIST = get_switches()
-if NODELIST == []:
-    print "No switches found on stack"
-    sys.exit(0)
-
 
 def get_rackhd_nodetype(nodeid):
     nodetype = ""
@@ -66,6 +62,7 @@ def get_rackhd_nodetype(nodeid):
 
 from nose.plugins.attrib import attr
 @attr(all=True, regression=True, smoke=True)
+@fit_common.unittest.skipIf(NODELIST == [],"No switches defined, skipping test.")
 class rackhd11_switch_pollers(fit_common.unittest.TestCase):
 
     def test_get_id_pollers(self):
