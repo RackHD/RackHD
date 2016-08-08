@@ -78,14 +78,14 @@ All FIT tests can be run from the wrapper 'run_tests.py':
 
 This example will run the RackHD installer onto stack 1 via the wrapper script:
 
-    ./run_tests.py -stack 1 -test autotest/run_rackhd_installer.py
+    python run_tests.py -stack 1 -test autotest/run_rackhd_installer.py
 
 
 The -stack or -ora argument can be omitted when running on the server or appliance. The test defaults to localhost:8080 for API calls.
 
 This example will run the smoke test from the appliance node:
 
-    ./run_tests.py -test autotest/run_rackhd_installer.py
+    python run_tests.py -test autotest/run_rackhd_installer.py
 
 
 Alternatively tests can be run directly from nose. Runtime parameters such as ORA address must be set in the environment.
@@ -105,7 +105,7 @@ Individual test scripts or tests may be executed using the following 'Nose' addr
 
 For example, to run the test 'test_rackhd11_api_catalogs' in script 'tests/rackhd11/test_rackhd11_api_catalogs.py' on stack 1:
 
-    python run_tests.py -stack 11 -test tests/rackhd11/test_rackhd11_api_catalogs.py:test_rackhd11_api_catalogs.test_api_11_catalogs
+    python run_tests.py -stack 11 -test tests/rackhd11/test_rackhd11_api_catalogs.py:rackhd11_api_catalogs.test_api_11_catalogs
 
 
 ## Test conventions
