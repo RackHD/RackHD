@@ -1,0 +1,312 @@
+{
+  "_comment":{
+    "bmc": "appliance bmc address",
+    "control": "control switch admin address",
+    "data": "data switch admin address",
+    "hyper": "hypervisor admin address",
+    "ora": "appliance OVA admin address",
+    "ovamac": "appliance OVA MAC address",
+    "pdu": "PDU admin address",
+    "type": "deployment type: esxi, docker, linux, or vagrant"
+  },
+  "1": {
+    "bmc": "stack1-bmc.admin", 
+    "control": "stack1-control.admin", 
+    "data": "stack1-data.admin", 
+    "hyper": "stack1-esxi.admin", 
+    "ora": "stack1-ora.admin",
+    "ovamac": "00:50:56:00:01:00",
+    "pdu": "192.168.1.254",
+    "type": "esxi"
+  }, 
+  "2": {
+    "bmc": "stack2-bmc.admin", 
+    "control": "stack2-control.admin", 
+    "data": "stack2-data.admin", 
+    "hyper": "stack2-esxi.admin", 
+    "ora": "stack2-ora.admin",
+    "ovamac": "00:50:56:00:02:00",
+    "pdu": "192.168.1.254",
+    "type": "esxi"
+  }, 
+  "3": {
+    "bmc": "stack3-bmc.admin", 
+    "control": "stack3-control.admin", 
+    "data": "stack3-data.admin", 
+    "hyper": "stack3-esxi.admin", 
+    "ora": "stack3-ora.admin",
+    "ovamac": "00:50:56:00:03:00",
+    "pdu": "192.168.1.254",
+    "type": "esxi"
+  }, 
+  "4": {
+    "bmc": "stack4-bmc.admin", 
+    "control": "stack4-control.admin", 
+    "data": "stack4-data.admin", 
+    "hyper": "stack4-esxi.admin", 
+    "ora": "stack4-ora.admin",
+    "ovamac": "00:50:56:00:04:00",
+    "pdu": "192.168.1.254",
+    "type": "esxi"
+  }, 
+  "5": {
+    "bmc": "stack5-bmc.admin", 
+    "control": "stack5-control.admin", 
+    "data": "stack5-data.admin", 
+    "hyper": "stack5-esxi.admin", 
+    "ora": "stack5-ora.admin",
+    "ovamac": "00:50:56:00:05:00",
+    "pdu": "192.168.1.254",
+    "type": "esxi"
+  }, 
+  "6": {
+    "bmc": "stack6-bmc.admin", 
+    "control": "stack6-control.admin", 
+    "data": "stack6-data.admin", 
+    "hyper": "stack6-esxi.admin", 
+    "ora": "stack6-ora.admin",
+    "ovamac": "00:50:56:00:06:00",
+    "pdu": "192.168.1.254",
+    "type": "esxi"
+  }, 
+  "7": {
+    "bmc": "stack7-bmc.admin", 
+    "control": "stack7-control.admin", 
+    "data": "stack7-data.admin", 
+    "hyper": "stack7-esxi.admin", 
+    "ora": "stack7-ora.admin",
+    "ovamac": "00:50:56:00:07:00",
+    "pdu": "192.168.1.254",
+    "type": "esxi"
+  }, 
+  "8": {
+    "bmc": "stack8-bmc.admin", 
+    "control": "stack8-control.admin", 
+    "data": "stack8-data.admin", 
+    "hyper": "stack8-esxi.admin", 
+    "ora": "stack8-ora.admin",
+    "ovamac": "00:50:56:00:08:00",
+    "pdu": "192.168.1.254",
+    "type": "esxi"
+  }, 
+  "9": {
+    "bmc": "stack9-bmc.admin", 
+    "control": "stack9-control.admin", 
+    "data": "stack9-data.admin", 
+    "hyper": "stack9-esxi.admin", 
+    "ora": "stack9-ora.admin",
+    "ovamac": "00:50:56:00:09:00",
+    "pdu": "192.168.1.254",
+    "type": "esxi"
+  }, 
+  "10": {
+    "bmc": "stack10-bmc.admin", 
+    "control": "stack10-control.admin", 
+    "data": "stack10-data.admin", 
+    "hyper": "stack10-esxi.admin", 
+    "ora": "stack10-ora.admin",
+    "ovamac": "00:50:56:00:10:00",
+    "pdu": "192.168.1.254",
+    "type": "esxi"
+  }, 
+  "11": {
+    "bmc": "stack11-bmc.admin", 
+    "control": "stack11-control.admin", 
+    "data": "stack11-data.admin", 
+    "hyper": "stack11-esxi.admin", 
+    "ora": "stack11-ora.admin",
+    "ovamac": "00:50:56:00:11:00",
+    "pdu": "192.168.1.254",
+    "type": "esxi"
+  }, 
+  "12": {
+    "bmc": "stack12-bmc.admin", 
+    "control": "stack12-control.admin", 
+    "data": "stack12-data.admin", 
+    "hyper": "stack12-esxi.admin", 
+    "ora": "stack12-ora.admin",
+    "ovamac": "00:50:56:00:12:00",
+    "pdu": "192.168.1.254",
+    "type": "esxi"
+  }, 
+  "13": {
+    "bmc": "stack13-bmc.admin", 
+    "control": "stack13-control.admin", 
+    "data": "stack13-data.admin", 
+    "hyper": "stack13-esxi.admin", 
+    "ora": "stack13-ora.admin",
+    "ovamac": "00:50:56:00:13:00",
+    "pdu": "192.168.1.254",
+    "type": "esxi"
+  }, 
+  "14": {
+    "bmc": "stack14-bmc.admin", 
+    "control": "stack14-control.admin", 
+    "data": "stack14-data.admin", 
+    "hyper": "stack14-esxi.admin", 
+    "ora": "stack14-ora.admin",
+    "ovamac": "00:50:56:00:14:00",
+    "pdu": "192.168.1.254",
+    "type": "esxi"
+  }, 
+  "15": {
+    "bmc": "stack15-bmc.admin", 
+    "control": "stack15-control.admin", 
+    "data": "stack15-data.admin", 
+    "hyper": "stack15-esxi.admin", 
+    "ora": "stack15-ora.admin",
+    "ovamac": "00:50:56:00:15:00",
+    "pdu": "192.168.1.254",
+    "type": "esxi"
+  }, 
+  "16": {
+    "bmc": "stack16-bmc.admin", 
+    "control": "stack16-control.admin", 
+    "data": "stack16-data.admin", 
+    "hyper": "stack16-esxi.admin", 
+    "ora": "stack16-ora.admin",
+    "ovamac": "00:50:56:00:16:00",
+    "pdu": "",
+    "type": "esxi"
+  }, 
+  "17": {
+    "bmc": "stack17-bmc.admin", 
+    "control": "stack17-control.admin", 
+    "data": "stack17-data.admin", 
+    "hyper": "stack17-esxi.admin", 
+    "ora": "stack17-ora.admin",
+    "ovamac": "00:50:56:00:17:00",
+    "pdu": "192.168.1.254",
+    "type": "esxi"
+  }, 
+  "18": {
+    "bmc": "stack18-bmc.admin", 
+    "control": "stack18-control.admin", 
+    "data": "stack18-data.admin", 
+    "hyper": "stack18-esxi.admin", 
+    "ora": "stack18-ora.admin",
+    "ovamac": "00:50:56:00:18:00",
+    "pdu": "192.168.1.254",
+    "type": "esxi"
+  }, 
+  "19": {
+    "bmc": "stack19-bmc.admin", 
+    "control": "stack19-control.admin", 
+    "data": "stack19-data.admin", 
+    "hyper": "stack19-esxi.admin", 
+    "ora": "stack19-ora.admin",
+    "ovamac": "00:50:56:00:19:00",
+    "pdu": "192.168.1.254",
+    "type": "esxi"
+  }, 
+  "20": {
+    "bmc": "stack20-bmc.admin", 
+    "control": "stack20-control.admin", 
+    "data": "stack20-data.admin", 
+    "hyper": "stack20-esxi.admin", 
+    "ora": "stack20-ora.admin",
+    "ovamac": "00:50:56:00:20:00",
+    "pdu": "",
+    "type": "esxi"
+  }, 
+  "21": {
+    "bmc": "stack21-bmc.admin", 
+    "control": "stack21-control.admin", 
+    "data": "stack21-data.admin", 
+    "hyper": "stack21-esxi.admin", 
+    "ora": "stack21-ora.admin",
+    "ovamac": "00:50:56:00:21:00",
+    "pdu": "",
+    "type": "esxi"
+  },
+  "22": {
+    "bmc": "stack22-bmc.admin", 
+    "control": "stack22-control.admin", 
+    "data": "stack22-data.admin", 
+    "hyper": "stack22-esxi.admin", 
+    "ora": "stack22-ora.admin",
+    "ovamac": "00:50:56:00:22:00",
+    "pdu": "",
+    "type": "esxi"
+  },
+  "23": {
+    "bmc": "stack23-bmc.admin", 
+    "control": "stack23-control.admin", 
+    "data": "stack23-data.admin", 
+    "hyper": "stack23-esxi.admin", 
+    "ora": "stack23-ora.admin",
+    "ovamac": "00:50:56:00:23:00",
+    "pdu": "",
+    "type": "esxi"
+  }, 
+  "24": {
+    "bmc": "stack24-bmc.admin", 
+    "control": "stack24-control.admin", 
+    "data": "stack24-data.admin", 
+    "hyper": "stack24-esxi.admin", 
+    "ora": "stack24-ora.admin",
+    "ovamac": "00:50:56:00:24:00",
+    "pdu": "",
+    "type": "esxi"
+  }, 
+  "25": {
+    "bmc": "stack25-bmc.admin", 
+    "control": "stack25-control.admin", 
+    "data": "stack25-data.admin", 
+    "hyper": "stack25-esxi.admin", 
+    "ora": "stack25-ora.admin",
+    "ovamac": "00:50:56:00:25:00",
+    "pdu": "",
+    "type": "esxi"
+  }, 
+  "26": {
+    "bmc": "stack26-bmc.admin", 
+    "control": "stack26-control.admin", 
+    "data": "stack26-data.admin", 
+    "hyper": "stack26-esxi.admin", 
+    "ora": "stack26-ora.admin",
+    "ovamac": "00:50:56:00:26:00",
+    "pdu": "",
+    "type": "esxi"
+  }, 
+  "27": {
+    "bmc": "stack27-bmc.admin", 
+    "control": "stack27-control.admin", 
+    "data": "stack27-data.admin", 
+    "hyper": "stack27-esxi.admin", 
+    "ora": "stack27-ora.admin",
+    "ovamac": "00:50:56:00:27:00",
+    "pdu": "",
+    "type": "esxi"
+  }, 
+  "28": {
+    "bmc": "stack28-bmc.admin", 
+    "control": "stack28-control.admin", 
+    "data": "stack28-data.admin", 
+    "hyper": "stack28-esxi.admin", 
+    "ora": "stack28-ora.admin",
+    "ovamac": "00:50:56:00:28:00",
+    "pdu": "",
+    "type": "esxi"
+  }, 
+  "29": {
+    "bmc": "stack29-bmc.admin", 
+    "control": "stack29-control.admin", 
+    "data": "stack29-data.admin", 
+    "hyper": "stack29-esxi.admin", 
+    "ora": "stack29-ora.admin",
+    "ovamac": "00:50:56:00:29:00",
+    "pdu": "",
+    "type": "esxi"
+  }, 
+  "30": {
+    "bmc": "stack30-bmc.admin", 
+    "control": "stack30-control.admin", 
+    "data": "stack30-data.admin", 
+    "hyper": "stack30-esxi.admin", 
+    "ora": "stack30-ora.admin",
+    "ovamac": "00:50:56:00:30:00",
+    "pdu": "",
+    "type": "esxi"
+  }
+}
