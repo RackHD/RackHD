@@ -78,7 +78,7 @@ All FIT tests can be run from the wrapper 'run_tests.py':
 
 This example will run the RackHD installer onto stack 1 via the wrapper script:
 
-    python run_tests.py -stack 1 -test autotest/run_rackhd_installer.py
+    python run_tests.py -stack 1 -test deploy/run_rackhd_installer.py
 
 
 The -stack or -ora argument can be omitted when running on the server or appliance. The test defaults to localhost:8080 for API calls.
