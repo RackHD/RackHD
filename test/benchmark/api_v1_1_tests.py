@@ -81,11 +81,14 @@ class BenchmarkTests(object):
             if injectableName == self.__graph_name:
                 graphId = w['context'].get('graphId')
                 if graphId == routeId:
+                    nodeid = w['context'].get('target')
+                    if nodeid == None:
+                        nodeid = w['definition']['options']['defaults'].get('nodeId','')
                     status = body.get('status')
                     if status == 'succeeded':
                         self.__finished += 1
-                        self.case_recorder.write_event('finish {0} {1}'
-                                .format(self.__graph_name, self.__finished))
+                        self.case_recorder.write_event('finish {0} on node {1} {2}'
+                                .format(self.__graph_name, self.__finished, nodeid))
                         break
 
         if self.__node_count == self.__finished:
@@ -144,43 +147,10 @@ class BenchmarkDiscoveryTests(BenchmarkTests):
 class BenchmarkBootstrapTests(BenchmarkTests):
     def __init__(self):
         BenchmarkTests.__init__(self, 'bootstrap')
-        self.__base = os.getenv('RACKHD_BASE_REPO_URL', \
-             'http://{0}:{1}'.format(HOST_IP, HOST_PORT))
-        self.__os_repo = os.getenv('RACKHD_CENTOS_REPO_PATH', \
+        self.__base = defaults.get('RACKHD_BASE_REPO_URL', \
+            'http://{0}:{1}'.format(HOST_IP, HOST_PORT))
+        self.__os_repo = defaults.get('RACKHD_CENTOS_REPO_PATH', \
             self.__base + '/repo/centos/7')
-
-    def __post_workflows(self, graph_name, body):
-        # POST workflows without listening to AMQP about status
-        Nodes().nodes_get()
-        nodes = loads(self.client.last_response.data)
-
-        for n in nodes:
-            if n.get('type') == 'compute':
-                id = n.get('id')
-                assert_not_equal(id,None)
-                try:
-                    Nodes().nodes_identifier_workflows_active_delete(id)
-                except Exception,e:
-                    assert_equal(404, e.status, message = 'status should be 404')
-
-                # Verify the active workflow has been deleted
-                # If the post workflow API was called immediatly after deleting active workflow,
-                # the API would fail at the first time and retry, though actually the workflow was issued twice
-                # in a consecutive manner, which would bring malfunction of vBMC
-                retries = 5
-                Nodes().nodes_identifier_workflows_active_get(id)
-                status = self.client.last_response.status
-                while status != 204 and retries != 0:
-                    LOG.warning('Workflow status for Node {0} (status={1},retries={2})'.format(id,status,retries))
-                    sleep(1)
-                    retries -= 1
-                    Nodes().nodes_identifier_workflows_active_get(id)
-                    status = self.client.last_response.status
-
-                assert_equal(204, status, message = 'status should be 204')
-
-                Nodes().nodes_identifier_workflows_post(id,name=graph_name,body=body)
-
     @test(groups=["test-bm-bootstrap-prepare"], depends_on_groups=["test-node-poller"])
     def test_prepare_bootstrap(self):
         """ Prepare bootstrap """
@@ -191,6 +161,7 @@ class BenchmarkBootstrapTests(BenchmarkTests):
     def test_install_centos7(self):
         """ Testing CentOS 7 Installer Workflow """
 
+        self.case_recorder.write_event('start all bootstrap')
         body = {
             "options": {
                 "defaults": {
@@ -199,7 +170,11 @@ class BenchmarkBootstrapTests(BenchmarkTests):
                 }
             }
         }
-        self.__post_workflows("Graph.InstallCentOS", body)
+
+        WorkflowsTests().post_workflows("Graph.InstallCentOS",
+                                        nodes=[],
+                                        data=body,
+                                        run_now=False)
 
     @test(groups=["test-bm-bootstrap"],
             depends_on_groups=["test-bm-bootstrap-prepare", "test-bm-bootstrap-post-centos7"])
