@@ -1,0 +1,148 @@
+{
+    "push": {
+      "name": "",
+      "vcs": true
+    },
+    "variables": {
+    },
+    "provisioners": [
+        {
+            "type": "shell",
+            "script": "scripts/base.sh",
+            "execute_command": "echo 'vagrant'|sudo -S bash '{{.Path}}'"
+        },
+        {
+            "type": "shell",
+            "script": "scripts/virtualbox.sh",
+            "execute_command": "echo 'vagrant'|sudo -S bash '{{.Path}}'",
+            "only": ["virtualbox-iso"]
+        },
+        {
+            "type": "shell",
+            "script": "scripts/vmware.sh",
+            "execute_command": "echo 'vagrant'|sudo -S bash '{{.Path}}'",
+            "only": ["vmware-iso"]
+        },
+        {
+            "type": "shell",
+            "scripts": [
+                "scripts/vagrant.sh",
+                "scripts/dep.sh"
+            ],
+            "execute_command": "echo 'vagrant'|sudo -S bash '{{.Path}}'"
+        },
+        {
+            "type": "ansible-local",
+            "inventory_groups": "local",
+            "playbook_file": "ansible/rackhd_local.yml",
+            "playbook_dir": "ansible"
+        },
+        {
+            "type": "shell",
+            "scripts": [
+                "scripts/firstuser.sh",
+                "scripts/cleanup.sh",
+                "scripts/zerodisk.sh"
+            ],
+            "execute_command": "echo 'vagrant'|sudo -S bash '{{.Path}}'"
+        }
+    ],
+  "builders": [
+    {
+      "type": "virtualbox-iso",
+      "boot_command": [
+        "<enter><wait><f6><esc><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+        "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+        "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+        "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+        "/install/vmlinuz<wait>",
+        " auto<wait>",
+        " console-setup/ask_detect=false<wait>",
+        " console-setup/layoutcode=us<wait>",
+        " console-setup/modelcode=pc105<wait>",
+        " debian-installer=en_US<wait>",
+        " fb=false<wait>",
+        " initrd=/install/initrd.gz<wait>",
+        " kbd-chooser/method=us<wait>",
+        " keyboard-configuration/layout=USA<wait>",
+        " keyboard-configuration/variant=USA<wait>",
+        " locale=en_US<wait>",
+        " netcfg/get_hostname=rackhd-demo<wait>",
+        " netcfg/hostname=rackhd-demo<wait>",
+        " noapic<wait>",
+        " interface=auto",
+        " preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.cfg<wait>",
+        " -- <wait>",
+        "<enter><wait>"
+      ],
+      "boot_wait": "10s",
+      "disk_size": 40960,
+      "guest_os_type": "Ubuntu_64",
+      "http_directory": "http",
+      "iso_checksum": "23e97cd5d4145d4105fbf29878534049",
+      "iso_checksum_type": "md5",
+      "iso_url": "http://releases.ubuntu.com/16.04/ubuntu-16.04-server-amd64.iso",
+      "ssh_username": "vagrant",
+      "ssh_password": "vagrant",
+      "ssh_port": 22,
+      "ssh_wait_timeout": "10000s",
+      "shutdown_command": "echo 'shutdown -P now' > /tmp/shutdown.sh; echo 'vagrant'|sudo -S sh '/tmp/shutdown.sh'",
+      "vboxmanage": [
+        [ "modifyvm", "{{.Name}}", "--memory", "512" ],
+        [ "modifyvm", "{{.Name}}", "--cpus", "1" ],
+        [ "modifyvm", "{{.Name}}", "--nic2", "intnet" ]
+      ]
+      },
+      {
+        "type": "vmware-iso",
+        "boot_command": [
+          "<enter><wait><f6><esc><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+          "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+          "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+          "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+
+          "/install/vmlinuz<wait>",
+          " auto<wait>",
+          " console-setup/ask_detect=false<wait>",
+          " console-setup/layoutcode=us<wait>",
+          " console-setup/modelcode=pc105<wait>",
+          " debian-installer=en_US<wait>",
+          " fb=false<wait>",
+          " initrd=/install/initrd.gz<wait>",
+          " kbd-chooser/method=us<wait>",
+          " keyboard-configuration/layout=USA<wait>",
+          " keyboard-configuration/variant=USA<wait>",
+          " locale=en_US<wait>",
+          " netcfg/get_hostname=rackhd-demo<wait>",
+          " noapic<wait>",
+          " preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.cfg<wait>",
+          " -- <wait>",
+          "<enter><wait>"
+        ],
+        "boot_wait": "10s",
+        "disk_size": 40960,
+        "guest_os_type": "linux",
+        "http_directory": "http",
+        "iso_checksum": "23e97cd5d4145d4105fbf29878534049",
+        "iso_checksum_type": "md5",
+        "iso_url": "http://releases.ubuntu.com/16.04/ubuntu-16.04-server-amd64.iso",
+        "ssh_username": "vagrant",
+        "ssh_password": "vagrant",
+        "ssh_port": 22,
+        "ssh_wait_timeout": "10000s",
+        "shutdown_command": "echo 'shutdown -P now' > /tmp/shutdown.sh; echo 'vagrant'|sudo -S sh '/tmp/shutdown.sh'",
+        "vmx_data": {
+          "memsize": "512",
+          "numvcpus": "1",
+          "cpuid.coresPerSocket": "1"
+        }
+      }
+  ],
+  "post-processors": [
+    [{
+        "type": "vagrant",
+        "keep_input_artifact": false
+    }
+    ]
+  ]
+}

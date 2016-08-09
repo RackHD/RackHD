@@ -19,15 +19,19 @@ enable:
 
 ### Build vagrant box based on Ubuntu 14.04
 
-    packer build -only=virtualbox-iso template-ubuntu-14.04.json
+    packer build -only=virtualbox-iso templates/template-ubuntu-14.04-source.json
 
 ### Build vagrant box based on Ubuntu 16.04
 
-    packer build -only=virtualbox-iso template-ubuntu-16.04.json
+    packer build -only=virtualbox-iso templates/template-ubuntu-16.04-source.json
 
 ## To build locally (using pre-built debian packages)
 
-    packer build -only=virtualbox-iso template-packages.json
+    packer build -only=virtualbox-iso templates/template-ubuntu-14.04-packages.json
+
+## To build locally without publishing to atlas, use the `-notlas` variant.
+
+    packer build -only=virtualbox-iso templates/template-ubuntu-14.04-source-noatlas.json
 
 
 ## To use ansible roles to install locally
