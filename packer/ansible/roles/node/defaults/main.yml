@@ -1,0 +1,6 @@
+# Defaults for node
+
+nodesource_key: https://deb.nodesource.com/gpgkey/nodesource.gpg.key
+nodesource_key_id: 68576280
+nodesource_repo: deb https://deb.nodesource.com/node_4.x/ trusty main
+nodejs_package: nodejs
