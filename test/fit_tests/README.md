@@ -38,7 +38,7 @@ Tests require the following virtual environment commands be executed:
 Local runtime parameters are set from the 'config/global_config.json' file.
 Stack definitions are set from the 'config/stack_config.json' file.
 An alternate configuration directory can be selected using the -config argument.
-More details in config/README.mg.
+More details in config/README.md.
 
 ## Running the tests
 
@@ -69,8 +69,8 @@ All FIT tests can be run from the wrapper 'run_tests.py':
                         default=all
       -nodeid NODEID    node identifier string of a discovered node, example:
                         56ddcf9a8eff16614e79ec74
-      -http             force using http protocol
-      -https            force using https protocol
+      -http             fforces the tests to utilize the http API protocol
+      -https            forces the tests to utilize the https API protocol
       -v V              Verbosity level of console output, default=0, Built Ins:
                         0: No debug, 2: User script output, 4: rest calls and
                         status info, 6: other common calls (ipmi, ssh), 9: all the

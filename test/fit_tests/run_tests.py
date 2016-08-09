@@ -72,9 +72,9 @@ GROUP.add_argument("-nodeid", default="None",
                      help="node identifier string of a discovered node, example: 56ddcf9a8eff16614e79ec74")
 GROUP2 = ARG_PARSER.add_mutually_exclusive_group(required=False)
 GROUP2.add_argument("-http", default="False", action="store_true",
-                        help="force using http protocol")
+                        help="forces the tests to utilize the http API protocol")
 GROUP2.add_argument("-https", default="False", action="store_true",
-                        help="force using https protocol")
+                        help="forces the tests to utilize the https API protocol")
 ARG_PARSER.add_argument("-v", default=1, type=int,
                         help="Verbosity level of console output, default=0, Built Ins: " +
                              "0: No debug, " +
