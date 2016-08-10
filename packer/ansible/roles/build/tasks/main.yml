@@ -4,4 +4,7 @@
   with_items:
     - build-essential
     - genisoimage
+    - debhelper
+    - devscripts
+    - fakeroot
   sudo: yes
