@@ -99,6 +99,17 @@ If the VM boots and is not discovered make sure you used './docker_vm_up.bash' t
     * By default the b2d vagrant vm exposes all related ports. Some of which are only necessary for development and debugging. You can disable any ports you do not wish to use, or change the which port on the host they map too.
     * Ensure you have the right version of Vagrant for VirtualBox. Later versions of VirtualBox require a more recent version of Vagrant.
 
+## Run a minimal set of RackHD containers (without ELK).
+For who doesn't need ELK running along with RackHD, due to system performance restriction or docker-pull network bandwidth restriction: an alternative docker-compose file can be used by "-f" option:
+
+```
+$ docker-compose -f docker-compose-mini.yml pull
+$ docker-compose -f docker-compose-mini.yml up
+```
+
+
+
+
 ## Running this example without `docker-compose`.
 
 For convenience there are alternative scripts you can use instead of `docker-compose`.
