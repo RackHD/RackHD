@@ -33,10 +33,11 @@ def get_rackhd_nodetype(nodeid):
     else:
         # get the sku id contained in the node
         sku = mondata['json'].get("sku")
+        sku = sku.split("/")[-1]
         if sku:
             skudata = fit_common.rackhdapi("/api/2.0/skus/" + sku)
             if skudata['status'] != 200:
-                print "Incorrect HTTP return code on sku, expected 200, received: {}".format(skudata['status'])
+                print "Error: Incorrect HTTP return code on sku, expected 200, received: {}".format(skudata['status'])
             else:
                 nodetype = skudata['json'].get("name")
         else:
@@ -46,20 +47,19 @@ def get_rackhd_nodetype(nodeid):
 from nose.plugins.attrib import attr
 @attr(all=True, regression=True, smoke=True)
 class rackhd20_computenode_pollers(fit_common.unittest.TestCase):
-    def test_verify_pollers(self):
+    def test_1_verify_pollers(self):
         msg = "Description: Check pollers created for node"
-        print "\t{0}".format(msg)
+        if fit_common.VERBOSITY >= 2:
+            print "\t{0}".format(msg)
 
         errorlist = []
         poller_list = ['driveHealth', 'sel', 'chassis', 'selInformation', 'sdr']
         if fit_common.VERBOSITY >= 2:
             print "Expected Pollers for a Node: ".format(poller_list)
-
-        node = 0
         for node in NODELIST:
-            nodetype = get_rackhd_nodetype(node)
             if fit_common.VERBOSITY >= 2:
-                print "Node: {}  Type: {}".format(node, nodetype)
+                nodetype = get_rackhd_nodetype(node)
+                print "\nNode: {}  Type: {}".format(node, nodetype)
             mondata = fit_common.rackhdapi("/api/2.0/nodes/" + node + "/pollers")
             self.assertIn(mondata['status'], [200], "Incorrect HTTP return code, expecting 200, received {}".format(mondata['status']))
 
@@ -77,16 +77,18 @@ class rackhd20_computenode_pollers(fit_common.unittest.TestCase):
             self.assertEqual(errorlist, [], "Error reported.")
 
 
-    def test_pollers_by_id(self):
+    def test_2_pollers_by_id(self):
         msg = "Description: Display the poller data per node."
-        print "\t{0}".format(msg)
+        if fit_common.VERBOSITY >= 2:
+            print "\t{0}".format(msg)
 
         errorlist = []
         poller_list = ['driveHealth', 'sel', 'chassis', 'selInformation', 'sdr']
         for node in NODELIST:
-            mondata = fit_common.rackhdapi("/api/2.0/nodes/" + node + "/pollers")
             if fit_common.VERBOSITY >= 2:
-                print "Node: {}".format(node)
+                nodetype = get_rackhd_nodetype(node)
+                print "Node: {}  Type: {}".format(node, nodetype)
+            mondata = fit_common.rackhdapi("/api/2.0/nodes/" + node + "/pollers")
             self.assertIn(mondata['status'], [200], "Incorrect HTTP return code, expecting 200, received {}".format(mondata['status']))
 
             # check required fields
@@ -102,7 +104,7 @@ class rackhd20_computenode_pollers(fit_common.unittest.TestCase):
             for poller in poller_dict:
                 poller_id = poller_dict[poller]["poller_id"]
                 if fit_common.VERBOSITY >= 2:
-                    print "\nPoller: {}  ID: {} ".format(poller, str(poller_id))
+                    print "Poller: {}  ID: {} ".format(poller, str(poller_id))
                 poll_data = fit_common.rackhdapi("/api/2.0/pollers/" + poller_id)
                 if fit_common.VERBOSITY >= 3:
                     print fit_common.json.dumps(poll_data.get('json', ""), indent=4)
@@ -111,23 +113,24 @@ class rackhd20_computenode_pollers(fit_common.unittest.TestCase):
             print "{}".format(fit_common.json.dumps(errorlist, indent=4))
             self.assertEqual(errorlist, [], "Error reported.")
 
-    def test_poller_headers(self):
+    def test_3_poller_headers(self):
         msg = "Description: Verify header data reported on the poller"
-        print "\t{0}".format(msg)
+        if fit_common.VERBOSITY >= 2:
+            print "\t{0}".format(msg)
 
         errorlist = []
         for node in NODELIST:
             mondata = fit_common.rackhdapi("/api/2.0/nodes/" + node + "/pollers")
             self.assertIn(mondata['status'], [200], "Incorrect HTTP return code, expecting 200, received {}".format(mondata['status']))
-            nodetype = get_rackhd_nodetype(node)
             if fit_common.VERBOSITY >= 2:
-                print "Node: {} Type: {}".format(node, nodetype)
+                nodetype = get_rackhd_nodetype(node)
+                print "\nNode: {} Type: {}".format(node, nodetype)
 
             poller_dict = test_api_utils.get_supported_pollers(node)
             for poller in poller_dict:
                 poller_id = poller_dict[poller]["poller_id"]
                 if fit_common.VERBOSITY >= 2:
-                    print "\nPoller: {}  ID: {} ".format(poller, str(poller_id))
+                    print "Poller: {}  ID: {} ".format(poller, str(poller_id))
                 poller_data = test_api_utils.get_poller_data_by_id(poller_id)
                 if poller_data == []:
                     errorlist.append("Error: Node {} Poller ID {}, {} failed to return any data".format(node, poller_id, poller))
@@ -138,15 +141,20 @@ class rackhd20_computenode_pollers(fit_common.unittest.TestCase):
             print "{}".format(fit_common.json.dumps(errorlist, indent=4))
             self.assertEqual(errorlist, [], "Error reported.")
 
-    def test_poller_default_cache(self):
+    def test_4_poller_default_cache(self):
         msg = "Description: Check number of polls being kept for poller ID"
-        print "\t{0}".format(msg)
+        if fit_common.VERBOSITY >= 2:
+            print "\t{0}".format(msg)
 
+        for node in NODELIST:
+            if fit_common.VERBOSITY >= 2:
+                nodetype = get_rackhd_nodetype(node)
+                print "Node: {}  Type: {}".format(node, nodetype)
         errorlist = []
         for node in NODELIST:
             nodetype = get_rackhd_nodetype(node)
             if fit_common.VERBOSITY >= 2:
-                print "Node: {} Type: {}".format(node, nodetype)
+                print "\nNode: {} Type: {}".format(node, nodetype)
 
             poller_dict = test_api_utils.get_supported_pollers(node)
             for poller in poller_dict:
@@ -154,7 +162,7 @@ class rackhd20_computenode_pollers(fit_common.unittest.TestCase):
                 poller_data = test_api_utils.get_poller_data_by_id(poller_id)
                 poll_len = len(poller_data)
                 if fit_common.VERBOSITY >= 2:
-                    print "\nPoller: {}  ID: {} ".format(poller, str(poller_id))
+                    print "Poller: {}  ID: {} ".format(poller, str(poller_id))
                     print "Number of polls for "+ str(poller_id) + ": " + str(len(poller_data))
                 if poll_len > 10:
                     errorlist.append('Error: Poller {} ID: {} - Number of cached polls should not exceed 10'.format(poller_id, poller))
@@ -165,22 +173,22 @@ class rackhd20_computenode_pollers(fit_common.unittest.TestCase):
             print "{}".format(fit_common.json.dumps(errorlist, indent=4))
             self.assertEqual(errorlist, [], "Error reported.")
 
-    def test_poller_current_data(self):
+    def test_5_poller_current_data(self):
         msg = "Description: Display most current data from poller"
-        print "\t{0}".format(msg)
+        if fit_common.VERBOSITY >= 2:
+            print "\t{0}".format(msg)
 
         errorlist = []
         for node in NODELIST:
-            nodetype = get_rackhd_nodetype(node)
             if fit_common.VERBOSITY >= 2:
-                print "Node: {} Type: {}".format(node, nodetype)
-
+                nodetype = get_rackhd_nodetype(node)
+                print "\nNode: {} Type: {}".format(node, nodetype)
             poller_dict = test_api_utils.get_supported_pollers(node)
             for poller in poller_dict:
                 poller_id = poller_dict[poller]["poller_id"]
                 if fit_common.VERBOSITY >= 2:
-                    print "\nPoller: {}  ID: {} ".format(poller, str(poller_id))
-                monurl = "/api/test/fit_tests/common/pollers/" + str(poller_id) + "/data/current"
+                    print "Poller: {}  ID: {} ".format(poller, str(poller_id))
+                monurl = "/api/2.0/pollers/" + str(poller_id) + "/data/current"
                 mondata = fit_common.rackhdapi(url_cmd=monurl)
                 if mondata['status'] not in [200, 201, 202, 204]:
                     errorlist.append("Error: Node {} Poller_ID {} Failed to get current poller data, status {}".format(node, poller_id, mondata['status']))
@@ -192,22 +200,22 @@ class rackhd20_computenode_pollers(fit_common.unittest.TestCase):
             print "{}".format(fit_common.json.dumps(errorlist, indent=4))
             self.assertEqual(errorlist, [], "Error reported.")
 
-    def test_poller_status_timestamp(self):
+    def test_6_poller_status_timestamp(self):
         msg = "Description: Display status and timestamp from current poll"
-        print "\t{0}".format(msg)
+        if fit_common.VERBOSITY >= 2:
+            print "\t{0}".format(msg)
 
         errorlist = []
         for node in NODELIST:
             nodetype = get_rackhd_nodetype(node)
             if fit_common.VERBOSITY >= 2:
-                print "Node: {} Type: {}".format(node, nodetype)
+                print "\nNode: {} Type: {}".format(node, nodetype)
             poller_dict = test_api_utils.get_supported_pollers(node)
-
             for poller in poller_dict:
                 poller_id = poller_dict[poller]["poller_id"]
                 if fit_common.VERBOSITY >= 2:
-                    print "\nPoller: {}  ID: {} ".format(poller, str(poller_id))
-                monurl = "/api/test/fit_tests/common/pollers/" + str(poller_id) + "/data/current"
+                    print "Poller: {}  ID: {} ".format(poller, str(poller_id))
+                monurl = "/api/2.0/pollers/" + str(poller_id) + "/data/current"
                 mondata = fit_common.rackhdapi(url_cmd=monurl)
                 if mondata['status'] == 200:
                     if fit_common.VERBOSITY >= 2:
@@ -218,11 +226,16 @@ class rackhd20_computenode_pollers(fit_common.unittest.TestCase):
             print "{}".format(fit_common.json.dumps(errorlist, indent=4))
             self.assertEqual(errorlist, [], "Error reported.")
 
-    def test_poller_error_counter(self):
+    def test_7_poller_error_counter(self):
         msg = "Description: Check for Poller Errors"
-        print "\t{0}".format(msg)
+        if fit_common.VERBOSITY >= 2:
+            print "\t{0}".format(msg)
+
         errorlist = []
         for node in NODELIST:
+            if fit_common.VERBOSITY >= 2:
+                nodetype = get_rackhd_nodetype(node)
+                print "\nNode: {} Type: {}".format(node, nodetype)
             mondata = fit_common.rackhdapi("/api/2.0/nodes/" + node + "/pollers")
             self.assertIn(mondata['status'], [200], "Incorrect HTTP return code, expecting 200, received {}".format(mondata['status']))
             for item in mondata['json']:
@@ -246,15 +259,16 @@ class rackhd20_computenode_pollers(fit_common.unittest.TestCase):
             if fit_common.VERBOSITY >= 2:
                 print "No Poller errors found"
 
-    def test_nodes_id_pollers(self):
+    def test_8_nodes_id_pollers(self):
         msg = "Description: Display the poller updated-at per node."
-        print "\t{0}".format(msg)
+        if fit_common.VERBOSITY >= 2:
+            print "\t{0}".format(msg)
 
-        node = 0
         errorlist = []
         for node in NODELIST:
             if fit_common.VERBOSITY >= 2:
-                print "Node: {}".format(node)
+                nodetype = get_rackhd_nodetype(node)
+                print "\nNode: {} Type: {}".format(node, nodetype)
             mondata = fit_common.rackhdapi("/api/2.0/nodes/" + node + "/pollers")
             self.assertIn(mondata['status'], [200], "Incorrect HTTP return code, expecting 200, received {}".format(mondata['status']))
             for item in mondata['json']:
@@ -269,12 +283,12 @@ class rackhd20_computenode_pollers(fit_common.unittest.TestCase):
                 poller_id = poller_dict[poller]["poller_id"]
                 poll_data = fit_common.rackhdapi("/api/2.0/pollers/" + poller_id)
                 if fit_common.VERBOSITY >= 2:
-                    print "\nPoller: {}  ID: {} ".format(poller, str(poller_id))
-                    print "Created At: {}".format(fit_common.json.dumps(poll_data['json']['createdAt']))
-                    print "Updated At: {}".format(fit_common.json.dumps(poll_data['json']['updatedAt']))
+                    print "Poller: {}  ID: {} ".format(poller, str(poller_id))
+                    print "Created At: {}".format(fit_common.json.dumps(poll_data['json'].get('createdAt')))
+                    print "Updated At: {}".format(fit_common.json.dumps(poll_data['json'].get('updatedAt')))
         if errorlist != []:
             print "{}".format(fit_common.json.dumps(errorlist, indent=4))
             self.assertEqual(errorlist, [], "Error reporterd.")
 
-
-
+if __name__ == '__main__':
+    fit_common.unittest.main()

@@ -128,7 +128,7 @@ class display_node_discovery_data(fit_common.unittest.TestCase):
                             print "Invalid or empty OBM setting"
                         else:
                             print obmhost,
-                            print "\t" + obmlist[0]["config"]["user"]
+                            print "\t" + obmlist[0]["config"].get("user","Error: No User defined!")
     else:
         print "Cannot get RackHD nodes from stack, http response code: ", result
 

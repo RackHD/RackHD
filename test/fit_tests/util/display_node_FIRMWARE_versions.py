@@ -189,7 +189,7 @@ class display_node_firmware(fit_common.unittest.TestCase):
                                 print "ERROR: BAD BMC Value: ", bmc_ip
                             else:
                                 user_cred = test_api_utils.get_compute_node_username(node)
-                                if user_cred == 0:
+                                if user_cred in [1,2,3,4]:
                                     print "Unable to get user credetials for node_id", node
                                 else:
                                     mc_data = test_api_utils.run_ipmi_command(bmc_ip, 'mc info', user_cred)

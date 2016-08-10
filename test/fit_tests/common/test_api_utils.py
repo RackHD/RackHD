@@ -234,7 +234,8 @@ def get_compute_node_username(node_id):
             print "Error in getting response with url\n\t" + monorail_url
         return 1
 
-    if rest_res['json']['obmSettings'][0]['config']['user']:
+    username = rest_res['json']['obmSettings'][0]['config'].get('user')
+    if username:
         user = unicodedata.normalize('NFKD', \
                                      rest_res['json']['obmSettings'][0]['config']['user']). \
             encode('ascii','ignore')
