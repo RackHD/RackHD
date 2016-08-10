@@ -13,6 +13,7 @@ or retrieving it from the download available at https://www.packer.io/downloads.
 The builds are pre-configured with post-processors to push the results to
 ATLAS, and need relevant configuration set in environment variables to
 enable:
+
     export ATLAS_USERNAME=rackhd
     export ATLAS_NAME=rackhd
     export ATLAS_TOKEN="..........................."
@@ -21,19 +22,27 @@ enable:
 
     git clone https://github.com/rackhd/rackhd
     cd rackhd/packer
-    packer build -only=virtualbox-iso template-ubuntu-14.04.json
-
+    packer build -only=virtualbox-iso templates/template-ubuntu-14.04-source.json
+    
 ### Build vagrant box based on Ubuntu 16.04
 
     git clone https://github.com/rackhd/rackhd
     cd rackhd/packer
-    packer build -only=virtualbox-iso template-ubuntu-16.04.json
-
+    packer build -only=virtualbox-iso templates/template-ubuntu-16.04-source.json
+    
 ### To build locally (using pre-built debian packages - Ubuntu 14.04)
 
     git clone https://github.com/rackhd/rackhd
     cd rackhd/packer
-    packer build -only=virtualbox-iso template-packages.json
+    packer build -only=virtualbox-iso templates/template-ubuntu-14.04-packages.json
+
+
+### To build locally without publishing to atlas, use the `-notlas` variant.
+
+    git clone https://github.com/rackhd/rackhd
+    cd rackhd/packer
+    packer build -only=virtualbox-iso templates/template-ubuntu-14.04-source-noatlas.json
+
 
 ## Local install
 
@@ -52,9 +61,8 @@ or from source:
 
     ansible-playbook -c local -i "local," rackhd_local.yml
 
-For more details on installation, please see the [Ubuntu source install guide](
-http://rackhd.readthedocs.io/en/latest/rackhd/ubuntu_source_installation.html) or
-the [Ubuntu package install guide](http://rackhd.readthedocs.io/en/latest/rackhd/ubuntu_package_installation.html)
+For more details on installation, please see the [Ubuntu source install guide](http://rackhd.readthedocs.io/en/latest/rackhd/ubuntu_source_installation.html) 
+or the [Ubuntu package install guide](http://rackhd.readthedocs.io/en/latest/rackhd/ubuntu_package_installation.html)
 
 ### License notes
 
