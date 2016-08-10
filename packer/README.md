@@ -7,40 +7,54 @@ homebrew:
     brew install packer
 
 or retrieving it from the download available at https://www.packer.io/downloads.html
-The builds are pre-configured with post-processors to push the results to
-ATLAS, and need relevant configuration set in environment variables to
-enable:
-
-    export ATLAS_USERNAME=${USER}
-    export ATLAS_NAME=rackhd
-    export ATLAS_TOKEN="..........................."
 
 ## To build locally (using code from source)
 
+The builds are pre-configured with post-processors to push the results to
+ATLAS, and need relevant configuration set in environment variables to
+enable:
+    export ATLAS_USERNAME=rackhd
+    export ATLAS_NAME=rackhd
+    export ATLAS_TOKEN="..........................."
+
 ### Build vagrant box based on Ubuntu 14.04
 
+    git clone https://github.com/rackhd/rackhd
+    cd rackhd/packer
     packer build -only=virtualbox-iso template-ubuntu-14.04.json
 
 ### Build vagrant box based on Ubuntu 16.04
 
+    git clone https://github.com/rackhd/rackhd
+    cd rackhd/packer
     packer build -only=virtualbox-iso template-ubuntu-16.04.json
 
-## To build locally (using pre-built debian packages)
+### To build locally (using pre-built debian packages - Ubuntu 14.04)
 
+    git clone https://github.com/rackhd/rackhd
+    cd rackhd/packer
     packer build -only=virtualbox-iso template-packages.json
 
+## Local install
 
-## To use ansible roles to install locally
+You can do a local installation on a virtual machine or bare metal host
+leveraging the same scripts that we use to make the VM with Packer. To do so,
+you will need to install ansible on the machine where you want to do the
+installation:
 
     sudo apt-get install ansible
 
-and then:
+and then to install from the bintray packages:
 
     ansible-playbook -c local -i "local," rackhd_package.yml
 
-or
+or from source:
 
     ansible-playbook -c local -i "local," rackhd_local.yml
+
+For more details on installation, please see the [Ubuntu source install guide](
+http://rackhd.readthedocs.io/en/latest/rackhd/ubuntu_source_installation.html) or
+the [Ubuntu package install guide](http://rackhd.readthedocs.io/en/latest/rackhd/ubuntu_package_installation.html)
 
 ### License notes
 
