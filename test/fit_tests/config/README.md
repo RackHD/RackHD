@@ -1,11 +1,20 @@
 ## Test config files:
 
-All test config files must reside in the config directory.
-There are two required files: config/global_config.json and config/stack_config.json.
+All test config files must reside in a config directory under fit_tests.
+
+'config/global_config.json' is the master config file and is required.
+An alternate config directory may be specified at the command line using run_tests.py -config xxx .
+The config parameter specifies a directory not a file!
+
+'config/stack_config.json' is an optional file to specify the parameters for a set of test bed 'stacks'.
+Stack labels are specified at the command line using run_tests_py -stack xxx .
+
 
 ## Global config file:
 
 The global config file specifies operating parameters and test environment.
+
+Sample global_config.json file:
 
     {
       "credentials": { # section for all usernames and passwords
@@ -85,14 +94,16 @@ The global config file specifies operating parameters and test environment.
       }
     }
 
-## Stack config:
+## Stack config files:
 
-The stack config file specifies addresses and environment for the specific hardware under test.
+Stack config files specifies addresses and environment for the specific hardware under test.
+There are no common parameters between the global_config file and the stack_config files.
 A stack config file is required for running deployment scripts, but not test scripts if running on the appliance.
 The stack config file is organized by stack label, which can be any alphanumeric key value.
 The stack key is used to identify the hardware to be used with test scripts using the '-stack' argument.
+The stack_config.json file is a 'master'. Override files can modify or add details to the master.
 
-Sample stack configuration file:
+Sample stack_config.json file
 
     {
     "stack1":{                           #alphanumeric stack label, can be any number of stacks defined
