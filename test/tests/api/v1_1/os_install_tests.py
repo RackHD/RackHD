@@ -181,7 +181,7 @@ class OSInstallTests(object):
     
     def install_windowsServer2012(self, version, nodes=[], options=None):
         graph_name = 'Graph.InstallWindowsServer'
-        os_repo = defaults.get('RACKHD_SMB_WINDOWS_REPO_PATH', none)
+        os_repo = defaults.get('RACKHD_SMB_WINDOWS_REPO_PATH', None)
         if None == os_repo:
             fail('user must set RACKHD_SMB_WINDOWS_REPO_PATH')
         body = options
