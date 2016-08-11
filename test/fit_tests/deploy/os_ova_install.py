@@ -17,6 +17,7 @@ import pdu_lib
 
 class os_ova_install(fit_common.unittest.TestCase):
     def test01_install_ova_template(self):
+        ovafile = fit_common.GLOBAL_CONFIG['repos']['install']['template']
         # Check for ovftool
         self.assertEqual(fit_common.subprocess.call('which ovftool', shell=True), 0, "FAILURE: 'ovftool' not installed.")
         # Ping for valid ESXi host
@@ -25,54 +26,94 @@ class os_ova_install(fit_common.unittest.TestCase):
         if fit_common.subprocess.call('ping -c 1 ' + fit_common.ARGS_LIST['ora'], shell=True) == 0:
             fit_common.remote_shell('shutdown -h now')
             fit_common.time.sleep(5)
-        # Run OVA installer
-        self.install_vm()
-        # Wait for reboot to complete
-        try:
-            fit_common.remote_shell("pwd")
-        except IOError:
-            self.fail("*** Login Error")
-        # Sync time on ORA
-        localdate = fit_common.subprocess.check_output("date +%s", shell=True)
-        fit_common.remote_shell("/bin/date -s @" + localdate.replace("\n", "") +
-                                 ";/sbin/hwclock --systohc")
-    def install_vm(self):
-        ovafile = fit_common.GLOBAL_CONFIG['repos']['install']['ova'] + "/ora-stack-" \
-                  + str(fit_common.ARGS_LIST['stack']) + ".ova "
+
         # Run probe to check for valid OVA file
         rc = fit_common.subprocess.call("ovftool " + ovafile, shell=True)
-        if rc > 0:
-            fit_common.premature_exit('Invalid or missing OVA file: ' + ovafile, 255)
-        # Run OVA installer
+        self.assertEqual(rc, 0,'Invalid or missing OVA file: ' + ovafile)
+
+        # this clears the hypervisor ssh key from ~/.ssh/known_hosts
+        subprocess.call(["touch ~/.ssh/known_hosts;ssh-keygen -R "
+                         + fit_common.ARGS_LIST['hyper']  + " -f ~/.ssh/known_hosts >/dev/null 2>&1"], shell=True)
+
+        # Find correct hypervisor credentials by testing each entry in the list
         cred_list = fit_common.GLOBAL_CONFIG['credentials']['hyper']
-        # just using first entry in cred list, will implement a retry over list later
-        uname = cred_list[0]['username']
-        passwd = cred_list[0]['password']
+        for entry in cred_list:
+            uname = entry['username']
+            passwd = entry['password']
+            (command_output, exitstatus) = \
+                fit_common.pexpect.run(
+                                "ssh -q -o StrictHostKeyChecking=no -t " + uname + "@"
+                                + fit_common.ARGS_LIST['hyper'] + " pwd",
+                                withexitstatus=1,
+                                events={"assword": passwd + "\n"},
+                                timeout=20, logfile=None)
+            if exitstatus == 0:
+                break
+
+        # Run OVA installer
         print '**** Deploying OVA file on hypervisor ' + fit_common.ARGS_LIST['hyper']
-        rc = fit_common.subprocess.call("ovftool --X:injectOvfEnv --powerOn --overwrite "
-                                         "--powerOffTarget --skipManifestCheck -q "
-                                         "--net:'ADMIN'='VM Network' "
-                                         "--net:'CONTROL'='Control Network' "
-                                         "--net:'PDU'='PDU Network' "
-                                         "--noSSLVerify "
-                                         + ovafile
-                                         + "vi://" + uname + ":" + passwd + "@"
-                                         + fit_common.ARGS_LIST['hyper'], shell=True)
+        rc = subprocess.call("ovftool --X:injectOvfEnv --overwrite "
+                             "--powerOffTarget --skipManifestCheck -q "
+                             "--net:'ADMIN'='VM Network' "
+                             "--net:'CONTROL'='Control Network' "
+                             "--net:'PDU'='PDU Network' "
+                             "--name='ora-stack-" + fit_common.ARGS_LIST['stack'] + "' "
+                             "--noSSLVerify "
+                             + ovafile
+                             + " vi://" + uname + ":" + passwd + "@"
+                             + fit_common.ARGS_LIST['hyper'], shell=True)
         # Check for successful completion
         if rc > 0:
-            print 'OVA installer failed at host: ' + fit_common.ARGS_LIST['hyper']
+            print 'OVA installer failed at host: ' + fit_common.ARGS_LIST['hyper'] + "Exiting..."
+            sys.exit(255)
+
+        # Wait for VM to settle
+        fit_common.countdown(30)
+        # Install MAC address by editing OVA .vmx file, then startup VM
+        esxi_command = "export fullpath=`find vmfs -name ora-stack-" + fit_common.ARGS_LIST['stack'] + "*.vmx`;" \
+                       "for file in $fullpath;" \
+                       "do " \
+                       "export editline=`cat $file |grep \\\'ethernet0.generatedAddress =\\\'`;" \
+                       "export editcmd=\\\'/\\\'$editline\\\'\/ c\\\ethernet0.address = \\\"" + fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']]['ovamac'] + "\\\"\\\';" \
+                       "sed -i \\\"$editcmd\\\" $file;" \
+                       "sed -i \\\'/ethernet0.addressType = \\\"vpx\\\"/ c\\\ethernet0.addressType = \\\"static\\\"\\\' $file;" \
+                       "sed -i \\\'/ethernet0.addressType = \\\"generated\\\"/ c\\\ethernet0.addressType = \\\"static\\\"\\\' $file;" \
+                       "done;" \
+                       "sleep 5;" \
+                       "export vmidstring=`vim-cmd vmsvc/getallvms |grep ora-stack-" + fit_common.ARGS_LIST['stack'] + "`;" \
+                       "for vmid in $vmidstring;" \
+                       "do " \
+                       "vim-cmd vmsvc/power.on $vmid;" \
+                       "exit $?;" \
+                       "done;"
+
+        (command_output, exitstatus) = \
+            fit_common.pexpect.run(
+                            "ssh -q -o StrictHostKeyChecking=no -t " + uname + "@"
+                            + fit_common.ARGS_LIST['hyper'] + " " + esxi_command,
+                            withexitstatus=1,
+                            events={"assword": passwd + "\n"},
+                            timeout=20, logfile=sys.stdout)
+        if exitstatus > 0:
+            print "MAC address processing failed. Exiting..."
+            sys.exit(255)
+
+        # Poll the OVA via ping
         for dummy in range(0, 30):
-            rc = fit_common.subprocess.call("ping -c 1 -w 5 " + fit_common.ARGS_LIST['ora'], shell=True)
+            rc = subprocess.call("ping -c 1 -w 5 " + fit_common.ARGS_LIST['ora'], shell=True)
             if rc == 0:
                 break
             else:
                 fit_common.time.sleep(10)
-        if rc > 0:
-            print 'OVA installer failed at host: ' + fit_common.ARGS_LIST['ora']
+        self.assertEqual(rc, 0, "VM did not activate.")
+        # Sync time on ORA
+        localdate = fit_common.subprocess.check_output("date +%s", shell=True)
+        fit_common.remote_shell("/bin/date -s @" + localdate.replace("\n", "") + ";/sbin/hwclock --systohc")
 
     def test02_power_off_nodes(self):
         print "**** Configuring power interface: "
         self.assertTrue(pdu_lib.config_power_interface(), "Failed to configure power interface")
+        fit_common.time.sleep(15)
         # ServerTech PDU case
         if pdu_lib.check_pdu_type() != "Unknown":
             print "**** Installing snmp package: "

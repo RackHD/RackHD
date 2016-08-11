@@ -61,15 +61,13 @@ def config_power_interface():
     if remote_shell('ping -c 1 192.168.1.254')['exitcode'] == 0:
         return True
 
-    iflist = remote_shell("ifconfig -s -a | tail -n +2 | awk \\\'{print \\\$1}\\\'")['stdout'].split()
+    iflist = remote_shell("ifconfig -s -a | tail -n +2 | awk \\\'{print \\\$1}\\\' |grep -v lo")['stdout'].split()
 
     # eth3 is power port in bare-metal eth2 is power interface in VM
-    if 'eth3' in iflist:
-        power_if = 'eth3'
-    elif 'eth2' in iflist:
-        power_if = 'eth2'
+    if iflist[1] != "":
+        power_if = iflist[8]
     else:
-        print "Failed to find power interface eth3 or eth2"
+        print "Failed to find power interface"
         return False
 
     cmd = "ip addr add {0}/{1} broadcast {2} dev {3}".format(ORA_POWER_IP,
@@ -92,7 +90,11 @@ def config_power_interface():
 
 # We need snmp commands before OnRack is installed
 def install_snmp():
-    response = remote_shell('apt-get -y install snmp')
+    ENVVARS = ''
+    if 'proxy' in GLOBAL_CONFIG['repos'] and GLOBAL_CONFIG['repos']['proxy'] != '':
+        ENVVARS = "export http_proxy=" + GLOBAL_CONFIG['repos']['proxy'] + ";" + \
+                  "export https_proxy=" + GLOBAL_CONFIG['repos']['proxy'] + ";"
+    response = remote_shell(ENVVARS + 'apt-get -y install snmp')
     if response['exitcode'] != 0:
         print "Failed to install snmp"
         return False

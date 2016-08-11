@@ -202,7 +202,7 @@ def scp_file_to_ora(src_file_name):
         return just_fname
 
     scp_target = 'onrack@{0}:'.format(ARGS_LIST["ora"])
-    cmd = 'scp {0} {1}'.format(src_file_name, scp_target)
+    cmd = 'scp -o StrictHostKeyChecking=no {0} {1}'.format(src_file_name, scp_target)
     if VERBOSITY >= 4:
         print "scp_file_to_ora: '{0}'".format(cmd)
 
@@ -280,7 +280,7 @@ def restful(url_command, rest_action='get', rest_payload=[], rest_timeout=None, 
     payload_print = []
     try:
         json.dumps(rest_payload)
-    except ValueError:
+    except:
         payload_print = []
     else:
         payload_print = json.dumps(rest_payload, sort_keys=True, indent=4,)

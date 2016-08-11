@@ -44,17 +44,19 @@ class rackhd_package_install(fit_common.unittest.TestCase):
         self.assertEqual(fit_common.remote_shell("apt-get -y install apt-mirror")['exitcode'], 0, "apt-mirror Install failure.")
         self.assertEqual(fit_common.remote_shell("apt-get -y install amtterm")['exitcode'], 0, "amtterm Install failure.")
         self.assertEqual(fit_common.remote_shell("apt-get -y install isc-dhcp-server")['exitcode'], 0, "isc-dhcp-server Install failure.")
+        # collect nic names
+        iflist = fit_common.remote_shell("ifconfig -s -a | tail -n +2 | awk \\\'{print \\\$1}\\\' |grep -v lo")['stdout'].split()
         # install network config
-        self.assertEqual(fit_common.remote_shell("echo 'auto eth1' > /etc/network/interfaces.d/control.cfg;"
-                                                  "echo 'iface eth1 inet static' >> /etc/network/interfaces.d/control.cfg;"
+        self.assertEqual(fit_common.remote_shell("echo 'auto " + iflist[7] + "' > /etc/network/interfaces.d/control.cfg;"
+                                                  "echo 'iface " + iflist[7] + " inet static' >> /etc/network/interfaces.d/control.cfg;"
                                                   "echo 'address 172.31.128.1' >> /etc/network/interfaces.d/control.cfg;"
                                                   "echo 'netmask 255.255.252.0' >> /etc/network/interfaces.d/control.cfg"
-                                                  )['exitcode'], 0, "Control Network Config failure.")
-        self.assertEqual(fit_common.remote_shell("echo 'auto eth2' > /etc/network/interfaces.d/pdudirect.cfg;"
-                                                  "echo 'iface eth2 inet static' >> /etc/network/interfaces.d/pdudirect.cfg;"
+                                                  )['exitcode'], 0, "Network config failure.")
+        self.assertEqual(fit_common.remote_shell("echo 'auto " + iflist[8] + "' > /etc/network/interfaces.d/pdudirect.cfg;"
+                                                  "echo 'iface " + iflist[8] + " inet static' >> /etc/network/interfaces.d/pdudirect.cfg;"
                                                   "echo 'address 192.168.1.1' >> /etc/network/interfaces.d/pdudirect.cfg;"
                                                   "echo 'netmask 255.255.255.0' >> /etc/network/interfaces.d/pdudirect.cfg"
-                                                  )['exitcode'], 0, "PDU Network Config failure.")
+                                                  )['exitcode'], 0, "Network config failure.")
 
     def test02_install_rackhd_packages(self):
         print "**** Installing RackHD packages."
@@ -189,10 +191,10 @@ class rackhd_package_install(fit_common.unittest.TestCase):
             "touch /etc/default/on-dhcp-proxy /etc/default/on-http /etc/default/on-tftp /etc/default/on-syslog /etc/default/on-taskgraph"
         )['exitcode'], 0, "Install failure.")
         # reboot
-        self.assertEqual(fit_common.remote_shell("reboot")['exitcode'], 0, 'ORA reboot registered error')
         print "**** Rebooting appliance..."
-        fit_common.countdown(30)
+        fit_common.remote_shell("shutdown -r now")
         print "**** Waiting for login..."
+        fit_common.countdown(30)
         shell_data = 0
         for dummy in range(0, 30):
             shell_data = fit_common.remote_shell("pwd")
