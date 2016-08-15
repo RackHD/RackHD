@@ -10,6 +10,8 @@ ADD https://bintray.com/artifact/download/rackhd/binary/ipxe/monorail.ipxe \
     /RackHD/downloads/monorail.ipxe
 ADD https://bintray.com/artifact/download/rackhd/binary/ipxe/monorail-undionly.kpxe \
     /RackHD/downloads/monorail-undionly.kpxe
+ADD https://bintray.com/artifact/download/rackhd/binary/ipxe/monorail.intel.ipxe \
+    /RackHD/downloads/monorail.intel.ipxe
 
 ADD https://bintray.com/artifact/download/rackhd/binary/syslinux/undionly.kkpxe \
     /RackHD/downloads/undionly.kkpxe
