@@ -14,11 +14,13 @@ import subprocess
 sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test/fit_tests/common")
 import fit_common
 
-# local methods
+# set proxy
 ENVVARS = ''
 if 'proxy' in fit_common.GLOBAL_CONFIG['repos'] and fit_common.GLOBAL_CONFIG['repos']['proxy'] != '':
     ENVVARS = "export http_proxy=" + fit_common.GLOBAL_CONFIG['repos']['proxy'] + ";" + \
               "export https_proxy=" + fit_common.GLOBAL_CONFIG['repos']['proxy'] + ";"
+# collect nic names
+IFLIST = fit_common.remote_shell("ifconfig -s -a | tail -n +2 | awk \\\'{print \\\$1}\\\' |grep -v lo")['stdout'].split()
 
 class rackhd_source_install(fit_common.unittest.TestCase):
     def test01_install_rackhd_dependencies(self):
@@ -93,6 +95,7 @@ class rackhd_source_install(fit_common.unittest.TestCase):
     def test05_install_rackhd_config_files(self):
         print "**** Installing RackHD config files."
         #create DHCP config
+        fit_common.remote_shell('echo INTERFACES=' + IFLIST[7] + ' > /etc/default/isc-dhcp-server')
         dhcp_conf = open('dhcpd.conf', 'w')
         dhcp_conf.write(
                         'ddns-update-style none;\n'
@@ -192,16 +195,14 @@ class rackhd_source_install(fit_common.unittest.TestCase):
 
     def test06_install_network_config(self):
         print "**** Installing RackHD network config."
-        # collect nic names
-        iflist = fit_common.remote_shell("ifconfig -s -a | tail -n +2 | awk \\\'{print \\\$1}\\\' |grep -v lo")['stdout'].split()
         # install network config
-        self.assertEqual(fit_common.remote_shell("echo 'auto " + iflist[7] + "' > /etc/network/interfaces.d/control.cfg;"
-                                                  "echo 'iface " + iflist[7] + " inet static' >> /etc/network/interfaces.d/control.cfg;"
+        self.assertEqual(fit_common.remote_shell("echo 'auto " + IFLIST[7] + "' > /etc/network/interfaces.d/control.cfg;"
+                                                  "echo 'iface " + IFLIST[7] + " inet static' >> /etc/network/interfaces.d/control.cfg;"
                                                   "echo 'address 172.31.128.1' >> /etc/network/interfaces.d/control.cfg;"
                                                   "echo 'netmask 255.255.252.0' >> /etc/network/interfaces.d/control.cfg"
                                                   )['exitcode'], 0, "Network config failure.")
-        self.assertEqual(fit_common.remote_shell("echo 'auto " + iflist[8] + "' > /etc/network/interfaces.d/pdudirect.cfg;"
-                                                  "echo 'iface " + iflist[8] + " inet static' >> /etc/network/interfaces.d/pdudirect.cfg;"
+        self.assertEqual(fit_common.remote_shell("echo 'auto " + IFLIST[8] + "' > /etc/network/interfaces.d/pdudirect.cfg;"
+                                                  "echo 'iface " + IFLIST[8] + " inet static' >> /etc/network/interfaces.d/pdudirect.cfg;"
                                                   "echo 'address 192.168.1.1' >> /etc/network/interfaces.d/pdudirect.cfg;"
                                                   "echo 'netmask 255.255.255.0' >> /etc/network/interfaces.d/pdudirect.cfg"
                                                   )['exitcode'], 0, "Network config failure.")
