@@ -1,6 +1,6 @@
 #!/bin/bash
-# Script to create the first user using localhost exception method. 
-# An authenticated https endpont must be defined and enabled 
+# Script to create the first user using localhost exception method.
+# An authenticated https endpont must be defined and enabled
 # in /opt/monorail/config.json
 #
 HTTP_URL=http://localhost:8080
@@ -28,9 +28,17 @@ startServices() {
     pids=`pidof node`
     if [ `expr length "$pids"` -eq "0" ]; then
        echo "starting rackhd ./src services..."
-       sudo nf start > /tmp/rackhd.log &   
+       sudo nf start > /tmp/rackhd.log &
     fi
   fi
+}
+
+stopServices() {
+    cd ~
+    for srv in ${SERVICES}; do
+        sudo service ${srv} stop
+    done
+    echo "services terminated"
 }
 
 waitForServices() {
@@ -64,7 +72,7 @@ createFirstUser() {
     if [[ "${status}" == *"201"* ]]; then
       echo "user created"
     else
-      echo "error creating user: ${status}" 
+      echo "error creating user: ${status}"
       exit 1
    fi
 }
@@ -85,4 +93,4 @@ fi
 if [ $? -eq "0" ]; then
   checkFirstUser
 fi
-
+stopServices
