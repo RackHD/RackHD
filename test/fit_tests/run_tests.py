@@ -75,6 +75,8 @@ GROUP2.add_argument("-http", default="False", action="store_true",
                         help="forces the tests to utilize the http API protocol")
 GROUP2.add_argument("-https", default="False", action="store_true",
                         help="forces the tests to utilize the https API protocol")
+ARG_PARSER.add_argument("-port", default="None",
+                        help="API port number override, default from global_config.json")
 ARG_PARSER.add_argument("-v", default=1, type=int,
                         help="Verbosity level of console output, default=0, Built Ins: " +
                              "0: No debug, " +

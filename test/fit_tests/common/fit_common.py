@@ -41,6 +41,7 @@ ARGS_LIST = \
     "group": os.getenv("GROUP", "all"), # test group
     "http": os.getenv("HTTP", "False"), # force http api protocol
     "https": os.getenv("HTTPS", "False"), # force https api protocol
+    "port": os.getenv("PORT", "None") # port number override
 }
 
 # Get top level path via git
@@ -51,8 +52,8 @@ if ARGS_LIST["config"] != 'config':
 VERBOSITY = int(os.getenv("VERBOSITY", "1"))
 GLOBAL_CONFIG = []
 STACK_CONFIG = []
-API_PORT=None
-API_PROTOCOL=None
+API_PORT = "None"
+API_PROTOCOL = "None"
 
 # List of BMC IP addresses
 BMC_LIST = []
@@ -99,16 +100,22 @@ if ARGS_LIST["stack"] != "None":
     if "hyper" in STACK_CONFIG[ARGS_LIST["stack"]]:
         ARGS_LIST["hyper"] = STACK_CONFIG[ARGS_LIST["stack"]]['hyper']
 
-# set api port and protocol
+# set api port and protocol from command line
+if ARGS_LIST['port'] != "None":
+    API_PORT = ARGS_LIST['port']
 if ARGS_LIST['http'] == "True":
-    API_PROTOCOL = 'http'
-    API_PORT = GLOBAL_CONFIG['ports']['http']
+    API_PROTOCOL = "http"
+    if API_PORT == "None":
+        API_PORT = GLOBAL_CONFIG['ports']['http']
 if ARGS_LIST['https'] == "True":
-    API_PROTOCOL = 'https'
-    API_PORT = GLOBAL_CONFIG['ports']['http']
+    API_PROTOCOL = "https"
+    if API_PORT == "None":
+        API_PORT = GLOBAL_CONFIG['ports']['https']
 if ARGS_LIST["ora"] == "localhost":
-    API_PROTOCOL = 'http'
-    API_PORT = '8080'
+    if API_PROTOCOL == "None":
+        API_PROTOCOL = 'http'
+    if API_PORT == "None":
+        API_PORT = '8080'
 
 def timestamp(): # return formatted current timestamp
     return time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime())
@@ -237,12 +244,14 @@ def rackhdapi(url_cmd, action='get', payload=[], timeout=None, rest_headers={}):
                 'timeout':False}
     '''
 
-    # unless protocol is specified, test http port, if closed, then use https
+    # Automatic protocol selection: unless protocol is specified, test protocols, save settings globally
     global API_PROTOCOL
     global API_PORT
-    if API_PROTOCOL == None or API_PORT == None:
+    if API_PROTOCOL == "None":
         try:
-            restful("http://" + ARGS_LIST['ora'] + ":" + str(GLOBAL_CONFIG['ports']['http']) + "/")
+            if API_PORT == "None":
+                API_PORT = GLOBAL_CONFIG['ports']['http']
+            restful("http://" + ARGS_LIST['ora'] + ":" + str(API_PORT) + "/")
         except:
             API_PROTOCOL = 'https'
             API_PORT = GLOBAL_CONFIG['ports']['https']
@@ -500,6 +509,7 @@ def run_nose(nosepath):
                              'export CONFIG=' + str(ARGS_LIST['config']) + ';' +
                              'export HTTP=' + str(ARGS_LIST['http']) + ';' +
                              'export HTTPS=' + str(ARGS_LIST['https']) + ';' +
+                             'export PORT=' + str(ARGS_LIST['port']) + ';' +
                              'nosetests ' + noseopts + ' --xunit-file ' + xmlfile + ' ' + pathspec
                          ], shell=True)
     exitcode = 0

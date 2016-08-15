@@ -25,7 +25,7 @@ Tests require the following virtual environment commands be executed:
     pip install -r requirements.txt
 
 
-## Organization
+## Directory Organization
 
 - 'tests' is the test 'harness'
 - 'common' contains any common library functions
@@ -71,6 +71,7 @@ All FIT tests can be run from the wrapper 'run_tests.py':
                         56ddcf9a8eff16614e79ec74
       -http             fforces the tests to utilize the http API protocol
       -https            forces the tests to utilize the https API protocol
+      -port PORT        API port number override, default from global_config.json
       -v V              Verbosity level of console output, default=0, Built Ins:
                         0: No debug, 2: User script output, 4: rest calls and
                         status info, 6: other common calls (ipmi, ssh), 9: all the
@@ -83,7 +84,7 @@ This example will run the RackHD installer onto stack 1 via the wrapper script:
 
 The -stack or -ora argument can be omitted when running on the server or appliance. The test defaults to localhost:8080 for API calls.
 
-This example will run the smoke test from the appliance node:
+This example will run the smoke test from the appliance node or the default Vagrant test bed:
 
     python run_tests.py -test tests -group smoke
 
