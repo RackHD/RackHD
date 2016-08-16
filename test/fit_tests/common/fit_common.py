@@ -491,6 +491,23 @@ def list_skus():
         skunames.append(item['name'])
     return skunames
 
+def check_active_workflows(nodeid):
+    # Return True if active workflows are found on node
+    workflows = rackhdapi('/api/2.0/nodes/' + nodeid + '/workflows')['json']
+    for item in workflows:
+        if 'running' in item['_status'] or 'pending' in item['_status']:
+            return True
+    return False
+
+def cancel_active_workflows(nodeid):
+    # cancel all active workflows on node
+    exitstatus = True
+    apistatus = rackhdapi('/api/2.0/nodes/' + nodeid + '/workflows/action',
+                          action='put', payload={"command": "cancel"})['status']
+    if apistatus != 202:
+       exitstatus = False
+    return exitstatus
+
 def run_nose(nosepath):
     # this routine runs nosetests from wrapper using path spec 'nosepath'
     def _noserunner(pathspec):

@@ -26,7 +26,7 @@ for dummy in NODECATALOG:
         break
 
 # this routine polls a task ID for completion
-def wait_for_task_complete(taskid, sysid, retries=60):
+def wait_for_task_complete(taskid, retries=60):
     for dummy in range(0, retries):
         result = fit_common.rackhdapi(taskid)
         if result['json']['TaskState'] == 'Running' or result['json']['TaskState'] == 'Pending':
@@ -48,10 +48,11 @@ from nose.plugins.attrib import attr
 class os_bootstrap_base(fit_common.unittest.TestCase):
     def setUp(self):
         #delete active workflows for specified node
-        fit_common.rackhdapi('/api/1.1/nodes/' + NODE + '/workflows/active', action='delete')
+        fit_common.cancel_active_workflows(NODE)
     @fit_common.unittest.skipUnless('esxi55' in fit_common.GLOBAL_CONFIG['repos']['os'], "Skipping ESXi5.5")
     def test_bootstrap_esxi55(self):
-        print 'Running ESXI 5.5 bootstrap.'
+        if fit_common.VERBOSITY >= 2:
+            print 'Running ESXI 5.5 bootstrap.'
         nodehostname = 'esxi55'
         payload_data = {"osName": "ESXi",
                         "version": "5.5",
@@ -72,12 +73,13 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
                                             action='post', payload=payload_data)
         self.assertEqual(result['status'], 201,
                          'Was expecting code 201. Got ' + str(result['status']))
-        self.assertEqual(wait_for_task_complete(result['json']['@odata.id'], NODE, retries=80), True,
+        self.assertEqual(wait_for_task_complete(result['json']['@odata.id'], retries=80), True,
                          'TaskID ' + result['json']['@odata.id'] + ' not successfully completed.')
 
     @fit_common.unittest.skipUnless('esxi60' in fit_common.GLOBAL_CONFIG['repos']['os'], "Skipping ESXi6.0")
     def test_bootstrap_esxi6(self):
-        print 'Running ESXI 6.0 bootstrap.'
+        if fit_common.VERBOSITY >= 2:
+            print 'Running ESXI 6.0 bootstrap.'
         nodehostname = 'esxi60'
         payload_data = {"osName": "ESXi",
                         "version": "6.0",
@@ -98,12 +100,13 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
                                             action='post', payload=payload_data)
         self.assertEqual(result['status'], 201,
                          'Was expecting code 201. Got ' + str(result['status']))
-        self.assertEqual(wait_for_task_complete(result['json']['@odata.id'], NODE, retries=80), True,
+        self.assertEqual(wait_for_task_complete(result['json']['@odata.id'], retries=80), True,
                          'TaskID ' + result['json']['@odata.id'] + ' not successfully completed.')
 
     @fit_common.unittest.skipUnless('centos65' in fit_common.GLOBAL_CONFIG['repos']['os'], "Skipping Centos 6.5")
     def test_bootstrap_centos65(self):
-        print 'Running CentOS 6.5 bootstrap.'
+        if fit_common.VERBOSITY >= 2:
+            print 'Running CentOS 6.5 bootstrap.'
         nodehostname = 'centos65'
         payload_data = {"osName": "CentOS",
                         "version": "6.5",
@@ -124,12 +127,13 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
                                             action='post', payload=payload_data)
         self.assertEqual(result['status'], 201,
                          'Was expecting code 201. Got ' + str(result['status']))
-        self.assertEqual(wait_for_task_complete(result['json']['@odata.id'], NODE), True,
+        self.assertEqual(wait_for_task_complete(result['json']['@odata.id']), True,
                          'TaskID ' + result['json']['@odata.id'] + ' not successfully completed.')
 
     @fit_common.unittest.skipUnless('centos70' in fit_common.GLOBAL_CONFIG['repos']['os'], "Skipping Centos 7.0")
     def test_bootstrap_centos7(self):
-        print 'Running CentOS 7 bootstrap...'
+        if fit_common.VERBOSITY >= 2:
+            print 'Running CentOS 7 bootstrap...'
         nodehostname = 'centos70'
         payload_data = {"osName": "CentOS",
                         "version": "7",
@@ -151,12 +155,13 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
                                             action='post', payload=payload_data)
         self.assertEqual(result['status'], 201,
                          'Was expecting code 201. Got ' + str(result['status']))
-        self.assertEqual(wait_for_task_complete(result['json']['@odata.id'], NODE), True,
+        self.assertEqual(wait_for_task_complete(result['json']['@odata.id']), True,
                          'TaskID ' + result['json']['@odata.id'] + ' not successfully completed.')
 
     @fit_common.unittest.skipUnless('centos65' in fit_common.GLOBAL_CONFIG['repos']['os'], "Skipping Centos 6.5 KVM")
     def test_bootstrap_centos65_kvm(self):
-        print 'Running CentOS 7 KVM bootstrap.'
+        if fit_common.VERBOSITY >= 2:
+            print 'Running CentOS 7 KVM bootstrap.'
         nodehostname = 'centos65'
         payload_data = {"osName": "CentOS+KVM",
                         "version": "6.5",
@@ -177,12 +182,13 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
                                             action='post', payload=payload_data)
         self.assertEqual(result['status'], 201,
                          'Was expecting code 201. Got ' + str(result['status']))
-        self.assertEqual(wait_for_task_complete(result['json']['@odata.id'], NODE), True,
+        self.assertEqual(wait_for_task_complete(result['json']['@odata.id']), True,
                          'TaskID ' + result['json']['@odata.id'] + ' not successfully completed.')
 
     @fit_common.unittest.skipUnless('rhel70' in fit_common.GLOBAL_CONFIG['repos']['os'], "Skipping Redhat 7.0")
     def test_bootstrap_rhel7_kvm(self):
-        print 'Running RHEL 7 KVM bootstrap.'
+        if fit_common.VERBOSITY >= 2:
+            print 'Running RHEL 7 KVM bootstrap.'
         nodehostname = 'rhel70'
         payload_data = {"osName": "RHEL+KVM",
                         "version": "7",
@@ -204,5 +210,8 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
                                             action='post', payload=payload_data)
         self.assertEqual(result['status'], 201,
                          'Was expecting code 201. Got ' + str(result['status']))
-        self.assertEqual(wait_for_task_complete(result['json']['@odata.id'], NODE), True,
+        self.assertEqual(wait_for_task_complete(result['json']['@odata.id']), True,
                          'TaskID ' + result['json']['@odata.id'] + ' not successfully completed.')
+
+if __name__ == '__main__':
+    fit_common.unittest.main()

@@ -164,7 +164,7 @@ class redfish10_api_computer_system_reset_base_suite(fit_common.unittest.TestCas
     # Clean out all the active workflows on each compute node before starting
     def setUp(self):
         for node in NODELIST:
-            fit_common.rackhdapi('/api/1.1/nodes/' + node + '/workflows/active', action='delete')
+            fit_common.cancel_active_workflows(node)
 
     def test_1_redfish_v1_computer_reset_on(self):
         # This test will verify the compute node workflow power reset option power On

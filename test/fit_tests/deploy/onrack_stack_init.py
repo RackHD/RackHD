@@ -23,15 +23,15 @@ class onrack_stack_init(fit_common.unittest.TestCase):
         # Load default SKU for unsupported compute nodes
         print '**** Installing default SKU'
         payload = {
-                        "name": ["Unsupported-Compute"],
+                        "name": "Unsupported-Compute",
                         "rules": [
                             {
                                 "path": "bmc.IP Address"
                             }
                         ]
                     }
-        api_data = fit_common.rackhdapi("/api/1.1/skus", action='post', payload=payload)
-        self.assertEqual(api_data['status'], 200, 'Incorrect HTTP return code, expecting 200, got '
+        api_data = fit_common.rackhdapi("/api/2.0/skus", action='post', payload=payload)
+        self.assertEqual(api_data['status'], 201, 'Incorrect HTTP return code, expecting 201, got '
                          + str(api_data['status']))
 
     def test02_power_on_nodes(self):
@@ -137,14 +137,9 @@ class onrack_stack_init(fit_common.unittest.TestCase):
                         self.assertIn('id', node, 'node does not contain id')
                         node_id = node['id']
                         # determine if there are any active worlflows. If so, discovery not completed
-                        awf_data = fit_common.rackhdapi('/api/1.1/nodes/'
-                                                           + node_id
-                                                           + '/workflows/active')
-                        # 204 indicates "No Content"
-                        if awf_data['status'] != 204 or 'sku' not in node:
+                        if fit_common.check_active_workflows(node_id):
                             discovery_complete = False
                             break
-
                 if discovery_complete:
                     return True
                 fit_common.time.sleep(10)
@@ -173,8 +168,8 @@ class onrack_stack_init(fit_common.unittest.TestCase):
                     }
             ]
             }
-            api_data = fit_common.rackhdapi("/api/1.1/workflows", action="put", payload=payload)
-            self.assertEqual(api_data['status'], 200, 'Incorrect HTTP return code, expecting 200, got ' + str(api_data['status']))
+            api_data = fit_common.rackhdapi("/api/2.0/workflows/graphs", action="put", payload=payload)
+            self.assertEqual(api_data['status'], 201, 'Incorrect HTTP return code, expecting 201, got ' + str(api_data['status']))
             count += 1
         print "**** Configure node OBM settings."
         # run each OBM credential workflow on each node until success
@@ -186,7 +181,7 @@ class onrack_stack_init(fit_common.unittest.TestCase):
                 workflow = {"name": 'Graph.Obm.Ipmi.CreateSettings' + str(num)}
                 # wait for existing workflow to complete
                 for dummy in range(0, MAX_CYCLES):
-                    result = fit_common.rackhdapi("/api/1.1/nodes/"  + node + "/workflows", action="post", payload=workflow)
+                    result = fit_common.rackhdapi("/api/2.0/nodes/"  + node + "/workflows", action="post", payload=workflow)
                     if result['status'] != 201:
                         fit_common.time.sleep(5)
                     else:
@@ -195,7 +190,7 @@ class onrack_stack_init(fit_common.unittest.TestCase):
                 counter = 0
                 for counter in range(0, MAX_CYCLES):
                     fit_common.time.sleep(10)
-                    status = fit_common.rackhdapi("/api/1.1/workflows/" + result['json']["instanceId"])['json']['_status']
+                    status = fit_common.rackhdapi("/api/2.0/workflows/" + result['json']["instanceId"])['json']['_status']
                     if status != "running" and status != "pending":
                         break
                 if status == "succeeded":
@@ -295,7 +290,7 @@ class onrack_stack_init(fit_common.unittest.TestCase):
         errorlist = []
         #check OBM MAC addresses
         if "nodes" in fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']]:
-            nodecheck = fit_common.rackhdapi('/api/1.1/nodes')['text']
+            nodecheck = fit_common.rackhdapi('/api/2.0/obms')['text']
             for entry in fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']]['nodes']:
                 if entry['bmcmac'] not in str(nodecheck):
                     print '**** Missing node:' + entry['sku'] + "  BMC:" + entry['bmcmac']
