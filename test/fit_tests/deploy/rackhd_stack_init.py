@@ -23,26 +23,27 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
     def test01_preload_sku_packs(self):
         print "**** Processing SKU Packs"
         # Load SKU packs from GutHub
-        fit_common.subprocess.call("rm -rf temp.sku; rm -rf on-skupack", shell=True)
+        subprocess.call("rm -rf temp.sku; rm -rf on-skupack", shell=True)
         os.mkdir("on-skupack")
         # download all SKU repos and merge into on-skupack
         for url in fit_common.GLOBAL_CONFIG['repos']['skupack']:
             print "**** Cloning SKU Packs from " + url
-            fit_common.subprocess.call("git clone " + url + " temp.sku", shell=True)
-            fit_common.subprocess.call('cp -R temp.sku/* on-skupack; rm -rf temp.sku', shell=True)
+            subprocess.call("git clone " + url + " temp.sku", shell=True)
+            subprocess.call('cp -R temp.sku/* on-skupack; rm -rf temp.sku', shell=True)
         # build build SKU packs
         for subdir, dirs, files in os.walk('on-skupack'):
             for skus in dirs:
                 if skus not in ["debianstatic", ".git"] and os.path.isfile('on-skupack/' + skus + '/config.json'):
-                    fit_common.subprocess.call("cd on-skupack; ./build-package.bash "
-                                               + skus + " " + skus + " >/dev/null 2>&1", shell=True)
+                    subprocess.call("cd on-skupack;mkdir -p " + skus + "/tasks " + skus + "/static "
+                                    + skus + "/workflows " + skus + "/templates", shell=True)
+                    subprocess.call("cd on-skupack; ./build-package.bash "
+                                    + skus + " " + skus + " >/dev/null 2>&1", shell=True)
             break
         # upload SKU packs to ORA
         print "**** Loading SKU Packs to server"
         for subdir, dirs, files in os.walk('on-skupack/tarballs'):
             for skupacks in files:
                 print "\n**** Loading SKU Pack for " + skupacks
-                # NOTE: /api/2.0/skus/pack not operational at this time, to be updated when ready
                 fit_common.rackhdapi("/api/1.1/skus/pack", action="binary-post",
                                      payload=file(fit_common.TEST_PATH + "on-skupack/tarballs/" + skupacks).read())
             break
