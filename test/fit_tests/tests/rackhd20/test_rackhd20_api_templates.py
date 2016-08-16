@@ -17,23 +17,23 @@ from nose.plugins.attrib import attr
 @attr(all=True, regression=True, smoke=True)
 class rackhd20_api_templates(fit_common.unittest.TestCase):
     def test_api_20_templates_library(self):
-        api_data = fit_common.rackhdapi("/api/2.0/templates/library")
+        api_data = fit_common.rackhdapi("/api/2.0/templates/metadata")
         self.assertEqual(api_data['status'], 200, "Was expecting code 200. Got " + str(api_data['status']))
         for item in api_data['json']:
             # check required fields
-            for subitem in ['contents', 'createdAt', 'id', 'name', 'updatedAt']:
+            for subitem in ['hash', 'id', 'name', 'scope']:
                 if fit_common.VERBOSITY >= 2:
                     print "Checking:", item['name'], subitem
                 self.assertGreater(len(item[subitem]), 0, subitem + ' field error')
 
     def test_api_20_templates_library_ID(self):
-        api_data = fit_common.rackhdapi("/api/2.0/templates/library")
+        api_data = fit_common.rackhdapi("/api/2.0/templates/metadata")
         self.assertEqual(api_data['status'], 200, "Was expecting code 200. Got " + str(api_data['status']))
         for item in api_data['json']:
-            lib_data = fit_common.rackhdapi("/api/2.0/templates/library/" + item['name'])
+            lib_data = fit_common.rackhdapi("/api/2.0/templates/metadata/" + item['name'])
             self.assertEqual(lib_data['status'], 200, "Was expecting code 200. Got " + str(lib_data['status']))
             # check required fields
-            for subitem in ['contents', 'createdAt', 'id', 'name', 'updatedAt']:
+            for subitem in ['hash', 'id', 'name', 'scope']:
                 if fit_common.VERBOSITY >= 2:
                     print "Checking:", item['name'], subitem
                 self.assertGreater(len(item[subitem]), 0, subitem + ' field error')
