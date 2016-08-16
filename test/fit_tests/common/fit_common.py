@@ -321,6 +321,13 @@ def restful(url_command, rest_action='get', rest_payload=[], rest_timeout=None, 
                                        timeout=rest_timeout,
                                        verify=sslverify,
                                        )
+        if rest_action == "text-put":
+            result_data = requests.put(url_command,
+                                       data=rest_payload,
+                                       headers={"Content-Type": "text/plain"},
+                                       timeout=rest_timeout,
+                                       verify=sslverify,
+                                       )
         if rest_action == "post":
             result_data = requests.post(url_command,
                                         data=json.dumps(rest_payload),
@@ -332,6 +339,13 @@ def restful(url_command, rest_action='get', rest_payload=[], rest_timeout=None, 
             result_data = requests.post(url_command,
                                         data=rest_payload,
                                         headers={"Content-Type": "application/octet-stream"},
+                                        timeout=rest_timeout,
+                                        verify=sslverify
+                                        )
+        if rest_action == "text-post":
+            result_data = requests.post(url_command,
+                                        data=rest_payload,
+                                        headers={"Content-Type": "text/plain"},
                                         timeout=rest_timeout,
                                         verify=sslverify
                                         )
