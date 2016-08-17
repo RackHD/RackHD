@@ -205,7 +205,7 @@ class SkusTests(object):
                     #Post the sku pack
                     self.generateTarball(node_manufacturer)
                     self.__file = {'file': open(self.__skuPackTarball, 'rb')}
-                    URL = config.host + '/skus/pack'
+                    URL = config.host + config.api_root + '/skus/pack'
                     LOG.info("URL {0}".format(URL))
                     requests.adapters.DEFAULT_RETRIES = 3
                     for n in range (0,5):
@@ -280,7 +280,7 @@ class SkusTests(object):
                     # Post the sku pack
                     self.generateTarball("Non Quanta")
                     self.__file = {'file': open(self.__skuPackTarball, 'rb')}
-                    URL = config.host + '/skus/pack'
+                    URL = config.host + config.api_root + '/skus/pack'
                     requests.adapters.DEFAULT_RETRIES = 3
                     for n in range(0, 5):
                         try:

@@ -10,6 +10,7 @@ from tags_tests import TagsTests
 from schema_tests import SchemaTests
 from lookups_tests import LookupsTests
 from skupack_tests import SkusTests
+from users_tests import UsersTests
 
 tests = [
     'nodes_api2.tests',
@@ -24,7 +25,8 @@ tests = [
     'obm_api2.tests',
     'schemas_api2.tests',''
     'skus_api2.tests',
-    'lookups_api2.tests'
+    'lookups_api2.tests',
+    'users_api2.tests'
 ]
 
 regression_tests = [
