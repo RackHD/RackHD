@@ -14,7 +14,7 @@
             "port": 8080,
             "httpsEnabled": false,
             "proxiesEnabled": true,
-            "authEnabled": false,
+            "authEnabled": true,
             "routers": "northbound-api-router"
         },
         {
