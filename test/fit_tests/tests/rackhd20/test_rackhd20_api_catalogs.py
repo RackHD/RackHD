@@ -27,7 +27,7 @@ class rackhd20_api_catalogs(fit_common.unittest.TestCase):
         self.assertNotEqual(len(api_data['json']), 0, "Error, no catalog")
         for item in api_data['json']:
             # check required fields
-            for subitem in ['createdAt', 'node', 'source', 'updatedAt', 'data']:
+            for subitem in ['node', 'id', 'source', 'data']:
                 if fit_common.VERBOSITY >= 2:
                     print "Checking:", item['id'], subitem
                 self.assertGreater(len(item[subitem]), 0, subitem + ' field error')
