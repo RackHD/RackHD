@@ -79,8 +79,12 @@ For OS installer related tests, optional HTTP proxies for accessing remote OS im
 Footprint benchmark collects system data when running poller, node discovery and bootstrap.
 Details can be found in WIKI page:
 [proposal-footprint-benchmarks](https://github.com/RackHD/RackHD/wiki/proposal-footprint-benchmarks)
+The benchmark data collection process can also start/stop independently without binding to any test case,
+thus users can get the footprint info about any operations they carry out during this period of time.
 
 ###Precondition
+
+The machine running RackHD can use apt-get to install packages, which means it must have accessible sources.list
 
 In RackHD, compute nodes have been discovered, and pollers are running
 
@@ -97,25 +101,26 @@ Aside from Optional settings in the section above,
 following parameters are also required at the first time user issuing the test,
 and stored in .passwd
 
-    localhost username and password: for the machine running the test
+    localhost username and password: username and password that can run "apt-get install"
+    in the machine running the test
 
 ###Running the tests
 
-Run poller tests
+Run poller|discovery|bootstrap tests
 
-    python benchmark.py --group=poller
-
-Run discovery tests
-
-    python benchmark.py --group=discovery
-
-Run bootstrap tests
-
-    python benchmark.py --group=bootstrap
+    python benchmark.py --group=poller|discovery|bootstrap
 
 Run all benchmark tests
 
     python benchmark.py
+
+Start|Stop benchmark data collection
+
+    python benchmark.py --start|stop
+
+Get the directory of the latest log data
+
+    python benchmark.py --getdir
 
 ###Getting result
 

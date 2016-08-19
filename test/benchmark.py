@@ -1,15 +1,16 @@
 import sys
 import os
-import getopt
+from benchmark.manipulator import manipulator
 from proboscis import register
 from proboscis import TestProgram
 
 def run_tests(api_ver, selected):
 
     if api_ver == '2':
-        import benchmark.api_v2_0 as benchmark
+        # No actual case yet
+        import benchmark.tests.api_v2_0_tests
     else:
-        import benchmark.api_v1_1_tests
+        import benchmark.tests.api_v1_1_tests
 
     register(groups=['poller'], depends_on_groups=['benchmark.poller'])
     register(groups=['discovery'], depends_on_groups=['benchmark.discovery'])
@@ -29,23 +30,41 @@ def run_tests(api_ver, selected):
             if (status != 0):
                 break;
 
-        benchmark.ansible_ctl.dispose()
     else:
         TestProgram().run_and_exit()
 
+    benchmark.tests.ansible_ctl.dispose()
 
 
 if __name__ == '__main__':
 
     api_version = "1"
     group_selected = False
+    run_test = True
 
+    # We don't use getopt here since there is no need enumerate all parameters for proboscis,
+    # just process some additional ones is enough
     for arg in sys.argv[1:]:
-        if arg[:14] == '--api_version=':
+
+        if arg.find('--api_version=') == 0:
             # Remove this arg from array to prevent TestProgram processing it
             api_version = arg[14]
             sys.argv.remove(arg)
-        elif arg[:8] == '--group=':
+
+        elif arg.find('--group=') == 0:
             group_selected = True
 
-    run_tests(api_version, group_selected)
+        elif arg.find('--getdir') == 0:
+            print manipulator().get_data_path()
+            run_test = False
+
+        elif arg.find('--start') == 0:
+            manipulator().start()
+            run_test = False
+
+        elif arg.find('--stop') == 0:
+            manipulator().stop()
+            run_test = False
+
+    if run_test:
+        run_tests(api_version, group_selected)

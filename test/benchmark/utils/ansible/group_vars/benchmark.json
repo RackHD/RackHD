@@ -2,5 +2,6 @@
     "test_machine_log_path": "{{ lookup('env', 'HOME') }}/benchmark/20160331-051015",
     "test_case_name": "poller",
     "data_interval": 1,
-    "host_port": "8080"
+    "host_port": "8080",
+    "status": "stop"
 }

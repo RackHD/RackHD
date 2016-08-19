@@ -27,7 +27,6 @@ class ansibleControl(object):
         self.__config_case_name = 'test_case_name'
         self.__config_interval = 'data_interval'
 
-        self.__set_data_path()
         self.__set_host_port()
         self.__hosts = self.__get_hosts()
 
@@ -43,10 +42,10 @@ class ansibleControl(object):
         path = path[0:insert_index] + '/' + timestamp
 
         # Write back to json file
-        return self.__render_varfile_variable(self.__config_data_path, path)
+        return self.__render_varfile_variable({self.__config_data_path:path})
 
     def __set_host_port(self):
-        return self.__render_varfile_variable("host_port", HOST_PORT)
+        return self.__render_varfile_variable({"host_port":HOST_PORT})
 
     def __get_hosts(self):
         # Overwrite remote temp file incase ansible doesn't have right to default path
@@ -108,14 +107,15 @@ class ansibleControl(object):
 
         return succeed
 
-    def __render_varfile_variable(self, key, value):
+    def __render_varfile_variable(self, items):
 
         with open(self.__var_file, 'r+') as f:
             # Load json data
             json_data = json.load(f)
 
-            # Change the case name
-            json_data[key] = value
+            for key in items:
+
+                json_data[key] = items[key]
 
             # Write json data back to the var file
             f.seek(0)
@@ -158,16 +158,26 @@ class ansibleControl(object):
         os.remove(self.__hosts.name)
 
     def setup_env(self):
+        self.__set_data_path()
         return self.__run_playbook('setup_env.yml')
 
     def start_daemon(self):
-        return self.__run_playbook('start_daemon.yml')
+        if self.__get_varfile_variable("status") == "start":
+            self.__render_varfile_variable({"status":"running"})
+            return self.__run_playbook('start_daemon.yml')
+        else:
+            raise Exception('The case cannot be kicked off, status: {0}'
+                    .format(self.__get_varfile_variable("status")))
 
     def collect_data(self):
-        return self.__run_playbook('collect_data.yml')
+        if self.__get_varfile_variable("status") == "running":
+            self.__render_varfile_variable({"status":"stop"})
+            return self.__run_playbook('collect_data.yml')
+        else:
+            raise Exception('The case hasn\'t been started yet')
 
     def render_case_name(self, name):
-        return self.__render_varfile_variable(self.__config_case_name, name)
+        return self.__render_varfile_variable({self.__config_case_name:name, "status":"start"})
 
     def get_data_path_per_case(self):
         path = self.__get_varfile_variable(self.__config_data_path) + '/' + \
@@ -177,7 +187,7 @@ class ansibleControl(object):
         return os.path.expanduser(str(path))
 
     def render_data_interval(self, interval):
-        return self.__render_varfile_variable(self.__config_interval, interval)
+        return self.__render_varfile_variable({self.__config_interval:interval})
 
     def get_data_interval(self):
         return self.__get_varfile_variable(self.__config_interval)
