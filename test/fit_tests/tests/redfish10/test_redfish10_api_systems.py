@@ -109,7 +109,7 @@ class redfish10_api_systems(fit_common.unittest.TestCase):
             api_data = fit_common.rackhdapi('/redfish/v1/Systems/' + nodeid +
                                             '/Actions/ComputerSystem.Reset', action='post',
                                             payload=on_payload)
-            self.assertEqual(api_data['status'], 201, 'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
+            self.assertEqual(api_data['status'], 202, 'Incorrect HTTP return code, expected 202, got:' + str(api_data['status']))
             # check for running task
             task_data = fit_common.rackhdapi(api_data['json']['@odata.id'])
             self.assertEqual(task_data['status'], 200, "No task ID for reset ")
