@@ -180,7 +180,7 @@ class rackhd_source_install(fit_common.unittest.TestCase):
         config_json.close()
         # AMQP config files
         rabbitmq_config = open('rabbitmq.config', 'w')
-        rabbitmq_config.write('[{rabbit, [{tcp_listeners, [5672]}]}].' )
+        rabbitmq_config.write('[{rabbit,[{tcp_listeners, [5672]},{loopback_users, []}]},{rabbitmq_management,[{listener, [{port,  15672},{ip,"127.0.0.1"}]}]}].')
         rabbitmq_config.close()
         # copy files to ORA
         fit_common.scp_file_to_ora('config.json')
@@ -195,17 +195,23 @@ class rackhd_source_install(fit_common.unittest.TestCase):
 
     def test06_install_network_config(self):
         print "**** Installing RackHD network config."
-        # install network config
+        # install control network config
         self.assertEqual(fit_common.remote_shell("echo 'auto " + IFLIST[7] + "' > /etc/network/interfaces.d/control.cfg;"
                                                   "echo 'iface " + IFLIST[7] + " inet static' >> /etc/network/interfaces.d/control.cfg;"
                                                   "echo 'address 172.31.128.1' >> /etc/network/interfaces.d/control.cfg;"
                                                   "echo 'netmask 255.255.252.0' >> /etc/network/interfaces.d/control.cfg"
                                                   )['exitcode'], 0, "Network config failure.")
-        self.assertEqual(fit_common.remote_shell("echo 'auto " + IFLIST[8] + "' > /etc/network/interfaces.d/pdudirect.cfg;"
-                                                  "echo 'iface " + IFLIST[8] + " inet static' >> /etc/network/interfaces.d/pdudirect.cfg;"
-                                                  "echo 'address 192.168.1.1' >> /etc/network/interfaces.d/pdudirect.cfg;"
-                                                  "echo 'netmask 255.255.255.0' >> /etc/network/interfaces.d/pdudirect.cfg"
-                                                  )['exitcode'], 0, "Network config failure.")
+        # If PDU network is present, configure
+        try:
+            IFLIST[8]
+        except IndexError:
+            print "**** No PDU network will be configured"
+        else:
+            self.assertEqual(fit_common.remote_shell("echo 'auto " + IFLIST[8] + "' > /etc/network/interfaces.d/pdudirect.cfg;"
+                                                      "echo 'iface " + IFLIST[8] + " inet static' >> /etc/network/interfaces.d/pdudirect.cfg;"
+                                                      "echo 'address 192.168.1.1' >> /etc/network/interfaces.d/pdudirect.cfg;"
+                                                      "echo 'netmask 255.255.255.0' >> /etc/network/interfaces.d/pdudirect.cfg"
+                                                      )['exitcode'], 0, "Network config failure.")
 
     def test07_reboot_and_check(self):
         print "**** Reboot and check installation."
