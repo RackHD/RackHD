@@ -19,6 +19,7 @@ DRYRUN=${DRYRUN-false}
 INSTALL=${INSTALL-true}
 STACK_NUMBER=${STACK_NUMBER-}
 RELEASE_NAME=${RELEASE_NAME-onrack-devel}
+OVA-NAME=${OVA_NAME-None}
 TEST_SCRIPT=${TEST_SCRIPT-autotest/run_onrack_smoke_test.py}
 TEST_RUN="smoketest"
 
@@ -26,6 +27,7 @@ while true ; do
         case "$1" in
                 -s|--stack) STACK_NUMBER=$2 ; shift 2 ;;
                 -r|--release) RELEASE_NAME=$2 ; shift 2 ;;
+                -o|--template) OVA_NAME=$2 ; shift 2 ;;
                 -n|--no-install) INSTALL=false ; shift ;;
                 -d|--dryrun) DRYRUN=true ; shift ;;
                 -t|--script) TEST_SCRIPT=$2 ; shift 2 ;;
@@ -65,7 +67,7 @@ fi
 
 set -x
 set -o pipefail
-python run_tests.py -v 9 -xunit -test "$TEST_SCRIPT" -stack "$STACK_NUMBER" -version "$RELEASE_NAME" | tee test_console.log
+python run_tests.py -v 9 -xunit -test "$TEST_SCRIPT" -stack "$STACK_NUMBER" -template "$OVA_NAME" -version "$RELEASE_NAME" | tee test_console.log
 STATUS=${PIPESTATUS[0]}
 set +x
 
