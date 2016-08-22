@@ -36,6 +36,7 @@ ARGS_LIST = \
     "nodeid": os.getenv("NODEID", "None"), # node ID
     "hyper": "None", # hypervisor address
     "version": os.getenv("VERSION", "onrack-devel"), # code version
+    "template": os.getenv("TEMPLATE", "None"), # path or URL link to OVA for deployment
     "xunit": os.getenv("XUNIT", False), # XUNIT output
     "list": os.getenv("LIST", False), # list tests
     "group": os.getenv("GROUP", "all"), # test group
@@ -116,6 +117,9 @@ if ARGS_LIST["ora"] == "localhost":
         API_PROTOCOL = 'http'
     if API_PORT == "None":
         API_PORT = '8080'
+# set OVA template from command line
+if ARGS_LIST["template"] == "None":
+    ARGS_LIST["template"] = GLOBAL_CONFIG['repos']['install']['template']
 
 def timestamp(): # return formatted current timestamp
     return time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime())
@@ -535,6 +539,7 @@ def run_nose(nosepath):
                              'export NODEID=' + str(ARGS_LIST['nodeid']) + ';' +
                              'export OBMMAC=' + str(ARGS_LIST['obmmac']) + ';' +
                              'export VERSION=' + str(ARGS_LIST['version']) + ';' +
+                             'export TEMPLATE=' + str(ARGS_LIST['template']) + ';' +
                              'export XUNIT=' + str(ARGS_LIST['xunit']) + ';' +
                              'export GROUP=' + str(ARGS_LIST['group']) + ';' +
                              'export CONFIG=' + str(ARGS_LIST['config']) + ';' +

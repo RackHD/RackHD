@@ -58,7 +58,9 @@ ARG_PARSER.add_argument("-stack", default="None",
 ARG_PARSER.add_argument("-ora", default="localhost",
                         help="OnRack/RackHD appliance IP address or hostname, default: localhost")
 ARG_PARSER.add_argument("-version", default="onrack-devel",
-                        help="OnRack version, example:onrack-release-0.3.0, default: onrack-devel")
+                        help="OnRack package install version, example:onrack-release-0.3.0, default: onrack-devel")
+ARG_PARSER.add_argument("-template", default=fit_common.GLOBAL_CONFIG['repos']['install']['template'],
+                        help="path or URL link to OVA template or OnRack OVA, default from global_config.json")
 ARG_PARSER.add_argument("-xunit", default="False", action="store_true",
                         help="generates xUnit XML report files")
 ARG_PARSER.add_argument("-list", default="False", action="store_true",

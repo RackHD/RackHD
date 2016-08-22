@@ -17,7 +17,7 @@ import pdu_lib
 
 class os_ova_install(fit_common.unittest.TestCase):
     def test01_install_ova_template(self):
-        ovafile = fit_common.GLOBAL_CONFIG['repos']['install']['template']
+        ovafile = fit_common.ARGS_LIST['template']
         # Check for ovftool
         self.assertEqual(fit_common.subprocess.call('which ovftool', shell=True), 0, "FAILURE: 'ovftool' not installed.")
         # Ping for valid ESXi host
