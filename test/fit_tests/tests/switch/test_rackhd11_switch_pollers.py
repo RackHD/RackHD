@@ -66,8 +66,9 @@ from nose.plugins.attrib import attr
 class rackhd11_switch_pollers(fit_common.unittest.TestCase):
 
     def test_get_id_pollers(self):
-        msg = "Description: Display the poller data per node."
-        print "\t{0}".format(msg)
+        if fit_common.VERBOSITY >= 2:
+            msg = "Description: Display the poller data per node."
+            print "\t{0}".format(msg)
 
         for node in NODELIST:
             mon_data = fit_common.rackhdapi("/api/1.1/nodes/" + node + "/pollers")
@@ -77,8 +78,8 @@ class rackhd11_switch_pollers(fit_common.unittest.TestCase):
                 self.assertGreater(item['pollInterval'], 0, 'pollInterval field error')
                 for subitem in ['node', 'config', 'createdAt', 'id', 'name', 'config']:
                     self.assertIn(subitem, item, subitem + ' field error')
-
-            print "\nNode: ", node
+            if fit_common.VERBOSITY >= 2:
+                print "\nNode: ", node
             poller_dict = test_api_utils.get_supported_pollers(node)
             for poller in poller_dict:
                 poller_id = poller_dict[poller]["poller_id"]
@@ -88,14 +89,16 @@ class rackhd11_switch_pollers(fit_common.unittest.TestCase):
                     print fit_common.json.dumps(poll_data['json'], indent=4)
 
     def test_verify_poller_headers(self):
-        msg = "Description: Verify header data reported on the poller"
-        print "\t{0}".format(msg)
+        if fit_common.VERBOSITY >= 2:
+            msg = "Description: Verify header data reported on the poller"
+            print "\t{0}".format(msg)
 
         for node in NODELIST:
             mon_data = fit_common.rackhdapi("/api/1.1/nodes/" + node + "/pollers")
             self.assertIn(mon_data['status'], [200], "Incorrect HTTP return code")
             nodetype = get_rackhd_nodetype(node)
-            print "\nNode: {} Type: {}".format(node, nodetype)
+            if fit_common.VERBOSITY >= 2:
+                print "\nNode: {} Type: {}".format(node, nodetype)
             # Run test against managed nodes only
             if nodetype != "unknown" and nodetype != "Unmanaged":
                 poller_dict = test_api_utils.get_supported_pollers(node)
@@ -108,11 +111,13 @@ class rackhd11_switch_pollers(fit_common.unittest.TestCase):
                         print fit_common.json.dumps(poller_data, indent=4)
 
     def test_verify_poller_data(self):
-        msg = "Description: Check number of polls being kept for poller ID"
-        print "\t{0}".format(msg)
+        if fit_common.VERBOSITY >= 2:
+            msg = "Description: Check number of polls being kept for poller ID"
+            print "\t{0}".format(msg)
 
         for node in NODELIST:
-            print "\nNode: ", node
+            if fit_common.VERBOSITY >= 2:
+                print "\nNode: ", node
             nodetype = get_rackhd_nodetype(node)
             # Run test against managed nodes only
             if nodetype != "unknown" and nodetype != "Unmanaged":
@@ -127,11 +132,13 @@ class rackhd11_switch_pollers(fit_common.unittest.TestCase):
                     self.assertLessEqual(poll_len, 10, 'Number of cached polls should not exceed 10')
 
     def test_get_current_poller_data(self):
-        msg = "Description: Display most current data from poller"
-        print "\t{0}".format(msg)
+        if fit_common.VERBOSITY >= 2:
+            msg = "Description: Display most current data from poller"
+            print "\t{0}".format(msg)
 
         for node in NODELIST:
-            print "\nNode: ", node
+            if fit_common.VERBOSITY >= 2:
+                print "\nNode: ", node
             nodetype = get_rackhd_nodetype(node)
             # Run test against managed nodes only
             if nodetype != "unknown" and nodetype != "Unmanaged":
@@ -146,11 +153,13 @@ class rackhd11_switch_pollers(fit_common.unittest.TestCase):
                         print fit_common.json.dumps(mondata, indent=4)
 
     def test_get_poller_status_timestamp(self):
-        msg = "Description: Display status and timestamp from current poll"
-        print "\t{0}".format(msg)
+        if fit_common.VERBOSITY >= 2:
+            msg = "Description: Display status and timestamp from current poll"
+            print "\t{0}".format(msg)
 
         for node in NODELIST:
-            print "\nNode: ", node
+            if fit_common.VERBOSITY >= 2:
+                print "\nNode: ", node
             nodetype = get_rackhd_nodetype(node)
             # Run test against managed nodes only
             if nodetype != "unknown" and nodetype != "Unmanaged":
@@ -168,8 +177,9 @@ class rackhd11_switch_pollers(fit_common.unittest.TestCase):
                             print fit_common.json.dumps(mondata['json'][0], indent=4)
 
     def test_verify_poller_error_counter(self):
-        msg = "Description: Check for Poller Errors"
-        print "\t{0}".format(msg)
+        if fit_common.VERBOSITY >= 2:
+            msg = "Description: Check for Poller Errors"
+            print "\t{0}".format(msg)
         errorlist = []
         for node in NODELIST:
             mon_data = fit_common.rackhdapi("/api/1.1/nodes/" + node + "/pollers")
@@ -193,16 +203,18 @@ class rackhd11_switch_pollers(fit_common.unittest.TestCase):
             print "{}".format(fit_common.json.dumps(errorlist, indent=4))
             self.assertEqual(errorlist, [], "Error reported in Pollers")
         else:
-            if fit_common.VERBOSITY >- 2:
+            if fit_common.VERBOSITY >= 2:
                 print ("No Poller errors found")
 
     def test_get_nodes_id_pollers(self):
-        msg = "Description: Display the poller updated-at per node."
-        print "\t{0}".format(msg)
+        if fit_common.VERBOSITY >= 2:
+            msg = "Description: Display the poller updated-at per node."
+            print "\t{0}".format(msg)
 
         node = 0
         for node in NODELIST:
-            print "\nNode: ", node
+            if fit_common.VERBOSITY >= 2:
+                print "\nNode: ", node
             mon_data = fit_common.rackhdapi("/api/1.1/nodes/" + node + "/pollers")
             self.assertIn(mon_data['status'], [200], "Incorrect HTTP return code")
             for item in mon_data['json']:
@@ -219,20 +231,21 @@ class rackhd11_switch_pollers(fit_common.unittest.TestCase):
                 pprint.pprint("Updated At: {}".format(poll_data['json']['updatedAt']))
 
     def test_check_poller_interval(self):
-        msg = "Description: Display the poller interval."
-        print "\t{0}".format(msg)
+        if fit_common.VERBOSITY >= 2:
+            msg = "Description: Display the poller interval."
+            print "\t{0}".format(msg)
 
         for node in NODELIST:
-            print "\nNode: ", node
+            if fit_common.VERBOSITY >= 2:
+                print "\nNode: ", node
             mon_data = fit_common.rackhdapi("/api/1.1/nodes/" + node + "/pollers")
             self.assertIn(mon_data['status'], [200], "Incorrect HTTP return code, expected 200, got {}".format(mon_data['status']))
 
             poller_list = []
-            print "mon_data "
-            print fit_common.json.dumps(mon_data['json'], indent=4)
+            if fit_common.VERBOSITY >= 2:
+                print fit_common.json.dumps(mon_data['json'], indent=4)
             for item in mon_data['json']:
                 poller_list.append(item['id'])
-            print "Poller list", poller_list
 
             for poller_id in poller_list:
                 poller = fit_common.rackhdapi("/api/1.1/pollers/" + poller_id )

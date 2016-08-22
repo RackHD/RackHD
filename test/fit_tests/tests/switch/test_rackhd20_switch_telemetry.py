@@ -67,11 +67,13 @@ from nose.plugins.attrib import attr
 @fit_common.unittest.skipIf(NODELIST == [],"No switches defined, skipping test.")
 class rackhd11_switch_telemetry(fit_common.unittest.TestCase):
     def test_poller_snmp_state(self):
-        msg = "Description: Display poller snmp-interface-state."
-        print "\t{0}".format(msg)
+        if fit_common.VERBOSITY >= 2:
+            msg = "Description: Display poller snmp-interface-state."
+            print "\t{0}".format(msg)
 
         for node in NODELIST:
-            print "\nNode: ", node
+            if fit_common.VERBOSITY >= 2:
+                print "\nNode: ", node
             mon_data = fit_common.rackhdapi("/api/2.0/nodes/" + node + "/pollers")
             self.assertIn(mon_data['status'], [200], "Incorrect HTTP return code, expected 200, got {}".format(mon_data['status']))
 
@@ -80,8 +82,8 @@ class rackhd11_switch_telemetry(fit_common.unittest.TestCase):
             for item in mon_data['json']:
                 if item['config']['metric'] == poller_test:
                     poller_list.append(item['id'])
-
-            print "Poller list", poller_list
+            if fit_common.VERBOSITY >= 2:
+                print "Poller list", poller_list
             self.assertNotEquals(poller_list, [], "Poller {0} not in list of pollers".format(poller_test))
 
             pollertime = i = 0
@@ -126,22 +128,23 @@ class rackhd11_switch_telemetry(fit_common.unittest.TestCase):
 
 
     def test_poller_bandwidth_util(self):
-        msg = "Description: Display snmp-interface-bandwidth-utilization."
-        print "\t{0}".format(msg)
+        if fit_common.VERBOSITY >= 2:
+            msg = "Description: Display snmp-interface-bandwidth-utilization."
+            print "\t{0}".format(msg)
 
         for node in NODELIST:
-            print "\nNode: ", node
+            if fit_common.VERBOSITY >= 2:
+                print "\nNode: ", node
             item_polls = {}
             mon_data = fit_common.rackhdapi("/api/2.0/nodes/" + node + "/pollers")
             self.assertIn(mon_data['status'], [200], "Incorrect HTTP return code, expected 200, got {}".format(mon_data['status']))
-
             poller_list = []
             poller_test = "snmp-interface-bandwidth-utilization"
             for item in mon_data['json']:
                 if item['config']['metric'] == poller_test:
                     poller_list.append(item['id'])
-
-            print "Poller list", poller_list
+            if fit_common.VERBOSITY >= 2:
+                print "Poller list", poller_list
             self.assertNotEquals(poller_list, [], "Poller {0} not in list of pollers".format(poller_test))
 
             pollertime = i = 0
@@ -185,11 +188,13 @@ class rackhd11_switch_telemetry(fit_common.unittest.TestCase):
                 i += 1
 
     def test_snmp_memory_util(self):
-        msg = "Description: Display poller snmp-memory-usage."
-        print "\t{0}".format(msg)
+        if fit_common.VERBOSITY >= 2:
+            msg = "Description: Display poller snmp-memory-usage."
+            print "\t{0}".format(msg)
 
         for node in NODELIST:
-            print "\nNode: ", node
+            if fit_common.VERBOSITY >= 2:
+                print "\nNode: ", node
             item_polls = {}
             mon_data = fit_common.rackhdapi("/api/2.0/nodes/" + node + "/pollers")
             self.assertIn(mon_data['status'], [200], "Incorrect HTTP return code, expected 200, got {}".format(mon_data['status']))
@@ -199,8 +204,8 @@ class rackhd11_switch_telemetry(fit_common.unittest.TestCase):
             for item in mon_data['json']:
                 if item['config']['metric'] == poller_test:
                     poller_list.append(item['id'])
-
-            print "Poller list", poller_list
+            if fit_common.VERBOSITY >= 2:
+                print "Poller list", poller_list
             self.assertNotEquals(poller_list, [], "Poller {0} not in list of pollers".format(poller_test))
 
             pollertime = i = 0
@@ -238,21 +243,22 @@ class rackhd11_switch_telemetry(fit_common.unittest.TestCase):
                 i += 1
 
     def test_snmp_processor_load(self):
-        msg = "Description: Display the snmp-processor-load."
-        print "\t{0}".format(msg)
+        if fit_common.VERBOSITY >= 2:
+            msg = "Description: Display the snmp-processor-load."
+            print "\t{0}".format(msg)
 
         for node in NODELIST:
-            print "\nNode: ", node
+            if fit_common.VERBOSITY >= 2:
+                print "\nNode: ", node
             mon_data = fit_common.rackhdapi("/api/2.0/nodes/" + node + "/pollers")
             self.assertIn(mon_data['status'], [200], "Incorrect HTTP return code, expected 200, got {}".format(mon_data['status']))
-
             poller_list = []
             poller_test = "snmp-processor-load"
             for item in mon_data['json']:
                 if item['config']['metric'] == poller_test:
                     poller_list.append(item['id'])
-
-            print "Poller list", poller_list
+            if fit_common.VERBOSITY >= 2:
+                print "Poller list", poller_list
             self.assertNotEquals(poller_list, [], "Poller {0} not in list of pollers".format(poller_test))
 
             pollertime = i = 0
@@ -286,11 +292,13 @@ class rackhd11_switch_telemetry(fit_common.unittest.TestCase):
                 i += 1
 
     def test_display_interfaces(self):
-        msg = "Description: Display switch ports that are connected and UP"
-        print "\t{0}".format(msg)
+        if fit_common.VERBOSITY >= 2:
+            msg = "Description: Display switch ports that are connected and UP"
+            print "\t{0}".format(msg)
 
         for node in NODELIST:
-            print "\nNode: ", node
+            if fit_common.VERBOSITY >= 2:
+                print "\nNode: ", node
             item_polls = {}
             mon_data = fit_common.rackhdapi("/api/2.0/nodes/" + node + "/pollers")
             self.assertIn(mon_data['status'], [200], "Incorrect HTTP return code, expected 200, got {}".format(mon_data['status']))
