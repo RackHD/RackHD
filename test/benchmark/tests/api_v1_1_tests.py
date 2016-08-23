@@ -20,7 +20,7 @@ from tests.api.v1_1.discovery_tests import DiscoveryTests
 from tests.api.v1_1.poller_tests import PollerTests
 from tests.api.v1_1.workflows_tests import WorkflowsTests
 
-from benchmark import ansible_ctl
+from benchmark.tests import ansible_ctl
 from benchmark.utils import parser
 from benchmark.utils.case_recorder import caseRecorder
 

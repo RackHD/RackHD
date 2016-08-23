@@ -10,6 +10,10 @@
     - name: Stop data collection daemon
       command: ./collect_data.sh -o stop chdir=/tmp
 
+    - name: Stop netatop
+      shell: ps aux | grep netatopd | sed "/grep/d" | awk '{print $2}' | xargs sudo kill -15
+      sudo: yes
+
     - name: fetch data from target machine
       synchronize: src=/tmp/benchmark_log/
                    dest={{ test_machine_log_path }}/{{ test_case_name }}

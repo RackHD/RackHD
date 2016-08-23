@@ -64,6 +64,15 @@
       shell: whereis netatop | awk -F ':' '{print $2}'
       register: netatop_path
 
+    - name: Check whether netatop is running
+      shell: ps aux | grep netatop | sed "/grep/d"
+      register: netatop_status
+
+    - name: Start netatop if already installed but not running
+      shell: insmod /lib/modules/`uname -r`/extra/netatop.ko; /usr/sbin/netatopd
+      sudo: yes
+      when: (netatop_path.stdout != "") and (netatop_status.stdout_lines|count < 2)
+
     - name: Install dependent tools for atop and netatop
       apt: name={{ item.package }}
       sudo: yes
