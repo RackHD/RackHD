@@ -111,6 +111,41 @@ For example, to run the test 'test_rackhd11_api_catalogs' in script 'tests/rackh
     python run_tests.py -stack 11 -test tests/rackhd11/test_rackhd11_api_catalogs.py:rackhd11_api_catalogs.test_api_11_catalogs
 
 
+## Running FIT tests on Vagrant RackHD
+
+Install the Vagrant box using the instructions here:
+https://github.com/RackHD/RackHD/tree/master/example
+
+Install the Quanta simulator:
+
+    vagrant up quanta_d51
+
+Log into the Vagrant box:
+
+    vagrant ssh dev
+
+Clone FIT tests:
+
+    git clone https://github.com/onrack2/fit_tests
+
+Load virtual environment:
+
+    cd fit_tests/tests/fit_tests
+    virtualenv .venv
+    source .venv/bin/activate
+    pip install -r requirements.txt
+
+Load SKU packs:
+
+    python run_tests.py -test util/load_sku_packs.py
+
+Run Smoke test suite:
+
+    python run_tests.py -test tests/ -group smoke
+
+Use run_tests.py options if needed such as '-port' '-ora' '-https' to select IP address, port and protocol.
+
+
 ## Test conventions
 
 - Tests should be written using Python 'unittest' classes and methods.
