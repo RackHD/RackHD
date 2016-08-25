@@ -150,10 +150,19 @@ def remote_shell(shell_cmd, expect_receive="", expect_send="", timeout=300, addr
     :return: dict = {'stdout': str:ouput, 'exitcode': return code}
     '''
 
+    logfile_redirect = None
+    if VERBOSITY >= 4:
+        print "remote_shell: Host =", address
+        print "remote_shell: Command =", shell_cmd
+
+    if VERBOSITY >= 9:
+        print "remote_shell: STDOUT =\n"
+        logfile_redirect = sys.stdout
+
     # if localhost just run the command local
     if ARGS_LIST['ora'] == 'localhost':
         (command_output, exitstatus) = \
-            pexpect.run("sudo bash -c \\\"" + shell_cmd + "\\\"",
+            pexpect.run("sudo bash -c \"" + shell_cmd + "\"",
                         withexitstatus=1,
                         events={"assword": password + "\n"},
                         timeout=timeout, logfile=logfile_redirect)
@@ -163,16 +172,7 @@ def remote_shell(shell_cmd, expect_receive="", expect_send="", timeout=300, addr
     subprocess.call(["touch ~/.ssh/known_hosts;ssh-keygen -R "
                      + address  + " -f ~/.ssh/known_hosts >/dev/null 2>&1"], shell=True)
 
-    logfile_redirect = None
     shell_cmd.replace("'", "\\\'")
-    if VERBOSITY >= 4:
-        print "remote_shell: Host =", address
-        print "remote_shell: Command =", shell_cmd
-
-    if VERBOSITY >= 9:
-        print "remote_shell: STDOUT =\n"
-        logfile_redirect = sys.stdout
-
     if expect_receive == "" or expect_send == "":
         (command_output, exitstatus) = \
             pexpect.run("ssh -q -o StrictHostKeyChecking=no -t " + user + "@"
@@ -397,18 +397,27 @@ def get_bmc_ips():
     # If we have already done this, use that list
     if len(BMC_LIST) == 0:
         ipscan = remote_shell('arp')['stdout'].split()
-
         for ipaddr in ipscan:
             if ipaddr[0:3] == "172" and remote_shell('ping -c 1 -w 5 ' + ipaddr)['exitcode'] == 0:
                 # iterate through all known IPMI users
                 for item in GLOBAL_CONFIG['credentials']['bmc']:
-                    return_code = remote_shell('ipmitool -I lanplus -H ' + ipaddr + ' -U ' + item['username'] \
-                                               + ' -P ' + item['password'] + ' -R 1 -N 3 dcmi get_mc_id_string')
-                    if return_code['exitcode'] == 0 and return_code['stdout'] not in idlist:
+                    # check BMC credentials
+                    ipmicheck = remote_shell('ipmitool -I lanplus -H ' + ipaddr + ' -U ' + item['username'] \
+                                               + ' -P ' + item['password'] + ' -R 1 -N 3 chassis power status')
+                    if ipmicheck['exitcode'] == 0:
+                        # retrieve the ID string
+                        return_code = remote_shell('ipmitool -I lanplus -H ' + ipaddr + ' -U ' + item['username'] \
+                                                   + ' -P ' + item['password'] + ' -R 1 -N 3 dcmi get_mc_id_string')
                         bmc_info = {"ip": ipaddr, "user": item['username'], "pw": item['password']}
-                        idlist.append(return_code['stdout'])
-                        BMC_LIST.append(bmc_info)
-                        break
+                        if return_code['exitcode'] == 0 and return_code['stdout'] not in idlist:
+                            # add to list if unique
+                            idlist.append(return_code['stdout'])
+                            BMC_LIST.append(bmc_info)
+                            break
+                        else:
+                            # simulated nodes don't yet support dcmi, remove this else branch when supported
+                            BMC_LIST.append(bmc_info)
+                            break
         if VERBOSITY >= 6:
             print "get_bmc_ips: "
             print "**** BMC IP node count =", len(BMC_LIST), "****"

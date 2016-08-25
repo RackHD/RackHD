@@ -26,7 +26,6 @@ class rackhd11_api_config(fit_common.unittest.TestCase):
         self.assertIn('apiServerAddress', api_data['json'], 'apiServerAddress field error')
         self.assertIn('apiServerPort', api_data['json'], 'apiServerPort field error')
         self.assertIn('broadcastaddr', api_data['json'], 'broadcastaddr field error')
-        self.assertIn('gatewayaddr', api_data['json'], 'gatewayaddr field error')
         self.assertIn('CIDRNet', api_data['json'], 'CIDRNet field error')
         self.assertIn('subnetmask', api_data['json'], 'subnetmask field error')
         self.assertIn('mongo', api_data['json'], 'mongo field error')

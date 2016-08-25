@@ -46,8 +46,13 @@ SERVERTECH_CONTROL_STATUS_MAPPER = {
     '17': 'eventShutdown'
 }
 
-def check_pdu_type(pduaddr=STACK_CONFIG[ARGS_LIST['stack']]['pdu']):
+def check_pdu_type():
     # execute check_pdu_type() to return PDU type if available, else return 'Unknown'
+    # check if PDU is defined in Stack dict
+    if 'pdu' in  STACK_CONFIG[ARGS_LIST['stack']]:
+        pduaddr = STACK_CONFIG[ARGS_LIST['stack']]['pdu']
+    else:
+        return "Unknown"
     if remote_shell('ping -c 1 ' + pduaddr)['exitcode'] == 0:
         if STACK_CONFIG[ARGS_LIST['stack']]['pdu'] == "192.168.1.254":
             return "ServerTech"

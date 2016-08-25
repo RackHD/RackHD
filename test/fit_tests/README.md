@@ -135,9 +135,9 @@ Load virtual environment:
     source .venv/bin/activate
     pip install -r requirements.txt
 
-Load SKU packs:
+Run stack init script to discover nodes and populate database:
 
-    python run_tests.py -test util/load_sku_packs.py
+    python run_tests.py -stack vagrant -v 9 -test deploy/rackhd_stack_init.py
 
 Run Smoke test suite:
 

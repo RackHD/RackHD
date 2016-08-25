@@ -30,7 +30,7 @@ class rackhd20_api_catalogs(fit_common.unittest.TestCase):
             for subitem in ['node', 'id', 'source', 'data']:
                 if fit_common.VERBOSITY >= 2:
                     print "Checking:", item['id'], subitem
-                self.assertGreater(len(item[subitem]), 0, subitem + ' field error')
+                self.assertIn(subitem, item, subitem + ' field error')
 
     def test_api_20_nodes_ID_catalogs(self):
         # iterate through nodes

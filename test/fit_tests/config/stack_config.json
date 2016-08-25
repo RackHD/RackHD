@@ -9,6 +9,10 @@
     "pdu": "PDU admin address",
     "type": "deployment type: esxi, docker, linux, or vagrant"
   },
+  "vagrant":{
+    "ora": "localhost",
+    "type": "vagrant"
+  },
   "1": {
     "bmc": "stack1-bmc.admin", 
     "control": "stack1-control.admin", 
