@@ -58,20 +58,19 @@ class rackhd20_api_nodes(fit_common.unittest.TestCase):
                 self.assertGreater(len(api_data['json'][item]), 0, item + ' field error')
 
     def test_api_20_create_delete_node(self):
-        data_payload = {"identifiers": ["00:1e:67:98:bc:7e"],
-                        "profile": "diskboot.ipxe", "name": "test"}
-        mon_url = "/api/2.0/nodes?identifiers=00:1e:67:98:bc:7e"
-        api_data = fit_common.rackhdapi(mon_url, action='post', payload=data_payload)
+        data_payload = {"name": "testnode"}
+        api_data = fit_common.rackhdapi("/api/2.0/nodes", action='post', payload=data_payload)
         self.assertEqual(api_data['status'], 201, 'Incorrect HTTP return code, expected 201, got:' + str(api_data['status']))
+        nodeid = api_data['json']['id']
         for item in api_data['json']:
             if fit_common.VERBOSITY >= 2:
                 print "Checking:", item
             self.assertGreater(len(item), 0, 'Empty JSON Field')
-        api_data = fit_common.rackhdapi(mon_url)
+        api_data = fit_common.rackhdapi("/api/2.0/nodes")
         self.assertEqual(api_data['status'], 200, 'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
-        api_data = fit_common.rackhdapi("/api/2.0/nodes/00:1e:67:98:bc:7e", action='delete')
+        api_data = fit_common.rackhdapi("/api/2.0/nodes/" + nodeid, action='delete')
         self.assertEqual(api_data['status'], 204, 'Incorrect HTTP return code, expected 204, got:' + str(api_data['status']))
-        api_data = fit_common.rackhdapi("/api/2.0/nodes/00:1e:67:98:bc:7e")
+        api_data = fit_common.rackhdapi("/api/2.0/nodes/" + nodeid)
         self.assertEqual(api_data['status'], 404, 'Incorrect HTTP return code, expected 404, got:' + str(api_data['status']))
 
     def test_api_20_nodes_ID_pollers(self):
@@ -112,7 +111,7 @@ class rackhd20_api_nodes(fit_common.unittest.TestCase):
 
     def test_api_20_nodes_ID_obmsettings(self):
         # create fake node
-        data_payload = {'identifiers':['00:1e:67:aa:aa:aa'], 'name':'fakenode'}
+        data_payload = {"name": "fakenode"}
         api_data = fit_common.rackhdapi("/api/2.0/nodes", action="post",
                                            payload=data_payload)
         self.assertEqual(api_data['status'], 201, 'Incorrect HTTP return code, expected 201, got:' + str(api_data['status']))
@@ -131,22 +130,10 @@ class rackhd20_api_nodes(fit_common.unittest.TestCase):
         api_data = fit_common.rackhdapi(mon_url)
         self.assertEqual(api_data['status'], 404, 'Incorrect HTTP return code, expected 404, got:' + str(api_data['status']))
 
-    '''
-    # needs work
-    def test_api_20_nodes_ID_workflows_active(self):
-        # iterate through nodes
-        for nodeid in NODECATALOG:
-            api_data = fit_common.rackhdapi("/api/2.0/nodes/" + nodeid + "/workflows/active")
-            self.assertIn(api_data['status'], [204, 200], "Incorrect HTTP return code:" + str(api_data['status']))
-        # needs an active workflow to report
-        # future work to create an active workflow then run report
-
-
     def test_api_20_nodes_ID_ssh(self):
         # iterate through nodes
         for nodeid in NODECATALOG:
             api_data = fit_common.rackhdapi("/api/2.0/nodes/" + nodeid + "/ssh")
-    '''
 
 if __name__ == '__main__':
     fit_common.unittest.main()
