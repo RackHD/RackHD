@@ -44,10 +44,9 @@ class rackhd20_api_pollers(fit_common.unittest.TestCase):
     def test_api_20_pollers_post_delete(self):
         mon_ip_addr = "172.31.128.200"
         poller_id = fit_common.rackhdapi("/api/2.0/nodes/" + NODECATALOG[0])['json']['id']
-        data_payload = {"name": "test", "type": "ipmi",
-                        "ip": str(mon_ip_addr),
-                        "user": "root", "password": "1234567",
-                        "node": str(poller_id), "pollInterval": 100,
+        data_payload = {"type": "ipmi",
+                        "paused": True,
+                        "pollInterval": 100,
                         "config":{"command":"sdr"}}
 
         # Create a new SDR poller, should return status 200
@@ -67,19 +66,6 @@ class rackhd20_api_pollers(fit_common.unittest.TestCase):
         # Check that the poller can no longer be retrieved (404 Not Found)
         api_data = fit_common.rackhdapi(mon_url)
         self.assertEqual(api_data['status'], 404, 'Incorrect HTTP return code, expected 404, got:' + str(api_data['status']))
-
-
-        # Negative test:  Try creating an invalid poller with no config block
-        # This currently does not work in the Monorail API
-        # data_payload = {"name": "test", "type": "ipmi",
-        #               "ip": str(mon_ip_addr),
-        #                "user": "root", "password": "1234567",
-        #                "node": str(NODECATALOG[0]["id"]), "pollInterval": 100}
-        # api_data = fit_common.rackhdapi('/api/2.0/pollers/', action="post",
-        #                                   payload=data_payload)
-        # Guessing on the return code, fix this when it works
-        #self.assertEqual(api_data['status'], 400, 'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
-
 
     def test_api_20_pollers_catalog(self):
         # Get poller catalog
