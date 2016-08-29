@@ -24,7 +24,7 @@ class rackhd20_api_users(fit_common.unittest.TestCase):
     def test_api_20_users_post_get_delete(self):
         # test incomplete, needs authorization code
         payload = {
-                      "username": "admin",
+                      "username": "readonly",
                       "password": "1234567",
                       "role": "ReadOnly"
                     }
@@ -32,8 +32,8 @@ class rackhd20_api_users(fit_common.unittest.TestCase):
         self.assertIn(api_data['status'], [201, 401], 'Incorrect HTTP return code, expected 201, got:' + str(api_data['status']))
         api_data = fit_common.rackhdapi('/api/2.0/users')
         self.assertEqual(api_data['status'], 200, 'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
-        api_data = fit_common.rackhdapi('/api/2.0/users/admin', action="delete")
-        self.assertIn(api_data['status'], [201, 404], 'Incorrect HTTP return code, expected 201, got:' + str(api_data['status']))
+        api_data = fit_common.rackhdapi('/api/2.0/users/readonly', action="delete")
+        self.assertIn(api_data['status'], [204, 404], 'Incorrect HTTP return code, expected 201, got:' + str(api_data['status']))
 
 if __name__ == '__main__':
     fit_common.unittest.main()

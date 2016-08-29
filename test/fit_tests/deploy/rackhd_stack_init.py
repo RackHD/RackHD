@@ -76,7 +76,18 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
         self.assertEqual(api_data['status'], 201, 'Incorrect HTTP return code, expecting 201, got '
                          + str(api_data['status']))
 
-    def test03_power_on_nodes(self):
+
+    def test03_set_auth_user(self):
+        print '**** Installing default admin user'
+        fit_common.remote_shell('rm auth.json')
+        auth_json = open('auth.json', 'w')
+        auth_json.write('{"username":"' + fit_common.GLOBAL_CONFIG["api"]["admin_user"] + '", "password":"' + fit_common.GLOBAL_CONFIG["api"]["admin_pass"] + '", "role":"Administrator"}')
+        auth_json.close()
+        fit_common.scp_file_to_ora('auth.json')
+        rc = fit_common.remote_shell("curl -ks -X POST -H 'Content-Type:application/json' https://localhost:" + str(fit_common.GLOBAL_CONFIG['ports']['https']) + "/api/2.0/users -d @auth.json" )
+        self.assertEqual(rc['exitcode'], 0, "Set auth user failed.")
+
+    def test04_power_on_nodes(self):
         # This powers on nodes via PDU or, if no PDU, power cycles nodes via IPMI to start discovery
         # ServerTech PDU case
         if pdu_lib.check_pdu_type() != "Unknown":
@@ -94,7 +105,7 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
 
     # Optionally install control switch node if present
     @fit_common.unittest.skipUnless("control" in fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']],"")
-    def test04_discover_control_switch_node(self):
+    def test05_discover_control_switch_node(self):
         print "**** Creating control switch node."
         payload = {
                     "type":"switch",
@@ -111,7 +122,7 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
 
     # Optionally install data switch node if present
     @fit_common.unittest.skipUnless("data" in fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']], "")
-    def test05_discover_data_switch_node(self):
+    def test06_discover_data_switch_node(self):
         print "**** Creating data switch node."
         payload = {
                     "type":"switch",
@@ -128,7 +139,7 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
 
     # Optionally install PDU node if present
     @fit_common.unittest.skipUnless("pdu" in fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']], "")
-    def test06_discover_pdu_node(self):
+    def test07_discover_pdu_node(self):
         print "**** Creating PDU node."
         payload = {
                     "type":"pdu",
@@ -143,7 +154,7 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
         self.assertEqual(api_data['status'], 201, 'Incorrect HTTP return code, expecting 201, got '
                          + str(api_data['status']))
 
-    def test07_check_compute_nodes(self):
+    def test08_check_compute_nodes(self):
         print "**** Waiting for compute nodes."
         c_index = 0
         for c_index in range(0, MAX_CYCLES):
@@ -153,7 +164,7 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
                 fit_common.time.sleep(30)
         self.assertLess(c_index, MAX_CYCLES-1, "No compute nodes found.")
 
-    def test08_check_discovery(self):
+    def test09_check_discovery(self):
         print "**** Waiting for node Discovery to complete.\n",
         # Determine if there are any active workflows. If returned value is true, obmSettings, SKUs
         # and active workflows are all either present or complete. If  the returned is false,
@@ -187,7 +198,7 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
                 fit_common.time.sleep(10)
         return False
 
-    def test09_install_obm_credentials(self):
+    def test10_install_obm_credentials(self):
         print "**** Install OBM credentials."
         # install OBM credentials via workflows
         count = 0
@@ -245,7 +256,7 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
 
     @fit_common.unittest.skipUnless("bmc" in fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']],"")
     @fit_common.unittest.skip("Skipping 'test10_add_management_server' due to ODR-803")
-    def test10_add_management_server(self):
+    def test11_add_management_server(self):
         print "**** Creating management server."
         usr = ""
         pwd = ""
@@ -280,7 +291,7 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
         self.assertEqual(api_data['status'], 201, 'Incorrect HTTP return code, expecting 201, got '
                          + str(api_data['status']))
 
-    def test11_check_pollers(self):
+    def test12_check_pollers(self):
         print "**** Waiting for pollers."
         # Determine if there are any pollers present. If the return value is true, there are pollers
         # active. If the return value is false, pollers are not active.
@@ -327,7 +338,7 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
                 fit_common.time.sleep(10)
         return False
 
-    def test12_check_node_inventory(self):
+    def test13_check_node_inventory(self):
         # this test will verify node inventory by BMC MAC if specified in STACK_CONFIG
         errorlist = []
         #check OBM MAC addresses
@@ -338,6 +349,7 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
                     print '**** Missing node:' + entry['sku'] + "  BMC:" + entry['bmcmac']
                     errorlist.append(entry['bmcmac'])
             self.assertEqual(errorlist, [], "Missing nodes in catalog.")
+
 
 if __name__ == '__main__':
     fit_common.unittest.main()

@@ -55,6 +55,7 @@ GLOBAL_CONFIG = []
 STACK_CONFIG = []
 API_PORT = "None"
 API_PROTOCOL = "None"
+AUTH_TOKEN = "None"
 
 # List of BMC IP addresses
 BMC_LIST = []
@@ -231,7 +232,20 @@ def scp_file_to_ora(src_file_name):
         'failed "{0}" because {1}. Output={2}'.format(cmd, ecode, command_output)
     return just_fname
 
-def rackhdapi(url_cmd, action='get', payload=[], timeout=None, rest_headers={}):
+def get_auth_token():
+    # This is run once to get an auth token which is set to global AUTH_TOKEN and used for rest of session
+    global AUTH_TOKEN
+    payload = {"username": GLOBAL_CONFIG["api"]["admin_user"], "password": GLOBAL_CONFIG["api"]["admin_pass"]}
+    api_data = restful("https://" + ARGS_LIST['ora'] + ":" + str(GLOBAL_CONFIG['ports']['https']) +
+                       "/login", rest_action="post", rest_payload=payload, rest_timeout=5)
+    if api_data['status'] == 200:
+        AUTH_TOKEN = str(api_data['json']['token'])
+        return True
+    else:
+        AUTH_TOKEN = "Unavailable"
+        return False
+
+def rackhdapi(url_cmd, action='get', payload=[], timeout=None, headers={}):
     '''
     This routine will build URL for RackHD API, enable port, execute, and return to previous state
     Example: fit_common.rackhdapi('/api/current/nodes') - simple 'get' command
@@ -241,6 +255,7 @@ def rackhdapi(url_cmd, action='get', payload=[], timeout=None, rest_headers={}):
     :param action: rest action (get/put/post/delete)
     :param payload: rest payload
     :param timeout: rest timeout
+    :param headers: rest_headers
 
     :return: {'json':result_data.json(), 'text':result_data.text,
                 'status':result_data.status_code,
@@ -251,12 +266,12 @@ def rackhdapi(url_cmd, action='get', payload=[], timeout=None, rest_headers={}):
     # Automatic protocol selection: unless protocol is specified, test protocols, save settings globally
     global API_PROTOCOL
     global API_PORT
+    if AUTH_TOKEN == "None":
+        get_auth_token()
     if API_PROTOCOL == "None":
-        try:
-            if API_PORT == "None":
-                API_PORT = GLOBAL_CONFIG['ports']['http']
-            restful("http://" + ARGS_LIST['ora'] + ":" + str(API_PORT) + "/")
-        except:
+        if API_PORT == "None":
+            API_PORT = GLOBAL_CONFIG['ports']['http']
+        if restful("http://" + ARGS_LIST['ora'] + ":" + str(API_PORT) + "/", rest_timeout=5)['status'] == 0:
             API_PROTOCOL = 'https'
             API_PORT = GLOBAL_CONFIG['ports']['https']
         else:
@@ -264,7 +279,7 @@ def rackhdapi(url_cmd, action='get', payload=[], timeout=None, rest_headers={}):
             API_PORT = GLOBAL_CONFIG['ports']['http']
 
     return restful(API_PROTOCOL + "://" + ARGS_LIST['ora'] + ":" + str(API_PORT) + url_cmd,
-                       rest_action=action, rest_payload=payload, rest_timeout=timeout, rest_headers=rest_headers)
+                       rest_action=action, rest_payload=payload, rest_timeout=timeout, rest_headers=headers)
 
 
 def restful(url_command, rest_action='get', rest_payload=[], rest_timeout=None, sslverify=False, rest_headers={}):
@@ -302,15 +317,22 @@ def restful(url_command, rest_action='get', rest_payload=[], rest_timeout=None, 
         if VERBOSITY >= 9 and rest_payload != []:
             print "restful: Payload =\n", payload_print
 
-    # Update passed in headers with Content-type
     rest_headers.update({"Content-Type": "application/json"})
-
+    # If AUTH_TOKEN is set, add to header
+    if AUTH_TOKEN != "None" and AUTH_TOKEN != "Unavailable" and "authorization" not in rest_headers:
+        rest_headers.update({"authorization": "JWT " + AUTH_TOKEN})
     # Perform rest request
     try:
         if rest_action == "get":
-            result_data = requests.get(url_command, timeout=rest_timeout, verify=sslverify, headers=rest_headers)
+            result_data = requests.get(url_command,
+                                       timeout=rest_timeout,
+                                       verify=sslverify,
+                                       headers=rest_headers)
         if rest_action == "delete":
-            result_data = requests.delete(url_command, timeout=rest_timeout, verify=sslverify, headers=rest_headers)
+            result_data = requests.delete(url_command,
+                                          timeout=rest_timeout,
+                                          verify=sslverify,
+                                          headers=rest_headers)
         if rest_action == "put":
             result_data = requests.put(url_command,
                                        data=json.dumps(rest_payload),
@@ -319,16 +341,18 @@ def restful(url_command, rest_action='get', rest_payload=[], rest_timeout=None, 
                                        verify=sslverify,
                                        )
         if rest_action == "binary-put":
+            rest_headers.update({"Content-Type": "application/octet-stream"})
             result_data = requests.put(url_command,
                                        data=rest_payload,
-                                       headers={"Content-Type": "application/octet-stream"},
+                                       headers=rest_headers,
                                        timeout=rest_timeout,
                                        verify=sslverify,
                                        )
         if rest_action == "text-put":
+            rest_headers.update({"Content-Type": "text/plain"})
             result_data = requests.put(url_command,
                                        data=rest_payload,
-                                       headers={"Content-Type": "text/plain"},
+                                       headers=rest_headers,
                                        timeout=rest_timeout,
                                        verify=sslverify,
                                        )
@@ -340,16 +364,18 @@ def restful(url_command, rest_action='get', rest_payload=[], rest_timeout=None, 
                                         verify=sslverify
                                         )
         if rest_action == "binary-post":
+            rest_headers.update({"Content-Type": "application/octet-stream"})
             result_data = requests.post(url_command,
                                         data=rest_payload,
-                                        headers={"Content-Type": "application/octet-stream"},
+                                        headers=rest_headers,
                                         timeout=rest_timeout,
                                         verify=sslverify
                                         )
         if rest_action == "text-post":
+            rest_headers.update({"Content-Type": "text/plain"})
             result_data = requests.post(url_command,
                                         data=rest_payload,
-                                        headers={"Content-Type": "text/plain"},
+                                        headers=rest_headers,
                                         timeout=rest_timeout,
                                         verify=sslverify
                                         )

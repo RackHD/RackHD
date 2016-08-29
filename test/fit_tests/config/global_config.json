@@ -50,6 +50,10 @@
       }
     ]
   },
+  "api": {
+      "admin_user": "admin",
+      "admin_pass": "admin123"
+  },
   "snmp":{
     "community": "onrack"
   },
@@ -76,6 +80,6 @@
   "ports": {
     "_comment": "These are the northbound rest API port assignments",
     "http": 8080,
-    "https": 8443
+    "https": 443
   }
 }
