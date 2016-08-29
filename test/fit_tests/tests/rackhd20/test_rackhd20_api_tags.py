@@ -32,10 +32,8 @@ class rackhd20_api_tags(fit_common.unittest.TestCase):
             self.assertIn("test_tag_" + nodeid, fit_common.json.dumps(api_data['json']), "Tag not set:" + fit_common.json.dumps(api_data['json']))
     def test_api_20_tags_post_delete(self):
         # create dummy node
-        data_payload = {"identifiers": ["00:1e:67:98:bc:7f"],
-                        "profile": "diskboot.ipxe", "name": "test"}
-        mon_url = "/api/2.0/nodes?identifiers=00:1e:67:98:bc:7f"
-        nodeid = fit_common.rackhdapi(mon_url, action='post', payload=data_payload)['json']['id']
+        data_payload = {"name": "test"}
+        nodeid = fit_common.rackhdapi("/api/2.0/nodes", action='post', payload=data_payload)['json']['id']
         # add tags
         api_data = fit_common.rackhdapi("/api/2.0/nodes/" + nodeid + "/tags", action="patch", payload={"tags":["test_node","dummy_node"]})
         self.assertEqual(api_data['status'], 200, 'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
