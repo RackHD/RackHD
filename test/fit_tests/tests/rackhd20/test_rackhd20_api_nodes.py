@@ -133,7 +133,11 @@ class rackhd20_api_nodes(fit_common.unittest.TestCase):
     def test_api_20_nodes_ID_ssh(self):
         # iterate through nodes
         for nodeid in NODECATALOG:
+            payload = {"host": nodeid, "user": "user", "password": "1234567"}
+            api_data = fit_common.rackhdapi("/api/2.0/nodes/" + nodeid + "/ssh", action="post", payload=payload)
+            self.assertEqual(api_data['status'], 201, 'Incorrect HTTP return code, expected 201, got:' + str(api_data['status']))
             api_data = fit_common.rackhdapi("/api/2.0/nodes/" + nodeid + "/ssh")
+            self.assertEqual(api_data['status'], 200, 'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
 
 if __name__ == '__main__':
     fit_common.unittest.main()
