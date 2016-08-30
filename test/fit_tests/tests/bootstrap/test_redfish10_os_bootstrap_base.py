@@ -71,8 +71,8 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
                                             + NODE
                                             + '/Actions/RackHD.BootImage',
                                             action='post', payload=payload_data)
-        self.assertEqual(result['status'], 201,
-                         'Was expecting code 201. Got ' + str(result['status']))
+        self.assertEqual(result['status'], 202,
+                         'Was expecting code 202. Got ' + str(result['status']))
         self.assertEqual(wait_for_task_complete(result['json']['@odata.id'], retries=80), True,
                          'TaskID ' + result['json']['@odata.id'] + ' not successfully completed.')
 
@@ -98,8 +98,8 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
                                             + NODE
                                             + '/Actions/RackHD.BootImage',
                                             action='post', payload=payload_data)
-        self.assertEqual(result['status'], 201,
-                         'Was expecting code 201. Got ' + str(result['status']))
+        self.assertEqual(result['status'], 202,
+                         'Was expecting code 202. Got ' + str(result['status']))
         self.assertEqual(wait_for_task_complete(result['json']['@odata.id'], retries=80), True,
                          'TaskID ' + result['json']['@odata.id'] + ' not successfully completed.')
 
@@ -125,8 +125,8 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
                                             + NODE
                                             + '/Actions/RackHD.BootImage',
                                             action='post', payload=payload_data)
-        self.assertEqual(result['status'], 201,
-                         'Was expecting code 201. Got ' + str(result['status']))
+        self.assertEqual(result['status'], 202,
+                         'Was expecting code 202. Got ' + str(result['status']))
         self.assertEqual(wait_for_task_complete(result['json']['@odata.id']), True,
                          'TaskID ' + result['json']['@odata.id'] + ' not successfully completed.')
 
@@ -153,15 +153,15 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
                                             + NODE
                                             + '/Actions/RackHD.BootImage',
                                             action='post', payload=payload_data)
-        self.assertEqual(result['status'], 201,
-                         'Was expecting code 201. Got ' + str(result['status']))
+        self.assertEqual(result['status'], 202,
+                         'Was expecting code 202. Got ' + str(result['status']))
         self.assertEqual(wait_for_task_complete(result['json']['@odata.id']), True,
                          'TaskID ' + result['json']['@odata.id'] + ' not successfully completed.')
 
     @fit_common.unittest.skipUnless('centos65' in fit_common.GLOBAL_CONFIG['repos']['os'], "Skipping Centos 6.5 KVM")
     def test_bootstrap_centos65_kvm(self):
         if fit_common.VERBOSITY >= 2:
-            print 'Running CentOS 7 KVM bootstrap.'
+            print 'Running CentOS 6.5 KVM bootstrap.'
         nodehostname = 'centos65'
         payload_data = {"osName": "CentOS+KVM",
                         "version": "6.5",
@@ -180,8 +180,8 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
                                             + NODE
                                             + '/Actions/RackHD.BootImage',
                                             action='post', payload=payload_data)
-        self.assertEqual(result['status'], 201,
-                         'Was expecting code 201. Got ' + str(result['status']))
+        self.assertEqual(result['status'], 202,
+                         'Was expecting code 202. Got ' + str(result['status']))
         self.assertEqual(wait_for_task_complete(result['json']['@odata.id']), True,
                          'TaskID ' + result['json']['@odata.id'] + ' not successfully completed.')
 
@@ -208,8 +208,8 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
                                             + NODE
                                             + '/Actions/RackHD.BootImage',
                                             action='post', payload=payload_data)
-        self.assertEqual(result['status'], 201,
-                         'Was expecting code 201. Got ' + str(result['status']))
+        self.assertEqual(result['status'], 202,
+                         'Was expecting code 202. Got ' + str(result['status']))
         self.assertEqual(wait_for_task_complete(result['json']['@odata.id']), True,
                          'TaskID ' + result['json']['@odata.id'] + ' not successfully completed.')
 
