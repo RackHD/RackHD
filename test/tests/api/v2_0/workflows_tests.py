@@ -28,12 +28,22 @@ class WorkflowsTests(object):
         self.workflowDict = {
             "friendlyName": "Shell Commands API 2.0 Hwtest_1",
             "injectableName": "Graph.post.test.api2",
-            "tasks": [{"taskName": "Task.Trigger.Send.Finish"}]
+            "tasks": [
+                {
+                    "taskName": "Task.Trigger.Send.Finish",
+                    "label": "Task.Trigger"
+                }
+            ]
         }
         self.workflowDict2 = {
             "friendlyName": "Shell Commands API 2.0 Hwtest_2",
             "injectableName": "Graph.post.test.api2",
-            "tasks": [{"taskName": "Task.Trigger.Send.Finish"}]
+            "tasks": [
+                {
+                    "taskName": "Task.Trigger.Send.Finish",
+                    "label": "Task.Trigger"
+                }
+            ]
         }
 
     @test(groups=['delete_all_active_workflows_api2'])
