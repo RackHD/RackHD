@@ -11,6 +11,7 @@ from schema_tests import SchemaTests
 from lookups_tests import LookupsTests
 from skupack_tests import SkusTests
 from users_tests import UsersTests
+from swagger_tests import SwaggerTests
 
 tests = [
     'nodes_api2.tests',
@@ -26,7 +27,8 @@ tests = [
     'schemas_api2.tests',''
     'skus_api2.tests',
     'lookups_api2.tests',
-    'users_api2.tests'
+    'users_api2.tests',
+    'swagger.tests'
 ]
 
 regression_tests = [
