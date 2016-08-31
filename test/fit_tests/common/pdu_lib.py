@@ -69,6 +69,12 @@ def config_power_interface():
     iflist = remote_shell("ifconfig -s -a | tail -n +2 | awk \\\'{print \\\$1}\\\' |grep -v lo")['stdout'].split()
 
     # eth3 is power port in bare-metal eth2 is power interface in VM
+    try:
+       iflist[1]
+    except:
+        print "Failed to find power interface"
+        return False
+
     if iflist[1] != "":
         power_if = iflist[8]
     else:

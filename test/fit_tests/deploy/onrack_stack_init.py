@@ -54,9 +54,9 @@ class onrack_stack_init(fit_common.unittest.TestCase):
     def test03_discover_control_switch_node(self):
         print "**** Creating control switch node."
         payload = {
-                    "type":"switch",
-                    "name":"Control",
-                    "autoDiscover":True,
+                    "type": "switch",
+                    "name": "Control",
+                    "autoDiscover": "true",
                     "snmpSettings":{
                         "host": fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']]['control'],
                         "community": fit_common.GLOBAL_CONFIG['snmp']['community'],
@@ -71,9 +71,9 @@ class onrack_stack_init(fit_common.unittest.TestCase):
     def test04_discover_data_switch_node(self):
         print "**** Creating data switch node."
         payload = {
-                    "type":"switch",
-                    "name":"Data",
-                    "autoDiscover":True,
+                    "type": "switch",
+                    "name": "Data",
+                    "autoDiscover": "true",
                     "snmpSettings":{
                         "host": fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']]['data'],
                         "community": fit_common.GLOBAL_CONFIG['snmp']['community'],
@@ -88,9 +88,9 @@ class onrack_stack_init(fit_common.unittest.TestCase):
     def test05_discover_pdu_node(self):
         print "**** Creating PDU node."
         payload = {
-                    "type":"pdu",
-                    "name":"PDU",
-                    "autoDiscover":True,
+                    "type": "pdu",
+                    "name": "PDU",
+                    "autoDiscover": "true",
                     "snmpSettings":{
                         "host": fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']]['pdu'],
                         "community": fit_common.GLOBAL_CONFIG['snmp']['community'],
@@ -201,7 +201,7 @@ class onrack_stack_init(fit_common.unittest.TestCase):
         self.assertTrue(succeeded, "OBM settings failed.")
 
     @fit_common.unittest.skipUnless("bmc" in fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']],"")
-    @fit_common.unittest.skip("Skipping 'test09_add_management_server' due to ODR-803")
+    @fit_common.unittest.skip("Skipping 'test09_add_management_server' code incomplete")
     def test09_add_management_server(self):
         print "**** Creating management server."
         usr = ""
@@ -216,8 +216,8 @@ class onrack_stack_init(fit_common.unittest.TestCase):
         # create management node using these creds
         payload = {
                     "name":"Management Server",
-                    "type": "compute",
-                    "identifiers": fit_common.ARGS_LIST['bmc'],
+                    "type": "mgmt",
+                    "autoDiscover": "true",
                     "ipmi-obm-service": {
                         "host": fit_common.ARGS_LIST['bmc'],
                         "user": usr,

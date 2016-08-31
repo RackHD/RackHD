@@ -210,8 +210,8 @@ def scp_file_to_ora(src_file_name):
     just_fname = os.path.basename(src_file_name)
     # if localhost just copy to home dir
     if ARGS_LIST['ora'] == 'localhost':
-        shutil.copyfile(src_file_name , '~/' + src_file_name)
-        return just_fname
+        remote_shell('cp ' + src_file_name + ' ~/' + src_file_name)
+        return src_file_name
 
     scp_target = 'onrack@{0}:'.format(ARGS_LIST["ora"])
     cmd = 'scp -o StrictHostKeyChecking=no {0} {1}'.format(src_file_name, scp_target)
@@ -472,7 +472,7 @@ def power_control_all_nodes(state):
     for bmc in BMC_LIST:
         return_code = remote_shell('ipmitool -I lanplus -H ' + bmc['ip'] \
                                    + ' -U ' + bmc['user'] + ' -P ' \
-                                   + bmc['pw'] + ' -R 1 -N 3 chassis power ' + state)
+                                   + bmc['pw'] + ' -R 4 -N 3 chassis power ' + state)
         if return_code['exitcode'] != 0:
             print "Error powering " + state + " node: " + bmc['ip']
 
