@@ -236,20 +236,27 @@ def get_auth_token():
     # This is run once to get an auth token which is set to global AUTH_TOKEN and used for rest of session
     global AUTH_TOKEN
     payload = {"username": GLOBAL_CONFIG["api"]["admin_user"], "password": GLOBAL_CONFIG["api"]["admin_pass"]}
-    api_data = restful("https://" + ARGS_LIST['ora'] + ":" + str(GLOBAL_CONFIG['ports']['https']) +
+    try:
+        restful("https://" + ARGS_LIST['ora'] + ":" + str(API_PORT) +
                        "/login", rest_action="post", rest_payload=payload, rest_timeout=5)
-    if api_data['status'] == 200:
-        AUTH_TOKEN = str(api_data['json']['token'])
-        return True
-    else:
+    except:
         AUTH_TOKEN = "Unavailable"
         return False
+    else:
+        api_data = restful("https://" + ARGS_LIST['ora'] + ":" + str(API_PORT) +
+                           "/login", rest_action="post", rest_payload=payload, rest_timeout=5)
+        if api_data['status'] == 200:
+            AUTH_TOKEN = str(api_data['json']['token'])
+            return True
+        else:
+            AUTH_TOKEN = "Unavailable"
+            return False
 
 def rackhdapi(url_cmd, action='get', payload=[], timeout=None, headers={}):
     '''
-    This routine will build URL for RackHD API, enable port, execute, and return to previous state
+    This routine will build URL for RackHD API, enable port, execute, and return data
     Example: fit_common.rackhdapi('/api/current/nodes') - simple 'get' command
-    Example: fit_common.rackhdapi("/api/current/nodes/ID/dhcp/whitelist", action='post')
+    Example: fit_common.rackhdapi("/api/current/nodes/ID/dhcp/whitelist", action="post")
 
     :param url_cmd: url command for monorail api
     :param action: rest action (get/put/post/delete)
@@ -266,32 +273,34 @@ def rackhdapi(url_cmd, action='get', payload=[], timeout=None, headers={}):
     # Automatic protocol selection: unless protocol is specified, test protocols, save settings globally
     global API_PROTOCOL
     global API_PORT
-    if AUTH_TOKEN == "None":
-        get_auth_token()
+
     if API_PROTOCOL == "None":
         if API_PORT == "None":
-            API_PORT = GLOBAL_CONFIG['ports']['http']
+            API_PORT = str(GLOBAL_CONFIG['ports']['http'])
         if restful("http://" + ARGS_LIST['ora'] + ":" + str(API_PORT) + "/", rest_timeout=5)['status'] == 0:
             API_PROTOCOL = 'https'
-            API_PORT = GLOBAL_CONFIG['ports']['https']
+            API_PORT = str(GLOBAL_CONFIG['ports']['https'])
         else:
             API_PROTOCOL = 'http'
-            API_PORT = GLOBAL_CONFIG['ports']['http']
+            API_PORT = str(GLOBAL_CONFIG['ports']['http'])
+
+    # Retrieve authentication token for the session
+    if AUTH_TOKEN == "None":
+        get_auth_token()
 
     return restful(API_PROTOCOL + "://" + ARGS_LIST['ora'] + ":" + str(API_PORT) + url_cmd,
                        rest_action=action, rest_payload=payload, rest_timeout=timeout, rest_headers=headers)
-
 
 def restful(url_command, rest_action='get', rest_payload=[], rest_timeout=None, sslverify=False, rest_headers={}):
     '''
     This routine executes a rest API call to the host.
 
-    :param url_command: the url that the web crawler/pusher goes
+    :param url_command: the full URL for the command
     :param rest_action: what the restful do (get/post/put/delete)
-    :param rep_obj: report object for logging
     :param rest_payload: payload for rest request
+    :param rest_headers: headers (JSON dict)
     :param rest_timeout: timeout for rest request
-    :param sslverify: ssl Verify
+    :param sslverify: ssl Verify (True/False)
     :return:    {'json':result_data.json(), 'text':result_data.text,
                 'status':result_data.status_code,
                 'headers':result_data.headers.get('content-type'),
