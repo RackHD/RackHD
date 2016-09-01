@@ -56,6 +56,7 @@ STACK_CONFIG = []
 API_PORT = "None"
 API_PROTOCOL = "None"
 AUTH_TOKEN = "None"
+REDFISH_TOKEN = "None"
 
 # List of BMC IP addresses
 BMC_LIST = []
@@ -235,18 +236,23 @@ def scp_file_to_ora(src_file_name):
 def get_auth_token():
     # This is run once to get an auth token which is set to global AUTH_TOKEN and used for rest of session
     global AUTH_TOKEN
-    payload = {"username": GLOBAL_CONFIG["api"]["admin_user"], "password": GLOBAL_CONFIG["api"]["admin_pass"]}
+    global REDFISH_TOKEN
+    api_login = {"username": GLOBAL_CONFIG["api"]["admin_user"], "password": GLOBAL_CONFIG["api"]["admin_pass"]}
+    redfish_login = {"UserName": GLOBAL_CONFIG["api"]["admin_user"], "Password": GLOBAL_CONFIG["api"]["admin_pass"]}
     try:
         restful("https://" + ARGS_LIST['ora'] + ":" + str(API_PORT) +
-                       "/login", rest_action="post", rest_payload=payload, rest_timeout=5)
+                       "/login", rest_action="post", rest_payload=api_login, rest_timeout=5)
     except:
         AUTH_TOKEN = "Unavailable"
         return False
     else:
         api_data = restful("https://" + ARGS_LIST['ora'] + ":" + str(API_PORT) +
-                           "/login", rest_action="post", rest_payload=payload, rest_timeout=5)
+                           "/login", rest_action="post", rest_payload=api_login, rest_timeout=5)
         if api_data['status'] == 200:
             AUTH_TOKEN = str(api_data['json']['token'])
+            redfish_data = restful("https://" + ARGS_LIST['ora'] + ":" + str(API_PORT) +
+                               "/redfish/v1/SessionService/Sessions", rest_action="post", rest_payload=redfish_login, rest_timeout=5)
+            REDFISH_TOKEN =  redfish_data['headers']['x-auth-token']
             return True
         else:
             AUTH_TOKEN = "Unavailable"
@@ -303,7 +309,7 @@ def restful(url_command, rest_action='get', rest_payload=[], rest_timeout=None, 
     :param sslverify: ssl Verify (True/False)
     :return:    {'json':result_data.json(), 'text':result_data.text,
                 'status':result_data.status_code,
-                'headers':result_data.headers.get('content-type'),
+                'headers':result_data.headers,
                 'timeout':False}
     '''
 
@@ -327,9 +333,12 @@ def restful(url_command, rest_action='get', rest_payload=[], rest_timeout=None, 
             print "restful: Payload =\n", payload_print
 
     rest_headers.update({"Content-Type": "application/json"})
+    if VERBOSITY >= 5:
+         print "restful: Request Headers =", rest_headers, "\n"
+
     # If AUTH_TOKEN is set, add to header
     if AUTH_TOKEN != "None" and AUTH_TOKEN != "Unavailable" and "authorization" not in rest_headers:
-        rest_headers.update({"authorization": "JWT " + AUTH_TOKEN})
+        rest_headers.update({"authorization": "JWT " + AUTH_TOKEN, "X-Auth-Token": REDFISH_TOKEN})
     # Perform rest request
     try:
         if rest_action == "get":
@@ -408,21 +417,25 @@ def restful(url_command, rest_action='get', rest_payload=[], rest_timeout=None, 
         if VERBOSITY >= 9:
             print "restful: TEXT =\n"
             print result_data.text
+        if VERBOSITY >= 6:
+            print "restful: Response Headers =", result_data.headers, "\n"
         if VERBOSITY >= 4:
-            print "restful: Status code:", result_data.status_code, "\n"
+            print "restful: Status code =", result_data.status_code, "\n"
         return {'json':{}, 'text':result_data.text, 'status':result_data.status_code,
-                'headers':result_data.headers.get('content-type'),
+                'headers':result_data.headers,
                 'timeout':False}
     else:
 
         if VERBOSITY >= 9:
             print "restful: JSON = \n"
             print json.dumps(result_data.json(), sort_keys=True, indent=4)
+        if VERBOSITY >= 6:
+            print "restful: Response Headers =", result_data.headers, "\n"
         if VERBOSITY >= 4:
             print "restful: Status code =", result_data.status_code, "\n"
         return {'json':result_data.json(), 'text':result_data.text,
                 'status':result_data.status_code,
-                'headers':result_data.headers.get('content-type'),
+                'headers':result_data.headers,
                 'timeout':False}
 
 
