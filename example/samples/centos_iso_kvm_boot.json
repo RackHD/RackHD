@@ -5,6 +5,7 @@
             "obmServiceName": "noop-obm-service"
         },
         "install-os": {
+            "version": "7.0",
             "repo": "{{api.server}}/Centos/7.0",
             "rootPassword": "root",
             "kvm": true
