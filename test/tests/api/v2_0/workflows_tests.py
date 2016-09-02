@@ -206,7 +206,7 @@ class WorkflowsTests(object):
         workflows = loads(self.__client.last_response.data)
         message.ack()
         for w in workflows:
-            injectableName = w['definition'].get('injectableName')
+            injectableName = w['injectableName']
             if injectableName == 'Graph.noop-example':
                 graphId = w['context'].get('graphId')
                 if graphId == routeId:
