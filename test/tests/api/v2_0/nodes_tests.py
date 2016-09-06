@@ -14,6 +14,7 @@ from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_true
+from proboscis.asserts import fail
 from proboscis import SkipTest
 from proboscis import test
 from json import loads
@@ -72,6 +73,15 @@ class NodesTests(object):
         self.__test_tags = {
             'tags': ['tag1', 'tag2']
         }
+        self.__test_obm = {
+            'config': {
+                'host': '1.2.3.4',
+                'user': 'username',
+                'password': 'password'
+            },
+            'service': 'noop-obm-service'
+        }
+
         
     def __get_data(self):
         return loads(self.__client.last_response.data)
@@ -275,9 +285,9 @@ class NodesTests(object):
         for resp in resps:
             assert_not_equal(0, len(resp), message='No Workflows found for Node')
 
-	Api().nodes_get_workflow_by_id('fooey')
+    	Api().nodes_get_workflow_by_id('fooey')
         resps_fooey = self.__get_data()
-	assert_equal(len(resps_fooey), 0, message='Should be empty')
+    	assert_equal(len(resps_fooey), 0, message='Should be empty')
 
     @test(groups=['node_post_workflows-api2'], depends_on_groups=['node_workflows-api2'])
     def test_node_workflows_post(self):
@@ -405,3 +415,56 @@ class NodesTests(object):
         for c in codes:
             assert_equal(204, c.status, message=c.reason)
 
+    @test(groups=['node_put_obm_by_node_id'], depends_on_groups=['nodes_tag_masterDelete'])
+    def test_node_put_obm_by_node_id(self):
+        """Testing PUT:/api/2.0/nodes/:id/obm"""
+        Api().nodes_get_all()
+        rsp = self.__client.last_response
+        nodes = loads(rsp.data)
+        assert_equal(200, rsp.status, message=rsp.status)
+        for n in nodes:
+            LOG.info(n, json=True)
+            Api().nodes_put_obms_by_node_id(identifier=n.get('id'), body=self.__test_obm)
+            LOG.info('Creating obm {0}'.format(self.__test_obm))
+            rsp = self.__client.last_response
+            LOG.info(n.get('id'));
+            assert_equal(201, rsp.status, message=rsp.status)
+
+    @test(groups=['node_get_obm_by_node_id'], depends_on_groups=['node_put_obm_by_node_id'])
+    def test_node_get_obm_by_node_id(self):
+        """Testing GET:/api/2.0/:id/obm"""
+        Api().nodes_get_all()
+        rsp = self.__client.last_response
+        nodes = loads(rsp.data)
+        assert_equal(200, rsp.status, message=rsp.status)
+        for n in nodes:
+            LOG.info(n, json=True)
+            Api().nodes_get_obms_by_node_id(identifier=n.get('id'))
+            LOG.info('getting OBMs for node {0}'.format(n.get('id')))
+            rsp = self.__client.last_response
+            assert_equal(200, rsp.status, message=rsp.status)
+            obms = loads(rsp.data)
+            assert_not_equal(0, len(obms), message='OBMs list was empty!')
+            for obm in obms:
+                id = obm.get('id')
+                Api().obms_delete_by_id(identifier=id)
+                rsp = self.__client.last_response
+                assert_equal(204, rsp.status, message=rsp.status)
+
+    @test(groups=['node_put_obm_invalid'], depends_on_groups=['node_get_obm_by_node_id'])
+    def test_node_put_obm_invalid_node_id(self):
+        """Test that PUT:/api/2.0/:id/obm returns 404 with invalid node ID"""
+        try:
+            Api().nodes_put_obms_by_node_id(identifier='invalid_ID', body=self.__test_obm)
+            fail(message='did not raise exception')
+        except rest.ApiException as e:
+            assert_equal(404, e.status, message='unexpected response {0}, expected 404'.format(e.status))
+
+    @test(groups=['node_get_obm_invalid'], depends_on_groups=['node_put_obm_invalid'])
+    def test_node_get_obm_invalid_node_id(self):
+        """Test that PUT:/api/2.0/:id/obm returns 404 with invalid node ID"""
+        try:
+            Api().nodes_get_obms_by_node_id(identifier='invalid_ID')
+            fail(message='did not raise exception')
+        except rest.ApiException as e:
+            assert_equal(404, e.status, message='unexpected response {0}, expected 404'.format(e.status))
