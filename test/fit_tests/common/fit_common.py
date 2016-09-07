@@ -351,6 +351,7 @@ def restful(url_command, rest_action='get', rest_payload=[], rest_timeout=None, 
                                        headers=rest_headers)
         if rest_action == "delete":
             result_data = requests.delete(url_command,
+                                          data=json.dumps(rest_payload),
                                           timeout=rest_timeout,
                                           verify=sslverify,
                                           headers=rest_headers)
@@ -807,7 +808,7 @@ def run_nose(nosepath):
                              'export VERBOSITY=' + str(ARGS_LIST['v']) + ';' +
                              'export ORA=' + str(ARGS_LIST['ora']) + ';' +
                              'export STACK=' + str(ARGS_LIST['stack']) + ';' +
-                             'export SKU=' + str(ARGS_LIST['sku']) + ';' +
+                             'export SKU="' + str(ARGS_LIST['sku']) + '";' +
                              'export NODEID=' + str(ARGS_LIST['nodeid']) + ';' +
                              'export OBMMAC=' + str(ARGS_LIST['obmmac']) + ';' +
                              'export VERSION=' + str(ARGS_LIST['version']) + ';' +
