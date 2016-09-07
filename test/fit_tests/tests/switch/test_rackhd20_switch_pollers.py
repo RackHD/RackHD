@@ -255,17 +255,17 @@ class rackhd11_switch_pollers(fit_common.unittest.TestCase):
                 # check required fields
                 self.assertGreater(pollerdata['pollInterval'], 0, 'pollInterval field error')
                 poller_interval = pollerdata['pollInterval']
-                print "pollerInterval", poller_interval
                 pollertime = poller_interval / 1000
-
-                print pollerdata['config'].get('metric', "")
-                print pollerdata.get('nextScheduled', "")
-                print pollertime
+                if fit_common.VERBOSITY >= 2:
+                    print "pollerInterval", poller_interval
+                    print pollerdata['config'].get('metric', "")
+                    print pollerdata.get('nextScheduled', "")
+                    print pollertime
 
                 pollcurrent = fit_common.rackhdapi("/api/2.0/pollers/" + poller_id + "/data/current" )
                 self.assertIn(pollcurrent['status'], [200], "Incorrect HTTP return code")
                 if fit_common.VERBOSITY >= 2:
-                    print fit_common.json.dumps(pollcurrent, indent=4)
+                    print pollcurrent
 
 if __name__ == '__main__':
     fit_common.unittest.main()

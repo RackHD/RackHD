@@ -97,18 +97,15 @@ class rackhd11_switch_telemetry(fit_common.unittest.TestCase):
                     poller = fit_common.rackhdapi("/api/2.0/pollers/" + poller_id)
                     self.assertIn(poller['status'], [200], "Incorrect HTTP return code, expected 200, got {}".format(poller['status']))
                     pollerdata = poller['json']
-                    item_polls = {'node': node, 'poller': pollerdata['config']['metric'], "next_poll": pollerdata['nextScheduled']}
 
                     # check required fields and grab the poller times
                     self.assertGreater(pollerdata['pollInterval'], 0, 'pollInterval field error')
                     poller_interval = pollerdata['pollInterval']
-                    print "pollerInterval", poller_interval
                     pollertime = poller_interval / 1000
-
-                    # metric is the name of the poller
-                    print "PollerData metric: ", pollerdata['config']['metric']
-                    print "NextScheduled poll: ", pollerdata['nextScheduled']
-                    print "PollerTime: ", pollertime
+                    if fit_common.VERBOSITY >= 2:
+                        print "pollerInterval", poller_interval
+                        print "PollerData metric: ", pollerdata['config']['metric']
+                        print "PollerTime: ", pollertime
 
                     # get the current readings from the switch for this poller
                     pollcurrent = fit_common.rackhdapi("/api/2.0/pollers/"+ poller_id + "/data/current")
@@ -158,18 +155,15 @@ class rackhd11_switch_telemetry(fit_common.unittest.TestCase):
                     poller = fit_common.rackhdapi("/api/2.0/pollers/"+ poller_id)
                     self.assertIn(poller['status'], [200], "Incorrect HTTP return code, expected 200, got {}".format(poller['status']))
                     pollerdata = poller['json']
-                    item_polls = {'node': node, 'poller': pollerdata['config']['metric'], "next_poll": pollerdata['nextScheduled']}
 
                     # check required fields and grab the poller times
                     self.assertGreater(pollerdata['pollInterval'], 0, 'pollInterval field error')
                     poller_interval = pollerdata['pollInterval']
-                    print "pollerInterval", poller_interval
                     pollertime = poller_interval / 1000
-
-                    # metric is the name of the poller
-                    print "PollerData metric: ", pollerdata['config']['metric']
-                    print "NextScheduled poll: ", pollerdata['nextScheduled']
-                    print "PollerTime: ", pollertime
+                    if fit_common.VERBOSITY >= 2:
+                        print "pollerInterval", poller_interval
+                        print "PollerData metric: ", pollerdata['config']['metric']
+                        print "PollerTime: ", pollertime
 
                     # get the current readings from the switch for this poller
                     pollcurrent = fit_common.rackhdapi("/api/2.0/pollers/"+ poller_id + "/data/current")
@@ -183,7 +177,7 @@ class rackhd11_switch_telemetry(fit_common.unittest.TestCase):
                     if fit_common.VERBOSITY >= 2:
                         result = pollcurrent['json'][0]['result']
                         for key, value in result.items():
-                            if value.get("inputUtilization") != None:
+                            if value.get("inputUtilization") != None and fit_common.VERBOSITY >= 2:
                                 print "IF: {} Utilization: {}".format(key, value)
                 i += 1
 
@@ -219,18 +213,15 @@ class rackhd11_switch_telemetry(fit_common.unittest.TestCase):
                     poller = fit_common.rackhdapi("/api/2.0/pollers/"+ poller_id)
                     self.assertIn(poller['status'], [200], "Incorrect HTTP return code, expected 200, got {}".format(poller['status']))
                     pollerdata = poller['json']
-                    item_polls = {'node': node, 'poller': pollerdata['config']['metric'], "next_poll": pollerdata['nextScheduled']}
 
                     # check required fields and grab the poller times
                     self.assertGreater(pollerdata['pollInterval'], 0, 'pollInterval field error')
                     poller_interval = pollerdata['pollInterval']
-                    print "pollerInterval", poller_interval
                     pollertime = poller_interval / 1000
-
-                    # metric is the name of the poller
-                    print "PollerData metric: ", pollerdata['config']['metric']
-                    print "NextScheduled poll: ", pollerdata['nextScheduled']
-                    print "PollerTime: ", pollertime
+                    if fit_common.VERBOSITY >= 2:
+                        print "pollerInterval", poller_interval
+                        print "PollerData metric: ", pollerdata['config']['metric']
+                        print "PollerTime: ", pollertime
 
                     # get the current readings from the switch for this poller
                     pollcurrent = fit_common.rackhdapi("/api/2.0/pollers/" + poller_id + "/data/current")
@@ -272,14 +263,13 @@ class rackhd11_switch_telemetry(fit_common.unittest.TestCase):
                     poller = fit_common.rackhdapi("/api/2.0/pollers/"+ poller_id)
                     self.assertIn(poller['status'], [200], "Incorrect HTTP return code")
                     pollerdata = poller['json']
-                    item_polls = {'node': node, 'poller': pollerdata['config']['metric'], "next_poll": pollerdata['nextScheduled']}
                     poller_interval = pollerdata['pollInterval']
 
                     # metric is the name of the poller
-                    print "PollerData metric: ", pollerdata['config']['metric']
-                    print "NextScheduled poll: ", pollerdata['nextScheduled']
                     pollertime = poller_interval / 1000
-                    print "PollerTime: ", pollertime
+                    if fit_common.VERBOSITY >= 2:
+                        print "PollerData metric: ", pollerdata['config']['metric']
+                        print "PollerTime: ", pollertime
 
                     # get the current readings from the switch for this poller
                     pollcurrent = fit_common.rackhdapi("/api/2.0/pollers/"+ poller_id + "/data/current")
@@ -310,8 +300,8 @@ class rackhd11_switch_telemetry(fit_common.unittest.TestCase):
                     poller_list.append(item['id'])
                 if item['config']['metric'] == "snmp-interface-bandwidth-utilization":
                     poller_list_util.append(item['id'])
-
-            print "Poller snmp-interface-state: ", poller_list
+            if fit_common.VERBOSITY >= 2:
+                print "Poller snmp-interface-state: ", poller_list
             self.assertNotEquals(poller_list, [], "Poller {0} not in list of pollers".format("snmp-interface-state"))
 
             # display the switch ports reporting UP
@@ -322,11 +312,12 @@ class rackhd11_switch_telemetry(fit_common.unittest.TestCase):
                     print json.dumps(pollcurrent['json'], indent=4)
                 result = pollcurrent['json'][0]['result']
                 for key, value in result.items():
-                    if value.get("state") == "up":
+                    if value.get("state") == "up" and fit_common.VERBOSITY >= 2:
                         print "IF: {} Status: {}".format(key, value)
 
             # display the switch ports reporting any utilization
-            print "\nPoller snmp-interface-bandwidth-utilization: ", poller_list_util
+            if fit_common.VERBOSITY >= 2:
+                print "\nPoller snmp-interface-bandwidth-utilization: ", poller_list_util
             self.assertNotEquals(poller_list_util, [], "Poller {0} not in list of pollers".format("snmp-interface-bandwidth-utilizatoni"))
             for poller_id in poller_list_util:
                 pollcurrent = fit_common.rackhdapi("/api/2.0/pollers/"+ poller_id + "/data/current")
@@ -335,7 +326,7 @@ class rackhd11_switch_telemetry(fit_common.unittest.TestCase):
                     print json.dumps(pollcurrent['json'], indent=4)
                 result = pollcurrent['json'][0]['result']
                 for key, value in result.items():
-                    if value.get("inputUtilization") != None:
+                    if value.get("inputUtilization") != None and fit_common.VERBOSITY >= 2:
                         print "IF: {} Utilization: {}".format(key, value)
 
 if __name__ == '__main__':

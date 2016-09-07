@@ -83,9 +83,9 @@ class rackhd11_switch_pollers(fit_common.unittest.TestCase):
             poller_dict = test_api_utils.get_supported_pollers(node)
             for poller in poller_dict:
                 poller_id = poller_dict[poller]["poller_id"]
-                print "\nPoller: " + poller + " ID: " + str(poller_id)
                 poll_data = fit_common.rackhdapi("/api/1.1/pollers/" + poller_id)
                 if fit_common.VERBOSITY >= 2:
+                    print "\nPoller: " + poller + " ID: " + str(poller_id)
                     print fit_common.json.dumps(poll_data['json'], indent=4)
 
     def test_verify_poller_headers(self):
@@ -105,9 +105,9 @@ class rackhd11_switch_pollers(fit_common.unittest.TestCase):
 
                 for poller in poller_dict:
                     poller_id = poller_dict[poller]["poller_id"]
-                    print "\nPoller: " + poller + " ID: " + str(poller_id)
                     poller_data = test_api_utils.get_poller_data_by_id(poller_id)
                     if fit_common.VERBOSITY >= 3:
+                        print "\nPoller: " + poller + " ID: " + str(poller_id)
                         print fit_common.json.dumps(poller_data, indent=4)
 
     def test_verify_poller_data(self):
@@ -125,10 +125,11 @@ class rackhd11_switch_pollers(fit_common.unittest.TestCase):
 
                 for poller in poller_dict:
                     poller_id = poller_dict[poller]["poller_id"]
-                    print "\nPoller: " + poller + " ID: " + str(poller_id)
                     poller_data = test_api_utils.get_poller_data_by_id(poller_id)
                     poll_len = len(poller_data)
-                    print "Number of polls for "+ str(poller_id) + ": " + str(len(poller_data))
+                    if fit_common.VERBOSITY >= 2:
+                        print "\nPoller: " + poller + " ID: " + str(poller_id)
+                        print "Number of polls for "+ str(poller_id) + ": " + str(len(poller_data))
                     self.assertLessEqual(poll_len, 10, 'Number of cached polls should not exceed 10')
 
     def test_get_current_poller_data(self):
@@ -146,7 +147,8 @@ class rackhd11_switch_pollers(fit_common.unittest.TestCase):
 
                 for poller in poller_dict:
                     poller_id = poller_dict[poller]["poller_id"]
-                    print "\nPoller: " + poller + " ID: " + str(poller_id)
+                    if fit_common.VERBOSITY >= 2:
+                        print "\nPoller: " + poller + " ID: " + str(poller_id)
                     monurl = "/api/1.1/pollers/" + str(poller_id) + "/data/current"
                     mondata = fit_common.rackhdapi(url_cmd=monurl)
                     if fit_common.VERBOSITY >= 2:
@@ -167,13 +169,14 @@ class rackhd11_switch_pollers(fit_common.unittest.TestCase):
 
                 for poller in poller_dict:
                     poller_id = poller_dict[poller]["poller_id"]
-                    print "\nPoller: " + poller + " ID: " + str(poller_id)
+                    if fit_common.VERBOSITY >= 2:
+                        print "\nPoller: " + poller + " ID: " + str(poller_id)
                     monurl = "/api/1.1/pollers/" + str(poller_id) + "/data/current"
                     mondata = fit_common.rackhdapi(url_cmd=monurl)
                     print "Return status", mondata['status']
                     if mondata['status'] == 200:
-                        print "Timestamp:", mondata['json'][0]['timestamp']
                         if fit_common.VERBOSITY >= 2:
+                            print "Timestamp:", mondata['json'][0]['timestamp']
                             print fit_common.json.dumps(mondata['json'][0], indent=4)
 
     def test_verify_poller_error_counter(self):
@@ -225,10 +228,11 @@ class rackhd11_switch_pollers(fit_common.unittest.TestCase):
             poller_dict = test_api_utils.get_supported_pollers(node)
             for poller in poller_dict:
                 poller_id = poller_dict[poller]["poller_id"]
-                print "\nPoller: " + poller + " ID: " + str(poller_id)
                 poll_data = fit_common.rackhdapi("/api/1.1/pollers/" + poller_id)
-                pprint.pprint("Created At: {}".format(poll_data['json']['createdAt']))
-                pprint.pprint("Updated At: {}".format(poll_data['json']['updatedAt']))
+                if fit_common.VERBOSITY >= 2:
+                    print "\nPoller: " + poller + " ID: " + str(poller_id)
+                    pprint.pprint("Created At: {}".format(poll_data['json']['createdAt']))
+                    pprint.pprint("Updated At: {}".format(poll_data['json']['updatedAt']))
 
     def test_check_poller_interval(self):
         if fit_common.VERBOSITY >= 2:
@@ -255,17 +259,17 @@ class rackhd11_switch_pollers(fit_common.unittest.TestCase):
                 # check required fields
                 self.assertGreater(pollerdata['pollInterval'], 0, 'pollInterval field error')
                 poller_interval = pollerdata['pollInterval']
-                print "pollerInterval", poller_interval
                 pollertime = poller_interval / 1000
-
-                print pollerdata['config'].get('metric', "")
-                print pollerdata.get('nextScheduled', "")
-                print pollertime
+                if fit_common.VERBOSITY >= 2:
+                    print "pollerInterval", poller_interval
+                    print pollerdata['config'].get('metric', "")
+                    print pollerdata.get('nextScheduled', "")
+                    print pollertime
 
                 pollcurrent = fit_common.rackhdapi("/api/1.1/pollers/" + poller_id + "/data/current" )
                 self.assertIn(pollcurrent['status'], [200], "Incorrect HTTP return code")
                 if fit_common.VERBOSITY >= 2:
-                    print fit_common.json.dumps(pollcurrent, indent=4)
+                    print pollcurrent
 
 if __name__ == '__main__':
     fit_common.unittest.main()
