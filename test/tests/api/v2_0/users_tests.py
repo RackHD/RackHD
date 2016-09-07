@@ -117,7 +117,6 @@ class UsersTests(object):
     def test_modify_user(self):
         """ Testing modifying user information  """
         newuser = {
-            'username': 'funtest-name',
             'password': 'funtest123',
             'role': 'ReadOnly'
         }
@@ -127,11 +126,11 @@ class UsersTests(object):
         LOG.debug(users,json=True)
         found = False
         for user in users:
-            if newuser.get('username') == user.get('username') :
+            if 'funtest-name' == user.get('username') :
                found = True
                assert_equal(newuser.get('role'), user.get('role'))
         if not found:
-            fail(message='newly created user was not found')
+            fail(message='newly modified user was not found')
 
     @test(groups=['users_api2.validate_readOnly_user'], depends_on_groups=['users_api2.modify_user'])
     def test_validate_user_readOnly(self):
