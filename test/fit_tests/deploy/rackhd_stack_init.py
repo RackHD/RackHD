@@ -198,61 +198,9 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
                 fit_common.time.sleep(10)
         return False
 
-    def test10_install_obm_credentials(self):
-        print "**** Install OBM credentials."
-        # install OBM credentials via workflows
-        count = 0
-        for creds in fit_common.GLOBAL_CONFIG['credentials']['bmc']:
-            # greate graph for setting OBM credentials
-            payload = \
-            {
-                "friendlyName": "IPMI" + str(count),
-                "injectableName": 'Graph.Obm.Ipmi.CreateSettings' + str(count),
-                "options": {
-                    "obm-ipmi-task": {
-                        "user": creds["username"],
-                        "password": creds["password"]
-                    }
-                },
-                "tasks": [
-                    {
-                        "label": "obm-ipmi-task",
-                        "taskName": "Task.Obm.Ipmi.CreateSettings"
-                    }
-            ]
-            }
-            api_data = fit_common.rackhdapi("/api/2.0/workflows/graphs", action="put", payload=payload)
-            self.assertEqual(api_data['status'], 201, 'Incorrect HTTP return code, expecting 201, got '
-                             + str(api_data['status']))
-            count += 1
-        print "**** Configure node OBM settings."
-        # run each OBM credential workflow on each node until success
-        nodelist = fit_common.node_select()
-        succeeded = True
-        for node in nodelist:
-            for num in range(0, count):
-                status = ""
-                workflow = {"name": 'Graph.Obm.Ipmi.CreateSettings' + str(num)}
-                # wait for existing workflow to complete
-                for dummy in range(0, MAX_CYCLES):
-                    result = fit_common.rackhdapi("/api/2.0/nodes/"  + node + "/workflows", action="post", payload=workflow)
-                    if result['status'] != 201:
-                        fit_common.time.sleep(5)
-                    else:
-                        break
-                # wait for OBM workflow to complete
-                counter = 0
-                for counter in range(0, MAX_CYCLES):
-                    fit_common.time.sleep(10)
-                    status = fit_common.rackhdapi("/api/2.0/workflows/" + result['json']["instanceId"])['json']['_status']
-                    if status != "running" and status != "pending":
-                        break
-                if status == "succeeded":
-                    break
-                if counter == MAX_CYCLES:
-                    succeeded = False
-                    print "*** Node failed OBM settings:", node
-        self.assertTrue(succeeded, "OBM settings failed.")
+    def test10_apply_obm_settings(self):
+        print "**** Apply OBM setting to compute nodes."
+        self.assertTrue(fit_common.apply_obm_settings(), "OBM settings failed.")
 
     @fit_common.unittest.skipUnless("bmc" in fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']],"")
     @fit_common.unittest.skip("Skipping 'test10_add_management_server' code incomplete")
@@ -337,19 +285,6 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
                     return True
                 fit_common.time.sleep(10)
         return False
-
-    def test13_check_node_inventory(self):
-        # this test will verify node inventory by BMC MAC if specified in STACK_CONFIG
-        errorlist = []
-        #check OBM MAC addresses
-        if "nodes" in fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']]:
-            nodecheck = fit_common.rackhdapi('/api/2.0/obms')['text']
-            for entry in fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']]['nodes']:
-                if entry['bmcmac'] not in str(nodecheck):
-                    print '**** Missing node:' + entry['sku'] + "  BMC:" + entry['bmcmac']
-                    errorlist.append(entry['bmcmac'])
-            self.assertEqual(errorlist, [], "Missing nodes in catalog.")
-
 
 if __name__ == '__main__':
     fit_common.unittest.main()

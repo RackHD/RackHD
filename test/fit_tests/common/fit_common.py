@@ -241,19 +241,22 @@ def get_auth_token():
     redfish_login = {"UserName": GLOBAL_CONFIG["api"]["admin_user"], "Password": GLOBAL_CONFIG["api"]["admin_pass"]}
     try:
         restful("https://" + ARGS_LIST['ora'] + ":" + str(API_PORT) +
-                       "/login", rest_action="post", rest_payload=api_login, rest_timeout=5)
+                       "/login", rest_action="post", rest_payload=api_login, rest_timeout=2)
     except:
         AUTH_TOKEN = "Unavailable"
         return False
     else:
         api_data = restful("https://" + ARGS_LIST['ora'] + ":" + str(API_PORT) +
-                           "/login", rest_action="post", rest_payload=api_login, rest_timeout=5)
+                           "/login", rest_action="post", rest_payload=api_login, rest_timeout=2)
         if api_data['status'] == 200:
             AUTH_TOKEN = str(api_data['json']['token'])
             redfish_data = restful("https://" + ARGS_LIST['ora'] + ":" + str(API_PORT) +
-                               "/redfish/v1/SessionService/Sessions", rest_action="post", rest_payload=redfish_login, rest_timeout=5)
-            REDFISH_TOKEN =  redfish_data['headers']['x-auth-token']
-            return True
+                               "/redfish/v1/SessionService/Sessions", rest_action="post", rest_payload=redfish_login, rest_timeout=2)
+            if 'x-auth-token' in redfish_data['headers']:
+                REDFISH_TOKEN =  redfish_data['headers']['x-auth-token']
+                return True
+            else:
+                print "WARNING: Redfish API token not available."
         else:
             AUTH_TOKEN = "Unavailable"
             return False
@@ -261,8 +264,8 @@ def get_auth_token():
 def rackhdapi(url_cmd, action='get', payload=[], timeout=None, headers={}):
     '''
     This routine will build URL for RackHD API, enable port, execute, and return data
-    Example: fit_common.rackhdapi('/api/current/nodes') - simple 'get' command
-    Example: fit_common.rackhdapi("/api/current/nodes/ID/dhcp/whitelist", action="post")
+    Example: rackhdapi('/api/current/nodes') - simple 'get' command
+    Example: rackhdapi("/api/current/nodes/ID/dhcp/whitelist", action="post")
 
     :param url_cmd: url command for monorail api
     :param action: rest action (get/put/post/delete)
@@ -283,7 +286,7 @@ def rackhdapi(url_cmd, action='get', payload=[], timeout=None, headers={}):
     if API_PROTOCOL == "None":
         if API_PORT == "None":
             API_PORT = str(GLOBAL_CONFIG['ports']['http'])
-        if restful("http://" + ARGS_LIST['ora'] + ":" + str(API_PORT) + "/", rest_timeout=5)['status'] == 0:
+        if restful("http://" + ARGS_LIST['ora'] + ":" + str(API_PORT) + "/", rest_timeout=2)['status'] == 0:
             API_PROTOCOL = 'https'
             API_PORT = str(GLOBAL_CONFIG['ports']['https'])
         else:
@@ -329,7 +332,7 @@ def restful(url_command, rest_action='get', rest_payload=[], rest_timeout=None, 
         payload_print = json.dumps(rest_payload, sort_keys=True, indent=4,)
         if len(payload_print) > 4096:
             payload_print = payload_print[0:4096] + '\n...truncated...\n'
-        if VERBOSITY >= 9 and rest_payload != []:
+        if VERBOSITY >= 7 and rest_payload != []:
             print "restful: Payload =\n", payload_print
 
     rest_headers.update({"Content-Type": "application/json"})
@@ -566,6 +569,29 @@ def list_skus():
         skunames.append(item['name'])
     return skunames
 
+def get_node_sku(nodeid):
+    # return name field of node SKU if available
+    nodetype = ""
+    sku = ""
+    # get node info
+    mondata = rackhdapi("/api/2.0/nodes/" + nodeid)
+    if mondata['status'] == 200:
+        # get the sku id contained in the node
+        sku = mondata['json'].get("sku")
+        if sku:
+            skudata = rackhdapi(sku)
+            if skudata['status'] == 200:
+                nodetype = skudata['json'].get("name")
+            else:
+                if VERBOSITY >= 2:
+                    errmsg = "Error: SKU API failed {}, return code {} ".format(sku, skudata['status'])
+                    print errmsg
+        else:
+            if VERBOSITY >= 2:
+                errmsg = "Error: nodeid {} did not return a valid sku in get_rackhd_nodetype{}".format(nodeid,sku)
+                print errmsg
+    return nodetype
+
 def check_active_workflows(nodeid):
     # Return True if active workflows are found on node
     workflows = rackhdapi('/api/2.0/nodes/' + nodeid + '/workflows')['json']
@@ -582,6 +608,195 @@ def cancel_active_workflows(nodeid):
     if apistatus != 202:
        exitstatus = False
     return exitstatus
+
+def apply_obm_settings_new():
+    # Experimental routine to install OBM credentials via workflows
+    count = 0
+    for creds in GLOBAL_CONFIG['credentials']['bmc']:
+        # greate graph for setting OBM credentials
+        payload = \
+        {
+            "friendlyName": "IPMI" + str(count),
+            "injectableName": 'Graph.Obm.Ipmi.CreateSettings' + str(count),
+            "options": {
+                "obm-ipmi-task":{
+                    "user": creds["username"],
+                    "password": creds["password"]
+                }
+            },
+            "tasks": [
+                {
+                    "label": "obm-ipmi-task",
+                    "taskName": "Task.Obm.Ipmi.CreateSettings"
+                }
+        ]
+        }
+        api_data = rackhdapi("/api/2.0/workflows/graphs", action="put", payload=payload)
+        if api_data['status'] != 201:
+            print "**** OBM workflow failed to load!"
+            return False
+        count += 1
+    # Setup additional OBM settings for nodes that currently use RMM port (still same bmc username/password used)
+    count = 0
+    for creds in GLOBAL_CONFIG['credentials']['bmc']:
+        # greate graph for setting OBM credentials for RMM
+        payload = \
+        {
+            "friendlyName": "RMM.IPMI" + str(count),
+            "injectableName": 'Graph.Obm.Ipmi.CreateSettings.RMM' + str(count),
+            "options": {
+                "obm-ipmi-task":{
+                    "ipmichannel": "3",
+                    "user": creds["username"],
+                    "password": creds["password"]
+                }
+            },
+            "tasks": [
+                {
+                    "label": "obm-ipmi-task",
+                    "taskName": "Task.Obm.Ipmi.CreateSettings"
+                }
+        ]
+        }
+        api_data = rackhdapi("/api/2.0/workflows/graphs", action="put", payload=payload)
+        if api_data['status'] != 201:
+            print "**** OBM workflow failed to load!"
+            return False
+        count += 1
+
+    # run each OBM credential workflow on each node in parallel until success
+    nodelist = node_select()
+    nodestatus = {} # dictionary with node IDs and status of each node
+    for node in nodelist:
+        nodestatus[node]= {"status": "pending", "instanceId": "", "sku": get_node_sku(node), "retry": 0}
+    for dummy in range(0, 60):
+        for num in range(0, count):
+            for node in nodelist:
+                skuid = rackhdapi('/api/2.0/nodes/' + node)['json'].get("sku")
+                skudata = rackhdapi(skuid)['text']
+                if "rmm.data.MAC" in skudata:
+                    workflow = {"name": 'Graph.Obm.Ipmi.CreateSettings.RMM' + str(num)}
+                else:
+                    workflow = {"name": 'Graph.Obm.Ipmi.CreateSettings' + str(num)}
+                # try workflow
+                if nodestatus[node]['status'] == "pending":
+                    for dummy in range(0, 60):
+                        # retry if other workflows active
+                        result = rackhdapi("/api/2.0/nodes/"  + node + "/workflows", action="post", payload=workflow)
+                        if result['status'] == 201:
+                            nodestatus[node] = {"status": "running", "instanceId": result['json']["instanceId"], "sku": nodetype, "retry": 0}
+                            break
+                        else:
+                           time.sleep(5)
+            for node in nodelist:
+                # check OBM workflow status
+                if nodestatus[node]['status'] == "running":
+                    nodestatus[node]['retry'] += 1
+                    state = rackhdapi("/api/2.0/workflows/" + nodestatus[node]['instanceId'])
+                    if state['status'] == 200:
+                        if state['json']['_status'] == "succeeded":
+                            nodestatus[node]['status'] = "succeeded"
+                        if state['json']['_status'] in ["failed", "cancelled", "timeout"]:
+                            nodestatus[node]['status'] = "pending"
+        if VERBOSITY > 4:
+            print "**** Node(s) OBM status:\n", json.dumps(nodestatus, sort_keys=True, indent=4,)
+        if "pending" not in str(nodestatus) and "running" not in str(nodestatus):
+            # All OBM settings successful
+            return True
+        time.sleep(10)
+    # Failures occurred
+    print "**** Node(s) OBM settings failed."
+    return False
+
+def apply_obm_settings():
+    # legacy routine to install OBM credentials via workflows
+    count = 0
+    for creds in GLOBAL_CONFIG['credentials']['bmc']:
+        # greate graph for setting OBM credentials
+        payload = \
+        {
+            "friendlyName": "IPMI" + str(count),
+            "injectableName": 'Graph.Obm.Ipmi.CreateSettings' + str(count),
+            "options": {
+                "obm-ipmi-task":{
+                    "user": creds["username"],
+                    "password": creds["password"]
+                }
+            },
+            "tasks": [
+                {
+                    "label": "obm-ipmi-task",
+                    "taskName": "Task.Obm.Ipmi.CreateSettings"
+                }
+        ]
+        }
+        api_data = rackhdapi("/api/2.0/workflows/graphs", action="put", payload=payload)
+        if api_data['status'] != 201:
+            print "**** OBM workflow failed to load!"
+            return False
+        count += 1
+    # Setup additional OBM settings for nodes that currently use RMM port (still same bmc username/password used)
+    count = 0
+    for creds in GLOBAL_CONFIG['credentials']['bmc']:
+        # greate graph for setting OBM credentials for RMM
+        payload = \
+        {
+            "friendlyName": "RMM.IPMI" + str(count),
+            "injectableName": 'Graph.Obm.Ipmi.CreateSettings.RMM' + str(count),
+            "options": {
+                "obm-ipmi-task":{
+                    "ipmichannel": "3",
+                    "user": creds["username"],
+                    "password": creds["password"]
+                }
+            },
+            "tasks": [
+                {
+                    "label": "obm-ipmi-task",
+                    "taskName": "Task.Obm.Ipmi.CreateSettings"
+                }
+        ]
+        }
+        api_data = rackhdapi("/api/2.0/workflows/graphs", action="put", payload=payload)
+        if api_data['status'] != 201:
+            print "**** OBM workflow failed to load!"
+            return False
+        count += 1
+
+    # run each OBM workflow against each node until success
+    nodelist = node_select()
+    failedlist = []
+    for node in nodelist:
+        for num in range(0, count):
+            status = ""
+            skuid = rackhdapi('/api/2.0/nodes/' + node)['json'].get("sku")
+            skudata = rackhdapi(skuid)['text']
+            if "rmm.data.MAC" in skudata:
+                workflow = {"name": 'Graph.Obm.Ipmi.CreateSettings.RMM' + str(num)}
+            else:
+                workflow = {"name": 'Graph.Obm.Ipmi.CreateSettings' + str(num)}
+            # wait for existing workflow to complete
+            for dummy in range(0, 60):
+                result = rackhdapi("/api/2.0/nodes/"  + node + "/workflows", action="post", payload=workflow)
+                if result['status'] != 201:
+                    time.sleep(5)
+                else:
+                    break
+            # wait for OBM workflow to complete
+            counter = 0
+            for counter in range(0, 60):
+                time.sleep(10)
+                status = rackhdapi("/api/2.0/workflows/" + result['json']["instanceId"])['json']['_status']
+                if status != "running" and status != "pending":
+                    break
+            if status == "succeeded":
+                break
+            if counter == 60:
+                failedlist.append(node)
+    if len(failedlist) > 0:
+        print "**** Nodes failed OBM settings:", failedlist
+        return False
+    return True
 
 def run_nose(nosepath):
     # this routine runs nosetests from wrapper using path spec 'nosepath'

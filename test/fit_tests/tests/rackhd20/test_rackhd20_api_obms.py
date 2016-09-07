@@ -28,12 +28,6 @@ class rackhd20_api_obms(fit_common.unittest.TestCase):
                 if fit_common.VERBOSITY >= 2:
                     print "Checking:", block
                 self.assertGreater(len(str(item[block])), 0, 'Field error: ' + block)
-    def test_api_20_obms_nodes(self):
-        # check node IDs
-        api_data = fit_common.rackhdapi("/api/2.0/obms")
-        # check links
-        for item in api_data['json']:
-            self.assertEqual(fit_common.rackhdapi(item['node'])['status'], 200, 'Unknown node ID:' + item['node'])
 
     def test_api_20_obms_definitions(self):
         api_data = fit_common.rackhdapi("/api/2.0/obms/definitions")

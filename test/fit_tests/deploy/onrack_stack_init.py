@@ -19,6 +19,18 @@ import pdu_lib
 MAX_CYCLES = 60
 
 class onrack_stack_init(fit_common.unittest.TestCase):
+    # Temporary auth settings routine
+    def test00_set_auth_user(self):
+        print '**** Installing default admin user'
+        fit_common.remote_shell('rm auth.json')
+        auth_json = open('auth.json', 'w')
+        auth_json.write('{"username":"' + fit_common.GLOBAL_CONFIG["api"]["admin_user"] + '", "password":"' + fit_common.GLOBAL_CONFIG["api"]["admin_pass"] + '", "role":"Administrator"}')
+        auth_json.close()
+        fit_common.scp_file_to_ora('auth.json')
+        rc = fit_common.remote_shell("curl -ks -X POST -H 'Content-Type:application/json' https://localhost:" + str(fit_common.GLOBAL_CONFIG['ports']['https']) + "/api/2.0/users -d @auth.json" )
+        if rc['exitcode'] != 0:
+            print "ALERT: Auth admin user not set! Please manually set the admin user account if https access is desired."
+
     def test01_preload_default_sku(self):
         # Load default SKU for unsupported compute nodes
         print '**** Installing default SKU'
@@ -145,60 +157,9 @@ class onrack_stack_init(fit_common.unittest.TestCase):
                 fit_common.time.sleep(10)
         return False
 
-    def test08_install_obm_credentials(self):
-        print "**** Install OBM credentials."
-        # install OBM credentials via workflows
-        count = 0
-        for creds in fit_common.GLOBAL_CONFIG['credentials']['bmc']:
-            # greate graph for setting OBM credentials
-            payload = \
-            {
-                "friendlyName": "IPMI" + str(count),
-                "injectableName": 'Graph.Obm.Ipmi.CreateSettings' + str(count),
-                "options": {
-                    "obm-ipmi-task":{
-                        "user": creds["username"],
-                        "password": creds["password"]
-                    }
-                },
-                "tasks": [
-                    {
-                        "label": "obm-ipmi-task",
-                        "taskName": "Task.Obm.Ipmi.CreateSettings"
-                    }
-            ]
-            }
-            api_data = fit_common.rackhdapi("/api/2.0/workflows/graphs", action="put", payload=payload)
-            self.assertEqual(api_data['status'], 201, 'Incorrect HTTP return code, expecting 201, got ' + str(api_data['status']))
-            count += 1
-        print "**** Configure node OBM settings."
-        # run each OBM credential workflow on each node until success
-        nodelist = fit_common.node_select()
-        succeeded = True
-        for node in nodelist:
-            for num in range(0, count):
-                status = ""
-                workflow = {"name": 'Graph.Obm.Ipmi.CreateSettings' + str(num)}
-                # wait for existing workflow to complete
-                for dummy in range(0, MAX_CYCLES):
-                    result = fit_common.rackhdapi("/api/2.0/nodes/"  + node + "/workflows", action="post", payload=workflow)
-                    if result['status'] != 201:
-                        fit_common.time.sleep(5)
-                    else:
-                        break
-                # wait for OBM workflow to complete
-                counter = 0
-                for counter in range(0, MAX_CYCLES):
-                    fit_common.time.sleep(10)
-                    status = fit_common.rackhdapi("/api/2.0/workflows/" + result['json']["instanceId"])['json']['_status']
-                    if status != "running" and status != "pending":
-                        break
-                if status == "succeeded":
-                    break
-                if counter == MAX_CYCLES:
-                    succeeded = False
-                    print "*** Node failed OBM settings:", node
-        self.assertTrue(succeeded, "OBM settings failed.")
+    def test08_apply_obm_settings(self):
+        print "**** Apply OBM setting to compute nodes."
+        self.assertTrue(fit_common.apply_obm_settings(), "OBM settings failed.")
 
     @fit_common.unittest.skipUnless("bmc" in fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']],"")
     @fit_common.unittest.skip("Skipping 'test09_add_management_server' code incomplete")

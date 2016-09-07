@@ -76,7 +76,8 @@ class rackhd11_computenode_pollers(fit_common.unittest.TestCase):
                 errorlist.append("Error: Node {0} Pollers not running {1}".format(node, list(set(poller_list) - set(poller_dict))))
 
         if errorlist != []:
-            print "{}".format(fit_common.json.dumps(errorlist, indent=4))
+            if fit_common.VERBOSITY >= 2:
+                print "{}".format(fit_common.json.dumps(errorlist, indent=4))
             self.assertEqual(errorlist, [], "Error reported.")
 
 
@@ -113,7 +114,8 @@ class rackhd11_computenode_pollers(fit_common.unittest.TestCase):
                     print fit_common.json.dumps(poll_data.get('json', ""), indent=4)
 
         if errorlist != []:
-            print "{}".format(fit_common.json.dumps(errorlist, indent=4))
+            if fit_common.VERBOSITY >= 2:
+                print "{}".format(fit_common.json.dumps(errorlist, indent=4))
             self.assertEqual(errorlist, [], "Error reported.")
 
     def test_3_poller_headers(self):
@@ -141,7 +143,8 @@ class rackhd11_computenode_pollers(fit_common.unittest.TestCase):
                     print fit_common.json.dumps(poller_data, indent=4)
 
         if errorlist != []:
-            print "{}".format(fit_common.json.dumps(errorlist, indent=4))
+            if fit_common.VERBOSITY >= 2:
+                print "{}".format(fit_common.json.dumps(errorlist, indent=4))
             self.assertEqual(errorlist, [], "Error reported.")
 
     def test_4_poller_default_cache(self):
@@ -169,7 +172,8 @@ class rackhd11_computenode_pollers(fit_common.unittest.TestCase):
                     errorlist.append('Error: Poller {} ID: {} - Pollers not running'.format(poller_id, poller))
 
         if errorlist != []:
-            print "{}".format(fit_common.json.dumps(errorlist, indent=4))
+            if fit_common.VERBOSITY >= 2:
+                print "{}".format(fit_common.json.dumps(errorlist, indent=4))
             self.assertEqual(errorlist, [], "Error reported.")
 
     def test_5_poller_current_data(self):
@@ -194,10 +198,11 @@ class rackhd11_computenode_pollers(fit_common.unittest.TestCase):
                     errorlist.append("Error: Node {} Poller_ID {} Failed to get current poller data, status {}".format(node, poller_id, mondata['status']))
                 else:
                     if fit_common.VERBOSITY >= 2:
-                        print fit_common.json.dumps(mondata, indent=4)
+                        print fit_common.json.dumps(mondata['json'], indent=4)
 
         if errorlist != []:
-            print "{}".format(fit_common.json.dumps(errorlist, indent=4))
+            if fit_common.VERBOSITY >= 2:
+                print "{}".format(fit_common.json.dumps(errorlist, indent=4))
             self.assertEqual(errorlist, [], "Error reported.")
 
     def test_6_poller_status_timestamp(self):
@@ -224,7 +229,8 @@ class rackhd11_computenode_pollers(fit_common.unittest.TestCase):
                 else:
                     errorlist.append("Error: Node {} Poller_ID {} Failed to get current poller data, status {}".format(node, poller_id, mondata['status']))
         if errorlist != []:
-            print "{}".format(fit_common.json.dumps(errorlist, indent=4))
+            if fit_common.VERBOSITY >= 2:
+                print "{}".format(fit_common.json.dumps(errorlist, indent=4))
             self.assertEqual(errorlist, [], "Error reported.")
 
     def test_7_poller_error_counter(self):
@@ -254,7 +260,8 @@ class rackhd11_computenode_pollers(fit_common.unittest.TestCase):
                 if poll_fails != 0:
                     errorlist.append("Node: {} Poller: {} {} reported {} failureCount".format(node, poller, poller_id, poll_fails))
         if errorlist != []:
-            print "{}".format(fit_common.json.dumps(errorlist, indent=4))
+            if fit_common.VERBOSITY >= 2:
+                print "{}".format(fit_common.json.dumps(errorlist, indent=4))
             self.assertEqual(errorlist, [], "Error counters are non-zero in Pollers counters")
         else:
             if fit_common.VERBOSITY >= 2:
@@ -288,7 +295,8 @@ class rackhd11_computenode_pollers(fit_common.unittest.TestCase):
                     print "Created At: {}".format(fit_common.json.dumps(poll_data['json'].get('createdAt')))
                     print "Updated At: {}".format(fit_common.json.dumps(poll_data['json'].get('updatedAt')))
         if errorlist != []:
-            print "{}".format(fit_common.json.dumps(errorlist, indent=4))
+            if fit_common.VERBOSITY >= 2:
+                print "{}".format(fit_common.json.dumps(errorlist, indent=4))
             self.assertEqual(errorlist, [], "Error reporterd.")
 
 if __name__ == '__main__':
