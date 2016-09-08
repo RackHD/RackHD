@@ -41,7 +41,6 @@
         "remotePath": "/amd64-usr"
     }],
     "httpStaticRoot": "/opt/monorail/static/http",
-    "minLogLevel": 3,
     "authUsername": "admin",
     "authPasswordHash": "KcBN9YobNV0wdux8h0fKNqi4uoKCgGl/j8c6YGlG7iA0PB3P9ojbmANGhDlcSBE0iOTIsYsGbtSsbqP4wvsVcw==",
     "authPasswordSalt": "zlxkgxjvcFwm0M8sWaGojh25qNYO8tuNWUMN4xKPH93PidwkCAvaX2JItLA3p7BSCWIzkw4GwWuezoMvKf3UXg==",
