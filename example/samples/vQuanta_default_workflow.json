@@ -2,22 +2,24 @@
     "friendlyName": "vQuanta D51 Default Workflow",
     "injectableName": "Graph.vQuanta.Default",
     "options": {
-      "defaults": {
-        "version": "7",
-        "dnsServers": ["8.8.8.8", "8.8.4.4"],
-        "repo": "{{api.server}}/Centos/7.0",
-        "rootPassword": "rootpassword",
-        "users": [{
-          "name": "rackhd",
-          "password": "rackhd123",
-          "uid": 1010
-        }]
+        "defaults": {
+            "version": "7",
+            "dnsServers": ["8.8.8.8", "8.8.4.4"],
+            "repo": "{{api.server}}/Centos/7.0",
+            "rootPassword": "rootpassword",
+            "users": [
+                {
+                    "name": "rackhd",
+                    "password": "rackhd123",
+                    "uid": 1010
+                }
+            ]
         },
-      "install-centos": {
-        "schedulerOverrides": {
-          "timeout": 3600000
+        "install-centos": {
+            "schedulerOverrides": {
+                "timeout": 3600000
+            }
         }
-      }
     },
     "tasks": [
         {
