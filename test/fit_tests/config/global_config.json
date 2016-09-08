@@ -62,11 +62,11 @@
     "proxy": "http://web.hwimo.lab.emc.com:3128",
     "mirror": "http://mirrors.hwimo.lab.emc.com/mirrors",
     "os": {
-      "esxi55": "http://172.31.128.1:8080/mirror/esxi/5.5/esxi",
-      "esxi60": "http://172.31.128.1:8080/mirror/esxi/6.0/esxi6",
-      "centos65": "http://172.31.128.1:8080/mirror/centos/6.5/os/x86_64",
-      "centos70": "http://172.31.128.1:8080/mirror/centos/7/os/x86_64",
-      "rhel70": "http://172.31.128.1:8080/mirror/rhel/7.0/os/x86_64"
+      "esxi55": "http://172.31.128.1:9080/mirror/esxi/5.5/esxi",
+      "esxi60": "http://172.31.128.1:9080/mirror/esxi/6.0/esxi6",
+      "centos65": "http://172.31.128.1:9080/mirror/centos/6.5/os/x86_64",
+      "centos70": "http://172.31.128.1:9080/mirror/centos/7/os/x86_64",
+      "rhel70": "http://172.31.128.1:9080/mirror/rhel/7.0/os/x86_64"
     },
     "install": {
       "template": "http://mirrors.hwimo.lab.emc.com/mirrors/ova/ora-ubuntu-1604.ova",
