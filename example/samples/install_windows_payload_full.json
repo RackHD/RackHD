@@ -19,12 +19,8 @@
       "productkey": "XXXX-XXXX-XXXX-XXXX-XXXX",
       "smbUser": "onrack",
       "smbPassword": "onrack",
-      "completionUri": "winpe-kickstart.ps1",
       "smbRepo": "\\\\172.31.128.1\\windowsServer2012",
       "repo": "http://172.31.128.1:8080/winpe"
-    },
-    "firstboot-callback-uri-wait":{
-      "completionUri": "renasar-ansible.pub"
     }
   }
 }
