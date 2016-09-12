@@ -232,41 +232,7 @@ class rackhd20_computenode_pollers(fit_common.unittest.TestCase):
                 print "{}".format(fit_common.json.dumps(errorlist, indent=4))
             self.assertEqual(errorlist, [], "Error reported.")
 
-    def test_7_poller_error_counter(self):
-        msg = "Description: Check for Poller Errors"
-        if fit_common.VERBOSITY >= 2:
-            print "\t{0}".format(msg)
-
-        errorlist = []
-        for node in NODELIST:
-            if fit_common.VERBOSITY >= 2:
-                nodetype = get_rackhd_nodetype(node)
-                print "\nNode: {} Type: {}".format(node, nodetype)
-            mondata = fit_common.rackhdapi("/api/2.0/nodes/" + node + "/pollers")
-            self.assertIn(mondata['status'], [200], "Incorrect HTTP return code, expecting 200, received {}".format(mondata['status']))
-            for item in mondata['json']:
-                # check required fields
-                if item['pollInterval'] == 0:
-                    errorlist.append("Node: {} pollInterval field error: {}".format(node, item['pollInterval']))
-                for subitem in ['node', 'config', 'createdAt', 'id', 'name', 'config', 'updatedAt']:
-                    if subitem not in item:
-                        errorlist.append("Node: {} field error: {}".format(node, subitem))
-            poller_dict = test_api_utils.get_supported_pollers(node)
-            for poller in poller_dict:
-                poller_id = poller_dict[poller]["poller_id"]
-                poll_data = fit_common.rackhdapi("/api/2.0/pollers/" + poller_id)
-                poll_fails = poll_data['json'].get('failureCount', 0)
-                if poll_fails != 0:
-                    errorlist.append("Node: {} Poller: {} {} reported {} failureCount".format(node, poller, poller_id, poll_fails))
-        if errorlist != []:
-            if fit_common.VERBOSITY >= 2:
-                print "{}".format(fit_common.json.dumps(errorlist, indent=4))
-            self.assertEqual(errorlist, [], "Error reported in Pollers counters")
-        else:
-            if fit_common.VERBOSITY >= 2:
-                print "No Poller errors found"
-
-    def test_8_nodes_id_pollers(self):
+    def test_7_nodes_id_pollers(self):
         msg = "Description: Display the poller updated-at per node."
         if fit_common.VERBOSITY >= 2:
             print "\t{0}".format(msg)

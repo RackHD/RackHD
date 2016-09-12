@@ -685,7 +685,7 @@ def apply_obm_settings_new():
                         # retry if other workflows active
                         result = rackhdapi("/api/2.0/nodes/"  + node + "/workflows", action="post", payload=workflow)
                         if result['status'] == 201:
-                            nodestatus[node] = {"status": "running", "instanceId": result['json']["instanceId"], "sku": nodetype, "retry": 0}
+                            nodestatus[node].update({"status": "running", "instanceId": result['json']["instanceId"], "retry": 0})
                             break
                         else:
                            time.sleep(5)
@@ -693,11 +693,15 @@ def apply_obm_settings_new():
                 # check OBM workflow status
                 if nodestatus[node]['status'] == "running":
                     nodestatus[node]['retry'] += 1
-                    state = rackhdapi("/api/2.0/workflows/" + nodestatus[node]['instanceId'])
-                    if state['status'] == 200:
-                        if state['json']['_status'] == "succeeded":
+                    state_data = rackhdapi("/api/2.0/workflows/" + nodestatus[node]['instanceId'])
+                    if state_data['status'] == 200:
+                        if "_status" in state_data['json']:
+                            state = state_data['json']['_status']
+                        else:
+                            state = state_data['json']['status']
+                        if state == "succeeded":
                             nodestatus[node]['status'] = "succeeded"
-                        if state['json']['_status'] in ["failed", "cancelled", "timeout"]:
+                        if state in ["failed", "cancelled", "timeout"]:
                             nodestatus[node]['status'] = "pending"
         if VERBOSITY > 4:
             print "**** Node(s) OBM status:\n", json.dumps(nodestatus, sort_keys=True, indent=4,)
@@ -769,7 +773,7 @@ def apply_obm_settings():
     failedlist = []
     for node in nodelist:
         for num in range(0, count):
-            status = ""
+            nodestatus = ""
             skuid = rackhdapi('/api/2.0/nodes/' + node)['json'].get("sku")
             skudata = rackhdapi(skuid)['text']
             if "rmm.data.MAC" in skudata:
@@ -787,10 +791,15 @@ def apply_obm_settings():
             counter = 0
             for counter in range(0, 60):
                 time.sleep(10)
-                status = rackhdapi("/api/2.0/workflows/" + result['json']["instanceId"])['json']['_status']
-                if status != "running" and status != "pending":
-                    break
-            if status == "succeeded":
+                state_data = rackhdapi("/api/2.0/workflows/" + result['json']["instanceId"])
+                if state_data['status'] == 200:
+                    if "_status" in state_data['json']:
+                        nodestatus = state_data['json']['_status']
+                    else:
+                        nodestatus = state_data['json']['status']
+                    if nodestatus != "running" and nodestatus != "pending":
+                        break
+            if nodestatus == "succeeded":
                 break
             if counter == 60:
                 failedlist.append(node)
