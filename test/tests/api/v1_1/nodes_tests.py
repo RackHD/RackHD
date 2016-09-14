@@ -125,21 +125,31 @@ class NodesTests(object):
         routeId = message.delivery_info.get('routing_key').split('graph.finished.')[1]
         Workflows().workflows_get()
         workflows = self.__get_data()
-        message.ack()
         for w in workflows:
-            definition = w['definition']
+            definition = w.get('definition', {})
             injectableName = definition.get('injectableName')
             if injectableName == 'Graph.SKU.Discovery':
-                graphId = w['context'].get('graphId')
+                graphId = w.get('context',{}).get('graphId')
                 if graphId == routeId:
+                    message.ack()
                     status = body.get('status')
-                    if status == 'succeeded':
+                    if status == 'succeeded' or status == 'failed':
                         options = definition.get('options')
-                        nodeid = options['defaults'].get('nodeId')
+                        nodeid = options.get('defaults',{}).get('nodeId')
                         duration = datetime.now() - self.__discovery_duration
-                        LOG.info('{0} - target: {1}, status: {2}, route: {3}, duration: {4}'
-                                .format(injectableName,nodeid,status,routeId,duration))
-                        self.__discovered += 1
+                        msg = {
+                            'graph_name': injectableName,
+                            'target': nodeid,
+                            'status': status,
+                            'route_id': routeId,
+                            'duration': str(duration)
+                        }
+                        if status == 'failed':
+                            msg['active_task'] = w.get('tasks',{})
+                            LOG.error(msg, json=True)
+                        else:
+                            LOG.info(msg, json=True)
+                            self.__discovered += 1
                         break
         check = self.check_compute_count()
         if check and check == self.__discovered:
