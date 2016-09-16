@@ -1,6 +1,6 @@
 # RackHD&trade;
 
-> RackHD is a new open source project in active development by Dell EMC.  If you have questions or would like to contact us about the RackHD project, you can contact us via email at our projects mailing list: rackhd@googlegroups.com
+> RackHD is a new open source project in active development by Dell co.  If you have questions or would like to contact us about the RackHD project, you can contact us via email at our projects mailing list: rackhd@googlegroups.com
 
 RackHD is a technology stack created for enabling hardware management and orchestration, to provide cohesive APIs to enable automated infrastructure. In a Converged Infrastructure Platform (CIP) architecture, RackHD software provides hardware management and orchestration
 (M&O). It serves as an abstraction layer between other M&O layers and the underlying physical hardware. Developers can use the RackHD API to create a user interface that serves as single point of access for managing hardware services regardless of the specific hardware in place.
@@ -23,7 +23,7 @@ This project adheres to the [Open Code of Conduct][code-of-conduct]. By particip
 We maintain a mailing list at https://groups.google.com/d/forum/rackhd. You can visit the group
 through the web page, or subscribe directly from email by sending email to rackhd+subscribe@googlegroups.com
 
-We also have a #RackHD slack channel: You can get an invite by requesting one at http://community.emccode.com.
+We also have a #RackHD slack channel: You can get an invite by requesting one at http://community.codedellemc.com.
 
 ## Documentation
 
