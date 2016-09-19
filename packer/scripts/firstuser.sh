@@ -44,7 +44,7 @@ stopServices() {
 waitForServices() {
   local attempt=0
   local maxto=20
-  local url=${HTTP_URL}/api/2.0/nodes
+  local url=${HTTP_URL}/swagger-ui
   echo "waiting for rackhd services.. "
   while [ ${attempt} != ${maxto} ]; do
     echo -ne "waited `expr $attempt \* 10` seconds\r"
