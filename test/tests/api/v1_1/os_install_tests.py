@@ -206,6 +206,31 @@ class OSInstallTests(object):
             }
         self.__post_workflow(graph_name, nodes, body)
 
+    def install_coreos(self, version, nodes=[], options=None):
+        graph_name = 'Graph.InstallCoreOS'
+        os_repo = defaults.get('RACKHD_COREOS_REPO_PATH', \
+            self.__base + '/repo/coreos')
+        body = options
+        if body == None:
+            body = {
+                'options': {
+                    'defaults': {
+                        'installDisk': '/dev/sda',
+                        'version': version,
+                        'repo': os_repo,
+			            'users': [{ 'name': 'onrack', 'password': 'Onr@ck1!', 'uid': 1010 }]
+                    },
+                    'set-boot-pxe': self.__obm_options,
+                    'reboot': self.__obm_options,
+                    'install-os': {
+                        'schedulerOverrides': {
+                            'timeout': 3600000
+                        }
+                    }
+                }
+            }
+        self.__post_workflow(graph_name, nodes, body)
+
     @test(enabled=True, groups=['centos-6-5-install.v1.1.test'])
     def test_install_centos_6(self):
         """ Testing CentOS 6.5 Installer Workflow """
@@ -241,3 +266,7 @@ class OSInstallTests(object):
         """ Testing Windows Server 2012 Installer Workflow """
         self.install_windowsServer2012('10.40') 
 
+    @test(enabled=True, groups=['coreos-install.v1.1.test'])
+    def test_install_coreos(self, nodes=[], options=None):
+        """ Testing CoreOS Installer Workflow """
+        self.install_coreos('899.17.0')
