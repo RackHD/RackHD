@@ -6,6 +6,7 @@ from modules.worker import WorkerThread, WorkerTasks
 from on_http_api1_1 import NodesApi as Nodes
 from on_http_api1_1 import rest
 from on_http_api1_1 import PollersApi as Pollers
+from on_http_api1_1 import WorkflowApi
 from workflows_tests import WorkflowsTests as Workflows
 from datetime import datetime
 from proboscis.asserts import assert_equal
@@ -29,11 +30,47 @@ if URI == None:
     ENABLED = False
 IS_EMC = defaults.get('RACKHD_REDFISH_EMC_OEM', False)
 
+ID_LED_GRAPH_LIST = [
+    {
+        'friendlyName': 'LED Lit',
+        'injectableName': 'Graph.Set.IndentifyLED.On',
+        'options': { 'led-on': { 'obmServiceName': 'redfish-obm-service' } },
+        'tasks': [
+            {
+                'label': 'led-on',
+                'taskName': 'Task.Obm.Node.IdentifyOn'
+            }
+        ]
+    },
+    {
+        'friendlyName': 'Led Blinking',
+        'injectableName': 'Graph.Set.IndentifyLED.Blink',
+        'options': { 'led-blink': { 'obmServiceName': 'redfish-obm-service' } },
+        'tasks': [
+            {
+                'label': 'led-blink',
+                'taskName': 'Task.Obm.Node.IdentifyBlink'
+            }
+        ]
+    },
+    {
+        'friendlyName': 'Led Off',
+        'injectableName': 'Graph.Set.IndentifyLED.Off',
+        'options': { 'led-off': { 'obmServiceName': 'redfish-obm-service' } },
+        'tasks': [
+            {
+                'label': 'led-blink',
+                'taskName': 'Task.Obm.Node.IdentifyOff'
+            }
+        ]
+    }
+]
+
 def next_element(type, list):
     for item in list:
         if item['Type'] == type:
             return list.pop(list.index(item))
-        
+
 @test(groups=['redfish-endpoint.v1.1.tests'])
 class RedfishEndpointTests(object):
     
@@ -54,29 +91,38 @@ class RedfishEndpointTests(object):
         workflow = Workflows()
         workflow.post_workflows(graph_name, nodes=nodes, tasks=tasks, data=body, callback=callback)
     
-    @before_class
+    def __get_enclosure_ids(self):
+        ids = []
+        Nodes().nodes_get()
+        nodes = self.__get_data()
+        for node in nodes:
+            if node.get('type') == 'enclosure':
+                for obm in node.get('obmSettings', []):
+                    if 'redfish-obm-service' == obm.get('service'):
+                        ids.append(node.get('id'))
+        return ids 
+    
+    @before_class(always_run=True)
     def setup(self):
+        for graph in ID_LED_GRAPH_LIST:
+            name = graph.get('injectableName')
+            try:
+                WorkflowApi().workflows_library_injectable_name_get(name)
+            except rest.ApiException as e:
+                if e.status == 404:
+                    LOG.info('Adding graph definition \"{0}\"'.format(name))
+                    WorkflowApi().workflows_put(body=graph)
         if IS_EMC:
-            def get_enclosure_ids():
-                ids = []
-                Nodes().nodes_get()
-                nodes = self.__get_data()
-                for node in nodes:
-                    if node.get('type') == 'enclosure':
-                        for obm in node.get('obmSettings', []):
-                            if 'redfish-obm-service' == obm.get('service'):
-                                ids.append(node.get('id'))
-                return ids 
             def callback(body, message):
                 message.ack()
-                for node in get_enclosure_ids():
+                for node in self.__get_enclosure_ids():
                     Nodes().nodes_identifier_workflows_active_get(node)
                     if self.__client.last_response.status == 204:
                         for task in tasks:
                             if task.id == node:
                                 task.worker.stop()
                                 task.running = False
-            for id in get_enclosure_ids():
+            for id in self.__get_enclosure_ids():
                 tasks = []
                 body = {
                     'options': {
@@ -89,8 +135,10 @@ class RedfishEndpointTests(object):
                 try:
                     self.__post_node_workflow([id], 'Graph.Emc.Compose.System', body, tasks=tasks, callback=callback)
                 except rest.ApiException as e:
-                    LOG.warning(e)    
-    @after_class
+                    LOG.warning(e)
+
+        
+    @after_class(always_run=True)
     def teardown(self):
         for node in self.__nodes:
             id = node.get('id')
@@ -120,7 +168,7 @@ class RedfishEndpointTests(object):
                 }
             }
         }
-        
+            
         if IS_EMC:
             body['options']['when-catalog-emc'] = { 'autoCatalogEmc': 'true' }
             body['options']['when-pollers-emc'] = { 'autoCreatePollerEmc': 'true' }
@@ -157,7 +205,17 @@ class RedfishEndpointTests(object):
                     name.append(p)
             assert_equal(len(pollers), len(name), \
                 message='Unexpected pollers found in Redfish enclosure')
-        
+     
+    @test(enabled=ENABLED, \
+        groups=['redfish-indicator-led.v1.1.test'], \
+        depends_on_groups=['redfish-discovery.v1.1.test'])    
+    def redfish_indicator_led_test(self):
+        """ Testing Redfish Chassis IndicatorLED Control """
+        node_ids = self.__get_enclosure_ids()
+        for graph in ID_LED_GRAPH_LIST:
+            name = graph.get('injectableName')
+            self.__post_node_workflow(node_ids, name, {})
+
     @test(enabled=IS_EMC, \
         groups=['redfish-emc-catalogs.v1.1.test'], \
         depends_on_groups=['redfish-discovery.v1.1.test'])    
@@ -276,5 +334,6 @@ class RedfishEndpointTests(object):
             if node.get('type') == 'compute':
                 if self.__system_name in node.get('identifiers'):
                     fail('failure deleting composed system')
+
 
         
