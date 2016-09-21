@@ -244,7 +244,7 @@ class NodesTests(object):
             assert_equal(204, c.status, message=c.reason)
         assert_raises(rest.ApiException, Api().nodes_del_by_id, 'fooey')
 
-    @test(groups=['catalog_nodes-api2'], depends_on_groups=['delete-whitelist-node-api2'])
+    @test(groups=['catalog_nodes-api2'], depends_on_groups=['delete-node-api2'])
     def test_node_catalogs(self):
         """ Testing GET:/api/2.0/nodes/:id/catalogs """
         resps = []
