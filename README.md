@@ -23,7 +23,7 @@ This project adheres to the [Open Code of Conduct][code-of-conduct]. By particip
 We maintain a mailing list at https://groups.google.com/d/forum/rackhd. You can visit the group
 through the web page, or subscribe directly from email by sending email to rackhd+subscribe@googlegroups.com
 
-We also have a #RackHD slack channel: You can get an invite by requesting one at http://community.emccode.com.
+We also have a #RackHD slack channel: You can get an invite by requesting one at http://community.codedellemc.com.
 
 ## Documentation
 
