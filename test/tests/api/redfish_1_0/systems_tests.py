@@ -217,10 +217,8 @@ class SystemsTests(object):
             self.__resetActionTypes = reset_actions.get('reset_type@Redfish.AllowableValues')
             assert_equal(dumps(self.__resetActionTypes), dumps(['On',\
                                                                 'ForceOff',\
-                                                                'GracefulShutdown',\
                                                                 'GracefulRestart',\
                                                                 'ForceRestart',\
-                                                                'Nmi',\
                                                                 'ForceOn',\
                                                                 'PushPowerButton']))
 
