@@ -16,7 +16,7 @@ from proboscis import test
 from proboscis import after_class
 from proboscis import before_class
 from proboscis.asserts import fail
-from json import dumps, loads
+from json import dumps, loads, load
 import os
 
 LOG = Log(__name__)
@@ -36,8 +36,10 @@ class OSInstallTests(object):
         self.__obm_options = { 
             'obmServiceName': defaults.get('RACKHD_GLOBAL_OBM_SERVICE_NAME', \
                 'ipmi-obm-service')
-	}
-            
+        }
+        self.__sampleDir = defaults.get('RACKHD_SAMPLE_PAYLOADS_PATH', \
+            '../example/samples/')
+
     @before_class()
     def setup(self):
         pass
@@ -68,7 +70,15 @@ class OSInstallTests(object):
                 'reboot-end': self.__obm_options
             }
         }
-        self.__post_workflow('Graph.ShellCommands', [], body) 
+        self.__post_workflow('Graph.ShellCommands', [], body)
+
+    def __get_os_install_payload(self, payload_file_name, os_repo):
+        payload = open(self.__sampleDir  + payload_file_name, 'r')
+        body = load(payload)
+        payload.close()
+        if body != None:
+            body['options']['defaults']['repo'] = os_repo
+        return body
 
     @test(enabled=ENABLE_FORMAT_DRIVE, groups=['format-drives.v1.1.test'])
     def test_format_drives(self):
@@ -206,29 +216,13 @@ class OSInstallTests(object):
             }
         self.__post_workflow(graph_name, nodes, body)
 
-    def install_coreos(self, version, nodes=[], options=None):
+    def install_coreos(self, nodes=[], options=None):
         graph_name = 'Graph.InstallCoreOS'
         os_repo = defaults.get('RACKHD_COREOS_REPO_PATH', \
             self.__base + '/repo/coreos')
         body = options
         if body == None:
-            body = {
-                'options': {
-                    'defaults': {
-                        'installDisk': '/dev/sda',
-                        'version': version,
-                        'repo': os_repo,
-			            'users': [{ 'name': 'onrack', 'password': 'Onr@ck1!', 'uid': 1010 }]
-                    },
-                    'set-boot-pxe': self.__obm_options,
-                    'reboot': self.__obm_options,
-                    'install-os': {
-                        'schedulerOverrides': {
-                            'timeout': 3600000
-                        }
-                    }
-                }
-            }
+            body = self.__get_os_install_payload('install_coreos_payload_minimal.json', os_repo)
         self.__post_workflow(graph_name, nodes, body)
 
     @test(enabled=True, groups=['centos-6-5-install.v1.1.test'])
@@ -269,4 +263,4 @@ class OSInstallTests(object):
     @test(enabled=True, groups=['coreos-install.v1.1.test'])
     def test_install_coreos(self, nodes=[], options=None):
         """ Testing CoreOS Installer Workflow """
-        self.install_coreos('899.17.0')
+        self.install_coreos()
