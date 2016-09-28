@@ -121,7 +121,7 @@ class EventServiceTests(object):
             id = member.get('@odata.id').split('/redfish/v1/EventService/Subscriptions/')[1]
             redfish().delete_event(id)
             status = self.__client.last_response.status
-            assert_equal(200, status, message='unexpected status on DELETE')
+            assert_equal(204, status, message='unexpected status on DELETE')
         redfish().get_events_collection()
         data = self.__get_data()
         assert_equal(len(data.get('Members')), 0, message='unexpected subscription size, expected zero')
