@@ -615,7 +615,7 @@ def cancel_active_workflows(nodeid):
        exitstatus = False
     return exitstatus
 
-def apply_obm_settings():
+def apply_obm_settings(retry=30):
     # New routine to install OBM credentials via workflows in parallel
     count = 0
     for creds in GLOBAL_CONFIG['credentials']['bmc']:
@@ -672,7 +672,7 @@ def apply_obm_settings():
 
     # run each OBM credential workflow on each node in parallel until success
     nodestatus = {} # dictionary with node IDs and status of each node
-    for dummy in range(0, 30):
+    for dummy in range(0, retry):
         nodelist = node_select()
         for node in nodelist:
             if node not in nodestatus:
