@@ -20,7 +20,7 @@ from json import dumps, loads
 import os
 
 LOG = Log(__name__)
-DEFAULT_TIMEOUT = 5400
+DEFAULT_TIMEOUT_SEC = 5400
 ENABLE_FORMAT_DRIVE=False
 if os.getenv('RACKHD_ENABLE_FORMAT_DRIVE', 'false') == 'true': 
     ENABLE_FORMAT_DRIVE=True
@@ -50,7 +50,7 @@ class OSInstallTests(object):
         return loads(self.__client.last_response.data)
     
     def __post_workflow(self, graph_name, nodes, body):
-        workflows().post_workflows(graph_name, timeout_sec=DEFAULT_TIMEOUT, nodes=nodes, data=body)         
+        workflows().post_workflows(graph_name, timeout_sec=DEFAULT_TIMEOUT_SEC, nodes=nodes, data=body)         
 
     def __format_drives(self):
         # Clear disk MBR and partitions
@@ -166,14 +166,17 @@ class OSInstallTests(object):
                         'kargs':{
                             'live-installer/net-image': os_repo + '/install/filesystem.squashfs'
                         },
-                        'users': [{ 'name': 'onrack', 'password': 'Onr@ck1!', 'uid': 1010 }]
+                        'users': [{ 'name': 'onrack', 'password': 'Onr@ck1!', 'uid': 1010 }],
+                        'rootPassword': 'Onr@ck1!'
                     },
                     'set-boot-pxe': self.__obm_options,
                     'reboot': self.__obm_options,
                     'install-ubuntu': {
-                        'schedulerOverrides': {
-                            'timeout': 3600000
-                        }
+                        '_taskTimeout': 3600000
+                    },
+                    'validate-ssh': {
+                        '_taskTimeout': 1200000,
+                        'retries': 10
                     }
                 }
             }
@@ -186,8 +189,9 @@ class OSInstallTests(object):
             fail('user must set RACKHD_SMB_WINDOWS_REPO_PATH')
         body = options
         if body == None:
-        # The value of the productkey below is not a valid product key. It is a KMS client key that was generated to run the workflows without requiring a real product key. This key is 
-        # available to public on the Microsoft site.
+            # The value of the productkey below is not a valid product key. It is a KMS client 
+            # key that was generated to run the workflows without requiring a real product key. 
+            # This key is available to public on the Microsoft site.
             body = {
                 'options': {
                     'defaults': {
