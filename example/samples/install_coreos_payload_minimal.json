@@ -1,0 +1,8 @@
+{
+    "options": {
+        "defaults": {
+            "version": "899.17.0",
+            "repo": "http://172.31.128.1:9080/coreos/amd64-usr"
+        }
+    }
+}
