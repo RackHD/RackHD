@@ -1,11 +1,11 @@
 {
     "options": {
         "defaults": {
-            "repo": "{{ api.server }}/ubuntu",
+            "repo": "{{ file.server }}/ubuntu",
             "version": "trusty",
             "baseUrl": "install/netboot/ubuntu-installer/amd64",
             "kargs": {
-                "live-installer/net-image": "{{ api.server }}/ubuntu/install/filesystem.squashfs"
+                "live-installer/net-image": "{{ file.server }}/ubuntu/install/filesystem.squashfs"
             }
         }
     }
