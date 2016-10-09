@@ -35,7 +35,8 @@
                         "gateway": "fe80::5efe:131.107.25.1",
                         "netmask": "ffff.ffff.ffff.ffff.0.0.0.0",
                         "vlanIds": [101, 106]
-                    }
+                    },
+                    "esxSwitchName": "vSwitch0"
                 },
                 {
                     "device": "2c:60:0c:ad:d5:ba",
@@ -50,7 +51,8 @@
                         "gateway": "fe80::5efe:131.107.25.100",
                         "netmask": "ffff.ffff.ffff.ffff.0.0.0.0",
                         "vlanIds": [106, 108]
-                    }
+                    },
+                    "esxSwitchName": "vSwitch1"
                 }
             ],
             "installDisk": "t10.ATA_____32GB_SATA_Flash_Drive___________________B0614305800900000021",
