@@ -7,7 +7,7 @@
   sudo: yes
 
 - name: Get RackHD from source
-  git: repo=https://github.com/rackhd/rackhd
+  git: repo=https://github.com/dell-smi/rackhd
        dest="{{ ansible_env.HOME }}/src"
        accept_hostkey=true
        version="{{ branch | default('master') }}"
