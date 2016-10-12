@@ -1,0 +1,69 @@
+{
+	"dell":{
+		"credentials":{
+			"user": "root",
+			"password": "calvin"
+		},
+		
+		"services":{
+			"bios":{
+				"host": "https://100.68.123.97:8440",
+				"endpoints":{
+					"config": "/wsman/bios/collectConfig",
+					"bootOrder": "/wsman/bios/collectBootOrderDetails",
+					"softwareIdentity": "/wsman/bios/collectSoftwareIdentity"
+				}
+			},
+			"discovery":{
+				"host": "http://100.68.123.100:9600",
+				"endpoints":{
+					"discoverIpList": "/smi/discover/ips",
+					"discoverIpRange": "/smi/discover/range"
+				}
+			},
+			"inventory":{
+				"host": "http://100.68.123.100:9600",
+				"endpoints":{
+					"hardware": "/smi/server/hardware",
+					"software": "/smi/server/software",
+					"nics": "/smi/server/nics",
+					"summary": "/smi/server/summary",
+					"chassisDetail": "/smi/chassis/details",
+					"chassisSummary": "/smi/chassis/summary",
+					"serverCallback": "/smi/server/inventory",
+					"chassisCallback": "/smi/chassis/inventory",
+					"northboundCallbackUri": "http://100.68.124.1:9080/api/2.0/nodes/_IDENTIFIER_/workflows",
+					"callbackUri": "http://100.68.124.1:9080/api/1.1/callback/_IDENTIFIER_"
+				}
+			},
+			"management":{
+				"host": "https://100.68.123.97:8444",
+				"endpoints":{
+					"power": "/wsman/management/managePower",
+					"reset": "/wsman/management/reset",
+					"eject": "/wsman/management/eject"
+				}
+			},
+			"config": {
+				"host": "https://100.68.123.97:8441",
+				"endpoints":{
+					"configureTraps": "/wsman/config/configureTraps",
+					"updateTrapFormat": "/wsman/config/updateTrapFormat",
+					"setTroubleshoot": "/wsman/config/setTroubleShootMode",
+					"clearTroubleshoot": "/wsman/config/clearTroubleShootMode", 
+					"blinkLED": "/wsman/config/startBlinkLED",
+					"stopBlinkLED": "/wsman/config/stopBlinkLED"
+				}
+			},
+			"logistics": {
+				"host": "https://100.68.123.97:8443",
+				"endpoints":{
+					"hypervisorInfo": "/wsman/logistics/hypervisorInfo",
+					"checkLicense": "/wsman/logistics/checkLicense",
+					"getSelLogs": "/wsman/logistics/collectSelLogs",
+					"getLcLogs": "/wsman/logistics/collectLcLogs"
+				}
+			}
+		}
+	}
+}
