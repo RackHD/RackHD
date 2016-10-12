@@ -24,9 +24,9 @@ DEFAULT_TIMEOUT_SEC = 5400
 ENABLE_FORMAT_DRIVE=False
 if os.getenv('RACKHD_ENABLE_FORMAT_DRIVE', 'false') == 'true': 
     ENABLE_FORMAT_DRIVE=True
+IS_EMC = defaults.get('RACKHD_REDFISH_EMC_OEM', False)
 
-@test(groups=['os-install.v1.1.tests'], \
-    depends_on_groups=['amqp.tests'])
+@test(groups=['os-install.v1.1.tests'])
 class OSInstallTests(object):
 
     def __init__(self):
@@ -37,6 +37,8 @@ class OSInstallTests(object):
             'obmServiceName': defaults.get('RACKHD_GLOBAL_OBM_SERVICE_NAME', \
                 'ipmi-obm-service')
         }
+        if self.__obm_options['obmServiceName'] == 'redfish-obm-service':
+            self.__obm_options['force'] = 'true'
         self.__sampleDir = defaults.get('RACKHD_SAMPLE_PAYLOADS_PATH', \
             '../example/samples/')
 
@@ -127,12 +129,16 @@ class OSInstallTests(object):
                     'set-boot-pxe': self.__obm_options,
                     'reboot': self.__obm_options,
                     'install-os': {
-                        'schedulerOverrides': {
-                            'timeout': 3600000
-                        }
+                        '_taskTimeout': 3600000
+                    },
+                    'validate-ssh': {
+                        '_taskTimeout': 1200000,
+                        'retries': 10
                     }
                 }
             }
+        if self.__obm_options['obmServiceName'] == 'redfish-obm-service' and IS_EMC:
+            body['options']['install-os']['kargs'] = {'acpi':'off'}
         self.__post_workflow(graph_name, nodes, body)  
         
     def install_suse(self, version, nodes=[], options=None):
