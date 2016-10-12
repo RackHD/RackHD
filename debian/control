@@ -1,0 +1,30 @@
+# Copyright 2015-2016, EMC, Inc.
+
+Source: rackhd
+Maintainer: RackHD by EMC <rackhd@hwimo.lab.emc.com>
+Section: rackhd
+Priority: optional
+Standards-Version: 3.9.5
+Build-Depends: debhelper (>= 9)
+
+Package: rackhd
+Architecture: any
+# revisit this list, move more of these dependencies to the specific 
+# rackhd-<> package that the real dependency lives in
+Depends: ${misc:Depends},
+         debconf (>= 0.2.26),
+         ansible,
+         apt-mirror,
+         amtterm,
+         ipmitool,
+         isc-dhcp-server,
+         lldpd,
+         mongodb,
+         on-dhcp-proxy,
+         on-http,
+         on-syslog,
+         on-taskgraph,
+         on-tftp,
+         rabbitmq-server
+Description: base package for all of RackHD
+ uber package for all rackhd installation

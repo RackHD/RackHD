@@ -1,0 +1,19 @@
+#!/usr/bin/make -f
+%:
+	@echo "ARGS " $@ > /tmp/dh-args
+	dh $@
+
+
+
+#MKDIR=mkdir -p
+#
+#%:
+#	dh $@ --with=systemd
+#
+#override_dh_auto_test:
+#	$(info skipping test)
+#
+#override_dh_auto_install:
+#	dh_auto_install
+#	dh_systemd_enable --name=onrack-init
+#

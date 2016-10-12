@@ -1,0 +1,60 @@
+#!/bin/bash
+
+# Copyright 2015, EMC, Inc.
+
+set -e
+
+
+#############################################
+#  Check NodeJS is greater than 4.x
+#
+#############################################
+
+check_nodejs(){
+    installed=0;
+    if [ "`type -p nodejs`" != "" ]; then
+        # Node JS being installed
+        NODEJS_VER=$(nodejs --version | sed s/v//)
+        if [ "$NODEJS_VER" \< "4.0" ] ; then
+            # Remove Old NodeJS
+            echo "[INFO] removing old version [$NODEJS_VER] of NodeJS..."
+            sudo apt-get -y remove nodeijs nodejs-legacy
+            installed=1;
+        else
+            installed=0;
+        fi
+    else
+        installed=1;
+    fi
+    return $installed
+    
+}
+
+check_install_nodejs(){
+
+    if ! check_nodejs ; then
+            echo "[INFO] Your NodeJS has not been installed or too old, install NodeJS 4.x first...."
+            # Install NodeJS 4.x =========== Starts ============
+            curl --silent https://deb.nodesource.com/gpgkey/nodesource.gpg.key | sudo apt-key add -
+            VERSION=node_4.x
+            DISTRO="$(lsb_release -s -c)"
+            echo "deb https://deb.nodesource.com/$VERSION $DISTRO main" | sudo tee /etc/apt/sources.list.d/nodesource.list
+            echo "deb-src https://deb.nodesource.com/$VERSION $DISTRO main" | sudo tee -a /etc/apt/sources.list.d/nodesource.list
+
+            sudo apt-get update
+            sudo apt-get -y install nodejs
+            # Install NodeJS 4.x =========== Ends ============
+    fi
+    # Double Check ========
+
+    if check_nodejs; then
+        return 0;
+    else
+        return 1;
+    fi
+
+}
+
+
+check_install_nodejs
+

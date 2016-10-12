@@ -1,0 +1,8 @@
+Template: RackHD/NIC_NAME
+Type: string
+Description: Please specific the name of control NIC port of RackHD(example : eth1) 
+
+Template: RackHD/WILLING_TO_FORCE_IP
+Type: boolean
+Description: Do you want to force your NIC IP to 172.31.128.1 ?  
+

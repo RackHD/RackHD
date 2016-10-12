@@ -1,0 +1,161 @@
+#!/bin/bash
+set -e
+
+#load debconf to ask use input parameters
+. /usr/share/debconf/confmodule
+
+
+SERVICES=("on-http" "on-taskgraph" "on-dhcp-proxy" "on-tftp" "on-syslog")
+
+
+
+#############################################
+#  Check if you have 2 NIC as below:
+#  eth0 for the public network - providing access to RackHD APIs, and providing routed (layer3) access to out of band network for machines under management
+#  eth1 for dhcp/pxe to boot/configure the machines. and IP configurated as static ( 172.31.128.0/22 )
+#
+#
+# Parameter #1 ($1) is the NIC name of the control port for RacKHD
+#
+#############################################
+check_NIC(){
+    NIC_Name=$1
+
+    if [ "$NIC_Name" != "eth1" ]; then
+        echo "[WARNING] RackHD takes the control NIC port as eth1 by default , with IP 172.31.128.0/22. RackHD may not function well if you left all config as default ! "
+        sleep 2
+    fi
+    NIC_IP=$( ifconfig $NIC_Name | grep "inet addr" | awk -F: '{print $2}' | awk '{print $1}' )
+
+    if [ "$NIC_IP" != "172.31.128.1" ]; then
+        echo -n "Do you want this script to force set your $NIC_Name IP to 172.31.128.1 ? (type \"yes\" to force set, others to abort) > "
+        db_get RackHD/WILLING_TO_FORCE_IP
+        willing_to_force_ip=$RET
+        echo "111111111111111111111111111"
+        echo "$willing_to_force_ip"
+        if [ "$willing_to_force_ip" == "true" ]; then
+                sudo echo "\
+                auto $NIC_Name
+                iface eth1 inet static
+                address 172.31.128.1
+                netmask 255.255.252.0" >> /etc/network/interfaces
+                echo "[INFO] will restart your $NIC_Name..."
+                ifdown $NIC_Name
+                ifup $NIC_Name
+                New_IP= $( ifconfig $NIC_Name | grep "inet addr" | awk -F: '{print $2}' | awk '{print $1}' )
+                echo "Your $NIC_Name new IP address is $New_IP"
+        else
+                echo "[Error] default RackHD configure files takes eth1 with IP 172.31.128.1 as control NIC port.RackHD may not function well if you left all config as default !"
+                exit 4
+
+        fi
+    fi
+}
+
+
+
+
+
+#############################################
+# Copy the PXE image and micro kernel from bintray 
+#
+#############################################
+copy_RackHD_static_bins(){
+
+    echo "[INFO] Will Copy static files, it will take a while"
+
+    mkdir -p /var/renasar/on-tftp/static/tftp
+    cd /var/renasar/on-tftp/static/tftp
+
+    for file in $(echo "\
+        monorail.ipxe \
+        monorail-undionly.kpxe \
+        monorail-efi64-snponly.efi \
+        monorail-efi32-snponly.efi");do
+    wget --no-check-certificate "https://dl.bintray.com/rackhd/binary/ipxe/$file" 
+    done
+
+    mkdir -p /var/renasar/on-http/static/http/common
+    cd /var/renasar/on-http/static/http/common
+
+    for file in $(echo "\
+        base.trusty.3.16.0-25-generic.squashfs.img \
+        discovery.overlay.cpio.gz \
+        initrd.img-3.16.0-25-generic \
+        vmlinuz-3.16.0-25-generic");do
+    wget --no-check-certificate "https://dl.bintray.com/rackhd/binary/builds/$file"
+    done
+}
+
+#############################################
+#  Update DHCP config
+#
+#############################################
+update_dhcp_config(){
+
+    # After isc-dhcp-server installed, there should be /etc/dhcp/dhcpd.conf file
+    sudo echo "
+    ##### RackHD added lines########################
+    deny duplicates;
+    ignore-client-uids true;
+    subnet 172.31.128.0 netmask 255.255.252.0 {
+       range 172.31.128.2 172.31.131.254;
+       # Use this option to signal to the PXE client that we are doing proxy DHCP
+       option vendor-class-identifier \"PXEClient\";
+    }
+    " >> /etc/dhcp/dhcpd.conf
+}
+
+#############################################
+# Copy example config.json , and put it into /opt/monorail/config.json
+#
+# NOTE: this is only for quick tutorial, modify the config for your own situation
+#############################################
+create_RackHD_config(){
+    wget https://raw.githubusercontent.com/RackHD/RackHD/master/packer/ansible/roles/monorail/files/config.json  -O /opt/monorail/config.json
+}
+
+
+#############################################
+#  Do tricky job to entertain upstart(Only for Ubuntu 14.04)
+#
+#############################################
+enable_services(){
+    for i in ${SERVICES[@]}; do
+        if [ -f /etc/default/${i} ];then
+            echo "${i} is enabled"
+        else
+            touch /etc/default/${i}
+        fi
+    done
+}
+
+
+#############################################
+#
+# start RackHD services 
+#############################################
+reload_services(){
+    for i in ${SERVICES[@]}; do
+        echo "start service ${i}"
+        service ${i} stop --force
+        service ${i} start 
+    done
+}
+
+
+print_usage(){
+    echo "curl http://localhost:8080/api/common/nodes"
+}
+
+db_get RackHD/NIC_NAME
+check_NIC $RET
+
+update_dhcp_config
+copy_RackHD_static_bins
+enable_services
+create_RackHD_config
+reload_services
+print_usage
+
+db_stop
