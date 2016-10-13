@@ -19,6 +19,7 @@
     - swagger
     - integrationtest
     - postgresql
+    - dell
   vars:
 # branch of https://github.com/rackhd/rackhd to be used
     - branch: "master"
