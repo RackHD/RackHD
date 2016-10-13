@@ -75,7 +75,12 @@
       },
     "skupack": [
       "https://github.com/RackHD/on-skupack"
-      ]
+      ],
+    "skupacks":{"Quanta T41":"http://web.hwimo.lab.emc.com/autotest/skupack/quanta-t41/quanta-t41_t41.tar.gz",
+               "Quanta D51 2U":"http://web.hwimo.lab.emc.com/autotest/skupack/quanta-d51/quanta-d51-2u_d51.tar.gz",
+               "Rinjin KP":"http://web.hwimo.lab.emc.com/autotest/skupack/Rinjin-KP/Rinjin-KP.tgz",
+               "Rinjin TP":"http://web.hwimo.lab.emc.com/autotest/skupack/Rinjin-TP/Rinjin-TP.tgz",
+               "Hydra":"http://web.hwimo.lab.emc.com/autotest/skupack/Hydra/Hydra.tgz"}
   },
   "ports": {
     "_comment": "These are the northbound rest API port assignments",
