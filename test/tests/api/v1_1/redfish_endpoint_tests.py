@@ -218,7 +218,7 @@ class RedfishEndpointTests(object):
 
     @test(enabled=IS_EMC, \
         groups=['redfish-emc-catalogs.v1.1.test'], \
-        depends_on_groups=['redfish-discovery.v1.1.test'])    
+        depends_on_groups=['redfish-indicator-led.v1.1.test'])    
     def redfish_emc_catalogs_test(self):
         """ Testing EMC Redfish Service Catalog """
         for node in self.__nodes:
