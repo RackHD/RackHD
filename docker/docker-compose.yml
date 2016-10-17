@@ -49,6 +49,11 @@ services:
     image: rackhd/on-core:latest
     command: "/bin/echo \"exit\""
 
+  tasks:
+    build: "../on-tasks"
+    image: rackhd/on-tasks:latest
+    command: "/bin/echo \"exit\""
+
   dhcp-proxy: # 68/udp, 4011
     build: "../on-dhcp-proxy"
     depends_on:
@@ -72,6 +77,7 @@ services:
       - mongo
       - rabbitmq
       - statsd
+      - tasks
     image: rackhd/on-http:latest
     network_mode: "host"
     privileged: true
@@ -114,6 +120,7 @@ services:
       - rabbitmq
       - syslog
       - statsd
+      - tasks
     image: rackhd/on-taskgraph:latest
     network_mode: "host"
     privileged: true

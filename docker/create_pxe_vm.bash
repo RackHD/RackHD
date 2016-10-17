@@ -4,6 +4,9 @@
 
 # Create PXE VM for VirtualBox
 
+set -e # fail on error
+set -x # debug commands
+
 if [[ ! -e $NAME.vdi ]]; then # check to see if PXE vm already exists
     echo "Creating PXE VM: $NAME"
     VBoxManage createvm --name $NAME --register;

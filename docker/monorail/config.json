@@ -55,6 +55,7 @@
     "tftpBindAddress": "172.31.128.1",
     "tftpBindPort": 69,
     "tftpRoot": "./static/tftp",
+    "wssSsl": false,
     "wssBindAddress": "0.0.0.0",
     "wssBindPort": 9100
 }
