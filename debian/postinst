@@ -148,6 +148,7 @@ print_usage(){
 
 db_get RackHD/NIC_NAME
 check_NIC $RET
+db_stop
 
 update_dhcp_config
 copy_RackHD_static_bins
@@ -156,4 +157,3 @@ create_RackHD_config
 reload_services
 print_usage
 
-db_stop

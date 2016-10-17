@@ -25,6 +25,9 @@ Depends: ${misc:Depends},
          on-syslog,
          on-taskgraph,
          on-tftp,
+         python-on-http-redfish-1.0,
+         python-on-http-api1.1,
+         python-on-http-api2.0,       
          rabbitmq-server
 Description: base package for all of RackHD
  uber package for all rackhd installation
