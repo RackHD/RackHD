@@ -30,6 +30,14 @@
             "proxiesEnabled": true,
             "authEnabled": false,
             "routers": "southbound-api-router"
+        },
+        {
+            "address": "100.68.123.164",
+            "port": 9988,
+            "httpsEnabled": false,
+            "proxiesEnabled": true,
+            "authEnabled": false,
+            "routers": "southbound-api-router"
         }
     ],
     "httpDocsRoot": "./build/apidoc",

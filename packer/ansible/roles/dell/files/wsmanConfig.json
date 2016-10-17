@@ -3,15 +3,15 @@
 		"credentials":{
 			"user": "root",
 			"password": "calvin"
-		},
-		
+		},		
 		"services":{
 			"bios":{
-				"host": "https://100.68.123.97:8440",
+				"host": "http://100.68.123.100:9600",
 				"endpoints":{
-					"config": "/wsman/bios/collectConfig",
-					"bootOrder": "/wsman/bios/collectBootOrderDetails",
-					"softwareIdentity": "/wsman/bios/collectSoftwareIdentity"
+					"bios": "/smi/server/ios/bios",
+					"boot": "/smi/server/ios/boot",
+					"biosCallback": "/smi/server/ios/inventory",
+					"callbackUri": "http://localhost:9988/api/1.1/wsmanCallback/_IDENTIFIER_"
 				}
 			},
 			"discovery":{
@@ -32,16 +32,15 @@
 					"chassisSummary": "/smi/chassis/summary",
 					"serverCallback": "/smi/server/inventory",
 					"chassisCallback": "/smi/chassis/inventory",
-					"northboundCallbackUri": "http://100.68.124.1:9080/api/2.0/nodes/_IDENTIFIER_/workflows",
-					"callbackUri": "http://100.68.124.1:9080/api/1.1/callback/_IDENTIFIER_"
+					"callbackUri": "http://localhost:9988/api/1.1/wsmanCallback/_IDENTIFIER_"
 				}
 			},
 			"management":{
-				"host": "https://100.68.123.97:8444",
+				"host": "http://100.68.123.100:9600",
 				"endpoints":{
-					"power": "/wsman/management/managePower",
-					"reset": "/wsman/management/reset",
-					"eject": "/wsman/management/eject"
+					"power": "/smi/server/action/power",
+                    "reset": "/wsman/management/reset",
+                    "eject": "/wsman/management/eject"
 				}
 			},
 			"config": {
