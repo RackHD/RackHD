@@ -18,7 +18,7 @@ import time
 
 # Select test group here using @attr
 from nose.plugins.attrib import attr
-@attr(all=True, regression=False, smoke=False)
+@attr(all=False, regression=False, smoke=False, firmware=True)
 class test_rackhd20_api_skupack(fit_common.unittest.TestCase):
     def setUp(self):
         api_data = fit_common.rackhdapi('/api/2.0/skus/')
