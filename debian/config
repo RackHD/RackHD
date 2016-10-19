@@ -1,12 +1,16 @@
-#!/bin/sh
+#!/bin/bash
+
+# Copyright 2015, EMC, Inc.
+
 set -e
-#echo "Config being called"
 
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
 # Please specific the name of control NIC port of RackHD(example : eth1)  > 
 db_input high RackHD/NIC_NAME || true
+
+# Please specific if you are will to set ip by force
 db_input high RackHD/WILLING_TO_FORCE_IP || true
 db_go || true
 db_stop

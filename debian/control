@@ -1,7 +1,7 @@
-# Copyright 2015-2016, EMC, Inc.
+# Copyright 2015, EMC, Inc.
 
 Source: rackhd
-Maintainer: RackHD by EMC <rackhd@hwimo.lab.emc.com>
+Maintainer: RackHD by EMC <rackhd@emc.com>
 Section: rackhd
 Priority: optional
 Standards-Version: 3.9.5
@@ -9,8 +9,8 @@ Build-Depends: debhelper (>= 9)
 
 Package: rackhd
 Architecture: any
-# revisit this list, move more of these dependencies to the specific 
-# rackhd-<> package that the real dependency lives in
+# Revisit this list, move more of these dependencies to the specific 
+# Rackhd-<> package that the real dependency lives in
 Depends: ${misc:Depends},
          debconf (>= 0.2.26),
          ansible,

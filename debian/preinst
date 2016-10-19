@@ -4,12 +4,9 @@
 
 set -e
 
-
 #############################################
 #  Check NodeJS is greater than 4.x
-#
 #############################################
-
 check_nodejs(){
     installed=0;
     if [ "`type -p nodejs`" != "" ]; then
@@ -18,7 +15,7 @@ check_nodejs(){
         if [ "$NODEJS_VER" \< "4.0" ] ; then
             # Remove Old NodeJS
             echo "[INFO] removing old version [$NODEJS_VER] of NodeJS..."
-            sudo apt-get -y remove nodeijs nodejs-legacy
+            sudo apt-get -y remove nodejs nodejs-legacy
             installed=1;
         else
             installed=0;
@@ -27,11 +24,9 @@ check_nodejs(){
         installed=1;
     fi
     return $installed
-    
 }
 
 check_install_nodejs(){
-
     if ! check_nodejs ; then
             echo "[INFO] Your NodeJS has not been installed or too old, install NodeJS 4.x first...."
             # Install NodeJS 4.x =========== Starts ============
@@ -45,16 +40,13 @@ check_install_nodejs(){
             sudo apt-get -y install nodejs
             # Install NodeJS 4.x =========== Ends ============
     fi
-    # Double Check ========
 
+    # Double Check NodeJs 2.x installed
     if check_nodejs; then
         return 0;
     else
         return 1;
     fi
-
 }
 
-
 check_install_nodejs
-

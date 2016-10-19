@@ -1,22 +1,19 @@
 #!/bin/bash
+
+# Copyright 2015, EMC, Inc.
+
 set -e
 
-#load debconf to ask use input parameters
+# Load debconf to ask use input parameters
 . /usr/share/debconf/confmodule
-
 
 SERVICES=("on-http" "on-taskgraph" "on-dhcp-proxy" "on-tftp" "on-syslog")
 
-
-
 #############################################
-#  Check if you have 2 NIC as below:
+# Check if you have 2 NIC as below:
 #  eth0 for the public network - providing access to RackHD APIs, and providing routed (layer3) access to out of band network for machines under management
 #  eth1 for dhcp/pxe to boot/configure the machines. and IP configurated as static ( 172.31.128.0/22 )
-#
-#
 # Parameter #1 ($1) is the NIC name of the control port for RacKHD
-#
 #############################################
 check_NIC(){
     NIC_Name=$1
@@ -50,18 +47,11 @@ check_NIC(){
     fi
 }
 
-
-
-
-
 #############################################
 # Copy the PXE image and micro kernel from bintray 
-#
 #############################################
 copy_RackHD_static_bins(){
-
     echo "[INFO] Will Copy static files, it will take a while"
-
     mkdir -p /var/renasar/on-tftp/static/tftp
     cd /var/renasar/on-tftp/static/tftp
 
@@ -86,18 +76,16 @@ copy_RackHD_static_bins(){
 }
 
 #############################################
-#  Update DHCP config
-#
+# Update DHCP config
 #############################################
 update_dhcp_config(){
-
     # After isc-dhcp-server installed, there should be /etc/dhcp/dhcpd.conf file
     sudo echo "
-    ##### RackHD added lines########################
+    ##### RackHD added lines #####
     deny duplicates;
     ignore-client-uids true;
-    subnet 172.31.128.0 netmask 255.255.252.0 {
-       range 172.31.128.2 172.31.131.254;
+    subnet 172.31.128.0 netmask 255.255.240.0 {
+       range 172.31.128.2 172.31.143.254;
        # Use this option to signal to the PXE client that we are doing proxy DHCP
        option vendor-class-identifier \"PXEClient\";
     }
@@ -106,17 +94,14 @@ update_dhcp_config(){
 
 #############################################
 # Copy example config.json , and put it into /opt/monorail/config.json
-#
-# NOTE: this is only for quick tutorial, modify the config for your own situation
+# This is only for quick tutorial, modify the config for your own situation
 #############################################
 create_RackHD_config(){
     wget https://raw.githubusercontent.com/RackHD/RackHD/master/packer/ansible/roles/monorail/files/config.json  -O /opt/monorail/config.json
 }
 
-
 #############################################
-#  Do tricky job to entertain upstart(Only for Ubuntu 14.04)
-#
+# Do tricky job to entertain upstart(Only for Ubuntu 14.04)
 #############################################
 enable_services(){
     for i in ${SERVICES[@]}; do
@@ -128,10 +113,8 @@ enable_services(){
     done
 }
 
-
 #############################################
-#
-# start RackHD services 
+# Start RackHD services 
 #############################################
 reload_services(){
     for i in ${SERVICES[@]}; do
@@ -139,11 +122,6 @@ reload_services(){
         service ${i} stop
         service ${i} start 
     done
-}
-
-
-print_usage(){
-    echo "curl http://localhost:8080/api/common/nodes"
 }
 
 db_get RackHD/NIC_NAME
@@ -155,5 +133,4 @@ copy_RackHD_static_bins
 enable_services
 create_RackHD_config
 reload_services
-print_usage
 

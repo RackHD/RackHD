@@ -1,15 +1,7 @@
 #!/bin/bash
 
-
 ###########################################
-#build debian packages
+# Build debian packages
 ###########################################
-
-
-#dch -v "1.2.5" -M autobuild
-
 
 debuild -us -uc 
-
-
-exit 0
