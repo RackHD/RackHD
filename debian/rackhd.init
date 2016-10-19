@@ -1,0 +1,105 @@
+#!/bin/bash
+
+### BEGIN INIT INFO
+# Provides:          RackHD
+# Required-Start:    $on-http $on-tftp $on-dhcp-proxy $on-taskgraph $on-syslog 
+# Required-Stop:     $on-http $on-tftp $on-dhcp-proxy $on-taskgraph $on-syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: RackHD
+# Description:       RackHD service
+### END INIT INFO
+
+NAME="rackhd"
+USER="root"
+PID_DIR="/var/run"
+
+USAGE="Usage: $0 {start|stop|restart|status} [--force]"
+FORCE_OP=false
+RESTART=false
+
+REQUIREDS=("on-http" "on-taskgraph" "on-dhcp-proxy" "on-tftp" "on-syslog")
+
+if [ ! -f "/etc/default/$NAME" ]
+then
+    echo "Service disabled due to absence of /etc/default/$NAME" 1>&2
+    exit 1
+else
+     . "/etc/default/$NAME"
+fi
+
+start_app() {
+    if [ ! -d $PID_DIR ]; then mkdir -p "$PID_DIR"; fi
+    if [ ! -d $LOG_DIR ]; then mkdir -p "$LOG_DIR"; fi
+
+    echo "Starting $NAME ..."
+
+    for i in ${REQUIREDS[@]}; do
+        echo "start service ${i}"
+        if [ $FORCE_OP = true ]
+        then
+            service ${i} start --force
+        else
+            service ${i} start
+        fi
+    done
+}
+
+stop_app() {
+    echo "Stoping $NAME ..."
+
+    for i in ${REQUIREDS[@]}; do
+        echo "stop service ${i}"
+        if [ $FORCE_OP = true ]
+        then
+            service ${i} stop --force
+        else
+            service ${i} stop
+        fi
+    done
+}
+
+status_app() {
+    for i in ${REQUIREDS[@]}; do
+        service ${i} status
+    done
+}
+
+case "$2" in
+    --force)
+        FORCE_OP=true
+    ;;
+
+    "")
+    ;;
+
+    *)
+        echo $USAGE
+        exit 1
+    ;;
+esac
+
+case "$1" in
+    start)
+        start_app
+    ;;
+
+    stop)
+        stop_app
+    ;;
+
+    restart)
+        FORCE_OP=true
+        stop_app
+        start_app
+    ;;
+
+    status)
+        status_app
+    ;;
+
+    *)
+        echo $USAGE
+        exit 1
+    ;;
+esac

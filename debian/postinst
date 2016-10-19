@@ -7,7 +7,7 @@ set -e
 # Load debconf to ask use input parameters
 . /usr/share/debconf/confmodule
 
-SERVICES=("on-http" "on-taskgraph" "on-dhcp-proxy" "on-tftp" "on-syslog")
+SERVICES=("on-http" "on-taskgraph" "on-dhcp-proxy" "on-tftp" "on-syslog", "rackhd")
 
 #############################################
 # Check if you have 2 NIC as below:
@@ -116,12 +116,8 @@ enable_services(){
 #############################################
 # Start RackHD services 
 #############################################
-reload_services(){
-    for i in ${SERVICES[@]}; do
-        echo "start service ${i}"
-        service ${i} stop
-        service ${i} start 
-    done
+restart_services(){
+    service rackhd restart
 }
 
 db_get RackHD/NIC_NAME
@@ -132,5 +128,5 @@ update_dhcp_config
 copy_RackHD_static_bins
 enable_services
 create_RackHD_config
-reload_services
+restart_services
 
