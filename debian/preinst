@@ -41,7 +41,7 @@ check_install_nodejs(){
             # Install NodeJS 4.x =========== Ends ============
     fi
 
-    # Double Check NodeJs 2.x installed
+    # Double Check NodeJs 4.x installed
     if check_nodejs; then
         return 0;
     else
