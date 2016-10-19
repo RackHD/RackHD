@@ -1,0 +1,27 @@
+{
+  "100": {
+    "bmc": "stack100-bmc.admin",
+    "control": "stack100-control.admin",
+    "data": "stack100-data.admin",
+    "hyper": "stack100-esxi.admin",
+    "ora": "stack100-ora.admin",
+    "ovamac": "00:50:56:00:11:00",
+    "pdu": "192.168.1.254",
+    "type": "esxi",
+    "nodes": [
+      {"bmcmac": "00:1e:67:d5:e1:96", "nodeid": "", "sku": "Rinjin KP"},
+      {"bmcmac": "00:1e:67:c8:00:3e", "nodeid": "", "sku": "Rinjin KP"},
+      {"bmcmac": "00:1e:67:d5:d7:4b", "nodeid": "", "sku": "Rinjin TP"},
+      {"bmcmac": "00:1e:67:d5:df:e3", "nodeid": "", "sku": "Hydra"},
+      {"bmcmac": "00:1e:67:d5:df:e3", "nodeid": "", "sku": "Hydra"},
+      {"bmcmac": "2c:60:0c:6f:16:6d", "nodeid": "", "sku": "Dell C6320"},
+      {"bmcmac": "2c:60:0c:6f:16:09", "nodeid": "", "sku": "Dell R630"},
+      {"bmcmac": "2c:60:0c:6f:17:3b", "nodeid": "", "sku": "Dell R630"},
+      {"bmcmac": "2c:60:0c:ad:d4:93", "nodeid": "", "sku": "Dell R730XD"},
+      {"bmcmac": "2c:60:0c:ad:d4:93", "nodeid": "", "sku": "Dell R730XD"},
+      {"bmcmac": "2c:60:0c:ad:d4:93", "nodeid": "", "sku": "Quanta T41"},
+      {"bmcmac": "2c:60:0c:ad:d4:93", "nodeid": "", "sku": "Quanta D51"},
+      {"bmcmac": "2c:60:0c:ad:d4:93", "nodeid": "", "sku": "Quanta D51"}
+    ]
+  }
+}
