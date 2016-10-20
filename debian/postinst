@@ -4,10 +4,7 @@
 
 set -e
 
-# Load debconf to ask use input parameters
-. /usr/share/debconf/confmodule
-
-SERVICES=("on-http" "on-taskgraph" "on-dhcp-proxy" "on-tftp" "on-syslog", "rackhd")
+SERVICES=("on-http" "on-taskgraph" "on-dhcp-proxy" "on-tftp" "on-syslog" "rackhd")
 
 #############################################
 # Copy the PXE image and micro kernel from bintray 
@@ -50,15 +47,6 @@ enable_services(){
     done
 }
 
-#############################################
-# Install dependencies of RackHD
-#############################################
-will_to_install_dependencies(){
-    db_get RackHD/DEPENDENCIES
-    for i in ${RET[@]}; do
-        apt-get install $i
-    done
-}
-#copy_RackHD_static_bins
+copy_RackHD_static_bins
 enable_services
-will_to_install_dependencies
+
