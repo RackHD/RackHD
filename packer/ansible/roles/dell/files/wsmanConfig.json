@@ -11,7 +11,7 @@
 					"bios": "/smi/server/ios/bios",
 					"boot": "/smi/server/ios/boot",
 					"biosCallback": "/smi/server/ios/inventory",
-					"callbackUri": "http://localhost:9988/api/1.1/wsmanCallback/_IDENTIFIER_"
+					"callbackUri": "http://_MANAGEMENT_NETWORK_IP_:9988/api/1.1/wsmanCallback/_IDENTIFIER_"
 				}
 			},
 			"discovery":{
@@ -32,7 +32,7 @@
 					"chassisSummary": "/smi/chassis/summary",
 					"serverCallback": "/smi/server/inventory",
 					"chassisCallback": "/smi/chassis/inventory",
-					"callbackUri": "http://localhost:9988/api/1.1/wsmanCallback/_IDENTIFIER_"
+					"callbackUri": "http://_MANAGEMENT_NETWORK_IP_:9988/api/1.1/wsmanCallback/_IDENTIFIER_"
 				}
 			},
 			"management":{
