@@ -1,8 +1,12 @@
-Template: RackHD/NIC_NAME
-Type: string
-Description: Please specific the name of control NIC port of RackHD(example : eth1) 
+Template: RackHD/DEPENDENCIES
+Type: multiselect
+Choices: rabbitmq-server, lldpd, isc-dhcp-server
+Description: Do you want to install below dependencies of RackHD? 
 
 Template: RackHD/WILLING_TO_FORCE_IP
 Type: boolean
-Description: Do you want to force your NIC IP to 172.31.128.1 ?  
+Description: Do you want to force your control NIC IP for RackHD to 172.31.128.1?
 
+Template: RackHD/NIC_NAME
+Type: string
+Description: Please specific the name of control NIC port of RackHD(example:eth1)

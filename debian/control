@@ -13,13 +13,6 @@ Architecture: any
 # Rackhd-<> package that the real dependency lives in
 Depends: ${misc:Depends},
          debconf (>= 0.2.26),
-         ansible,
-         apt-mirror,
-         amtterm,
-         ipmitool,
-         isc-dhcp-server,
-         lldpd,
-         mongodb,
          on-dhcp-proxy,
          on-http,
          on-syslog,
@@ -27,7 +20,6 @@ Depends: ${misc:Depends},
          on-tftp,
          python-on-http-redfish-1.0,
          python-on-http-api1.1,
-         python-on-http-api2.0,       
-         rabbitmq-server
+         python-on-http-api2.0       
 Description: base package for all of RackHD
  uber package for all rackhd installation

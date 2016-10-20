@@ -4,4 +4,4 @@
 # Build debian packages
 ###########################################
 
-debuild -us -uc 
+debuild --no-tgz-check -us -uc 

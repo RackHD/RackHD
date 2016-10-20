@@ -7,10 +7,50 @@ set -e
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
-# Please specific the name of control NIC port of RackHD(example : eth1)  > 
-db_input high RackHD/NIC_NAME || true
+# Please specific which dependencies are going to be installed
+db_input high RackHD/DEPENDENCIES || true
 
-# Please specific if you are will to set ip by force
-db_input high RackHD/WILLING_TO_FORCE_IP || true
+# Please specific if you are will to set dhcp
+db_input high RackHD/WILLING_TO_SETUP_DHCP || true
 db_go || true
+
+db_get RackHD/WILLING_TO_SETUP_DHCP
+if [ "$RET" != "true" ]; then
+    db_stop
+    exit 0
+fi
+
+# Please specific the name of control NIC port of RackHD(example : eth1)  >
+db_input high RackHD/NIC_NAME || true
+db_go || true
+
+db_get RackHD/NIC_NAME
+if [ "$RET" != "eth1" ]; then
+    echo "[WARNING] RackHD takes the control NIC port as eth1 by default , with IP 172.31.128.0/22. RackHD may not function well if you left all config as default ! "
+    sleep 2
+fi
+
+NIC_IP=$( ifconfig $NIC_Name | grep "inet addr" | awk -F: '{print $2}' | awk '{print $1}' )
+
+if [ "$NIC_IP" != "172.31.128.1" ]; then
+    # Please specific if you are will to set ip by force
+    db_input high RackHD/WILLING_TO_FORCE_IP || true
+    db_go || true
+
+    de_get RackHD/WILLING_TO_FORCE_IP
+
+    if [ "$RET" == "true" ] ; then
+        sudo echo "\
+        auto $NIC_Name
+        iface $NIC_Name inet static
+        address 172.31.128.1
+        netmask 255.255.252.0" >> /etc/network/interfaces
+        echo "[INFO] will restart your $NIC_Name..."
+        ifdown $NIC_Name
+        ifup $NIC_Name
+        New_IP=$(ifconfig $NIC_Name | grep "inet addr" | awk -F: '{print $2}' | awk '{print $1}')
+        echo "Your $NIC_Name new IP address is $New_IP"
+    fi
+fi
+
 db_stop
