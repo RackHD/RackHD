@@ -10,8 +10,10 @@ Copyright 2016, EMC, Inc.
 
 ```
 $ cd RackHD/docker
-$ ./docker_vm_up.bash         # Spin up boot2docker.iso vagrant box.
-$ . export_docker_host.bash   # Point docker host to b2d vm.
+$ vagrant up                  # Create and provision Docker VM.
+$ . export_docker_host.bash   # Point docker host to Docker VM.
+$ vagrant ssh                 # SSH into Docker VM.
+$ cd /RackHD/docker           # Go to RackHD/docker.
 $ docker-compose up           # Run RackHD and ELK.
 ```
 
@@ -92,11 +94,9 @@ $ NAME=pxe-1 ./create_pxe_vm.bash   # Creates PXE VM in VirtualBox.
 
 Now start `pxe-1` from VirtualBox. You should see it boot and auto automatically get discovered and catalogs by RackHD.
 
-If the VM boots and is not discovered make sure you used './docker_vm_up.bash' to setup your `boot2docker.iso` VM. Otherwise it will not discover your PXE VM.
-
 ## Troubleshoot common Vagrant issues.
   If running `./docker_vm_up.bash` fails:
-    * By default the b2d vagrant vm exposes all related ports. Some of which are only necessary for development and debugging. You can disable any ports you do not wish to use, or change the which port on the host they map too.
+    * By default the Vagrant Docker VM exposes all related ports. Some of which are only necessary for development and debugging. You can disable any ports you do not wish to use, or change the which port on the host they map too.
     * Ensure you have the right version of Vagrant for VirtualBox. Later versions of VirtualBox require a more recent version of Vagrant.
 
 ## Running this example without `docker-compose`.
