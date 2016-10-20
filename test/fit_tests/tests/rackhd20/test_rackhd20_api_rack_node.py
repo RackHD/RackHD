@@ -22,28 +22,6 @@ import fit_common
 import test_api_utils
 
 
-#clear the test environment
-def tear_down():
-    '''str_taglist = get_tag_list()
-    taglist = json.loads(str_taglist)
-    for tagitem in taglist:
-        tagname = tagitem['name']
-        delete_response = delete_tag(tagname)
-        if delete_response not in range(200,205):
-            print "Fail to clear up the tag-"+ tagname
-            return 1
-    nodes_list = get_node_id_list()
-    for node in nodes_list:
-        tags = get_tag_list_on_node(node)
-        tag_list = json.loads(tags)
-        for tag in tag_list:
-            print "{} has tags: {}".format(node,tag)
-            response = delete_tag_in_node(node,tag)
-            if response  not in range(200,205):
-                print "Fail to delete the tag:" + tag
-                return 2
-    print "clear the environment finished!" '''
-    return 0
 
 
 def get_node_list():
@@ -139,6 +117,12 @@ from nose.plugins.attrib import attr
 @attr(all=True, regression=True, smoke=True)
 
 class rackhd20_api_rack_node(fit_common.unittest.TestCase):
+    #clear the test environment
+    def tear_down(self):
+        self.test_api_delete_relation()
+        self.test_api_delete_rack()
+
+
     def test_api_create_and_check_racks(self):
         for operator in range(0,257):
             RandomCharacters = '.'.join(random.sample(string.printable,8))
@@ -148,7 +132,6 @@ class rackhd20_api_rack_node(fit_common.unittest.TestCase):
             mon_url = '/api/1.1/nodes'
             mon_data = fit_common.rackhdapi(mon_url,action='post',payload=Newrack)
             self.assertIn(mon_data['status'],range(200,205),"Incorrect HTTP return code: {}".format(mon_data['status']))
-            #time.sleep(1)
             rackid = mon_data['json']['id']
             mon_url = '/api/1.1/nodes/{}'.format(rackid)
             mon_data = fit_common.rackhdapi(mon_url)
@@ -157,9 +140,7 @@ class rackhd20_api_rack_node(fit_common.unittest.TestCase):
             self.assertTrue(json_node_data['name'] == Newrack['name'] and json_node_data['type']=="rack","rack node field error")
             print "query rack: " + rackname + "successfully!"
     print "test: rack creation and query succeed!"
-        #response = tear_down()
-        #if response != 0:
-        #    print "clearing the test environment failed!"
+
     def test_api_delete_rack(self):
         rack_node_list= get_rack_node_list()
         for rack in rack_node_list:
@@ -170,20 +151,23 @@ class rackhd20_api_rack_node(fit_common.unittest.TestCase):
     def test_api_add_relation(self):
         rack_node_list= get_rack_node_list()
         compute_node_list= get_compute_node_list()
-        #switch_node_list= get_switch_node_list()
-        #switch_node_list= get_pdu_node_list()
-        #add_relation(rack_node_list[10],compute_node_list[1])
+        switch_node_list= get_switch_node_list()
+        pdu_node_list= get_pdu_node_list()
+        add_relation(rack_node_list[10],compute_node_list[1])
         for index in range(0,8):
             print "n=",(2*index+1)
             add_relation(rack_node_list[index],compute_node_list[(2*index+1)])
             add_relation(rack_node_list[index],compute_node_list[(2*index)])
-            #add_relation(rack_node_list[index],switch_node_list[index])
-            #add_relation(rack_node_list[index],switch_node_list[index])
-            #time.sleep(1)
+            if switch_node_list!=[]:
+                add_relation(rack_node_list[index],switch_node_list[index])
+            if pdu_node_list!=[]:
+                add_relation(rack_node_list[index],pdu_node_list[index])
             self.assertLessEqual(check_relation(rack_node_list[index],compute_node_list[(2*index+1)]),1,"Fail to check the relation")
             self.assertLessEqual(check_relation(rack_node_list[index],compute_node_list[(2*index)]),1,"Fail to check the relation")
-            #self.assertLessEqual(check_relation(rack_node_list[index],switch_node_list[index]),1,"Fail to check the relation")
-            #self.assertLessEqual(check_relation(rack_node_list[index],switch_node_list[index]),1,"Fail to check the relation")
+            if switch_node_list!=[]:
+                self.assertLessEqual(check_relation(rack_node_list[index],switch_node_list[index]),1,"Fail to check the relation")
+            if pdu_node_list!=[]:
+                self.assertLessEqual(check_relation(rack_node_list[index],pdu_node_list[index]),1,"Fail to check the relation")
 
 
     def test_api_delete_relation(self):
