@@ -18,6 +18,15 @@ login() {
 # Include the on-* services in case we're installing from .deb packages
 SERVICES="isc-dhcp-server rabbitmq-server mongodb postgresql \
     on-http on-taskgraph on-dhcp-proxy on-syslog on-tftp"
+RACKHD_SERVICES="on-http on-taskgraph on-dhcp-proxy on-syslog on-tftp"
+
+cleanServicesPIDs() {
+    for srv in ${RACKHD_SERVICES}; do
+        sudo rm /var/run/${srv}.pid
+    done
+    echo "PIDs cleaned"
+}
+
 startServices() {
   ifconfig eth1 172.31.128.1 netmask 255.255.255.0
   cd ~
@@ -86,6 +95,8 @@ checkFirstUser() {
    echo "${status}"
 }
 
+stopServices
+cleanServicesPIDs
 startServices
 if [ $? -eq "0" ]; then
   waitForServices
