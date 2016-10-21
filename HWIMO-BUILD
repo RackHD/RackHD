@@ -4,4 +4,21 @@
 # Build debian packages
 ###########################################
 
+set -e
+set -x
+
+if [ -f "$1" ];then
+    source $1
+fi
+
+rm -rf packagebuild
+git clone . packagebuild
+pushd packagebuild
+cp -r ../debian .
+
+if [ ! -z "$PKG_VERSION" ];then
+    dch -v $PKG_VERSION autobuild
+fi
 debuild --no-tgz-check -us -uc 
+
+popd
