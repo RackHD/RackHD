@@ -1,7 +1,7 @@
 Template: RackHD/WILLING_TO_SETUP_RACKHD
 Type: boolean
-Description: Do you want to set up an initial environment for RackHD?
+Description: Do you want to setup an initial environment for RackHD?
 
 Template: RackHD/NIC_NAME
 Type: string
-Description: Please specific the name of control NIC port for RackHD(example:eth1)
+Description: Please specify the name of control NIC port for RackHD(example:eth1)

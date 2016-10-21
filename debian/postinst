@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright 2016, DELLEMC, Inc.
+# Copyright 2016, DELL EMC, Inc.
 
 set -e
 
