@@ -38,19 +38,6 @@ copy_RackHD_static_bins(){
 }
 
 #############################################
-# Enable services: on-http, on-dhcp-proxy, on-tftp, on-syslog, on-taskgraph
-#############################################
-enable_services(){
-    for i in ${SERVICES[@]}; do
-        if [ -f /etc/default/${i} ];then
-            echo "${i} is enabled"
-        else
-            touch /etc/default/${i}
-        fi
-    done
-}
-
-#############################################
 # Start rackhd service if user will to set up an intial environment for rackhd
 #############################################
 start_service(){
@@ -62,5 +49,4 @@ start_service(){
 }
 
 copy_RackHD_static_bins
-enable_services
 start_service
