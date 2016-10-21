@@ -1,10 +1,6 @@
-Template: RackHD/WILLING_TO_SETUP_DHCP
+Template: RackHD/WILLING_TO_SETUP_RACKHD
 Type: boolean
-Description: Do you want to set up the dhcp for RackHD?
-
-Template: RackHD/WILLING_TO_FORCE_IP
-Type: boolean
-Description: Do you want to force the IP of control NIC port for RackHD to 172.31.128.1?
+Description: Do you want to set up an initial environment for RackHD?
 
 Template: RackHD/NIC_NAME
 Type: string

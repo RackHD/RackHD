@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Copyright 2016, DELLEMC, Inc.
+
 ### BEGIN INIT INFO
 # Provides:          RackHD
 # Required-Start:    $on-http $on-tftp $on-dhcp-proxy $on-taskgraph $on-syslog 

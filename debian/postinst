@@ -1,8 +1,11 @@
 #!/bin/bash
 
-# Copyright 2015, EMC, Inc.
+# Copyright 2016, DELLEMC, Inc.
 
 set -e
+
+# Source debconf library.
+. /usr/share/debconf/confmodule
 
 SERVICES=("on-http" "on-taskgraph" "on-dhcp-proxy" "on-tftp" "on-syslog" "rackhd")
 
@@ -47,6 +50,17 @@ enable_services(){
     done
 }
 
+#############################################
+# Start rackhd service if user will to set up an intial environment for rackhd
+#############################################
+start_service(){
+    db_get RackHD/WILLING_TO_SETUP_RACKHD
+    if [ "$RET" == "true" ];then
+        service rackhd restart
+    fi
+    db_stop
+}
+
 copy_RackHD_static_bins
 enable_services
-
+start_service
