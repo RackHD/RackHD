@@ -7,18 +7,7 @@
 set -e
 set -x
 
-if [ -f "$1" ];then
-    source $1
-fi
+wget https://raw.githubusercontent.com/RackHD/RackHD/master/packer/ansible/roles/monorail/files/config.json  -O config.json
 
-rm -rf packagebuild
-git clone . packagebuild
-pushd packagebuild
-cp -r ../debian .
-
-if [ ! -z "$PKG_VERSION" ];then
-    dch -v $PKG_VERSION autobuild
-fi
 debuild --no-tgz-check -us -uc 
 
-popd
