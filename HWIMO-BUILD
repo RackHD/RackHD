@@ -1,0 +1,31 @@
+#!/bin/bash
+
+###########################################
+# Build debian packages
+###########################################
+
+set -e
+set -x
+
+if [ -f "$1" ];then
+    source $1
+fi
+
+rm -rf packagebuild
+git clone . packagebuild
+pushd packagebuild
+cp -r ../debian .
+
+wget https://raw.githubusercontent.com/RackHD/RackHD/master/packer/ansible/roles/monorail/files/config.json  -O config.json
+
+if [ ! -z "$PKG_VERSION" ];then
+    if [[ $PKG_VERSION =~ ^[0-9.]+$ ]];then
+        dch -r ""
+    else
+        COMMIT_STR=`git log -n 1 --oneline`
+        dch -v $PKG_VERSION -u low $COMMIT_STR -b -m
+    fi
+fi
+
+debuild --no-lintian --no-tgz-check -us -uc 
+

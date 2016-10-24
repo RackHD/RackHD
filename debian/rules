@@ -1,0 +1,4 @@
+#!/usr/bin/make -f
+%:
+	@echo "ARGS " $@ > /tmp/dh-args
+	dh $@

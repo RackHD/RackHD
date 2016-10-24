@@ -1,0 +1,28 @@
+# Copyright 2016, DELL EMC, Inc.
+
+Source: rackhd
+Maintainer: RackHD by EMC <rackhd@emc.com>
+Section: rackhd
+Priority: optional
+Standards-Version: 3.9.5
+Build-Depends: debhelper (>= 9)
+
+Package: rackhd
+Architecture: any
+# Revisit this list, move more of these dependencies to the specific 
+# Rackhd-<> package that the real dependency lives in
+Depends: ${misc:Depends},
+         debconf (>= 0.2.26),
+         isc-dhcp-server,
+         lldpd,
+         on-dhcp-proxy,
+         on-http,
+         on-syslog,
+         on-taskgraph,
+         on-tftp,
+         python-on-http-redfish-1.0,
+         python-on-http-api1.1,
+         python-on-http-api2.0,       
+         rabbitmq-server
+Description: base package for all of RackHD
+ uber package for all rackhd installation
