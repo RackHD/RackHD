@@ -65,7 +65,7 @@ class test_rackhd11_api_skupack(fit_common.unittest.TestCase):
         foundflag=0
         api_response= fit_common.rackhdapi('/api/1.1/skus/')
         for item in api_response['json']:
-            if skutype in item['name']:
+            if skutype == item['name']:
                 foundflag+=1
         self.assertEqual(foundflag,1,'Could not get the newly added sku info!')
 
@@ -96,7 +96,7 @@ class test_rackhd11_api_skupack(fit_common.unittest.TestCase):
         f = open(file_name, 'rb')
         api_data = fit_common.rackhdapi('/api/1.1/skus/')
         for item in api_data['json']:
-            if skutype in item['name']:
+            if skutype == item['name']:
                 api_response = fit_common.rackhdapi('/api/1.1/skus/'+ item['id']+'/pack', action='binary-put',payload=f)
                 self.assertEqual(api_response['status'], 201, 'Incorrect HTTP return code, expected 200, got:' + str(api_response['status']))
 
