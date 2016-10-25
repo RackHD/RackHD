@@ -32,7 +32,7 @@
             "routers": "southbound-api-router"
         },
         {
-            "address": "_MANAGEMENT_NETWORK_IP_",
+            "address": "0.0.0.0",
             "port": 9988,
             "httpsEnabled": false,
             "proxiesEnabled": true,
