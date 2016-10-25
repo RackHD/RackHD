@@ -147,7 +147,8 @@ class OSInstallTests(object):
                         'installDisk': '/dev/sda',
                         'version': version,
                         'repo': os_repo,
-                        'users': [{ 'name': 'onrack', 'password': 'Onr@ck1!', 'uid': 1010 }]
+                        'users': [{ 'name': 'onrack', 'password': 'Onr@ck1!', 'uid': 1010 }],
+                        'kargs' : {'NetWait': '180'}
                     },
                     'set-boot-pxe': self.__obm_options,
                     'reboot': self.__obm_options,
