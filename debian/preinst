@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# Copyright 2016, DELL EMC, Inc.
+
+set -e
+
+SERVICES=("on-http" "on-taskgraph" "on-dhcp-proxy" "on-tftp" "on-syslog" "rackhd")
+
+#############################################
+# Enable services: on-http, on-dhcp-proxy, on-tftp, on-syslog, on-taskgraph
+#############################################
+enable_services(){
+    for i in ${SERVICES[@]}; do
+        if [ -f /etc/default/${i} ];then
+            echo "${i} is enabled"
+        else
+            touch /etc/default/${i}
+        fi
+    done
+}
+
+enable_services

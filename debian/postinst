@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# Copyright 2016, DELL EMC, Inc.
+
+set -e
+
+# Source debconf library.
+. /usr/share/debconf/confmodule
+
+SERVICES=("on-http" "on-taskgraph" "on-dhcp-proxy" "on-tftp" "on-syslog" "rackhd")
+
+#############################################
+# Copy the PXE image and micro kernel from bintray 
+#############################################
+copy_RackHD_static_bins(){
+    echo "[INFO] Will Copy static files, it will take a while"
+    mkdir -p /var/renasar/on-tftp/static/tftp
+    cd /var/renasar/on-tftp/static/tftp
+
+    for file in $(echo "\
+        monorail.ipxe \
+        monorail-undionly.kpxe \
+        monorail-efi64-snponly.efi \
+        monorail-efi32-snponly.efi");do
+    wget --no-check-certificate "https://dl.bintray.com/rackhd/binary/ipxe/$file" 
+    done
+
+    mkdir -p /var/renasar/on-http/static/http/common
+    cd /var/renasar/on-http/static/http/common
+
+    for file in $(echo "\
+        base.trusty.3.16.0-25-generic.squashfs.img \
+        discovery.overlay.cpio.gz \
+        initrd.img-3.16.0-25-generic \
+        vmlinuz-3.16.0-25-generic");do
+    wget --no-check-certificate "https://dl.bintray.com/rackhd/binary/builds/$file"
+    done
+}
+
+#############################################
+# Start rackhd service if user will to set up an intial environment for rackhd
+#############################################
+start_service(){
+    db_get RackHD/WILLING_TO_SETUP_RACKHD
+    if [ "$RET" == "true" ];then
+        service rackhd restart
+    fi
+    db_stop
+}
+
+copy_RackHD_static_bins
+start_service
