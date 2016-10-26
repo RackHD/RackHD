@@ -17,6 +17,7 @@ from proboscis import after_class
 from proboscis import before_class
 from proboscis.asserts import fail
 from json import dumps, loads, load
+from collections import Mapping
 import os
 
 LOG = Log(__name__)
@@ -72,32 +73,48 @@ class OSInstallTests(object):
         }
         self.__post_workflow('Graph.ShellCommands', [], body)
 
-    def __get_os_install_payload(self, payload_file_name, os_repo):
+    def __get_os_install_payload(self, payload_file_name):
         payload = open(self.__sampleDir  + payload_file_name, 'r')
         body = load(payload)
         payload.close()
-        if body != None:
-            body['options']['defaults']['repo'] = os_repo
+        return body
+
+    def __update_body(self, body, updates):
+        #check each key, value pair in the updates
+        for key, value in updates.iteritems():
+            #if value is a dict, recursivly call __update_body
+            if isinstance(value, Mapping):
+                r = self.__update_body(body.get(key, {}), value)
+                body[key] = r
+            else:
+                body[key] = updates[key]
         return body
 
     @test(enabled=ENABLE_FORMAT_DRIVE, groups=['format-drives.v1.1.test'])
     def test_format_drives(self):
         """ Drive Format Test """
         self.__format_drives()  
-        
-    def install_centos(self, version, nodes=[], options=None):
+
+    def install_centos(self, version, nodes=[], options=None, payloadFile=None):
         graph_name = 'Graph.InstallCentOS'
         os_repo = defaults.get('RACKHD_CENTOS_REPO_PATH', \
             self.__base + '/repo/centos/{0}'.format(version))
-        body = options
-        if body == None:
-            body = {
+
+        # load the payload from the specified file
+        if payloadFile != None:
+            body = self.__get_os_install_payload(payloadFile)
+        else:
+            body = {}
+
+        # if no options are specified, fill in the minimum required options
+        if options == None:
+            options = {
                 'options': {
                     'defaults': {
                         'installDisk': '/dev/sda',
                         'version': version,
                         'repo': os_repo,
-			'users': [{ 'name': 'onrack', 'password': 'Onr@ck1!', 'uid': 1010 }]
+                        'users': [{ 'name': 'onrack', 'password': 'Onr@ck1!', 'uid': 1010 }]
                     },
                     'set-boot-pxe': self.__obm_options,
                     'reboot': self.__obm_options,
@@ -107,9 +124,15 @@ class OSInstallTests(object):
                         }
                     }
                 }
-            } 
+            }
+
+        # add additional options to the body
+        self.__update_body(body, options);
+
+        LOG.info(body)
+        # run the workflow
         self.__post_workflow(graph_name, nodes, body)
-        
+
     def install_esxi(self, version, nodes=[], options=None):
         graph_name = 'Graph.InstallESXi'
         os_repo = defaults.get('RACKHD_ESXI_REPO_PATH', \
@@ -226,11 +249,14 @@ class OSInstallTests(object):
             self.__base + '/repo/coreos')
         body = options
         if body == None:
-            body = self.__get_os_install_payload('install_coreos_payload_minimal.json', os_repo)
+            body = self.__get_os_install_payload('install_coreos_payload_minimal.json')
+            if body != None:
+                body['options']['defaults']['repo'] = os_repo
+
         self.__post_workflow(graph_name, nodes, body)
 
     @test(enabled=True, groups=['centos-6-5-install.v1.1.test'])
-    def test_install_centos_6(self):
+    def test_install_centos_6(self, nodes=[], options=None):
         """ Testing CentOS 6.5 Installer Workflow """
         self.install_centos('6.5')
         
@@ -268,3 +294,14 @@ class OSInstallTests(object):
     def test_install_coreos(self, nodes=[], options=None):
         """ Testing CoreOS Installer Workflow """
         self.install_coreos()
+
+    @test(enabled=True, groups=['centos-6-5-minimal-install.v1.1.test'])
+    def test_install_centos_6_minimal(self):
+        """ Testing CentOS 6.5 Installer Workflow """
+        self.install_centos('6.5', payloadFile='install_centos_payload_minimal.json')
+
+    @test(enabled=True, groups=['centos-7-minimal-install.v1.1.test'])
+    def test_install_centos_7_minimal(self, nodes=[], options=None):
+        """ Testing CentOS 7 Installer Workflow """
+        self.install_centos('7.0', payloadFile='install_centos_payload_minimal.json')
+
