@@ -1,6 +1,6 @@
 {
 	"dell":{
 		"configServerPath": "/smi/server/config/smi/service",
-		"callbackUri": "http://_MANAGEMENT_NETWORK_IP_:9988/api/1.1/wsmanCallback/_IDENTIFIER_"
+		"wsmanCallbackUri": "http://_MANAGEMENT_NETWORK_IP_:9988/api/1.1/wsmanCallback/_IDENTIFIER_"
 	}
 }
