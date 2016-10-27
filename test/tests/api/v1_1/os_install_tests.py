@@ -251,12 +251,49 @@ class OSInstallTests(object):
     @test(enabled=True, groups=['centos-6-5-install.v1.1.test'])
     def test_install_centos_6(self, nodes=[], options=None):
         """ Testing CentOS 6.5 Installer Workflow """
+        options = {
+            'options': {
+                'defaults': {
+                    'installDisk': '/dev/sda',
+                    'version': '6.5',
+                    'repo': defaults.get('RACKHD_CENTOS_REPO_PATH', \
+                        self.__base + '/repo/centos/6.5'),
+                    'users': [{'name': 'onrack', 'password': 'Onr@ck1!', 'uid': 1010}]
+                },
+                'set-boot-pxe': self.__obm_options,
+                'reboot': self.__obm_options,
+                'install-os': {
+                    'schedulerOverrides': {
+                        'timeout': 3600000
+                    }
+                }
+            }
+        }
+
         self.install_centos('6.5')
         
     @test(enabled=True, groups=['centos-7-install.v1.1.test'])
     def test_install_centos_7(self, nodes=[], options=None):
         """ Testing CentOS 7 Installer Workflow """
-        self.install_centos('7.0')
+        options = {
+            'options': {
+                'defaults': {
+                    'installDisk': '/dev/sda',
+                    'version': '7.0',
+                    'repo': defaults.get('RACKHD_CENTOS_REPO_PATH', \
+                        self.__base + '/repo/centos/7.0'),
+                    'users': [{'name': 'onrack', 'password': 'Onr@ck1!', 'uid': 1010}]
+                },
+                'set-boot-pxe': self.__obm_options,
+                'reboot': self.__obm_options,
+                'install-os': {
+                    'schedulerOverrides': {
+                        'timeout': 3600000
+                    }
+                }
+            }
+        }
+        self.install_centos('7.0', options=options)
 
     @test(enabled=True, groups=['ubuntu-install.v1.1.test'])
     def test_install_ubuntu(self, nodes=[], options=None):
