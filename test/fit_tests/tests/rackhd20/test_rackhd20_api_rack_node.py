@@ -64,8 +64,9 @@ def check_relation(hostnode,slavenode):
 def delete_relations(hostnode):
     mon_url = '/api/2.0/nodes/{}/relations'.format(hostnode)
     response= fit_common.rackhdapi(mon_url)
+    #check if relations is empty
     if len(response["text"])<3:
-        return 1
+        return True
     if response['status'] in range(200,205):
         for relation in response['json']:
             if relation["relationType"]== "contains":
@@ -97,13 +98,13 @@ class rackhd20_api_rack_node(fit_common.unittest.TestCase):
     def test_api_create_and_check_racks(self):
         for operator in range(0,257):
             if fit_common.VERBOSITY >= 8:
-                RandomCharacters = '.'.join(random.sample(string.printable,8))
-                rackname = "myRack" + "_" + " " + RandomCharacters + datetime.now().__str__() + " " + RandomCharacters
+                randomcharacters = '.'.join(random.sample(string.printable,8))
+                rackname = "myRack" + "_" + " " + randomcharacters + datetime.now().__str__() + " " + randomcharacters
             else:
-                RandomCharacters = '.'.join(random.sample(string.letters,8))
-                rackname = "myRack" + "_" + " " + RandomCharacters  + " " + RandomCharacters
-            Newrack = {"name" :rackname,"type":"rack"}
-            print "create new tag: " ,Newrack
+                randomcharacters = '.'.join(random.sample(string.letters,8))
+                rackname = "myRack" + "_" + " " + randomcharacters + " " + randomcharacters
+            newrack = {"name" :rackname,"type":"rack"}
+            print "create new tag: " ,newrack
             mon_url = '/api/2.0/nodes'
             mon_data = fit_common.rackhdapi(mon_url,action='post',payload=Newrack)
             self.assertIn(mon_data['status'],range(200,205),"Incorrect HTTP return code: {}".format(mon_data['status']))
@@ -112,7 +113,7 @@ class rackhd20_api_rack_node(fit_common.unittest.TestCase):
             mon_data = fit_common.rackhdapi(mon_url)
             self.assertIn(mon_data['status'],range(200,205),"Incorrect HTTP return code: {}".format(mon_data['status']))
             json_node_data = mon_data['json']
-            self.assertTrue(json_node_data['name'] == Newrack['name'] and json_node_data['type']=="rack","rack node field error")
+            self.assertTrue(json_node_data['name'] == newrack['name'] and json_node_data['type']=="rack","rack node field error")
             print "query rack: " + rackname + "successfully!"
         print "test: rack creation and query succeed!"
 
