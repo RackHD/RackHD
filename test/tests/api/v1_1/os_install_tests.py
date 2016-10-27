@@ -86,6 +86,8 @@ class OSInstallTests(object):
             if isinstance(value, Mapping):
                 r = self.__update_body(body.get(key, {}), value)
                 body[key] = r
+            elif isinstance(value, list) and key in body.keys():
+                body[key] = body[key] + updates[key]
             else:
                 body[key] = updates[key]
         return body
@@ -111,17 +113,8 @@ class OSInstallTests(object):
             options = {
                 'options': {
                     'defaults': {
-                        'installDisk': '/dev/sda',
                         'version': version,
-                        'repo': os_repo,
-                        'users': [{ 'name': 'onrack', 'password': 'Onr@ck1!', 'uid': 1010 }]
-                    },
-                    'set-boot-pxe': self.__obm_options,
-                    'reboot': self.__obm_options,
-                    'install-os': {
-                        'schedulerOverrides': {
-                            'timeout': 3600000
-                        }
+                        'repo': os_repo
                     }
                 }
             }
@@ -129,7 +122,6 @@ class OSInstallTests(object):
         # add additional options to the body
         self.__update_body(body, options);
 
-        LOG.info(body)
         # run the workflow
         self.__post_workflow(graph_name, nodes, body)
 
