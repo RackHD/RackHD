@@ -1,5 +1,5 @@
 '''
-Copyright 2015, EMC, Inc.
+Copyright 2016, EMC, Inc.
 
 Author(s):
 Harry Ling
@@ -55,14 +55,15 @@ def get_node_list_by_sku(skuname):
     for sku in skus:
         if skuname == sku['name']:
             sku_id = sku['id']
-    response = fit_common.rackhdapi('/api/{}/nodes'.format(MON_API_VERSION))
+            break
+    response = fit_common.rackhdapi('/api/{}/skus/{}/nodes'.format(MON_API_VERSION , sku_id))
     nodes = json.loads(response['text'])
     for node in nodes:
         if MON_API_VERSION == 1.1:
-            if node.has_key('sku') and node['sku'] == sku_id:
+            if node.has_key('sku'):
                 idfound.append(node['id'])
         if MON_API_VERSION == 2.0:
-            if node.has_key('sku') and node['sku'].split('/')[-1] == sku_id:
+            if node.has_key('sku'):
                 idfound.append(node['id'])
     return idfound
     
@@ -207,7 +208,7 @@ class rackhd_api_node_tag_and_label_feature(fit_common.unittest.TestCase):
 
     def test_api_create_tags_and_check_node_list_with_the_given_tag(self):
         self.assertEqual(tear_down(),0,"clearing the test environment failed!")
-        SupportPlatforms = {'Rinjin KP':'S2600KP','Quanta T41':'QuantaPlex T41S-2U','Quanta D51':'D51B-2U (dual 10G LoM)'}
+        SupportPlatforms = {'Quanta T41':'QuantaPlex T41S-2U','Quanta D51':'D51B-2U (dual 10G LoM)'}
         for platform in SupportPlatforms.keys():
             platformname = platform
             NewTag = {"name":platformname,"rules":[{"equals":SupportPlatforms[platform],"path":"dmi.System Information.Product Name"}]}
@@ -217,8 +218,8 @@ class rackhd_api_node_tag_and_label_feature(fit_common.unittest.TestCase):
             str_tagnodelist = get_node_by_tag(platform)
             node_number = 0
             print "currrent tag name is: {}".format(platformname)
-            #read config information from stack 100 config
-            for node in fit_common.STACK_CONFIG['100']['nodes']:
+            #read node information from stack  config
+            for node in fit_common.STACK_CONFIG[fit_common.ARGS_LIST["stack"]]['nodes']:
                 if node['sku']==platformname:
                     node_number = node_number + 1      
             print "the node number  of the sku {} are: {}".format(platformname,node_number)
