@@ -4,7 +4,6 @@ from config.amqp import *
 from modules.logger import Log
 from modules.amqp import AMQPWorker
 from modules.worker import WorkerThread, WorkerTasks
-from on_http_api1_1 import WorkflowApi as Workflows  #TODO remove when 2.0 worklfow API is implemented
 from on_http_api2_0 import ApiApi as Api
 from on_http_api2_0 import rest
 from datetime import datetime
@@ -137,23 +136,29 @@ class NodesTests(object):
 
     def handle_graph_finish(self,body,message):
         routeId = message.delivery_info.get('routing_key').split('graph.finished.')[1]
-        Workflows().workflows_get()  #TODO replace with 2.0 workflow API
+        Api().workflows_get()
         workflows = self.__get_data()
         for w in workflows:
-            definition = w['definition']
-            injectableName = definition.get('injectableName') 
+            injectableName = w.get('injectableName')
             if injectableName == 'Graph.SKU.Discovery':
-                graphId = w['context'].get('graphId')
+                graphId = w.get('context',{}).get('graphId', {})
                 if graphId == routeId:
+                    message.ack()
                     status = body.get('status')
-                    if status == 'succeeded':
-                        options = definition.get('options')
-                        nodeid = options['defaults'].get('nodeId')
+                    if status == 'succeeded' or status == 'failed':
                         duration = datetime.now() - self.__discovery_duration
-                        LOG.info('{0} - target: {1}, status: {2}, route: {3}, duration: {4}'
-                                .format(injectableName,nodeid,status,routeId,duration))
-                        self.__discovered += 1
-                        message.ack()
+                        msg = {
+                            'graph_name': injectableName,
+                            'status': status,
+                            'route_id': routeId,
+                            'duration': str(duration)
+                        }
+                        if status == 'failed':
+                            msg['active_task'] = w.get('tasks',{})
+                            LOG.error(msg, json=True)
+                        else:
+                            LOG.info(msg, json=True)
+                            self.__discovered += 1
                         break
         check = self.check_compute_count()
         if check and check == self.__discovered:
@@ -245,7 +250,7 @@ class NodesTests(object):
             assert_equal(204, c.status, message=c.reason)
         assert_raises(rest.ApiException, Api().nodes_del_by_id, 'fooey')
 
-    @test(groups=['catalog_nodes-api2'], depends_on_groups=['delete-whitelist-node-api2'])
+    @test(groups=['catalog_nodes-api2'], depends_on_groups=['delete-node-api2'])
     def test_node_catalogs(self):
         """ Testing GET:/api/2.0/nodes/:id/catalogs """
         resps = []
