@@ -4,11 +4,6 @@
 
 set -e
 
-# Source debconf library.
-. /usr/share/debconf/confmodule
-
-SERVICES=("on-http" "on-taskgraph" "on-dhcp-proxy" "on-tftp" "on-syslog" "rackhd")
-
 #############################################
 # Copy the PXE image and micro kernel from bintray 
 #############################################
@@ -37,16 +32,4 @@ copy_RackHD_static_bins(){
     done
 }
 
-#############################################
-# Start rackhd service if user will to set up an intial environment for rackhd
-#############################################
-start_service(){
-    db_get RackHD/WILLING_TO_SETUP_RACKHD
-    if [ "$RET" == "true" ];then
-        service rackhd restart
-    fi
-    db_stop
-}
-
 copy_RackHD_static_bins
-start_service
