@@ -9,7 +9,7 @@
     "pdu": "PDU admin address",
     "type": "deployment type: esxi, docker, linux, or vagrant"
   },
-  "vagrant":{  
+  "vagrant":{
     "ora": "localhost",
     "type": "vagrant"
   },
