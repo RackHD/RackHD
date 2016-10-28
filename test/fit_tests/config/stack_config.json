@@ -10,9 +10,9 @@
     "type": "deployment type: esxi, docker, linux, or vagrant"
   },
   "vagrant":{  
-    "ora": "localhost",  
-    "type": "vagrant"  
-  }, 
+    "ora": "localhost",
+    "type": "vagrant"
+  },
   "1": {
     "bmc": "stack1-bmc.admin", 
     "control": "stack1-control.admin", 
@@ -309,16 +309,6 @@
     "data": "stack30-data.admin", 
     "hyper": "stack30-esxi.admin", 
     "ora": "stack30-ora.admin",
-    "ovamac": "00:50:56:00:30:00",
-    "pdu": "",
-    "type": "esxi"
-  },
-  "100": {
-    "bmc": "stack100-bmc.admin", 
-    "control": "stack100-control.admin", 
-    "data": "stack100-data.admin", 
-    "hyper": "stack100-esxi.admin", 
-    "ora": "stack100-ora.admin",
     "ovamac": "00:50:56:00:30:00",
     "pdu": "",
     "type": "esxi"

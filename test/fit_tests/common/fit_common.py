@@ -116,7 +116,7 @@ if ARGS_LIST['https'] == "True":
         API_PORT = GLOBAL_CONFIG['ports']['https']
 if ARGS_LIST["ora"] == "localhost":
     if API_PROTOCOL == "None":
-        API_PROTOCOL = 'http'
+        API_PiROTOCOL = 'http'
     if API_PORT == "None":
         API_PORT = '8080'
 # set OVA template from command line
@@ -853,4 +853,3 @@ def run_nose(nosepath):
     else:
         exitcode += _noserunner(nosepath)
     return exitcode
-

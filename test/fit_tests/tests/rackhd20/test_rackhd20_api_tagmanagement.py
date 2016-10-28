@@ -23,7 +23,7 @@ import test_api_utils
 
 # Local methods
 MON_NODES = fit_common.node_select()
-MON_API_VERSION = 2.0
+MON_API_VERSION = 1.1
 
 #clear the test environment
 def tear_down():
@@ -59,12 +59,8 @@ def get_node_list_by_sku(skuname):
     response = fit_common.rackhdapi('/api/{}/skus/{}/nodes'.format(MON_API_VERSION , sku_id))
     nodes = json.loads(response['text'])
     for node in nodes:
-        if MON_API_VERSION == 1.1:
-            if node.has_key('sku'):
-                idfound.append(node['id'])
-        if MON_API_VERSION == 2.0:
-            if node.has_key('sku'):
-                idfound.append(node['id'])
+        if node.has_key('sku'):
+            idfound.append(node['id'])
     return idfound
     
 def delete_tag(tag_name):
@@ -300,7 +296,7 @@ class rackhd_api_node_tag_and_label_feature(fit_common.unittest.TestCase):
         print "test: workflow post to nodes with given tag succeeed!"
         self.assertEqual(tear_down(),0,"clearing the test environment failed!")
 
-    def test_api_assgin_tags_to_selected_nodes(self):
+    def test_api_assign_tags_to_selected_nodes(self):
         self.assertEqual(tear_down(),0,"clearing the test environment failed!")
         manualtag = {"name":"AssignTest","rules":[{"equals":"Only for assign test","path":"dmi.System Information.Product Name"}]}
         response=create_tag(manualtag)
