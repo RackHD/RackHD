@@ -23,7 +23,7 @@ import test_api_utils
 
 # Local methods
 MON_NODES = fit_common.node_select()
-MON_API_VERSION = 1.1
+MON_API_VERSION = 2.0
 
 #clear the test environment
 def tear_down():
@@ -349,7 +349,7 @@ class rackhd_api_node_tag_and_label_feature(fit_common.unittest.TestCase):
             for s_nodes in sku_discovery_list:
                 patch_tag_to_node(s_nodes,manualtagname)
         print "the created tag are: {}".format(tagrecordlist)
-        time.sleep(10)
+        time.sleep(2)
         for s_nodes in sku_discovery_list:
             str_taglist = get_tag_list_on_node(s_nodes)
             print "(test) the node {} have  tag list:{}".format(s_nodes,str_taglist)
