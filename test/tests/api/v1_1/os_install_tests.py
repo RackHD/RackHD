@@ -134,6 +134,10 @@ class OSInstallTests(object):
         # run the workflow
         self.__post_workflow(graph_name, nodes, body)
 
+        #test network devices
+        if 'networkDevices' in body['options']['defaults']:
+            self.__test_link_up(body['options']['defaults']['networkDevices'])
+
     def install_esxi(self, version, nodes=[], options=None):
         graph_name = 'Graph.InstallESXi'
         os_repo = defaults.get('RACKHD_ESXI_REPO_PATH', \
@@ -220,7 +224,7 @@ class OSInstallTests(object):
         #test network devices
         if 'networkDevices' in body['options']['defaults']:
             self.__test_link_up(body['options']['defaults']['networkDevices'])
-    
+
     def install_windowsServer2012(self, version, nodes=[], options=None):
         graph_name = 'Graph.InstallWindowsServer'
         os_repo = defaults.get('RACKHD_SMB_WINDOWS_REPO_PATH', None)
@@ -353,3 +357,7 @@ class OSInstallTests(object):
         """ Testing CentOS 7 Installer Workflow """
         self.install_centos('7.0', payloadFile='install_centos_payload_minimal.json')
 
+    @test(enabled=True, groups=['centos-7-full-install.v1.1.test'])
+    def test_install_centos_7_full(self, nodes=[], options=None):
+        """ Testing CentOS 7 Installer Workflow """
+        self.install_centos('7.0', payloadFile='install_centos_payload_full.json')
