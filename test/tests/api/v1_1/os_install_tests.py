@@ -94,6 +94,13 @@ class OSInstallTests(object):
                 body[key] = updates[key]
         return body
 
+    def __test_link_up(self, network_devices):
+        for entry in network_devices:
+            if entry['ipv4'] != None:
+                hostname = entry['ipv4']['ipAddr']
+                response = os.system('ping -c 1 ' + hostname)
+                assert_equal(response, 0, message='link {0} device {1} is down'.format(entry['device'], hostname))
+
     @test(enabled=ENABLE_FORMAT_DRIVE, groups=['format-drives.v1.1.test'])
     def test_format_drives(self):
         """ Drive Format Test """
@@ -182,37 +189,37 @@ class OSInstallTests(object):
             }
         self.__post_workflow(graph_name, nodes, body)
         
-    def install_ubuntu(self, version, nodes=[], options=None):
+    def install_ubuntu(self, version, payloadFile, nodes = []):
         graph_name = 'Graph.InstallUbuntu'
         os_repo = defaults.get('RACKHD_UBUNTU_REPO_PATH', \
             self.__base + '/repo/ubuntu')
-        body = options
-        if body == None:
-            body = {
-                'options': {
-                    'defaults': {
-                        'installDisk': '/dev/sda',
-                        'version': version,
-                        'repo': os_repo,
-                        'baseUrl':'install/netboot/ubuntu-installer/amd64',
-                        'kargs':{
-                            'live-installer/net-image': os_repo + '/install/filesystem.squashfs'
-                        },
-                        'users': [{ 'name': 'onrack', 'password': 'Onr@ck1!', 'uid': 1010 }],
-                        'rootPassword': 'Onr@ck1!'
-                    },
-                    'set-boot-pxe': self.__obm_options,
-                    'reboot': self.__obm_options,
-                    'install-ubuntu': {
-                        '_taskTimeout': 3600000
-                    },
-                    'validate-ssh': {
-                        '_taskTimeout': 1200000,
-                        'retries': 10
+        # load the payload from the specified file
+        body = {}
+        body = self.__get_os_install_payload(payloadFile)
+        extra_options = {
+            'options':{
+                'defaults':{ 
+                    'repo': os_repo ,
+                    'kargs':{
+                        'live-installer/net-image': os_repo + '/install/filesystem.squashfs'
                     }
+                },
+                'set-boot-pxe': self.__obm_options,
+                'reboot': self.__obm_options,
+                'install-ubuntu': {
+                    '_taskTimeout': 3600000
+                },
+                'validate-ssh': {
+                    '_taskTimeout': 1200000,
+                    'retries': 10
                 }
             }
+        }
+        self.__update_body(body, extra_options)
         self.__post_workflow(graph_name, nodes, body)
+        #test network devices
+        if 'networkDevices' in body['options']['defaults']:
+            self.__test_link_up(body['options']['defaults']['networkDevices'])
     
     def install_windowsServer2012(self, version, nodes=[], options=None):
         graph_name = 'Graph.InstallWindowsServer'
@@ -301,10 +308,15 @@ class OSInstallTests(object):
         }
         self.install_centos('7.0', options=options)
 
-    @test(enabled=True, groups=['ubuntu-install.v1.1.test'])
-    def test_install_ubuntu(self, nodes=[], options=None):
-        """ Testing Ubuntu 14.04 Installer Workflow """
-        self.install_ubuntu('trusty')
+    @test(enabled=True, groups=['ubuntu-minimal-install.v1.1.test'])
+    def test_install_min_ubuntu(self, nodes=[], options=None):
+        """ Testing Ubuntu 14.04 Installer Workflow With Minimal Payload """
+        self.install_ubuntu('trusty', 'install_ubuntu_payload_iso_minimal.json')
+
+    @test(enabled=True, groups=['ubuntu-maximal-install.v1.1.test'])
+    def test_install_max_ubuntu(self, nodes=[], options=None):
+        """ Testing Ubuntu 14.04 Installer Workflow With Maximal Payload """
+        self.install_ubuntu('trusty', 'install_ubuntu_payload_iso_full.json')
        
     @test(enabled=True, groups=['suse-install.v1.1.test'])
     def test_install_suse(self, nodes=[], options=None):
