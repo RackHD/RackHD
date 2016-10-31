@@ -5,7 +5,9 @@
     },
     "variables": {
         "atlas_username": "{{ env `ATLAS_USERNAME` }}",
-        "atlas_name": "{{ env `ATLAS_NAME` }}"
+        "atlas_name": "{{ env `ATLAS_NAME` }}",
+        "vm_name" : "rackhd-vm",
+        "playbook": "rackhd_package"
     },
     "provisioners": [
         {
@@ -44,7 +46,7 @@
         {
             "type": "ansible-local",
             "inventory_groups": "local",
-            "playbook_file": "ansible/rackhd_package.yml",
+            "playbook_file": "ansible/{{user `playbook`}}.yml",
             "playbook_dir": "ansible"
         },
         {
@@ -105,6 +107,7 @@
 
       {
         "type": "vmware-iso",
+        "vm_name": "{{user `vm_name`}}",
         "boot_command": [
           "<esc><wait>",
           "<esc><wait>",
