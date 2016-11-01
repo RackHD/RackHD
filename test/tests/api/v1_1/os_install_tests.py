@@ -122,7 +122,6 @@ class OSInstallTests(object):
             options = {
                 'options': {
                     'defaults': {
-                        'version': version,
                         'repo': os_repo
                     }
                 }
@@ -350,14 +349,19 @@ class OSInstallTests(object):
     @test(enabled=True, groups=['centos-6-5-minimal-install.v1.1.test'])
     def test_install_centos_6_minimal(self):
         """ Testing CentOS 6.5 Installer Workflow """
-        self.install_centos('6.5', payloadFile='install_centos_payload_minimal.json')
+        self.install_centos('6.5', payloadFile='install_centos_6_payload_minimal.json')
+
+    @test(enabled=True, groups=['centos-6-5-full-install.v1.1.test'])
+    def test_install_centos_6_full(self, nodes=[], options=None):
+        """ Testing CentOS 7 Installer Workflow """
+        self.install_centos('6.5', payloadFile='install_centos_6_payload_full.json')
 
     @test(enabled=True, groups=['centos-7-minimal-install.v1.1.test'])
     def test_install_centos_7_minimal(self, nodes=[], options=None):
         """ Testing CentOS 7 Installer Workflow """
-        self.install_centos('7.0', payloadFile='install_centos_payload_minimal.json')
+        self.install_centos('7.0', payloadFile='install_centos_7_payload_minimal.json')
 
     @test(enabled=True, groups=['centos-7-full-install.v1.1.test'])
     def test_install_centos_7_full(self, nodes=[], options=None):
         """ Testing CentOS 7 Installer Workflow """
-        self.install_centos('7.0', payloadFile='install_centos_payload_full.json')
+        self.install_centos('7.0', payloadFile='install_centos_7_payload_full.json')
