@@ -3,6 +3,7 @@
 # Copyright 2016, DELL EMC, Inc.
 
 set -e
+SERVICES=("on-http" "on-taskgraph" "on-dhcp-proxy" "on-tftp" "on-syslog")
 
 #############################################
 # Copy the PXE image and micro kernel from bintray 
@@ -32,4 +33,15 @@ copy_RackHD_static_bins(){
     done
 }
 
+#############################################
+# Stop on-xxx 
+# Use Rackhd service to manager the status of on-xxx services
+#############################################
+stop_component_service(){
+    for i in ${SERVICES[@]}; do
+        service ${i} stop
+    done
+}
+
 copy_RackHD_static_bins
+stop_component_service
