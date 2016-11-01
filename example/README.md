@@ -40,7 +40,7 @@ Clone RackHD repo to your local machine.
     # create the RackHD instance.
     vagrant up dev
     # start the RackHD services
-    vagrant ssh dev -c "sudo nf start"
+    vagrant ssh dev -c "sudo pm2 start rackhd.yml"
 
 ### LOCAL SOURCE
 
@@ -323,7 +323,7 @@ change the settings while running to point to this instance of RackHD at
     cd ~/src
     ./scripts/clean_all.bash && ./scripts/reset_submodules.bash && ./scripts/link_install_locally.bash
     cd ~
-    sudo nf start
+    sudo pm2 start rackhd.yml
 
 * log in to the same VM with another shell and start the tests
 
