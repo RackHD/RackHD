@@ -11,6 +11,16 @@
                   state=present
   sudo: yes
 
+- file: path="/etc/default/{{ item }}" state=touch
+  with_items:
+    - on-dhcp-proxy
+    - on-http
+    - on-taskgraph
+    - on-tftp
+    - on-syslog
+  sudo: yes
+
+
 - name: Install RackHD Packages
   apt: pkg="{{ item }}" state=latest
   with_items:
@@ -21,14 +31,6 @@
     - on-syslog
   sudo: yes
 
-- file: path="/etc/default/{{ item }}" state=touch
-  with_items:
-    - on-dhcp-proxy
-    - on-http
-    - on-taskgraph
-    - on-tftp
-    - on-syslog
-  sudo: yes
 
 - name: set HTTP static directory for RackHD
   set_fact: http_static_directory="/var/renasar/on-http/static/http"
