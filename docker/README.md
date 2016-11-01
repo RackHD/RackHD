@@ -25,9 +25,9 @@ $ docker-compose up           # Run RackHD and ELK.
   * docker-compose v1.6 or higher [Install Docker Compose](https://docs.docker.com/compose/install/)
 
 ```
-$ cd RackHD/docker
-$ sudo docker-compose pull         # Download prebuilt docker images.
-$ sudo docker-compose up           # Create containers and Run RackHD and ELK.
+$ cd RackHD/docker                            # TAG can be a release version, if not set default: latest
+$ sudo TAG=${TAG} docker-compose pull         # Download prebuilt docker images.
+$ sudo TAG=${TAG} docker-compose up           # Create containers and Run RackHD and ELK.
 ```
 
 ## Once RackHD and ELK are running.
