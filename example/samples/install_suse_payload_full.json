@@ -10,8 +10,7 @@
                 {
                     "name": "rackhd1",
                     "password": "123456",
-                    "uid": 1010,
-                    "sshKey": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDJQ631/sw3D40h/6JfA+PFVy5Ofz6eu7caxbv0zdw4fTJsrFcOliHZTEtAvqx7Oa8gqSC6d7v61M0croQxtt1DGUcH2G4yhfdZOlK4pr5McwtX0T/APACdAr1HtP7Bt7u43mgHpUG4bHGc+NoY7cWCISkxl4apkYWbvcoJy/5bQn0uRgLuHUNXxK/XuLT5vG76xxY+1xRa5+OIoJ6l78nglNGrj2V+jH3+9yZxI43S9I3NOCl4BvX5Cp3CFMHyt80gk2yM1BJpQZZ4GHewkI/XOIFPU3rR5+toEYXHz7kzykZsqt1PtbaTwG3TX9GJI4C7aWyH9H+9Bt76vH/pLBIn rackhd@rackhd-demo"
+                    "uid": 1010
                 },
                 {
                     "name": "rackhd2",
@@ -24,33 +23,28 @@
             "dnsServers": ["172.12.88.91", "192.168.20.77"],
             "networkDevices": [
                 {
-                    "device": "eth1",
+                    "device": "eth0",
                     "ipv4": {
-                        "ipAddr": "192.168.1.29",
-                        "gateway": "192.168.1.1",
-                        "netmask": "255.255.255.0",
-                        "vlanIds": [104, 105]
+                        "ipAddr": "172.31.128.222",
+                        "gateway": "172.31.128.255",
+                        "netmask": "255.255.255.0"
+                    }
+                },
+                {
+                    "device": "eth4",
+                    "ipv4": {
+                        "ipAddr": "192.168.100.29",
+                        "gateway": "192.168.100.1",
+                        "netmask": "255.255.255.0"                   
                     },
                     "ipv6": {
                         "ipAddr": "fec0::6ab4:0:5efe:157.60.14.21",
                         "gateway": "fe80::5efe:131.107.25.1",
                         "netmask": "ffff.ffff.ffff.ffff.0.0.0.0",
-                        "vlanIds": [101, 106]
-                    }
-                },
-                {
-                    "device": "eth2",
-                    "ipv4": {
-                        "ipAddr": "192.168.11.89",
-                        "gateway": "192.168.11.1",
-                        "netmask": "255.255.255.0",
-                        "vlanIds": [105, 109]
-                    },
-                    "ipv6": {
-                        "ipAddr": "fec0::6ab4:0:5efe:159.45.14.11",
-                        "gateway": "fe80::5efe:131.107.25.100",
-                        "netmask": "ffff.ffff.ffff.ffff.0.0.0.0",
-                        "vlanIds": [106, 108]
+                        "vlanIds": [
+                            101,
+                            106
+                        ]
                     }
                 }
             ],

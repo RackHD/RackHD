@@ -27,7 +27,7 @@ if os.getenv('RACKHD_ENABLE_FORMAT_DRIVE', 'false') == 'true':
     ENABLE_FORMAT_DRIVE=True
 IS_EMC = defaults.get('RACKHD_REDFISH_EMC_OEM', False)
 
-@test(groups=['os-install.v1.1.tests'], depends_on_groups=['amqp.tests'])
+@test(groups=['os-install.v1.1.tests'], depends_on_groups=['obm.tests'])
 class OSInstallTests(object):
 
     def __init__(self):
@@ -173,32 +173,33 @@ class OSInstallTests(object):
 
         if 'networkDevices' in body['options']['defaults']:
             self.__test_link_up(body['options']['defaults']['networkDevices'])
-        
 
-    def install_suse(self, version, nodes=[], options=None):
+
+    def install_suse(self, version, nodes=[], options=None, payloadFile=None):
         graph_name = 'Graph.InstallSUSE'
         os_repo = defaults.get('RACKHD_SUSE_REPO_PATH', \
             self.__base + '/repo/suse/{0}/'.format(version))
-        body = options
-        if body == None:
-            body = {
+
+        # load the payload from the specified file
+        if payloadFile != None:
+            body = self.__get_os_install_payload(payloadFile)
+        else:
+            body = {}
+
+        if options == None:
+            options = {
                 'options': {
                     'defaults': {
-                        'installDisk': '/dev/sda',
                         'version': version,
                         'repo': os_repo,
-                        'users': [{ 'name': 'onrack', 'password': 'Onr@ck1!', 'uid': 1010 }],
-                        'kargs' : {'NetWait': '180'}
-                    },
-                    'set-boot-pxe': self.__obm_options,
-                    'reboot': self.__obm_options,
-                    'install-os': {
-                        'schedulerOverrides': {
-                            'timeout': 3600000
-                        }
+                        'kargs' : {'NetWait': '10'}
                     }
                 }
             }
+
+        # add additional options to the body
+        self.__update_body(body, options);
+        # run the workflow
         self.__post_workflow(graph_name, nodes, body)
 
     def install_ubuntu(self, version, payloadFile, nodes = []):
@@ -331,11 +332,16 @@ class OSInstallTests(object):
         """ Testing Ubuntu 14.04 Installer Workflow With Maximal Payload """
         self.install_ubuntu('trusty', 'install_ubuntu_payload_iso_full.json')
 
-    @test(enabled=True, groups=['suse-install.v1.1.test'])
-    def test_install_suse(self, nodes=[], options=None):
-        """ Testing OpenSuse Leap 42.1 Installer Workflow """
-        self.install_suse('42.1')
-        
+    @test(enabled=True, groups=['suse-minimal-install.v1.1.test'])
+    def test_install_suse_min(self, nodes=[], options=None):
+        """ Testing OpenSuse Leap 42.1 Installer Workflow With Min Payload"""
+        self.install_suse('42.1', payloadFile='install_suse_payload_minimal.json')
+
+    @test(enabled=True, groups=['suse-full-install.v1.1.test'])
+    def test_install_suse_max(self, nodes=[], options=None):
+        """ Testing OpenSuse Leap 42.1 Installer Workflow With Max Payload"""
+        self.install_suse('42.1', payloadFile='install_suse_payload_full.json')
+
     @test(enabled=True, groups=['esxi-5-5-min-install.v1.1.test'])
     def test_install_min_esxi_5_5(self, nodes=[], options=None):
         """ Testing  ESXi 5.5 Installer Workflow With Minimal Payload """
@@ -355,7 +361,7 @@ class OSInstallTests(object):
     def test_install_max_esxi_6(self, nodes=[], options=None):
         """ Testing  ESXi 6 Installer Workflow With Maximum Payload """
         self.install_esxi('6.0', payloadFile='install_esx_payload_full.json')
-        
+
     @test(enabled=True, groups=['windowsServer2012-maximum-install.v1.1.test'])
     def test_install_max_windowsServer2012(self, nodes=[], options=None):
         """ Testing Windows Server 2012 Installer Workflow with Max payload"""
