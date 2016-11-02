@@ -32,7 +32,7 @@
                     }
                 },
                 {
-                    "device": "ens2f0",
+                    "device": "ens3f0",
                     "ipv4": {
                         "ipAddr": "192.168.100.29",
                         "gateway": "192.168.100.1",
@@ -47,7 +47,7 @@
                     }
                 },
                 {
-                    "device": "ens2f1",
+                    "device": "ens3f0",
                     "ipv4": {
                         "ipAddr": "192.168.101.89",
                         "gateway": "192.168.101.1",
