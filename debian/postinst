@@ -48,8 +48,8 @@ stop_component_services
 
 # Automatically added by dh_installinit
 if [ -x "/etc/init.d/rackhd" ]; then
-        update-rc.d rackhd defaults >/dev/null
-        invoke-rc.d rackhd start
+    update-rc.d rackhd defaults >/dev/null
+    invoke-rc.d rackhd start
 fi
 # End automatically added section
 
