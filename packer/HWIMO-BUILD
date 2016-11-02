@@ -107,7 +107,6 @@ BASENAME=${VM_NAME}
 OVA="${BASENAME}.ova"
 ovftool $SIGN_ARGS -o ${VMDIR}/${VM_NAME}.vmx $OVA
 
-
 if [ $? != 0 ]; then
     echo "ovftool exec failed.. exit"
     exit 4
@@ -122,6 +121,50 @@ then
 else
     echo "skip clamscan..."
 fi
+
+
+########## Modify the OVF file and update checksum ##############
+echo "covert to OVF"
+OVF=$"${BASENAME}.ovf"
+ovftool $OVA  $OVF
+echo "modify the OVF"
+
+
+# Note : this is ESXi format. (other ESX version may varies )
+# Add ProductSection/Property xml nodes under VirtualSystem xml node( kind of declare OVF Enviromental Properties)
+sed -i 's/<\/VirtualSystem>/ \
+  <ProductSection>    \
+     <Info>Information about the installed software<\/Info> \
+     <Product>Rackhd<\/Product> \
+     <Category>adminnetwork<\/Category>  \
+     <Property ovf:key="adminIP" ovf:type="string" ovf:userConfigurable="true"> \
+        <Label>adminIP<\/Label> \
+     <\/Property> \
+     <Property ovf:key="adminGateway" ovf:type="string" ovf:userConfigurable="true"> \
+        <Label>adminGateway<\/Label> \
+     <\/Property> \
+     <Property ovf:key="adminNetmask" ovf:type="string" ovf:userConfigurable="true"> \
+        <Label>adminNetmask<\/Label> \
+     <\/Property> \
+     <Property ovf:key="adminDNS" ovf:type="string" ovf:userConfigurable="true"> \
+        <Label>adminDNS<\/Label> \
+     <\/Property>  \
+  <\/ProductSection> \
+<\/VirtualSystem>   \
+/'  $OVF
+
+# specific the "OVF enviroment transport" method to VMWare Tools
+sed -i 's/<VirtualHardwareSection>/<VirtualHardwareSection ovf:transport="com.vmware.guestInfo" > /' $OVF
+
+echo "recovert back to OVA"
+# update checksum
+NewChk=$(sha1sum $OVF | awk '{print $1}')
+sed  -i -E  "s/SHA1\(.*ovf\)=.*$/SHA1\($OVF\)= $NewChk/g"  $"${BASENAME}.mf"
+# re-package into OVA
+rm $OVA
+ovftool $OVF $OVA
+
+
 
 
 # Create MD5 & Sha256 checksum file
@@ -157,4 +200,5 @@ then
 fi
 
 chmod a=r "$OVA"*
+
 
