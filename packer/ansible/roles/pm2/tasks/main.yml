@@ -4,5 +4,5 @@
   sudo: yes
 
 - name: Copy PM2 process file to home directory
-  copy: src=rackhd.yml dest="{{ ansible_env.HOME }}"
+  copy: src=rackhd-pm2-config.yml dest="{{ ansible_env.HOME }}"
   sudo: yes

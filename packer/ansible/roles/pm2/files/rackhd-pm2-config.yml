@@ -1,16 +1,16 @@
 apps:
    - script: index.js
-     name: taskgraph
+     name: on-taskgraph
      cwd: /home/vagrant/src/on-taskgraph
    - script: index.js
-     name: http
+     name: on-http
      cwd: /home/vagrant/src/on-http
    - script: index.js
-     name: dhcp
+     name: on-dhcp
      cwd: /home/vagrant/src/on-dhcp-proxy
    - script: index.js
-     name: syslog
+     name: on-syslog
      cwd: /home/vagrant/src/on-syslog
    - script: index.js
-     name: tftp
+     name: on-tftp
      cwd: /home/vagrant/src/on-tftp
