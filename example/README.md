@@ -40,7 +40,7 @@ Clone RackHD repo to your local machine.
     # create the RackHD instance.
     vagrant up dev
     # start the RackHD services
-    vagrant ssh dev -c "sudo pm2 start rackhd.yml"
+    vagrant ssh dev -c "sudo pm2 start rackhd-pm2-config.yml"
 
 ### LOCAL SOURCE
 
