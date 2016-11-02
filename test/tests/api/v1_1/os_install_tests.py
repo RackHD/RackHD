@@ -353,7 +353,7 @@ class OSInstallTests(object):
 
     @test(enabled=True, groups=['centos-6-5-full-install.v1.1.test'])
     def test_install_centos_6_full(self, nodes=[], options=None):
-        """ Testing CentOS 7 Installer Workflow """
+        """ Testing CentOS 6.5 Installer Workflow """
         self.install_centos('6.5', payloadFile='install_centos_6_payload_full.json')
 
     @test(enabled=True, groups=['centos-7-minimal-install.v1.1.test'])

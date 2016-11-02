@@ -32,7 +32,7 @@
                     }
                 },
                 {
-                    "device": "eth1",
+                    "device": "eth4",
                     "ipv4": {
                         "ipAddr": "192.168.100.29",
                         "gateway": "192.168.100.1",
@@ -47,7 +47,7 @@
                     }
                 },
                 {
-                    "device": "eth1",
+                    "device": "eth4",
                     "ipv4": {
                         "ipAddr": "192.168.101.89",
                         "gateway": "192.168.101.1",
