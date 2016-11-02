@@ -37,14 +37,14 @@ copy_RackHD_static_bins(){
 # Stop on-xxx 
 # Use Rackhd service to manager the status of on-xxx services
 #############################################
-stop_component_service(){
+stop_component_services(){
     for i in ${SERVICES[@]}; do
         service ${i} stop
     done
 }
 
 copy_RackHD_static_bins
-stop_component_service
+stop_component_services
 
 # Automatically added by dh_installinit
 if [ -x "/etc/init.d/rackhd" ]; then
