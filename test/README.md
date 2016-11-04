@@ -15,7 +15,7 @@ Run Vagrant environment
 
     cd ../example
     vagrant up
-    vagrant ssh dev -c "sudo nf start"
+    vagrant ssh dev -c "sudo pm2 start rackhd-pm2-config.yml"
     cd ../test
 
 Run the tests

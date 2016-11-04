@@ -71,4 +71,4 @@ fi
 
 echo "starting the services"
 echo "The RackHD documentation will be available shortly at http://localhost:9090/docs"
-vagrant ssh dev -c "sudo nf start"
+vagrant ssh dev -c "sudo pm2 start rackhd-pm2-config.yml"
