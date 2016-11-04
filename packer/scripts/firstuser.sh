@@ -28,7 +28,7 @@ startServices() {
     pids=`pidof node`
     if [ `expr length "$pids"` -eq "0" ]; then
        echo "starting rackhd ./src services..."
-       sudo nf start > /tmp/rackhd.log &
+       sudo pm2 start rackhd-pm2-config.yml 
     fi
   fi
 }

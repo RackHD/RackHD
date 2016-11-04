@@ -1,0 +1,8 @@
+---
+- name: Install PM2
+  shell: npm install -g pm2
+  sudo: yes
+
+- name: Copy PM2 process file to home directory
+  copy: src=rackhd-pm2-config.yml dest="{{ ansible_env.HOME }}"
+  sudo: yes
