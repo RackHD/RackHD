@@ -27,7 +27,7 @@ if os.getenv('RACKHD_ENABLE_FORMAT_DRIVE', 'false') == 'true':
     ENABLE_FORMAT_DRIVE=True
 IS_EMC = defaults.get('RACKHD_REDFISH_EMC_OEM', False)
 
-@test(groups=['os-install.v1.1.tests'], depends_on_groups=['obm.tests'])
+@test(groups=['os-install.v1.1.tests'], depends_on_groups=['amqp.tests'])
 class OSInstallTests(object):
 
     def __init__(self):
