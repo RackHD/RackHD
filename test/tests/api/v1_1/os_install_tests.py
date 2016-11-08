@@ -40,8 +40,7 @@ class OSInstallTests(object):
         }
         if self.__obm_options['obmServiceName'] == 'redfish-obm-service':
             self.__obm_options['force'] = 'true'
-        self.__sampleDir = defaults.get('RACKHD_SAMPLE_PAYLOADS_PATH', \
-            '../example/samples/')
+        self.__sampleDir = defaults.get('RACKHD_SAMPLE_PAYLOADS_PATH', '../example/samples/')
 
     @before_class()
     def setup(self):
@@ -76,6 +75,7 @@ class OSInstallTests(object):
         self.__post_workflow('Graph.ShellCommands', [], body)
 
     def __get_os_install_payload(self, payload_file_name):
+
         payload = open(self.__sampleDir  + payload_file_name, 'r')
         body = load(payload)
         payload.close()
@@ -86,6 +86,7 @@ class OSInstallTests(object):
         for key, value in updates.iteritems():
             #if value is a dict, recursivly call __update_body
             if isinstance(value, Mapping):
+
                 r = self.__update_body(body.get(key, {}), value)
                 body[key] = r
             elif isinstance(value, list) and key in body.keys():
@@ -220,37 +221,42 @@ class OSInstallTests(object):
         }
         self.__update_body(body, extra_options)
         self.__post_workflow(graph_name, nodes, body)
+
         #test network devices
         if 'networkDevices' in body['options']['defaults']:
             self.__test_link_up(body['options']['defaults']['networkDevices'])
-
-    def install_windowsServer2012(self, version, nodes=[], options=None):
+    
+    def install_windowsServer2012(self, version, payloadFile, nodes=[]):
         graph_name = 'Graph.InstallWindowsServer'
         os_repo = defaults.get('RACKHD_SMB_WINDOWS_REPO_PATH', None)
         if None == os_repo:
             fail('user must set RACKHD_SMB_WINDOWS_REPO_PATH')
-        body = options
-        if body == None:
-            # The value of the productkey below is not a valid product key. It is a KMS client 
-            # key that was generated to run the workflows without requiring a real product key. 
-            # This key is available to public on the Microsoft site.
-            body = {
+        # load the payload from the specified file
+        body = {}
+
+        body = self.__get_os_install_payload(payloadFile)
+
+        # The value of the productkey below is not a valid product key. It is a KMS client
+        # key that was generated to run the workflows without requiring a real product key.
+        # This key is available to public on the Microsoft site.
+        extra_options = {
                 'options': {
                     'defaults': {
                         'productkey': 'D2N9P-3P6X9-2R39C-7RTCD-MDVJX',
                         'smbUser':  defaults.get('RACKHD_SMB_USER' , 'onrack'),
                         'smbPassword':  defaults.get('RACKHD_SMB_PASSWORD' , 'onrack'),
-                        'completionUri': 'winpe-kickstart.ps1',
                         'smbRepo': os_repo,
                         'repo' : defaults.get('RACKHD_WINPE_REPO_PATH',  \
                             self.__base + '/repo/winpe')
-                    },
-                    'firstboot-callback-uri-wait':{
-                        'completionUri': 'renasar-ansible.pub'
                     }
                 }
-            }
+        }
+        self.__update_body(body, extra_options)
+        new_body = dumps(body)
         self.__post_workflow(graph_name, nodes, body)
+
+        if 'networkDevices' in body['options']['defaults']:
+            self.__test_link_up(body['options']['defaults']['networkDevices'])
 
     def install_coreos(self, nodes=[], options=None):
         graph_name = 'Graph.InstallCoreOS'
@@ -336,10 +342,15 @@ class OSInstallTests(object):
         """ Testing ESXi 6 Installer Workflow """
         self.install_esxi('6.0')
         
-    @test(enabled=True, groups=['windowsServer2012-install.v1.1.test'])
-    def test_install_windowsServer2012(self, nodes=[], options=None):
-        """ Testing Windows Server 2012 Installer Workflow """
-        self.install_windowsServer2012('10.40') 
+    @test(enabled=True, groups=['windowsServer2012-maximum-install.v1.1.test'])
+    def test_install_max_windowsServer2012(self, nodes=[], options=None):
+        """ Testing Windows Server 2012 Installer Workflow with Max payload"""
+        self.install_windowsServer2012('10.40','install_windows_payload_full.json')
+
+    @test(enabled=True, groups=['windowsServer2012-minimum-install.v1.1.test'])
+    def test_install_min_windowsServer2012(self, nodes=[], options=None):
+        """ Testing Windows Server 2012 Installer Workflow with Min payload"""
+        self.install_windowsServer2012('10.40','install_windows_payload_minimal.json')
 
     @test(enabled=True, groups=['coreos-install.v1.1.test'])
     def test_install_coreos(self, nodes=[], options=None):

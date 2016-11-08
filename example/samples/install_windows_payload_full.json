@@ -7,12 +7,11 @@
       "username": "onrack",
       "networkDevices": [
         {
-          "device": "Ethernet",
+          "device": "Ethernet 4",
           "ipv4": {
-            "ipAddr": "172.31.128.222",
-            "gateway": "192.168.1.1",
-            "netmask": "255.255.255.0",
-            "vlanIds": [104]
+            "ipAddr": "172.31.128.152",
+            "gateway": "172.31.128.5",
+            "netmask": "255.255.255.0"
           }
         }
       ],
