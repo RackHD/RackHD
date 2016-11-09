@@ -23,7 +23,7 @@ import os
 LOG = Log(__name__)
 DEFAULT_TIMEOUT_SEC = 5400
 ENABLE_FORMAT_DRIVE=False
-if os.getenv('RACKHD_ENABLE_FORMAT_DRIVE', 'false') == 'true': 
+if os.getenv('RACKHD_ENABLE_FORMAT_DRIVE', 'false') == 'true':
     ENABLE_FORMAT_DRIVE=True
 IS_EMC = defaults.get('RACKHD_REDFISH_EMC_OEM', False)
 
@@ -34,7 +34,7 @@ class OSInstallTests(object):
         self.__client = config.api_client
         self.__base = defaults.get('RACKHD_BASE_REPO_URL', \
             'http://{0}:{1}'.format(HOST_IP, HOST_PORT))
-        self.__obm_options = { 
+        self.__obm_options = {
             'obmServiceName': defaults.get('RACKHD_GLOBAL_OBM_SERVICE_NAME', \
                 'ipmi-obm-service')
         }
@@ -45,16 +45,16 @@ class OSInstallTests(object):
     @before_class()
     def setup(self):
         pass
-        
+
     @after_class(always_run=True)
     def teardown(self):
-        self.__format_drives()  
-    
+        self.__format_drives()
+
     def __get_data(self):
         return loads(self.__client.last_response.data)
-    
+
     def __post_workflow(self, graph_name, nodes, body):
-        workflows().post_workflows(graph_name, timeout_sec=DEFAULT_TIMEOUT_SEC, nodes=nodes, data=body)         
+        workflows().post_workflows(graph_name, timeout_sec=DEFAULT_TIMEOUT_SEC, nodes=nodes, data=body)
 
     def __format_drives(self):
         # Clear disk MBR and partitions
@@ -63,8 +63,8 @@ class OSInstallTests(object):
         body = {
             'options': {
                 'shell-commands': {
-                    'commands': [ 
-                        { 'command': command } 
+                    'commands': [
+                        { 'command': command }
                     ]
                 },
                 'set-boot-pxe': self.__obm_options,
@@ -105,7 +105,7 @@ class OSInstallTests(object):
     @test(enabled=ENABLE_FORMAT_DRIVE, groups=['format-drives.v1.1.test'])
     def test_format_drives(self):
         """ Drive Format Test """
-        self.__format_drives()  
+        self.__format_drives()
 
     def install_centos(self, version, nodes=[], options=None, payloadFile=None):
         graph_name = 'Graph.InstallCentOS'
@@ -148,7 +148,7 @@ class OSInstallTests(object):
                 'options': {
                     'defaults': {
                         'installDisk': 'firstdisk',
-                        'version': version, 
+                        'version': version,
                         'repo': os_repo,
                         'users': [{ 'name': 'onrack', 'password': 'Onr@ck1!', 'uid': 1010 }]
                     },
@@ -156,17 +156,13 @@ class OSInstallTests(object):
                     'reboot': self.__obm_options,
                     'install-os': {
                         '_taskTimeout': 3600000
-                    },
-                    'validate-ssh': {
-                        '_taskTimeout': 1200000,
-                        'retries': 10
                     }
                 }
             }
         if self.__obm_options['obmServiceName'] == 'redfish-obm-service' and IS_EMC:
             body['options']['install-os']['kargs'] = {'acpi':'off'}
-        self.__post_workflow(graph_name, nodes, body)  
-        
+        self.__post_workflow(graph_name, nodes, body)
+
     def install_suse(self, version, nodes=[], options=None):
         graph_name = 'Graph.InstallSUSE'
         os_repo = defaults.get('RACKHD_SUSE_REPO_PATH', \
@@ -192,7 +188,7 @@ class OSInstallTests(object):
                 }
             }
         self.__post_workflow(graph_name, nodes, body)
-        
+
     def install_ubuntu(self, version, payloadFile, nodes = []):
         graph_name = 'Graph.InstallUbuntu'
         os_repo = defaults.get('RACKHD_UBUNTU_REPO_PATH', \
@@ -202,7 +198,7 @@ class OSInstallTests(object):
         body = self.__get_os_install_payload(payloadFile)
         extra_options = {
             'options':{
-                'defaults':{ 
+                'defaults':{
                     'repo': os_repo ,
                     'kargs':{
                         'live-installer/net-image': os_repo + '/install/filesystem.squashfs'
@@ -212,10 +208,6 @@ class OSInstallTests(object):
                 'reboot': self.__obm_options,
                 'install-ubuntu': {
                     '_taskTimeout': 3600000
-                },
-                'validate-ssh': {
-                    '_taskTimeout': 1200000,
-                    'retries': 10
                 }
             }
         }
@@ -225,7 +217,7 @@ class OSInstallTests(object):
         #test network devices
         if 'networkDevices' in body['options']['defaults']:
             self.__test_link_up(body['options']['defaults']['networkDevices'])
-    
+
     def install_windowsServer2012(self, version, payloadFile, nodes=[]):
         graph_name = 'Graph.InstallWindowsServer'
         os_repo = defaults.get('RACKHD_SMB_WINDOWS_REPO_PATH', None)
@@ -293,7 +285,7 @@ class OSInstallTests(object):
         }
 
         self.install_centos('6.5')
-        
+
     @test(enabled=True, groups=['centos-7-install.v1.1.test'])
     def test_install_centos_7(self, nodes=[], options=None):
         """ Testing CentOS 7 Installer Workflow """
@@ -326,22 +318,22 @@ class OSInstallTests(object):
     def test_install_max_ubuntu(self, nodes=[], options=None):
         """ Testing Ubuntu 14.04 Installer Workflow With Maximal Payload """
         self.install_ubuntu('trusty', 'install_ubuntu_payload_iso_full.json')
-       
+
     @test(enabled=True, groups=['suse-install.v1.1.test'])
     def test_install_suse(self, nodes=[], options=None):
         """ Testing OpenSuse Leap 42.1 Installer Workflow """
         self.install_suse('42.1')
-        
+
     @test(enabled=True, groups=['esxi-5-5-install.v1.1.test'])
     def test_install_esxi_5_5(self, nodes=[], options=None):
         """ Testing ESXi 5.5 Installer Workflow """
         self.install_esxi('5.5')
-        
+
     @test(enabled=True, groups=['esxi-6-install.v1.1.test'])
     def test_install_esxi_6(self, nodes=[], options=None):
         """ Testing ESXi 6 Installer Workflow """
         self.install_esxi('6.0')
-        
+
     @test(enabled=True, groups=['windowsServer2012-maximum-install.v1.1.test'])
     def test_install_max_windowsServer2012(self, nodes=[], options=None):
         """ Testing Windows Server 2012 Installer Workflow with Max payload"""
