@@ -7,7 +7,6 @@ George Paulos
 This script initializes RackHD stack after install.
 '''
 
-
 import os
 import sys
 import subprocess
@@ -15,6 +14,7 @@ import subprocess
 sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test/fit_tests/common")
 import fit_common
 import pdu_lib
+import json
 
 # Locals
 MAX_CYCLES = 60
@@ -44,17 +44,17 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
         for subdir, dirs, files in os.walk('on-skupack/tarballs'):
             for skupacks in files:
                 print "\n**** Loading SKU Pack for " + skupacks
-                fit_common.rackhdapi("/api/1.1/skus/pack", action="binary-post",
+                fit_common.rackhdapi("/api/2.0/skus/pack", action="binary-post",
                                      payload=file(fit_common.TEST_PATH + "on-skupack/tarballs/" + skupacks).read())
             break
         print "\n"
         # check SKU directory against source files
         errorcount = 0
-        skulist = fit_common.json.dumps(fit_common.rackhdapi("/api/2.0/skus")['json'])
+        skulist = json.dumps(fit_common.rackhdapi("/api/2.0/skus")['json'])
         for subdir, dirs, files in os.walk('on-skupack'):
             for skus in dirs:
                 if skus not in ["debianstatic", ".git", "packagebuild", "tarballs"] and os.path.isfile('on-skupack/' + skus + '/config.json'):
-                    configfile = fit_common.json.loads(open("on-skupack/" + skus  + "/config.json").read())
+                    configfile = json.loads(open("on-skupack/" + skus  + "/config.json").read())
                     if configfile['name'] not in skulist:
                         print "FAILURE - Missing SKU: " + configfile['name']
                         errorcount += 1
@@ -83,7 +83,7 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
         auth_json.write('{"username":"' + fit_common.GLOBAL_CONFIG["api"]["admin_user"] + '", "password":"' + fit_common.GLOBAL_CONFIG["api"]["admin_pass"] + '", "role":"Administrator"}')
         auth_json.close()
         fit_common.scp_file_to_ora('auth.json')
-        rc = fit_common.remote_shell("curl -ks -X POST -H 'Content-Type:application/json' https://localhost:" + str(fit_common.GLOBAL_CONFIG['ports']['https']) + "/api/2.0/users -d @auth.json" )
+        rc = fit_common.remote_shell("curl -ks -X POST -H 'Content-Type:application/json' https://localhost:" + str(fit_common.GLOBAL_CONFIG['ports']['https']) + "/api/2.0/users -d @auth.json")
         if rc['exitcode'] != 0:
             print "ALERT: Auth admin user not set! Please manually set the admin user account if https access is desired."
 
@@ -104,7 +104,7 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
             self.assertNotEqual(fit_common.power_control_all_nodes("on"), 0, 'No BMC IP addresses found')
 
     # Optionally install control switch node if present
-    @fit_common.unittest.skipUnless("control" in fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']],"")
+    @fit_common.unittest.skipUnless("control" in fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']], "")
     def test05_discover_control_switch_node(self):
         print "**** Creating control switch node."
         payload = {
@@ -172,7 +172,7 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
         # workflows have not completed.
         # Wait 10 minutes ( MAX_CYCLES * 10 seconds) for this to occur.
         self.assertTrue(self.check_for_active_workflows(MAX_CYCLES), "Node discovery not completed")
-        
+
     def check_for_active_workflows(self, max_time):
         '''
         Determine if are any active workflows.
@@ -202,7 +202,7 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
         print "**** Apply OBM setting to compute nodes."
         self.assertTrue(fit_common.apply_obm_settings(), "OBM settings failed.")
 
-    @fit_common.unittest.skipUnless("bmc" in fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']],"")
+    @fit_common.unittest.skipUnless("bmc" in fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']], "")
     @fit_common.unittest.skip("Skipping 'test10_add_management_server' code incomplete")
     def test11_add_management_server(self):
         print "**** Creating management server."
@@ -265,6 +265,7 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
             fit_common.time.sleep(30)
         return False
 
+
     def check_for_active_poller_data(self, max_time):
         '''
         Determine if all poller have data.
@@ -272,18 +273,28 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
         :return:  True  - Poller have data
                   False - Not all poller have data
         '''
+        poller_list = []
         api_data = fit_common.rackhdapi('/api/2.0/pollers')
         if api_data:
-            for dummy in range(0, max_time):
-                good_poller_data = True
-                for index in  api_data['json']:
-                    poll_data = fit_common.rackhdapi("/api/2.0/pollers/" + index['id'] + "/data")
-                    if poll_data['status'] != 200 or len(poll_data['json']) == 0:
-                        good_poller_data = False
-                        break
-                if good_poller_data:
-                    return True
-                fit_common.time.sleep(10)
+            # set up a list of poller ids
+            for index in api_data['json']:
+                poller_list.append(index['id'])
+            if poller_list != []:
+                for dummy in range(0, max_time):
+                    # move backwards through the list allowing completed poller ids to be popped
+                    # off the list
+                    for i in reversed(range(len(poller_list))):
+                        id = poller_list[i]
+                        poll_data = fit_common.rackhdapi("/api/2.0/pollers/" + id + "/data/current")
+                        # Check if data current returned 200 and data in the poll, if so, remove from list
+                        if poll_data['status'] == 200 and len(poll_data['json']) != 0:
+                            poller_list.pop(i)
+                    if poller_list == []:
+                        # return when all pollers look good
+                        return True
+                    fit_common.time.sleep(10)
+        if poller_list != []:
+            print "Poller IDs with error or no data: {}".format(json.dumps(poller_list, indent=4))
         return False
 
 if __name__ == '__main__':
