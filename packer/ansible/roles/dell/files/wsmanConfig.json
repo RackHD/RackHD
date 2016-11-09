@@ -1,6 +1,24 @@
 {
 	"dell":{
 		"configServerPath": "/smi/server/config/smi/service",
-		"wsmanCallbackUri": "http://_MANAGEMENT_NETWORK_IP_:9988/api/1.1/wsmanCallback/_IDENTIFIER_"
+		"wsmanCallbackUri": "http://_MANAGEMENT_NETWORK_IP_:9988/api/1.1/wsmanCallback/_IDENTIFIER_",
+		
+ 		"services":{
+ 			
+ 
+                     "firmwareUpdate":{
+ 				"host": "http://100.68.124.107:8080",
+ 				"endpoints":{
+ 				             "apiVersion": "/v1/duse/version",
+                                             "uci": "/v1/duse/uci/?address",
+ 					     "downloader" : "/v1/duse/downloader?fileName=Catalog.xml.gz&fileUrl=ftp.dell.com/catalog&targetLocation=/fwRepo/" ,
+                                             "comparer": "/v1/duse/comparer/",
+                                             "customRepo":  "/v1/duse/comparer/custom",  
+                                             "updater":    "/v1/duse/updater/",  
+                                             "callbackUri": "http://100.68.124.106:9988/api/1.1/wsmanCallback/_IDENTIFIER_"
+	 				}
+ 			}  
+
+	      }
 	}
-}
+  }
