@@ -35,7 +35,8 @@
             "type": "ansible-local",
             "inventory_groups": "local",
             "playbook_file": "ansible/{{user `playbook`}}.yml",
-            "playbook_dir": "ansible"
+            "playbook_dir": "ansible",
+            "extra_arguments": [ "--extra-vars \"rackhd_version={{user `version`}}\"" ]
         },
         {
             "type": "shell",
@@ -81,8 +82,8 @@
       "iso_checksum_type": "md5",
       "iso_url": "{{user `iso_url`}}",
       "headless": false,
-      "ssh_username": "vagrant",
-      "ssh_password": "vagrant",
+      "ssh_username": "rackhd",
+      "ssh_password": "rackhd",
       "ssh_port": 22,
       "ssh_wait_timeout": "10000s",
       "shutdown_command": "echo 'shutdown -P now' > /tmp/shutdown.sh; echo 'vagrant'|sudo -S sh '/tmp/shutdown.sh'",

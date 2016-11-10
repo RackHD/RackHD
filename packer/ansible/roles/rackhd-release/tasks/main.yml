@@ -11,8 +11,16 @@
                   state=present
   sudo: yes
 
-- name: Install RackHD Packages
+- name: Install RackHD Packages latest
   apt: pkg="{{ item }}" state=latest force=yes
   with_items:
     - rackhd
   sudo: yes
+  when: (rackhd_version is undefined) or (not rackhd_version)
+
+- name: Install RackHD Packages specific version
+  apt: pkg="{{ item }}" force=yes
+  with_items:
+    - rackhd={{ rackhd_version }}
+  sudo: yes
+  when: (rackhd_version is not undefined) and rackhd_version
