@@ -4,8 +4,12 @@
       "vcs": true
     },
     "variables": {
-        "atlas_username": "{{ env `ATLAS_USERNAME` }}",
-        "atlas_name": "{{ env `ATLAS_NAME` }}"
+        "atlas_username": "",
+        "atlas_name": "",
+        "atlas_token": "",
+        "iso_url": "http://releases.ubuntu.com/14.04/ubuntu-14.04.4-server-amd64.iso",
+        "playbook": "rackhd_ci_builds",
+        "version": ""
     },
     "provisioners": [
         {
@@ -30,8 +34,9 @@
         {
             "type": "ansible-local",
             "inventory_groups": "local",
-            "playbook_file": "ansible/rackhd_package.yml",
-            "playbook_dir": "ansible"
+            "playbook_file": "ansible/{{user `playbook`}}.yml",
+            "playbook_dir": "ansible",
+            "extra_arguments": [ "--extra-vars \"rackhd_version={{user `version`}}\"" ]
         },
         {
             "type": "shell",
@@ -75,9 +80,10 @@
       "http_directory": "http",
       "iso_checksum": "2ac1f3e0de626e54d05065d6f549fa3a",
       "iso_checksum_type": "md5",
-      "iso_url": "http://releases.ubuntu.com/14.04/ubuntu-14.04.4-server-amd64.iso",
-      "ssh_username": "vagrant",
-      "ssh_password": "vagrant",
+      "iso_url": "{{user `iso_url`}}",
+      "headless": false,
+      "ssh_username": "rackhd",
+      "ssh_password": "rackhd",
       "ssh_port": 22,
       "ssh_wait_timeout": "10000s",
       "shutdown_command": "echo 'shutdown -P now' > /tmp/shutdown.sh; echo 'vagrant'|sudo -S sh '/tmp/shutdown.sh'",
@@ -92,6 +98,17 @@
     [{
         "type": "vagrant",
         "keep_input_artifact": true
+    },
+    {
+        "type": "atlas",
+        "only": ["virtualbox-iso"],
+        "artifact": "{{user `atlas_username`}}/{{user `atlas_name`}}",
+        "token": "{{user `atlas_token`}}",
+        "artifact_type": "vagrant.box",
+        "metadata": {
+            "provider": "virtualbox",
+            "version": "{{user `version`}}"
+        }
     }]
-]
+  ]
 }
