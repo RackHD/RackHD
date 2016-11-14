@@ -59,9 +59,6 @@
   },
   "repos": {
     "_comment":   "This is the list of repositories for each category",
-    "proxy":      "http://web.hwimo.lab.emc.com:3128",
-    "proxyhost":  "web.hwimo.lab.emc.com",
-    "proxyport":  "3128",
     "mirror":     "http://mirrors.hwimo.lab.emc.com/mirrors",
     "os": {
       "esxi55":   "http://172.31.128.1:9080/mirror/esxi/5.5/esxi",
