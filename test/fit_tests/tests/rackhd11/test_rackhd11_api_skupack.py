@@ -172,13 +172,13 @@ class test_rackhd11_api_skupack(fit_common.unittest.TestCase):
             bmcimgfile=""
             url=fit_common.GLOBAL_CONFIG["repos"]["firmware"][skutype]["firmware"]
             intelimgfile= url.split('/')[-1]
-        graphlist={"intel":"Graph.Flash.Intel.Firmware",
+        graphlist={
                    "quantabios":"Graph.Flash.Quanta.BIOS",
                    "quantabmc":"Graph.Flash.Quanta.Bmc"}
-        optionlist={"intel":"upgrade-firmware",
+        optionlist={
                    "quantabios":"upgrade-bios-firmware",
                    "quantabmc":"upgrade-bmc-firmware"}
-        imgfile={"intel":intelimgfile,
+        imgfile={
                    "quantabios":biosimgfile,
                    "quantabmc":bmcimgfile}
         payloadlist={"dhcp+reboot": {"name":  graphlist[updatetype], "options": {"when-reboot-at-end": { "rebootAtEnd": "true" }}},
@@ -227,51 +227,6 @@ class test_rackhd11_api_skupack(fit_common.unittest.TestCase):
                 else:
                     self.assertEqual(0,1,'No valid firmware image in skupack!')
                     return 1
-    '''
-    def rackhd_api_11_quanta_skupack_bmc_update(self,skutype,myaction):
-            # delete Quanta skus before test
-            api_data = fit_common.rackhdapi("/api/1.1/skus")
-            payloadlist={"dhcp+reboot": {"name": "Graph.Flash.Quanta.Bmc", "options": {"when-reboot-at-end": { "rebootAtEnd": "true" }}},
-                     "static+reboot": {"name": "Graph.Flash.Quanta.Bmc","options": {"when-reboot-at-end": { "rebootAtEnd": "true" }}},
-                     "dhcp+noreboot": { "name": "Graph.Flash.Quanta.Bmc"},
-                     "static+noreboot":{ "name": "Graph.Flash.Quanta.Bmc"}   }
-
-            #print "text=",api_data['json']
-            for item in api_data['json']:
-                print "item name=",item['name']
-                print "item body=",item
-                if skutype in item['name'] :
-                    if 'skuConfig' in item:
-                        print "image name=",item['skuConfig']['bmcFirmware']['filename']
-                        if ".IMA" in item['skuConfig']['bmcFirmware']['filename'] or ".ima" in item['skuConfig']['bmcFirmware']['filename']:
-                            response_data = fit_common.rackhdapi("/api/1.1/skus/" + item['id']+ "/nodes")
-                            for quantanode in response_data['json']:
-                                quanta_node_id=quantanode['id']
-                                catalogdata=fit_common.rackhdapi("/api/1.1/nodes/" +quanta_node_id+ "/catalogs/bmc/")
-                                bmc_ip=catalogdata['json']["data"]["IP Address"]
-                                fit_common.rackhdapi('/api/1.1/nodes/' + quanta_node_id + '/workflows/active', action='delete')
-                                updatebios_data = fit_common.rackhdapi('/api/1.1/nodes/'+quanta_node_id+'/workflows', action='post',payload= payloadlist[myaction])
-                                self.assertEqual(updatebios_data['status'], 201, 'Incorrect HTTP return code, expected 200, got:' + str(updatebios_data['status']))
-                                workflow_id=updatebios_data['json']['instanceId']
-                                self.wait_complete(workflow_id)
-                                if myaction=="static+noreboot" or  myaction=="dhcp+noreboot":
-                                    self.assertEqual(self.ping_node_by_id(quanta_node_id), 0,'Could Not Ping to the node now!')
-                                    self.reboot_node(quanta_node_id)
-                                time.sleep(120)
-                                self.check_system_state(quanta_node_id)
-                                #check if static ip is changed
-                                if myaction=="dhcp+noreboot" or  myaction=="dhcp+noreboot":
-                                    self.assertEqual(fit_common.remote_shell('ping -c 1 '+bmc_ip)['exitcode'],0,"Orignial BMC IP could not be ping through!")
-                                    catalogdata=fit_common.rackhdapi("/api/1.1/nodes/" + quanta_node_id+ "/catalogs/bmc/")
-                                    self.assertEqual(catalogdata['json']["data"]["IP Address"],bmc_ip,"Static IP is changed!")
-                            return 0
-                        else :
-                            self.assertEqual(0,1,'No valid firmware image in skupack!')
-                            return 1
-                    else:
-                        self.assertEqual(0,1,'No valid firmware image in skupack!')
-                        return 1
-    '''
 
     def wait_complete(self,workflow_id):
         rc={}
@@ -284,8 +239,6 @@ class test_rackhd11_api_skupack(fit_common.unittest.TestCase):
                 if fit_common.VERBOSITY >= 6:
                     print time.strftime('%X %x %Z'),"current status:",rc['json']['_status']," Retry times:", dummy
                 fit_common.time.sleep(30)
-        #if rc['json']['_status']!="succeeded"
-        #    fit_common.rackhdapi('/api/current/nodes/' + workflow_id + '/workflows/active', action='delete')
         self.assertEqual( rc['json']['_status'],"succeeded",' operation is not succeeded! we get '+str(rc['json']['_status']))
 
 
@@ -303,14 +256,6 @@ class test_rackhd11_api_skupack(fit_common.unittest.TestCase):
     def test_api_11_update_quanta_d51_2u_skupack(self):
         self.rackhd_api_11_update_skupack("Quanta D51 2U")
 
-    def test_api_11_update_rinjin_kp_skupack(self):
-        self.rackhd_api_11_update_skupack("Rinjin KP")
-
-    def test_api_11_update_rinjin_tp_skupack(self):
-        self.rackhd_api_11_update_skupack("Rinjin TP")
-
-    def test_api_11_update_hydra_skupack(self):
-        self.rackhd_api_11_update_skupack("Hydra")
 
     def test_api_11_quanta_t41_skupack_firmware_update_static_noreboot(self):
         responsecode= self.rackhd_api_11_skupack_firmware_update("Quanta T41","quantabios","static+noreboot")
@@ -376,89 +321,4 @@ class test_rackhd11_api_skupack(fit_common.unittest.TestCase):
         responsecode= self.rackhd_api_11_skupack_firmware_update("Quanta T41","quantabmc","fileoveride")
         self.assertEqual(responsecode, 0,'Update Quanta T41 failed!')
     
-    
-    '''intel server''' 
-    '''Hydra server''' 
-    def test_api_11_hydra_skupack_firmware_update_static_noreboot(self):
-        responsecode= self.rackhd_api_11_skupack_firmware_update("Hydra","intel","static+noreboot")
-        self.assertEqual(responsecode, 0,'Update Hydra failed!')
-
-    def test_api_11_hydra_skupack_firmware_update_static_reboot(self):
-        responsecode= self.rackhd_api_11_skupack_firmware_update("Hydra","intel","static+reboot")
-        self.assertEqual(responsecode, 0,'Update Hydra failed!')
-
-    def test_api_11_hydra_skupack_firmware_update_dhcp_noreboot(self):
-        responsecode= self.rackhd_api_11_skupack_firmware_update("Hydra","intel","dhcp+noreboot")
-        self.assertEqual(responsecode, 0,'Update Hydra failed!')
-
-    def test_api_11_hydra_skupack_firmware_update_dhcp_reboot(self):
-        responsecode= self.rackhd_api_11_skupack_firmware_update("Hydra","intel","dhcp+reboot")
-        self.assertEqual(responsecode, 0,'Update Hydra failed!')
-
-    def test_api_11_hydra_skupack_firmware_update_fileoveride(self):
-        self.rackhd_api_11_post_firmware_file("Hydra","firmware")
-        responsecode= self.rackhd_api_11_skupack_firmware_update("Hydra","intel","fileoveride")
-        self.assertEqual(responsecode, 0,'Update Hydra failed!')
-
-    '''intel Rinjin KP server'''
-    def test_api_11_rinjin_kp_skupack_firmware_update_static_noreboot(self):
-        responsecode= self.rackhd_api_11_skupack_firmware_update("Rinjin KP","intel","static+noreboot")
-        self.assertEqual(responsecode, 0,'Update Rinjin KP failed!')
-
-
-    def test_api_11_rinjin_kp_skupack_firmware_update_static_reboot(self):
-        responsecode= self.rackhd_api_11_skupack_firmware_update("Rinjin KP","intel","static+reboot")
-        self.assertEqual(responsecode, 0,'Update Rinjin KP failed!')
-
-    def test_api_11_rinjin_kp_skupack_firmware_update_dhcp_noreboot(self):
-        responsecode= self.rackhd_api_11_skupack_firmware_update("Rinjin KP","intel","dhcp+noreboot")
-        self.assertEqual(responsecode, 0,'Update Rinjin KP failed!')
-
-    def test_api_11_rinjin_kp_skupack_firmware_update_dhcp_reboot(self):
-        responsecode= self.rackhd_api_11_skupack_firmware_update("Rinjin KP","intel","dhcp+reboot")
-        self.assertEqual(responsecode, 0,'Update Rinjin KP failed!')
-
-
-    def test_api_11_rinjin_kp_skupack_firmware_update_fileoveride(self):
-        self.rackhd_api_11_post_firmware_file("Rinjin KP","firmware")
-        responsecode= self.rackhd_api_11_skupack_firmware_update("Rinjin KP","intel","fileoveride")
-        self.assertEqual(responsecode, 0,'Update Rinjin KP failed!')
-
-    '''intel Rinjin TP server'''
-    def test_api_11_rinjin_tp_skupack_firmware_update_static_noreboot(self):
-        responsecode= self.rackhd_api_11_skupack_firmware_update("Rinjin TP","intel","static+noreboot")
-        self.assertEqual(responsecode, 0,'Update Rinjin TP failed!')
-
-
-    def test_api_11_rinjin_tp_skupack_firmware_update_static_reboot(self):
-        responsecode= self.rackhd_api_11_skupack_firmware_update("Rinjin TP","intel","static+reboot")
-        self.assertEqual(responsecode, 0,'Update Rinjin TP failed!')
-
-    def test_api_11_rinjin_tp_skupack_firmware_update_dhcp_noreboot(self):
-        responsecode= self.rackhd_api_11_skupack_firmware_update("Rinjin TP","intel","dhcp+noreboot")
-        self.assertEqual(responsecode, 0,'Update Rinjin TP failed!')
-
-    def test_api_11_rinjin_tp_skupack_firmware_update_dhcp_reboot(self):
-        responsecode= self.rackhd_api_11_skupack_firmware_update("Rinjin TP","intel","dhcp+reboot")
-        self.assertEqual(responsecode, 0,'Update Rinjin TP failed!')
-
-
-    def test_api_11_rinjin_tp_skupack_firmware_update_fileoveride(self):
-        self.rackhd_api_11_post_firmware_file("Rinjin TP","firmware")
-        responsecode= self.rackhd_api_11_skupack_firmware_update("Rinjin KP","intel","fileoveride")
-        self.assertEqual(responsecode, 0,'Update Rinjin TP failed!')
-
-    def test_check_system_state(self):
-        self.check_system_state("57aacc6fd3d89e0e05513abe")
-    ''' def test_find_microkernel(self):
-            id="578857cd33ac86ba07fa9597"
-            response_data = fit_common.rackhdapi("/api/1.1/nodes/" + id)
-            mac=response_data['json']["name"]
-            print "mac found=",mac
-            catalogdata=fit_common.rackhdapi("/api/1.1/nodes/" + id+ "/catalogs/ohai/")
-            ip=catalogdata['json']["data"]["ipaddress"]
-            print "find ip=",ip
-            if fit_common.remote_shell('ping -c 1 '+ip)['exitcode'] == 0:
-                print "Successed, She is alive!"
-            else :
-                print "Ping fail!"'''
+ 
