@@ -4,7 +4,23 @@ Copyright 2016, EMC, Inc.
 Author(s):
 George Paulos
 
-This script installs RackHD from GitHub source onto blank OS.
+This script installs RackHD from GitHub source onto blank Ubuntu 14 or 16 OS via Ansible installer.
+This script performs the following functions:
+    - loads prerequisite packages git, ansible, etc.
+    - downloads RackHD source to management server from repos specified in global_config.json
+    - installs using rackhd_local.yml playbook
+    - set up networking
+    - load configuration files
+    - startup and verify operations
+
+NOTES: This installer does not currently work behind a proxy. If test bed is behind a proxy wall,
+       use the package installer deploy/rackhd_package_install.py.
+       If the host is rebooted, the RackHD must be restarted by typing 'sudo nf start' at console.
+
+usage:
+    python run_tests.py -ova <ip or host> -test deploy/rackhd_source_install.py
+    or
+    python run_tests.py -stack <stack ID> -test deploy/rackhd_source_install.py
 '''
 
 import os
@@ -14,13 +30,34 @@ import subprocess
 sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test/fit_tests/common")
 import fit_common
 
-# set proxy
+# set proxy if required
 ENVVARS = ''
 if 'proxy' in fit_common.GLOBAL_CONFIG['repos'] and fit_common.GLOBAL_CONFIG['repos']['proxy'] != '':
     ENVVARS = "export http_proxy=" + fit_common.GLOBAL_CONFIG['repos']['proxy'] + ";" + \
               "export https_proxy=" + fit_common.GLOBAL_CONFIG['repos']['proxy'] + ";"
-# collect nic names
-IFLIST = fit_common.remote_shell("ifconfig -s -a | tail -n +2 | awk \\\'{print \\\$1}\\\' |grep -v lo")['stdout'].split()
+    # maven proxy settings
+    maven_proxy = open('settings.xml', 'w')
+    maven_proxy.write(
+      '<settings '
+      'xmlns="http://maven.apache.org/SETTINGS/1.0.0" '
+      'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" '
+      'xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 '
+      'http://maven.apache.org/xsd/settings-1.0.0.xsd">'
+          '<proxies>'
+              '<proxy>'
+              '<id>mavenproxy</id>'
+              '<active>true</active>'
+              '<protocol>https</protocol>'
+              '<host>' + fit_common.GLOBAL_CONFIG['repos']['proxyhost'] + '</host>'
+              '<port>' + fit_common.GLOBAL_CONFIG['repos']['proxyport'] + '</port>'
+              '<nonProxyHosts>localhost</nonProxyHosts>'
+            '</proxy>'
+          '</proxies>'
+      '</settings>')
+    maven_proxy.close()
+    fit_common.scp_file_to_ora('settings.xml')
+    fit_common.remote_shell('mkdir -p ~/.m2;cp settings.xml ~/.m2;mkdir -p /root/.m2;cp settings.xml /root/.m2')
+    os.remove('settings.xml')
 
 class rackhd_source_install(fit_common.unittest.TestCase):
     def test01_install_rackhd_dependencies(self):
@@ -39,21 +76,18 @@ class rackhd_source_install(fit_common.unittest.TestCase):
         self.assertEqual(fit_common.remote_shell(ENVVARS + "apt-get -y update")['exitcode'], 0, "update failure.")
         self.assertEqual(fit_common.remote_shell(ENVVARS + "apt-get -y dist-upgrade")['exitcode'], 0, "upgrade failure.")
         self.assertEqual(fit_common.remote_shell("git config --global http.sslverify false")['exitcode'], 0, "Git config failure.")
-        self.assertEqual(fit_common.remote_shell("git config --global http.proxy " + fit_common.GLOBAL_CONFIG['repos']['proxy']
+        if 'proxy' in fit_common.GLOBAL_CONFIG['repos'] and fit_common.GLOBAL_CONFIG['repos']['proxy'] != '':
+            self.assertEqual(fit_common.remote_shell("git config --global http.proxy " + fit_common.GLOBAL_CONFIG['repos']['proxy']
                                                   )['exitcode'], 0, "Git proxy config failure.")
-    def test02_install_node(self):
-        print "**** Installing NodeJS 4"
-        # install Node
-        fit_common.remote_shell(ENVVARS + 'apt-get -y remove nodejs nodejs-legacy')
-        fit_common.remote_shell(ENVVARS +
-                                'wget --quiet -O - https://deb.nodesource.com/gpgkey/nodesource.gpg.key | sudo apt-key add -;'
-                                'echo "deb https://deb.nodesource.com/node_4.x trusty main" | tee /etc/apt/sources.list.d/nodesource.list;'
-                                'echo "deb-src https://deb.nodesource.com/node_4.x trusty main" | tee -a /etc/apt/sources.list.d/nodesource.list;')
-        fit_common.remote_shell(ENVVARS + 'apt-get -y update;apt-get -y install nodejs;')
-        fit_common.remote_shell(ENVVARS + 'apt-get -y install npm;npm config set https-proxy ' + fit_common.GLOBAL_CONFIG['repos']['proxy'])
-        self.assertEqual(fit_common.remote_shell('node -v')['exitcode'], 0, "Node install failed..")
+        # install Ansible
+        self.assertEqual(fit_common.remote_shell(ENVVARS + "cd ~;apt-get -y install ansible")['exitcode'], 0, "Ansible Install failure.")
+        self.assertEqual(fit_common.remote_shell(ENVVARS + "apt-get -y update")['exitcode'], 0, "Ansible Update failure.")
+        # create startup files
+        self.assertEqual(fit_common.remote_shell(
+            "touch /etc/default/on-dhcp-proxy /etc/default/on-http /etc/default/on-tftp /etc/default/on-syslog /etc/default/on-taskgraph"
+            )['exitcode'], 0, "Startup files failure.")
 
-    def test03_clone_rackhd_source(self):
+    def test02_clone_rackhd_source(self):
         print "**** Cloning RackHD source."
         modules = [
             "on-core",
@@ -64,38 +98,92 @@ class rackhd_source_install(fit_common.unittest.TestCase):
             "on-taskgraph",
             "on-tasks",
             "on-tftp",
-            "on-tools"
+            "on-tools",
+            "on-wss"
         ]
         # clone base repo
         fit_common.remote_shell('rm -rf ~/rackhd')
         self.assertEqual(fit_common.remote_shell(ENVVARS + "git clone "
-                                                + fit_common.GLOBAL_CONFIG['repos']['install']['rackhd']
-                                                + "/rackhd ~/rackhd"
+                                                + fit_common.GLOBAL_CONFIG['repos']['install']['rackhd']['repo']
+                                                + " ~/rackhd"
                                                 )['exitcode'], 0, "RackHD git clone failure.")
+        self.assertEqual(fit_common.remote_shell("cd ~/rackhd/" + ";git checkout "
+                                                 + fit_common.GLOBAL_CONFIG['repos']['install']['rackhd']['branch']
+                                                 )['exitcode'], 0, "Branch not found on RackHD repo.")
         # clone modules
         for repo in modules:
             self.assertEqual(fit_common.remote_shell(ENVVARS
-                                                    + "rm -rf ~rackhd/" + repo + ";"
+                                                    + "rm -rf ~/rackhd/" + repo + ";"
                                                     + "git clone "
-                                                    + fit_common.GLOBAL_CONFIG['repos']['install']['rackhd']
-                                                    + "/" + repo + " ~/rackhd/" + repo
+                                                    + fit_common.GLOBAL_CONFIG['repos']['install'][repo]['repo']
+                                                    + " ~/rackhd/" + repo
                                                      )['exitcode'], 0, "RackHD git clone module failure:" + repo)
+            self.assertEqual(fit_common.remote_shell("cd ~/rackhd/" + repo + ";git checkout "
+                                                     + fit_common.GLOBAL_CONFIG['repos']['install'][repo]['branch']
+                                                     )['exitcode'], 0, "Branch not found on module:" + repo)
 
-    def test04_run_ansible_installer(self):
+    def test03_run_ansible_installer(self):
         print "**** Run RackHD Ansible installer."
-        # install Ansible
-        self.assertEqual(fit_common.remote_shell(ENVVARS + "cd ~;apt-get -y install ansible")['exitcode'], 0, "Install failure.")
-        # run Ansible RackHD installer
         self.assertEqual(fit_common.remote_shell(ENVVARS +
                                                  "cd ~/rackhd/packer/ansible/;"
-                                                 "ansible-playbook -i 'local,' -c local rackhd_package.yml",
-                                                 timeout=600,
-                                                 )['exitcode'], 0, "Install failure.")
+                                                 "ansible-playbook -i 'local,' -c local rackhd_local.yml",
+                                                 timeout=1200,
+                                                 )['exitcode'], 0, "RackHD Install failure.")
 
-    def test05_install_rackhd_config_files(self):
-        print "**** Installing RackHD config files."
+    def test04_install_network_config(self):
+        print "**** Installing RackHD network config."
+        # collect nic names
+        getifs = fit_common.remote_shell("ifconfig -s -a |tail -n +2 |grep -v -e Iface -e lo")
+        # clean out login stuff
+        splitifs = getifs['stdout'].split('\n')
+        ifslit = [] # array of valid eth ports
+        for item in splitifs:
+            if "assword" not in item and item.split(" ")[0]:
+                ifslit.append(item.split(" ")[0])
+
+        # install control network config
+        control_cfg = open('control.cfg', 'w')
+        control_cfg.write(
+                            'auto ' + ifslit[1] + '\n'
+                            'iface ' + ifslit[1] + ' inet static\n'
+                            'address 172.31.128.1\n'
+                            'netmask 255.255.252.0\n'
+                        )
+        control_cfg.close()
+        # copy file to ORA
+        fit_common.scp_file_to_ora('control.cfg')
+        self.assertEqual(fit_common.remote_shell('cp control.cfg /etc/network/interfaces.d/')['exitcode'], 0, "Control network config failure.")
+        os.remove('control.cfg')
+        # startup NIC
+        fit_common.remote_shell('ip addr add 172.31.128.1/22 dev ' + ifslit[1])
+        fit_common.remote_shell('ip link set ' + ifslit[1] + ' up')
+        self.assertEqual(fit_common.remote_shell('ping -c 1 -w 5 172.31.128.1')['exitcode'], 0, 'Control NIC failure.')
+
+        # If PDU network adapter is present, configure
+        try:
+            ifslit[2]
+        except IndexError:
+            print "**** No PDU network will be configured"
+        else:
+            pdudirect_cfg = open('pdudirect.cfg', 'w')
+            pdudirect_cfg.write(
+                                'auto ' + ifslit[2] + '\n'
+                                'iface ' + ifslit[2] + ' inet static\n'
+                                'address 192.168.1.1\n'
+                                'netmask 255.255.255.0\n'
+                                )
+            pdudirect_cfg.close()
+            # copy file to ORA
+            fit_common.scp_file_to_ora('pdudirect.cfg')
+            self.assertEqual(fit_common.remote_shell('cp pdudirect.cfg /etc/network/interfaces.d/')['exitcode'], 0, "DHCP Config failure.")
+            os.remove('pdudirect.cfg')
+            # startup NIC
+            fit_common.remote_shell('ip addr add 192.168.1.1/24 dev ' + ifslit[2])
+            fit_common.remote_shell('ip link set ' + ifslit[2] + ' up')
+            self.assertEqual(fit_common.remote_shell('ping -c 1 -w 5 192.168.1.1')['exitcode'], 0, 'PDU NIC failure.')
+
         #create DHCP config
-        fit_common.remote_shell('echo INTERFACES=' + IFLIST[7] + ' > /etc/default/isc-dhcp-server')
+        fit_common.remote_shell('echo INTERFACES=' + ifslit[1] + ' > /etc/default/isc-dhcp-server')
         dhcp_conf = open('dhcpd.conf', 'w')
         dhcp_conf.write(
                         'ddns-update-style none;\n'
@@ -112,12 +200,20 @@ class rackhd_source_install(fit_common.unittest.TestCase):
                         '}\n'
                          )
         dhcp_conf.close()
+        # copy file to ORA
+        fit_common.scp_file_to_ora('dhcpd.conf')
+        self.assertEqual(fit_common.remote_shell('cp dhcpd.conf /etc/dhcp/')['exitcode'], 0, "DHCP Config failure.")
+        os.remove('dhcpd.conf')
+
+    def test05_install_rackhd_config_files(self):
+        print "**** Installing RackHD config files."
         # create RackHD config
         hdconfig = {
                     "CIDRNet": "172.31.128.0/22",
                     "amqp": "amqp://localhost",
                     "apiServerAddress": "172.31.128.1",
                     "apiServerPort": 9080,
+                    "arpCacheEnabled": True,
                     "broadcastaddr": "172.31.131.255",
                     "dhcpGateway": "172.31.128.1",
                     "dhcpProxyBindAddress": "172.31.128.1",
@@ -184,55 +280,29 @@ class rackhd_source_install(fit_common.unittest.TestCase):
         rabbitmq_config.close()
         # copy files to ORA
         fit_common.scp_file_to_ora('config.json')
-        fit_common.scp_file_to_ora('dhcpd.conf')
         fit_common.scp_file_to_ora('rabbitmq.config')
-        self.assertEqual(fit_common.remote_shell('cp dhcpd.conf /etc/dhcp/')['exitcode'], 0, "DHCP Config failure.")
         self.assertEqual(fit_common.remote_shell('cp config.json /opt/monorail/')['exitcode'], 0, "RackHD Config file failure.")
         self.assertEqual(fit_common.remote_shell('cp rabbitmq.config /etc/rabbitmq/')['exitcode'], 0, "AMQP Config file failure.")
-        os.remove('dhcpd.conf')
         os.remove('config.json')
         os.remove('rabbitmq.config')
+        fit_common.remote_shell('mkdir -p ~/src/on-http/static/swagger-ui')
 
-    def test06_install_network_config(self):
-        print "**** Installing RackHD network config."
-        # install control network config
-        self.assertEqual(fit_common.remote_shell("echo 'auto " + IFLIST[7] + "' > /etc/network/interfaces.d/control.cfg;"
-                                                  "echo 'iface " + IFLIST[7] + " inet static' >> /etc/network/interfaces.d/control.cfg;"
-                                                  "echo 'address 172.31.128.1' >> /etc/network/interfaces.d/control.cfg;"
-                                                  "echo 'netmask 255.255.252.0' >> /etc/network/interfaces.d/control.cfg"
-                                                  )['exitcode'], 0, "Network config failure.")
-        # If PDU network is present, configure
-        try:
-            IFLIST[8]
-        except IndexError:
-            print "**** No PDU network will be configured"
-        else:
-            self.assertEqual(fit_common.remote_shell("echo 'auto " + IFLIST[8] + "' > /etc/network/interfaces.d/pdudirect.cfg;"
-                                                      "echo 'iface " + IFLIST[8] + " inet static' >> /etc/network/interfaces.d/pdudirect.cfg;"
-                                                      "echo 'address 192.168.1.1' >> /etc/network/interfaces.d/pdudirect.cfg;"
-                                                      "echo 'netmask 255.255.255.0' >> /etc/network/interfaces.d/pdudirect.cfg"
-                                                      )['exitcode'], 0, "Network config failure.")
-
-    def test07_reboot_and_check(self):
-        print "**** Reboot and check installation."
-        # create startup files
-        self.assertEqual(fit_common.remote_shell(
-            "touch /etc/default/on-dhcp-proxy /etc/default/on-http /etc/default/on-tftp /etc/default/on-syslog /etc/default/on-taskgraph"
-            )['exitcode'], 0, "Install failure.")
-        # reboot
-        print "**** Rebooting appliance..."
-        fit_common.remote_shell("shutdown -r now")
-        print "**** Waiting for login..."
-        fit_common.countdown(30)
-        shell_data = 0
-        for dummy in range(0, 30):
-            shell_data = fit_common.remote_shell("pwd")
-            if shell_data['exitcode'] == 0:
-                break
+    def test06_startup(self):
+        print "Start services."
+        startup = open('startup.sh', 'w')
+        startup.write('cd ~/;nf start&\n')
+        startup.close()
+        fit_common.scp_file_to_ora('startup.sh')
+        self.assertEqual(fit_common.remote_shell("chmod 777 startup.sh;/etc/init.d/isc-dhcp-server restart")['exitcode'], 0, "dhcp startup failure.")
+        self.assertEqual(fit_common.remote_shell("nohup ./startup.sh")['exitcode'], 0, "RackHD startup failure.")
+        print "**** Check installation."
+        for dummy in range(0, 10):
+            try:
+                fit_common.rackhdapi("/api/2.0/config")
+            except:
+                fit_common.time.sleep(10)
             else:
-                fit_common.time.sleep(5)
-        self.assertEqual(shell_data['exitcode'], 0, "Shell test failed after appliance reboot")
-        fit_common.time.sleep(10)
+                break
         self.assertEqual(fit_common.rackhdapi("/api/2.0/config")['status'], 200, "Unable to contact RackHD.")
 
 if __name__ == '__main__':
