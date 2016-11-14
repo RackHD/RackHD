@@ -13,8 +13,7 @@ This script performs the following functions:
     - load configuration files
     - startup and verify operations
 
-NOTES: This installer does not currently work behind a proxy. If test bed is behind a proxy wall,
-       use the package installer deploy/rackhd_package_install.py.
+NOTES:
        If the host is rebooted, the RackHD must be restarted by typing 'sudo nf start' at console.
 
 usage:
