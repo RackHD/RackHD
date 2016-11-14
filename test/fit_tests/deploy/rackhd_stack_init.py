@@ -1,10 +1,19 @@
 '''
-Copyright 2015, EMC, Inc.
+Copyright 2016, EMC, Inc.
 
 Author(s):
 George Paulos
 
 This script initializes RackHD stack after install.
+    - loads SKU packs
+    - loads default SKU
+    - sets auth user
+    - restarts nodes for discovery
+    - discovers switches and/or PDUs if available
+    - checks node discovery
+    - assigns node OBM settings
+    - checks pollers for data
+
 '''
 
 import os
@@ -49,17 +58,26 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
             break
         print "\n"
         # check SKU directory against source files
-        errorcount = 0
+        errorcount = ""
         skulist = json.dumps(fit_common.rackhdapi("/api/2.0/skus")['json'])
         for subdir, dirs, files in os.walk('on-skupack'):
             for skus in dirs:
-                if skus not in ["debianstatic", ".git", "packagebuild", "tarballs"] and os.path.isfile('on-skupack/' + skus + '/config.json'):
-                    configfile = json.loads(open("on-skupack/" + skus  + "/config.json").read())
-                    if configfile['name'] not in skulist:
-                        print "FAILURE - Missing SKU: " + configfile['name']
-                        errorcount += 1
+                if skus not in ["debianstatic", ".git", "packagebuild", "tarballs"] and \
+                   os.path.isfile('on-skupack/' + skus + '/config.json'):
+                    try:
+                        json.loads(open("on-skupack/" + skus  + "/config.json").read())
+                    except:
+                        # Check is the sku pack config.json file is valid format, fails skupack install if invalid
+                        print "FAILURE - Corrupt config.json in SKU Pack: " + str(skus) + " - not loaded"
+                        errorcount += "  Corrupt config.json in SKU Pack: " + str(skus)
+                    else:
+                        configfile = json.loads(open("on-skupack/" + skus  + "/config.json").read())
+                        # if config.json is valid, check if sku pack got installed
+                        if configfile['name'] not in skulist:
+                            print "FAILURE - Missing SKU: " + configfile['name']
+                            errorcount += "  Missing SKU: " + configfile['name']
             break
-        self.assertEqual(errorcount, 0, "SKU pack install error.")
+        self.assertEqual(errorcount, "", errorcount)
 
     def test02_preload_default_sku(self):
         # Load default SKU for unsupported compute nodes
@@ -80,10 +98,12 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
         print '**** Installing default admin user'
         fit_common.remote_shell('rm auth.json')
         auth_json = open('auth.json', 'w')
-        auth_json.write('{"username":"' + fit_common.GLOBAL_CONFIG["api"]["admin_user"] + '", "password":"' + fit_common.GLOBAL_CONFIG["api"]["admin_pass"] + '", "role":"Administrator"}')
+        auth_json.write('{"username":"' + fit_common.GLOBAL_CONFIG["api"]["admin_user"] + '", "password":"' \
+                        + fit_common.GLOBAL_CONFIG["api"]["admin_pass"] + '", "role":"Administrator"}')
         auth_json.close()
         fit_common.scp_file_to_ora('auth.json')
-        rc = fit_common.remote_shell("curl -ks -X POST -H 'Content-Type:application/json' https://localhost:" + str(fit_common.GLOBAL_CONFIG['ports']['https']) + "/api/2.0/users -d @auth.json")
+        rc = fit_common.remote_shell("curl -ks -X POST -H 'Content-Type:application/json' https://localhost:" \
+                                     + str(fit_common.GLOBAL_CONFIG['ports']['https']) + "/api/2.0/users -d @auth.json")
         if rc['exitcode'] != 0:
             print "ALERT: Auth admin user not set! Please manually set the admin user account if https access is desired."
 
