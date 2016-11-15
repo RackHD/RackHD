@@ -30,9 +30,9 @@ sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=T
 import fit_common
 
 # set proxy if required
-ENVVARS = ''
+PROXYVARS = ''
 if 'proxy' in fit_common.GLOBAL_CONFIG['repos'] and fit_common.GLOBAL_CONFIG['repos']['proxy'] != '':
-    ENVVARS = "export http_proxy=" + fit_common.GLOBAL_CONFIG['repos']['proxy'] + ";" + \
+    PROXYVARS = "export http_proxy=" + fit_common.GLOBAL_CONFIG['repos']['proxy'] + ";" + \
               "export https_proxy=" + fit_common.GLOBAL_CONFIG['repos']['proxy'] + ";"
     # maven proxy settings
     maven_proxy = open('settings.xml', 'w')
@@ -71,16 +71,16 @@ class rackhd_source_install(fit_common.unittest.TestCase):
                                                   )['exitcode'], 0, "sudoersproxy config failure.")
         os.remove('sudoersproxy')
         # install git
-        self.assertEqual(fit_common.remote_shell(ENVVARS + "apt-get -y install git")['exitcode'], 0, "Git install failure.")
-        self.assertEqual(fit_common.remote_shell(ENVVARS + "apt-get -y update")['exitcode'], 0, "update failure.")
-        self.assertEqual(fit_common.remote_shell(ENVVARS + "apt-get -y dist-upgrade")['exitcode'], 0, "upgrade failure.")
+        self.assertEqual(fit_common.remote_shell(PROXYVARS + "apt-get -y install git")['exitcode'], 0, "Git install failure.")
+        #self.assertEqual(fit_common.remote_shell(PROXYVARS + "apt-get -y update")['exitcode'], 0, "update failure.")
+        #self.assertEqual(fit_common.remote_shell(PROXYVARS + "apt-get -y dist-upgrade")['exitcode'], 0, "upgrade failure.")
         self.assertEqual(fit_common.remote_shell("git config --global http.sslverify false")['exitcode'], 0, "Git config failure.")
         if 'proxy' in fit_common.GLOBAL_CONFIG['repos'] and fit_common.GLOBAL_CONFIG['repos']['proxy'] != '':
             self.assertEqual(fit_common.remote_shell("git config --global http.proxy " + fit_common.GLOBAL_CONFIG['repos']['proxy']
                                                   )['exitcode'], 0, "Git proxy config failure.")
         # install Ansible
-        self.assertEqual(fit_common.remote_shell(ENVVARS + "cd ~;apt-get -y install ansible")['exitcode'], 0, "Ansible Install failure.")
-        self.assertEqual(fit_common.remote_shell(ENVVARS + "apt-get -y update")['exitcode'], 0, "Ansible Update failure.")
+        self.assertEqual(fit_common.remote_shell(PROXYVARS + "cd ~;apt-get -y install ansible")['exitcode'], 0, "Ansible Install failure.")
+        #self.assertEqual(fit_common.remote_shell(PROXYVARS + "apt-get -y update")['exitcode'], 0, "Ansible Update failure.")
         # create startup files
         self.assertEqual(fit_common.remote_shell(
             "touch /etc/default/on-dhcp-proxy /etc/default/on-http /etc/default/on-tftp /etc/default/on-syslog /etc/default/on-taskgraph"
@@ -102,7 +102,7 @@ class rackhd_source_install(fit_common.unittest.TestCase):
         ]
         # clone base repo
         fit_common.remote_shell('rm -rf ~/rackhd')
-        self.assertEqual(fit_common.remote_shell(ENVVARS + "git clone "
+        self.assertEqual(fit_common.remote_shell(PROXYVARS + "git clone "
                                                 + fit_common.GLOBAL_CONFIG['repos']['install']['rackhd']['repo']
                                                 + " ~/rackhd"
                                                 )['exitcode'], 0, "RackHD git clone failure.")
@@ -111,7 +111,7 @@ class rackhd_source_install(fit_common.unittest.TestCase):
                                                  )['exitcode'], 0, "Branch not found on RackHD repo.")
         # clone modules
         for repo in modules:
-            self.assertEqual(fit_common.remote_shell(ENVVARS
+            self.assertEqual(fit_common.remote_shell(PROXYVARS
                                                     + "rm -rf ~/rackhd/" + repo + ";"
                                                     + "git clone "
                                                     + fit_common.GLOBAL_CONFIG['repos']['install'][repo]['repo']
@@ -123,7 +123,7 @@ class rackhd_source_install(fit_common.unittest.TestCase):
 
     def test03_run_ansible_installer(self):
         print "**** Run RackHD Ansible installer."
-        self.assertEqual(fit_common.remote_shell(ENVVARS +
+        self.assertEqual(fit_common.remote_shell(PROXYVARS +
                                                  "cd ~/rackhd/packer/ansible/;"
                                                  "ansible-playbook -i 'local,' -c local rackhd_local.yml",
                                                  timeout=1200,

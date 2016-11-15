@@ -28,9 +28,9 @@ sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=T
 import fit_common
 
 # set proxy if required
-ENVVARS = ''
+PROXYVARS = ''
 if 'proxy' in fit_common.GLOBAL_CONFIG['repos'] and fit_common.GLOBAL_CONFIG['repos']['proxy'] != '':
-    ENVVARS = "export http_proxy=" + fit_common.GLOBAL_CONFIG['repos']['proxy'] + ";" + \
+    PROXYVARS = "export http_proxy=" + fit_common.GLOBAL_CONFIG['repos']['proxy'] + ";" + \
               "export https_proxy=" + fit_common.GLOBAL_CONFIG['repos']['proxy'] + ";"
 
 class rackhd_package_install(fit_common.unittest.TestCase):
@@ -46,16 +46,16 @@ class rackhd_package_install(fit_common.unittest.TestCase):
                                                   )['exitcode'], 0, "sudoersproxy config failure.")
         os.remove('sudoersproxy')
         # install git
-        self.assertEqual(fit_common.remote_shell(ENVVARS + "apt-get -y install git")['exitcode'], 0, "Git install failure.")
-        self.assertEqual(fit_common.remote_shell(ENVVARS + "apt-get -y update")['exitcode'], 0, "update failure.")
-        self.assertEqual(fit_common.remote_shell(ENVVARS + "apt-get -y dist-upgrade")['exitcode'], 0, "upgrade failure.")
+        self.assertEqual(fit_common.remote_shell(PROXYVARS + "apt-get -y install git")['exitcode'], 0, "Git install failure.")
+        #self.assertEqual(fit_common.remote_shell(PROXYVARS + "apt-get -y update")['exitcode'], 0, "update failure.")
+        #self.assertEqual(fit_common.remote_shell(PROXYVARS + "apt-get -y dist-upgrade")['exitcode'], 0, "upgrade failure.")
         self.assertEqual(fit_common.remote_shell("git config --global http.sslverify false")['exitcode'], 0, "Git config failure.")
         if 'proxy' in fit_common.GLOBAL_CONFIG['repos'] and fit_common.GLOBAL_CONFIG['repos']['proxy'] != '':
             self.assertEqual(fit_common.remote_shell("git config --global http.proxy " + fit_common.GLOBAL_CONFIG['repos']['proxy']
                                                   )['exitcode'], 0, "Git proxy config failure.")
         # install Ansible
-        self.assertEqual(fit_common.remote_shell(ENVVARS + "cd ~;apt-get -y install ansible")['exitcode'], 0, "Ansible Install failure.")
-        self.assertEqual(fit_common.remote_shell(ENVVARS + "apt-get -y update")['exitcode'], 0, "Ansible Update failure.")
+        self.assertEqual(fit_common.remote_shell(PROXYVARS + "cd ~;apt-get -y install ansible")['exitcode'], 0, "Ansible Install failure.")
+        #self.assertEqual(fit_common.remote_shell(PROXYVARS + "apt-get -y update")['exitcode'], 0, "Ansible Update failure.")
         # create startup files
         self.assertEqual(fit_common.remote_shell(
             "touch /etc/default/on-dhcp-proxy /etc/default/on-http /etc/default/on-tftp /etc/default/on-syslog /etc/default/on-taskgraph"
@@ -65,14 +65,14 @@ class rackhd_package_install(fit_common.unittest.TestCase):
         print "**** Cloning RackHD repo."
         # clone base repo
         fit_common.remote_shell('rm -rf ~/rackhd')
-        self.assertEqual(fit_common.remote_shell(ENVVARS + "git clone "
+        self.assertEqual(fit_common.remote_shell(PROXYVARS + "git clone "
                                                 + fit_common.GLOBAL_CONFIG['repos']['install']['rackhd']['repo']
                                                 + " ~/rackhd"
                                                 )['exitcode'], 0, "RackHD git clone failure.")
 
     def test03_run_ansible_installer(self):
         print "**** Run RackHD Ansible installer."
-        self.assertEqual(fit_common.remote_shell(ENVVARS +
+        self.assertEqual(fit_common.remote_shell(PROXYVARS +
                                                  "cd ~/rackhd/packer/ansible/;"
                                                  "ansible-playbook -i 'local,' -c local rackhd_package.yml",
                                                  timeout=800,
@@ -236,12 +236,12 @@ class rackhd_package_install(fit_common.unittest.TestCase):
 
     def test06_startup(self):
         print "Restart services."
-        self.assertEqual(fit_common.remote_shell("service isc-dhcp-server restart")['exitcode'], 0, "on-http failure.")
+        self.assertEqual(fit_common.remote_shell("service isc-dhcp-server restart")['exitcode'], 0, "isc-dhcp-server failure.")
         self.assertEqual(fit_common.remote_shell("service on-http restart")['exitcode'], 0, "on-http failure.")
-        self.assertEqual(fit_common.remote_shell("service on-dhcp-proxy restart")['exitcode'], 0, "on-http failure.")
-        self.assertEqual(fit_common.remote_shell("service on-syslog restart")['exitcode'], 0, "on-http failure.")
-        self.assertEqual(fit_common.remote_shell("service on-taskgraph restart")['exitcode'], 0, "on-http failure.")
-        self.assertEqual(fit_common.remote_shell("service on-tftp restart")['exitcode'], 0, "on-http failure.")
+        self.assertEqual(fit_common.remote_shell("service on-dhcp-proxy restart")['exitcode'], 0, "on-dhcp-proxy failure.")
+        self.assertEqual(fit_common.remote_shell("service on-syslog restart")['exitcode'], 0, "on-syslog failure.")
+        self.assertEqual(fit_common.remote_shell("service on-taskgraph restart")['exitcode'], 0, "on-taskgraph failure.")
+        self.assertEqual(fit_common.remote_shell("service on-tftp restart")['exitcode'], 0, "on-tftp failure.")
         print "**** Check installation."
         for dummy in range(0, 10):
             try:
