@@ -19,16 +19,18 @@ This script initializes RackHD stack after install.
 import os
 import sys
 import subprocess
+import json
+import time
+import unittest
 # set path to common libraries
 sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test/fit_tests/common")
 import fit_common
 import pdu_lib
-import json
 
 # Locals
 MAX_CYCLES = 60
 
-class rackhd_stack_init(fit_common.unittest.TestCase):
+class rackhd_stack_init(unittest.TestCase):
     def test01_preload_sku_packs(self):
         print "**** Processing SKU Packs"
         # Load SKU packs from GutHub
@@ -124,7 +126,7 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
             self.assertNotEqual(fit_common.power_control_all_nodes("on"), 0, 'No BMC IP addresses found')
 
     # Optionally install control switch node if present
-    @fit_common.unittest.skipUnless("control" in fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']], "")
+    @unittest.skipUnless("control" in fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']], "")
     def test05_discover_control_switch_node(self):
         print "**** Creating control switch node."
         payload = {
@@ -141,7 +143,7 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
                          + str(api_data['status']))
 
     # Optionally install data switch node if present
-    @fit_common.unittest.skipUnless("data" in fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']], "")
+    @unittest.skipUnless("data" in fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']], "")
     def test06_discover_data_switch_node(self):
         print "**** Creating data switch node."
         payload = {
@@ -158,7 +160,7 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
                          + str(api_data['status']))
 
     # Optionally install PDU node if present
-    @fit_common.unittest.skipUnless("pdu" in fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']], "")
+    @unittest.skipUnless("pdu" in fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']], "")
     def test07_discover_pdu_node(self):
         print "**** Creating PDU node."
         payload = {
@@ -181,7 +183,7 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
             if "compute" in fit_common.rackhdapi("/api/2.0/nodes")['text']:
                 break
             else:
-                fit_common.time.sleep(30)
+                time.sleep(30)
         self.assertLess(c_index, MAX_CYCLES-1, "No compute nodes found.")
 
     def test09_check_discovery(self):
@@ -215,15 +217,15 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
                             break
                 if discovery_complete:
                     return True
-                fit_common.time.sleep(10)
+                time.sleep(10)
         return False
 
     def test10_apply_obm_settings(self):
         print "**** Apply OBM setting to compute nodes."
         self.assertTrue(fit_common.apply_obm_settings(), "OBM settings failed.")
 
-    @fit_common.unittest.skipUnless("bmc" in fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']], "")
-    @fit_common.unittest.skip("Skipping 'test10_add_management_server' code incomplete")
+    @unittest.skipUnless("bmc" in fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']], "")
+    @unittest.skip("Skipping 'test10_add_management_server' code incomplete")
     def test11_add_management_server(self):
         print "**** Creating management server."
         usr = ""
@@ -282,7 +284,7 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
             api_data = fit_common.rackhdapi('/api/2.0/pollers')
             if len(api_data['json']) > 0:
                 return True
-            fit_common.time.sleep(30)
+            time.sleep(30)
         return False
 
 
@@ -312,10 +314,10 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
                     if poller_list == []:
                         # return when all pollers look good
                         return True
-                    fit_common.time.sleep(10)
+                    time.sleep(10)
         if poller_list != []:
             print "Poller IDs with error or no data: {}".format(json.dumps(poller_list, indent=4))
         return False
 
 if __name__ == '__main__':
-    fit_common.unittest.main()
+    unittest.main()
