@@ -138,19 +138,23 @@ class OSInstallTests(object):
         if 'networkDevices' in body['options']['defaults']:
             self.__test_link_up(body['options']['defaults']['networkDevices'])
 
-    def install_esxi(self, version, nodes=[], options=None):
+    def install_esxi(self, version, nodes=[], options=None, payloadFile=None):
         graph_name = 'Graph.InstallESXi'
         os_repo = defaults.get('RACKHD_ESXI_REPO_PATH', \
             self.__base + '/repo/esxi/{0}'.format(version))
-        body = options
-        if body == None:
-            body = {
-                'options': {
-                    'defaults': {
+        # load the payload from the specified file
+        if payloadFile != None:
+            body = self.__get_os_install_payload(payloadFile)
+        else:
+            body = {}
+        # if no options are specified, fill in the minimum required options
+        if options == None:
+            options = {
+                'options':{
+                    'defaults':{
                         'installDisk': 'firstdisk',
                         'version': version,
-                        'repo': os_repo,
-                        'users': [{ 'name': 'onrack', 'password': 'Onr@ck1!', 'uid': 1010 }]
+                        'repo': os_repo
                     },
                     'set-boot-pxe': self.__obm_options,
                     'reboot': self.__obm_options,
@@ -159,9 +163,17 @@ class OSInstallTests(object):
                     }
                 }
             }
+        # add additional options to the body
+        self.__update_body(body, options)
+
         if self.__obm_options['obmServiceName'] == 'redfish-obm-service' and IS_EMC:
             body['options']['install-os']['kargs'] = {'acpi':'off'}
+
         self.__post_workflow(graph_name, nodes, body)
+
+        if 'networkDevices' in body['options']['defaults']:
+            self.__test_link_up(body['options']['defaults']['networkDevices'])
+        
 
     def install_suse(self, version, nodes=[], options=None):
         graph_name = 'Graph.InstallSUSE'
@@ -323,17 +335,27 @@ class OSInstallTests(object):
     def test_install_suse(self, nodes=[], options=None):
         """ Testing OpenSuse Leap 42.1 Installer Workflow """
         self.install_suse('42.1')
+        
+    @test(enabled=True, groups=['esxi-5-5-min-install.v1.1.test'])
+    def test_install_min_esxi_5_5(self, nodes=[], options=None):
+        """ Testing  ESXi 5.5 Installer Workflow With Minimal Payload """
+        self.install_esxi('5.5', payloadFile='install_esx_payload_minimal.json')
 
-    @test(enabled=True, groups=['esxi-5-5-install.v1.1.test'])
-    def test_install_esxi_5_5(self, nodes=[], options=None):
-        """ Testing ESXi 5.5 Installer Workflow """
-        self.install_esxi('5.5')
+    @test(enabled=True, groups=['esxi-5-5-max-install.v1.1.test'])
+    def test_install_max_esxi_5_5(self, nodes=[], options=None):
+        """ Testing  ESXi 5.5 Installer Workflow With Maximum Payload """
+        self.install_esxi('5.5', payloadFile='install_esx_payload_full.json')
 
-    @test(enabled=True, groups=['esxi-6-install.v1.1.test'])
-    def test_install_esxi_6(self, nodes=[], options=None):
-        """ Testing ESXi 6 Installer Workflow """
-        self.install_esxi('6.0')
+    @test(enabled=True, groups=['esxi-6-min-install.v1.1.test'])
+    def test_install_min_esxi_6(self, nodes=[], options=None):
+        """ Testing  ESXi 6 Installer Workflow With Minimal Payload """
+        self.install_esxi('6.0', payloadFile='install_esx_payload_minimal.json')
 
+    @test(enabled=True, groups=['esxi-6-max-install.v1.1.test'])
+    def test_install_max_esxi_6(self, nodes=[], options=None):
+        """ Testing  ESXi 6 Installer Workflow With Maximum Payload """
+        self.install_esxi('6.0', payloadFile='install_esx_payload_full.json')
+        
     @test(enabled=True, groups=['windowsServer2012-maximum-install.v1.1.test'])
     def test_install_max_windowsServer2012(self, nodes=[], options=None):
         """ Testing Windows Server 2012 Installer Workflow with Max payload"""
