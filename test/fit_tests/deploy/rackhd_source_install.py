@@ -72,15 +72,12 @@ class rackhd_source_install(fit_common.unittest.TestCase):
         os.remove('sudoersproxy')
         # install git
         self.assertEqual(fit_common.remote_shell(PROXYVARS + "apt-get -y install git")['exitcode'], 0, "Git install failure.")
-        #self.assertEqual(fit_common.remote_shell(PROXYVARS + "apt-get -y update")['exitcode'], 0, "update failure.")
-        #self.assertEqual(fit_common.remote_shell(PROXYVARS + "apt-get -y dist-upgrade")['exitcode'], 0, "upgrade failure.")
         self.assertEqual(fit_common.remote_shell("git config --global http.sslverify false")['exitcode'], 0, "Git config failure.")
         if 'proxy' in fit_common.GLOBAL_CONFIG['repos'] and fit_common.GLOBAL_CONFIG['repos']['proxy'] != '':
             self.assertEqual(fit_common.remote_shell("git config --global http.proxy " + fit_common.GLOBAL_CONFIG['repos']['proxy']
                                                   )['exitcode'], 0, "Git proxy config failure.")
         # install Ansible
         self.assertEqual(fit_common.remote_shell(PROXYVARS + "cd ~;apt-get -y install ansible")['exitcode'], 0, "Ansible Install failure.")
-        #self.assertEqual(fit_common.remote_shell(PROXYVARS + "apt-get -y update")['exitcode'], 0, "Ansible Update failure.")
         # create startup files
         self.assertEqual(fit_common.remote_shell(
             "touch /etc/default/on-dhcp-proxy /etc/default/on-http /etc/default/on-tftp /etc/default/on-syslog /etc/default/on-taskgraph"
