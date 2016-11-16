@@ -1,7 +1,7 @@
 {
     "options": {
         "defaults": {
-            "hostname": "Coreos-node",
+            "hostname": "coreos-node",
             "installDisk": "/dev/sda",
             "comport": "ttys0",
             "repo": "http://172.31.128.1:9080/coreos/amd64-usr",
@@ -11,7 +11,7 @@
             "users": [
                 {
                     "name": "rackhd1",
-                    "password": "rackhd1",
+                    "password": "123456",
                     "groups": [
                         "sudo", "docker"
                     ],
@@ -20,7 +20,7 @@
                 },
                 {
                     "name": "rackhd2",
-                    "password": "rackhd2",
+                    "password": "123456",
                     "groups": [
                         "sudo"
                     ],
