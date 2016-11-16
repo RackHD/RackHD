@@ -5,7 +5,9 @@
     },
     "variables": {
         "atlas_username": "{{ env `ATLAS_USERNAME` }}",
-        "atlas_name": "{{ env `ATLAS_NAME` }}"
+        "atlas_name": "{{ env `ATLAS_NAME` }}",
+        "vm_name" : "rackhd-vm",
+        "playbook": "rackhd_package"
     },
     "provisioners": [
         {
@@ -34,9 +36,17 @@
             "execute_command": "echo 'vagrant'|sudo -S bash '{{.Path}}'"
         },
         {
+            "type": "shell",
+            "scripts": [
+                "scripts/addnetif.sh"
+            ],
+            "execute_command": "echo 'vagrant'|sudo -S bash '{{.Path}}'",
+            "only": ["vmware-iso"]
+        },
+        {
             "type": "ansible-local",
             "inventory_groups": "local",
-            "playbook_file": "ansible/rackhd_local.yml",
+            "playbook_file": "ansible/{{user `playbook`}}.yml",
             "playbook_dir": "ansible"
         },
         {
@@ -94,33 +104,37 @@
         [ "modifyvm", "{{.Name}}", "--nic2", "intnet" ]
       ]
       },
+
       {
         "type": "vmware-iso",
+        "vm_name": "{{user `vm_name`}}",
         "boot_command": [
           "<esc><wait>",
           "<esc><wait>",
           "<enter><wait>",
-          "/install/vmlinuz<wait>",
-          " auto<wait>",
-          " console-setup/ask_detect=false<wait>",
-          " console-setup/layoutcode=us<wait>",
-          " console-setup/modelcode=pc105<wait>",
-          " debian-installer=en_US<wait>",
-          " fb=false<wait>",
-          " initrd=/install/initrd.gz<wait>",
-          " kbd-chooser/method=us<wait>",
-          " keyboard-configuration/layout=USA<wait>",
-          " keyboard-configuration/variant=USA<wait>",
-          " locale=en_US<wait>",
-          " netcfg/get_hostname=rackhd-demo<wait>",
-          " noapic<wait>",
-          " preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.cfg<wait>",
+          "/install/vmlinuz ",
+          " auto ",
+          " console-setup/ask_detect=false ",
+          " console-setup/layoutcode=us ",
+          " console-setup/modelcode=pc105 ",
+          " debian-installer=en_US ",
+          " fb=false ",
+          " initrd=/install/initrd.gz ",
+          " kbd-chooser/method=us ",
+          " keyboard-configuration/layout=USA ",
+          " keyboard-configuration/variant=USA ",
+          " locale=en_US ",
+          " noapic ",
+          " hostname=RackHD ",
+          " netcfg/choose_interface=eth0 ",
+          " preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.cfg ",
           " -- <wait>",
           "<enter><wait>"
         ],
         "boot_wait": "10s",
+        "headless": true,
         "disk_size": 40960,
-        "guest_os_type": "linux",
+        "guest_os_type": "ubuntu-64",
         "http_directory": "http",
         "iso_checksum": "2ac1f3e0de626e54d05065d6f549fa3a",
         "iso_checksum_type": "md5",
@@ -131,9 +145,43 @@
         "ssh_wait_timeout": "10000s",
         "shutdown_command": "echo 'shutdown -P now' > /tmp/shutdown.sh; echo 'vagrant'|sudo -S sh '/tmp/shutdown.sh'",
         "vmx_data": {
-          "memsize": "512",
-          "numvcpus": "1",
-          "cpuid.coresPerSocket": "1"
+            "memsize": "1024",
+            "numvcpus": "2",
+            "cpuid.coresPerSocket": "1",
+
+            "ethernet0.virtualDev": "e1000",
+            "ethernet0.present": "TRUE",
+            "ethernet0.connectiontype": "nat",
+            "ethernet0.pcislotnumber": "32",
+
+            "ethernet1.virtualDev": "e1000",
+            "ethernet1.present": "TRUE",
+            "ethernet1.pcislotnumber": "33"
+        },
+        "vmx_data_post":
+        {
+            "memsize": "1024",
+            "numvcpus": "2",
+            "cpuid.coresPerSocket": "1",
+
+            "ethernet0.networkName": "ADMIN",
+            "ethernet0.virtualDev": "e1000",
+            "ethernet0.present": "TRUE",
+
+            "ethernet1.networkName": "CONTROL",
+            "ethernet1.virtualDev": "e1000",
+            "ethernet1.present": "TRUE",
+            "ethernet1.addressType": "generated",
+
+            "ethernet2.networkName": "PDU",
+            "ethernet2.virtualDev": "e1000",
+            "ethernet2.present": "TRUE",
+            "ethernet2.addressType": "generated",
+
+            "ethernet3.networkName": "BMC",
+            "ethernet3.virtualDev": "e1000",
+            "ethernet3.present": "TRUE",
+            "ethernet3.addressType": "generated"
         }
       }
   ],

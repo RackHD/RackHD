@@ -1,0 +1,160 @@
+#!/bin/bash
+
+###################################################
+# input (enviromental variable):
+# * OS_VER        -   ubuntu-14.04 or ubuntu-16.04
+# * BUILD_TYPE    -   vmware or virtualbox
+# * RACKHD_INSTALL_ANSIBLE - which is the ansible yml playbook used. now are rackhd_package or rackhd_local
+###################################################
+
+
+
+
+# early exit on command failure
+set -e
+
+#Ubuntu Version, can become an ENV VAR in the future
+if  [ ! -n "${OS_VER}" ];  then
+    OS_VER=ubuntu-14.04
+fi
+echo "Packer Build based on $OS_VER"
+
+# Build Vagrant or VMware OVA
+if  [ ! -n "${BUILD_TYPE}" ];  then
+    BUILD_TYPE=vmware  # option is vmware or vitrualbox , case senstive
+fi
+
+
+
+# Enable Verbose Packer Logging
+# see https://www.packer.io/docs/other/environmental-variables.html for details
+export PACKER_LOG=1
+export PACKER_LOG_PATH=./packer-debug.log
+export PACKER_NO_COLOR=1  # for Jenkins usage. if manual run, suggest to turn color on (set to 0)
+
+
+# By default. use ansible playbook : rackhd_package.yml
+# can become an ENV VAR in the future
+if  [ ! -n "${RACKHD_INSTALL_ANSIBLE}" ];  then
+    RACKHD_INSTALL_ANSIBLE=rackhd_package
+fi
+echo "Install RackHD with ansible ${RACKHD_INSTALL_ANSIBLE}.yml"
+
+
+
+# default is output-${type}. you can customized in packer's json by "output_directory" param
+VMDIR=output-${BUILD_TYPE}-iso
+
+VM_NAME=rackhd-${OS_VER}
+
+
+# parameter file pass to packer
+echo { \"playbook\": \"${RACKHD_INSTALL_ANSIBLE}\",   > template.cfg
+echo  \"vm_name\": \"${VM_NAME}\" } >> template.cfg
+
+
+PACKER=packer
+if [ -x /opt/packer/packer ]
+then
+    PACKER=/opt/packer/packer
+fi
+
+if [ -x /usr/local/bin/ts ]
+then
+    TS=/usr/local/bin/ts
+else
+    TS=cat
+fi
+
+
+if [ "$BUILD_TYPE"  == "vmware" ];  then
+    # Check Free Disk Space,  VMWare Workstation may stuck if disk space too small
+    fd_in_kb=$(df  .  | awk '/^\/dev/ {print $4}')
+    fd_thres=$(expr 1024 '*' 1024 '*' 8)  # set to 8G as threshold.
+    if [ $fd_in_kb -lt  $fd_thres ]
+    then
+        echo "The Free Up Disk Space($fd_in_kb KB) is not suffcient(recommended to $fd_thres KB). it may cause VMWare Workstation to stuck."
+        exit 2
+    fi
+fi
+
+#build RackHD OVA
+$PACKER build --force --only=${BUILD_TYPE}-iso --var-file=template.cfg template-${OS_VER}.json | $TS | tee packer-install.log
+
+if [ $? != 0 ]; then
+    echo "Packer Build failed.. exit"
+    exit 3
+fi
+
+if [ "$BUILD_TYPE"  != "vmware" ];  then
+    echo "Skip the signing for virtualbox for the time being ..."
+    exit 0
+fi
+
+
+# Prepare Signing Key (used for Jenkins Build Release)
+if [ -f "$CI_SIGNING_KEY" ]
+then
+    SIGN_ARGS="--privateKey=$CI_SIGNING_KEY"
+    echo "Signing the OVA with the CI key"
+else
+    echo "No signing to be performed.. skip."
+fi
+
+# Conver the VM Disk and VMX folder into an OVA
+
+BASENAME=${VM_NAME}
+OVA="${BASENAME}.ova"
+ovftool $SIGN_ARGS -o ${VMDIR}/${VM_NAME}.vmx $OVA
+
+
+if [ $? != 0 ]; then
+    echo "ovftool exec failed.. exit"
+    exit 4
+fi
+
+# Do Virus Scan
+if [ -x /usr/bin/clamscan ]
+then
+    echo "Doing ClamScan"
+    rm -rf "$OVA.avscan"
+    /usr/bin/clamscan --log="$OVA.avscan" --max-filesize=4000M --max-scansize=4000M -r ${VMDIR} --allmatch
+else
+    echo "skip clamscan..."
+fi
+
+
+# Create MD5 & Sha256 checksum file
+
+rm -f "$OVA.md5" "$OVA.sha"
+md5sum "$OVA" > "$OVA.md5"
+sha256sum  "$OVA" > "$OVA.sha"
+
+echo "***************************"
+echo "Created : $OVA"
+echo "also find $OVA.md5 & $OVA.sha"
+echo "***************************"
+
+
+# Do gpg signing
+if [ -f "$GPG_SIGNING_KEY" ]
+then
+    export GNUPGHOME=$(mktemp -d)
+    trap -- "rm -rf $GNUPGHOME" EXIT
+    gpg --allow-secret-key-import --import "$GPG_SIGNING_KEY"
+    gpg -k
+
+    rm -rf "$OVA.md5.gpg"
+    gpg -a --output "$OVA.md5.gpg" --detach-sig "$OVA.md5"
+
+    rm -rf "$OVA.sha.gpg"
+    gpg -a --output "$OVA.sha.gpg" --detach-sig "$OVA.sha"
+
+    if [ -f "$OVA.avscan" ]
+    then
+        gpg -a --output "$OVA.avscan.gpg" --detach-sig "$OVA.avscan"
+    fi
+fi
+
+chmod a=r "$OVA"*
+

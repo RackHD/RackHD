@@ -19,3 +19,8 @@ rm -fr /home/vagrant/linux.iso
 
 /tmp/vmware-tools-distrib/vmware-install.pl -d
 rm -fr /tmp/vmware-tools-distrib
+
+
+# another way to install VMWware Tools. due to above from ISO sometimes fails
+sudo apt-get  install -y  open-vm-tools
+
