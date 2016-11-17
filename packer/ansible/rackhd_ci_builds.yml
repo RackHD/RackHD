@@ -1,6 +1,9 @@
 ---
 - name: RackHD Demonstration Server
   hosts: local
+  vars:
+    rackhd_version: ""
+    is_release: false
   sudo: no
   roles:
     - apt
@@ -16,4 +19,4 @@
     - integrationtest
     - postgresql
     - setuptools
-    - rackhd-ci-builds
+    - rackhd-builds

@@ -164,7 +164,7 @@ then
     fi
     # Delete the post-processors blocks in the template.json, before sending to 'packer build'
 #    PACKER_TEMP=$( jq 'del(."post-processors")'  template-${OS_VER}.json)
-     PACKER_TEMP=$( jq 'del(.["post-processors", "push"])' template-${OS_VER}.json)
+     PACKER_TEMP=$( jq 'del(.["post-processors"][0][1])' template-${OS_VER}.json | jq 'del(.["push"])')
 fi
 
 

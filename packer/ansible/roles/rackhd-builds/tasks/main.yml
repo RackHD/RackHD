@@ -7,20 +7,26 @@
 - apt: pkg=python-pycurl state=present
   sudo: yes
 
+- apt_repository: repo="deb https://dl.bintray.com/rackhd-mirror/debian trusty main"
+                  state=present
+  sudo: yes
+  when: (is_release is undefined) or (not is_release)
+
 - apt_repository: repo="deb https://dl.bintray.com/rackhd-mirror/debian trusty release"
                   state=present
   sudo: yes
+  when: (is_relaese is not undefined) and is_release
 
 - name: Install RackHD Packages latest
-  apt: pkg="{{ item }}" state=latest force=yes
-  with_items:
-    - rackhd
+  include: aptitude_install_rackhd.yml
+  vars:
+    package: rackhd
   sudo: yes
   when: (rackhd_version is undefined) or (not rackhd_version)
 
 - name: Install RackHD Packages specific version
-  apt: pkg="{{ item }}" force=yes
-  with_items:
-    - rackhd={{ rackhd_version }}
+  include: aptitude_install_rackhd.yml
+  vars:
+    package: rackhd={{ rackhd_version }}
   sudo: yes
   when: (rackhd_version is not undefined) and rackhd_version
