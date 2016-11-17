@@ -33,7 +33,7 @@ enable:
 
     git clone https://github.com/rackhd/rackhd
     cd rackhd/packer
-    export RACKHD_INSTALL_ANSIBLE=rackhd_ci_builds
+    export ANSIBLE_PLAYBOOK=rackhd_ci_builds
     ./HWIMO-BUILD
 
 ### To build VMware OVA/OVF
@@ -50,11 +50,11 @@ enable:
 ```
 * if build using pre-built debian packages on Bintray.com
 ```
-    export RACKHD_INSTALL_ANSIBLE=rackhd_ci_builds # tell packer to use rackhd_ci_builds.yml
+    export ANSIBLE_PLAYBOOK=rackhd_ci_builds # tell packer to use rackhd_ci_builds.yml
 ```
 * else , build from source code
 ```
-    export RACKHD_INSTALL_ANSIBLE=rackhd_local  # tell packer to use rackhd_local.yml
+    export ANSIBLE_PLAYBOOK=rackhd_local  # tell packer to use rackhd_local.yml
 
     export BUILD_TYPE=vmware      # tell packer to build -only=vmware-iso
     ./HWIMO-BUILD

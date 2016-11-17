@@ -6,10 +6,10 @@
     "variables": {
         "atlas_username": "",
         "atlas_name": "",
-        "atlas_token": "",
         "atlas_version": "",
+        "atlas_token": "{{env `ATLAS_TOKEN`}}",
         "vm_name" : "rackhd-vm",
-        "playbook": "rackhd_ci_builds"
+        "playbook": "rackhd_package"
     },
     "provisioners": [
         {
