@@ -8,66 +8,91 @@ homebrew:
 
 or retrieving it from the download available at https://www.packer.io/downloads.html
 
-## To build locally (using code from source)
+## To Build Vagrant Box
 
-The builds are pre-configured with post-processors to push the results to
-ATLAS, and need relevant configuration set in environment variables to
-enable:
+### Prerequisite
+- clone code
+```
+    git clone https://github.com/rackhd/rackhd
+    cd rackhd/packer
+```
+- if build based on Ubuntu 14.04
+```
+    export OS_VER=ubuntu-14.04
+```
+- else, if build based on Ubuntu 16.04
+```
+    export OS_VER=ubuntu-16.04
+```
+- if to upload vagrant box to ATLAS
+The builds are pre-configured with post-processors to push the results to ATLAS, and need relevant configuration set in environment variables to enable:
+```
     export ATLAS_USERNAME=rackhd
     export ATLAS_NAME=rackhd
     export ATLAS_TOKEN="..........................."
+```
+- if you don't want to upload the box to ATLAS, you can follow below suggestion to remove the "post-processors" in json file:
+```
+jq 'del(.["post-processors", "push"])' /tmp/template-${OS_VER}.json > template-${OS_VER}.json
+```
 
-### Build vagrant box based on Ubuntu 14.04
+### To build locally (install RackHD from source code)
 
-    git clone https://github.com/rackhd/rackhd
-    cd rackhd/packer
-    packer build -only=virtualbox-iso template-ubuntu-14.04.json
+    export ANSIBLE_PLAYBOOK=rackhd_local # tell packer to use rackhd_local.yml
+    export BUILD_TYPE=virtualbox
+    ./HWIMO-BUILD
 
-### Build vagrant box based on Ubuntu 16.04
+### To build using pre-built debian packages
 
-    git clone https://github.com/rackhd/rackhd
-    cd rackhd/packer
-    packer build -only=virtualbox-iso template-ubuntu-16.04.json
-
-### To build locally (using pre-built debian packages - Ubuntu 14.04)
-
-    git clone https://github.com/rackhd/rackhd
-    cd rackhd/packer
     export ANSIBLE_PLAYBOOK=rackhd_ci_builds
+    export BUILD_TYPE=virtualbox
     ./HWIMO-BUILD
 
-### To build VMware OVA/OVF
+## To build VMware OVA/OVF
 
-* Prerequisite: Install VMWare WorkStation(example , VMware Workstation 12.x ) and ovftool
-```
-    git clone https://github.com/rackhd/rackhd
-    cd rackhd/packer
+### Prerequisite
+- use VMWare Tools
 
-    # if   build for Ubuntu 14.04
-    export OS_VER=ubuntu-14.04
-    # else, build for Ubuntu 16.04
-    export OS_VER=ubuntu-16.04
-```
-* if build using pre-built debian packages on Bintray.com
-```
-    export ANSIBLE_PLAYBOOK=rackhd_ci_builds # tell packer to use rackhd_ci_builds.yml
-```
-* else , build from source code
-```
-    export ANSIBLE_PLAYBOOK=rackhd_local  # tell packer to use rackhd_local.yml
+ Option #1:  Install VMWare WorkStation locally on the same OS where the packer build runs ( example: install VMware Workstation 12.x )
 
-    export BUILD_TYPE=vmware      # tell packer to build -only=vmware-iso
-    ./HWIMO-BUILD
-```
-* Tips:
-  1. the OVA image build will be sit in rackhd/packer folder
-  2. Packer can do the deployment automaticlly after OVA/OVF build (ovftool should be installed). just to add below lines in template-ubuntu-*.json as sub fields of "builders":
+ Option #2:  To use a remote VMware vSphere Hypervisor to build your VM, just to add below lines in template-ubuntu-*.json as sub fields of "builders"(refer to https://www.packer.io/docs/builders/vmware-iso.html for more info.)
+
 ```
         "remote_type": "esx5",
         "remote_host": "$YOUR_ESXI_HOST_IP",
         "remote_datastore": "$YOUR_ESXI_DATASTORE_NAME",
+        "remote_cache_directory": "$YOUR_REMOTE_ISO_CACHE_DIR"
         "remote_username": "$YOUR_ESXI_USER",
         "remote_password": "$YOUR_ESXI_PWS",
+```
+- install ovftool
+
+refer to VMWare documents to install ovftool. it will be used to convert between ovf and ova. and also can used to deploy OVA to remote ESXi.
+
+- clone code
+```
+       git clone https://github.com/rackhd/rackhd
+       cd rackhd/packer
+```
+- if   build based on Ubuntu 14.04
+```
+       export OS_VER=ubuntu-14.04
+```
+- else, build based on Ubuntu 16.04
+```
+       export OS_VER=ubuntu-16.04
+```
+### To build locally (using code from source)
+```
+    export ANSIBLE_PLAYBOOK=rackhd_local
+    export BUILD_TYPE=vmware
+    ./HWIMO-BUILD
+```
+###  To build using pre-built debian packages on Bintray.com
+```
+    export ANSIBLE_PLAYBOOK=rackhd_ci_builds
+    export BUILD_TYPE=vmware
+    ./HWIMO-BUILD
 ```
 
 ## Local install
