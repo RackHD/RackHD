@@ -263,16 +263,25 @@ class OSInstallTests(object):
         if 'networkDevices' in body['options']['defaults']:
             self.__test_link_up(body['options']['defaults']['networkDevices'])
 
-    def install_coreos(self, payloadFile, nodes=[]):
+    def install_coreos(self, payloadFile, nodes=[], options=None):
         graph_name = 'Graph.InstallCoreOS'
         os_repo = defaults.get('RACKHD_COREOS_REPO_PATH', \
             self.__base + '/repo/coreos')
+        if options == None:
 
+            options = {
+                'options': {
+                    'defaults': {
+                        'repo': os_repo
+                    }
+                }
+            }
         if(payloadFile):
             body = self.__get_os_install_payload(payloadFile)
         else:
-            body = self.__get_os_install_payload('install_coreos_payload_minimal.json')
+            body = self.__get_os_install_payload('install_coreos_payload_minimum.json')
 
+        self.__update_body(body, options)
         self.__post_workflow(graph_name, nodes, body)
 
     @test(enabled=True, groups=['centos-6-5-install.v1.1.test'])

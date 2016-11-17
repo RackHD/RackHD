@@ -31,11 +31,20 @@
             "dnsServers": [ "172.12.88.91"],
             "networkDevices": [
                 {
-                    "device": "ens3",
+                    "device": "ens255f0",
                     "ipv4": {
                         "ipAddr": "172.31.128.223",
                         "gateway": "172.31.128.1",
                         "netmask": "255.255.255.0"
+                    }
+                },
+
+                {
+                    "device": "ens255f1",
+                    "ipv4": {
+                        "ipAddr": "172.31.128.221",
+                        "gateway": "172.31.128.1",
+                        "netmask": "255.255.0.0"
                     }
                 }
             ]
