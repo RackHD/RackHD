@@ -33,7 +33,8 @@ enable:
 
     git clone https://github.com/rackhd/rackhd
     cd rackhd/packer
-    packer build -only=virtualbox-iso template-packages.json
+    export RACKHD_INSTALL_ANSIBLE=rackhd_ci_builds
+    ./HWIMO-BUILD
 
 ### To build VMware OVA/OVF
 
@@ -49,7 +50,7 @@ enable:
 ```
 * if build using pre-built debian packages on Bintray.com
 ```
-    export RACKHD_INSTALL_ANSIBLE=rackhd_package # tell packer to use rackhd_package.yml
+    export RACKHD_INSTALL_ANSIBLE=rackhd_ci_builds # tell packer to use rackhd_ci_builds.yml
 ```
 * else , build from source code
 ```
