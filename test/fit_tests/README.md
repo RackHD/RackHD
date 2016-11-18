@@ -1,7 +1,7 @@
 # FIT Test Overview
 
 The FIT test suite is an open-source testing harness for RackHD and OnRack software.
-RackHD/OnRack (https://github.com/RackHD) is the open-sourced Hardware Management and Orchestration
+RackHD (https://github.com/RackHD) is the open-sourced Hardware Management and Orchestration
 software developed by EMC for datacenter administration.
 
 FIT stands for Functional Integration Tests and is intended for Continuous Integration testing
@@ -26,6 +26,8 @@ Tests require the following virtual environment commands be executed:
 
 
 ## Directory Organization
+
+The FIT test framework is under RackHD/test/fit_tests.
 
 - 'tests' is the test 'harness'
 - 'common' contains any common library functions
@@ -113,37 +115,32 @@ For example, to run the test 'test_rackhd11_api_catalogs' in script 'tests/rackh
 
 ## Running FIT tests on Vagrant RackHD
 
-Install the Vagrant box using the instructions here:
-https://github.com/RackHD/RackHD/tree/master/example
+The RackHD 'Vagrant' configuration is a convenient simulated hardware environment with one management server and one node.
+It can be run on a Windows or Ubuntu Linux workstation for testing and development.
 
-Install the Quanta simulator:
+Install Git, Oracle VirtualBox. and HashiCorp Vagrant onto a Windows or Linux host machine or workstation
 
-    vagrant up quanta_d51
+https://www.virtualbox.org/wiki/Downloads
+https://www.vagrantup.com/downloads.html
 
-Log into the Vagrant box:
+Open a shell or command prompt on host.
+
+Run the following commands at the command prompt:
+
+    git clone https://github.com/RackHD/RackHD
+    cd RackHD/test/fit_tests
+    vagrant up
+
+This will load a virtual RackHD server and one virtual Quanta D51 node into VirtualBox.
+
+Use the following commands to initialize the server and run a Smoke Test:
 
     vagrant ssh dev
-
-Clone FIT tests:
-
-    git clone https://github.com/onrack2/fit_tests
-
-Load virtual environment:
-
-    cd fit_tests/tests/fit_tests
-    virtualenv .venv
+    sudo bash
     source .venv/bin/activate
-    pip install -r requirements.txt
-
-Run stack init script to discover nodes and populate database:
-
-    python run_tests.py -stack vagrant -v 9 -test deploy/rackhd_stack_init.py
-
-Run Smoke test suite:
-
-    python run_tests.py -test tests/ -group smoke
-
-Use run_tests.py options if needed such as '-port' '-ora' '-https' to select IP address, port and protocol.
+    cd fit_tests/test/fit_tests
+    python run_tests.py -stack vagrant -test deploy/rackhd_stack_init.py -v 4
+    python run_tests.py -test tests/
 
 
 ## Test conventions
