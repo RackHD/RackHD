@@ -5,6 +5,7 @@
       "domain": "rackhd",
       "password": "RackHDRocks!",
       "username": "onrack",
+      "firewallDisable": true,
       "networkDevices": [
         {
           "device": "Ethernet 4",
