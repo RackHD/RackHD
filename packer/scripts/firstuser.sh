@@ -18,17 +18,39 @@ login() {
 # Include the on-* services in case we're installing from .deb packages
 SERVICES="isc-dhcp-server rabbitmq-server mongodb postgresql \
     on-http on-taskgraph on-dhcp-proxy on-syslog on-tftp"
+RACKHD_SERVICES="on-http on-taskgraph on-dhcp-proxy on-syslog on-tftp"
+
+cleanServicesPIDs() {
+    for srv in ${RACKHD_SERVICES}; do
+        sudo rm /var/run/${srv}.pid -f
+    done
+    echo "PIDs cleaned"
+}
+
 startServices() {
-  ifconfig eth1 172.31.128.1 netmask 255.255.255.0
-  cd ~
+
+  secondary_nic=eth1
+  if [[ $( ip addr|grep ens33 ) != "" ]]
+  then
+      secondary_nic=ens33
+  fi
+  if [[ $( ip addr|grep ens192 ) != "" ]]
+  then
+      secondary_nic=ens192
+  fi
+  # Config the Secondary NIC IP to align with the default /opt/monorail/config.json IP setting
+  sudo ifconfig $secondary_nic 172.31.128.1 netmask 255.255.255.0
+
   for srv in ${SERVICES}; do
     sudo service ${srv} start
   done
-  if [ -d ./src ]; then
+  # if installed from src code, assuming the code are in ~/src directory.then use PM2 to start RackHD
+  if [ -d ~/src ]; then
+    cd ~
     pids=`pidof node`
     if [ `expr length "$pids"` -eq "0" ]; then
        echo "starting rackhd ./src services..."
-       sudo nf start > /tmp/rackhd.log &
+       sudo pm2 start rackhd-pm2-config.yml 
     fi
   fi
 }
@@ -86,6 +108,8 @@ checkFirstUser() {
    echo "${status}"
 }
 
+stopServices
+cleanServicesPIDs
 startServices
 if [ $? -eq "0" ]; then
   waitForServices

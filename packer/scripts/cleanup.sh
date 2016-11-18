@@ -6,6 +6,12 @@ apt-get -y clean
 
 apt-get purge linux-headers-$(uname -r) build-essential zlib1g-dev libssl-dev libreadline-gplv2-dev
 
+echo "Cleaning up mongodb"
+echo "db.dropDatabase()" | mongo pxe
+
+echo "Cleaning up rackhd log"
+sudo pm2 flush
+
 echo "Cleaning up apt cache"
 rm -f /etc/apt/apt.conf.d/90aptcache
 

@@ -1,0 +1,6 @@
+# apt_repository apparently requires this to run in Ansible 1.5
+- apt: pkg=python-pip state=present
+  sudo: yes
+
+- pip: name=setuptools extra_args='--upgrade'
+  sudo: yes

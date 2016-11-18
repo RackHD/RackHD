@@ -35,6 +35,40 @@ enable:
     cd rackhd/packer
     packer build -only=virtualbox-iso template-packages.json
 
+### To build VMware OVA/OVF
+
+* Prerequisite: Install VMWare WorkStation(example , VMware Workstation 12.x ) and ovftool
+```
+    git clone https://github.com/rackhd/rackhd
+    cd rackhd/packer
+
+    # if   build for Ubuntu 14.04
+    export OS_VER=ubuntu-14.04
+    # else, build for Ubuntu 16.04
+    export OS_VER=ubuntu-16.04
+```
+* if build using pre-built debian packages on Bintray.com
+```
+    export RACKHD_INSTALL_ANSIBLE=rackhd_package # tell packer to use rackhd_package.yml
+```
+* else , build from source code
+```
+    export RACKHD_INSTALL_ANSIBLE=rackhd_local  # tell packer to use rackhd_local.yml
+
+    export BUILD_TYPE=vmware      # tell packer to build -only=vmware-iso
+    ./HWIMO-BUILD
+```
+* Tips:
+  1. the OVA image build will be sit in rackhd/packer folder
+  2. Packer can do the deployment automaticlly after OVA/OVF build (ovftool should be installed). just to add below lines in template-ubuntu-*.json as sub fields of "builders":
+```
+        "remote_type": "esx5",
+        "remote_host": "$YOUR_ESXI_HOST_IP",
+        "remote_datastore": "$YOUR_ESXI_DATASTORE_NAME",
+        "remote_username": "$YOUR_ESXI_USER",
+        "remote_password": "$YOUR_ESXI_PWS",
+```
+
 ## Local install
 
 You can do a local installation on a virtual machine or bare metal host

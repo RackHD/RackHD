@@ -1,5 +1,5 @@
 ---
-- name: Development Server
+- name: RackHD Demonstration Server
   hosts: local
   sudo: no
   roles:
@@ -13,14 +13,7 @@
     - monorail
     - snmptool
     - ipmitool
-    - foreman
-    - pm2
-    - remoterepos
-    - images
-    - swagger
     - integrationtest
     - postgresql
-    - dell
-  vars:
-# branch of https://github.com/rackhd/rackhd to be used
-    - branch: "master"
+    - setuptools
+    - rackhd-ci-builds

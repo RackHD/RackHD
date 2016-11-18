@@ -16,8 +16,7 @@ NAME="rackhd"
 USER="root"
 PID_DIR="/var/run"
 
-USAGE="Usage: $0 {start|stop|restart|status} [--force]"
-FORCE_OP=false
+USAGE="Usage: $0 {start|stop|restart|status}"
 RESTART=false
 
 REQUIREDS=("on-http" "on-taskgraph" "on-dhcp-proxy" "on-tftp" "on-syslog")
@@ -30,6 +29,11 @@ else
      . "/etc/default/$NAME"
 fi
 
+is_running(){
+    service=$1
+    /etc/init.d/${i} status
+}
+
 start_app() {
     if [ ! -d $PID_DIR ]; then mkdir -p "$PID_DIR"; fi
 
@@ -37,48 +41,28 @@ start_app() {
 
     for i in ${REQUIREDS[@]}; do
         echo "start service ${i}"
-        if [ $FORCE_OP = true ]
+        if is_running ${i};
         then
-            service ${i} start --force
+            echo "${i} is already running"
         else
-            service ${i} start
+            /etc/init.d/${i} start
         fi
     done
 }
 
 stop_app() {
     echo "Stoping $NAME ..."
-
     for i in ${REQUIREDS[@]}; do
         echo "stop service ${i}"
-        if [ $FORCE_OP = true ]
-        then
-            service ${i} stop --force
-        else
-            service ${i} stop
-        fi
+        /etc/init.d/${i} stop
     done
 }
 
 status_app() {
     for i in ${REQUIREDS[@]}; do
-        service ${i} status
+        /etc/init.d/${i} status
     done
 }
-
-case "$2" in
-    --force)
-        FORCE_OP=true
-    ;;
-
-    "")
-    ;;
-
-    *)
-        echo $USAGE
-        exit 1
-    ;;
-esac
 
 case "$1" in
     start)
@@ -90,7 +74,6 @@ case "$1" in
     ;;
 
     restart)
-        FORCE_OP=true
         stop_app
         start_app
     ;;
