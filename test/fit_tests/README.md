@@ -141,7 +141,7 @@ Use the following commands to initialize the server and run a Smoke Test:
     source .venv/bin/activate
     cd fit_tests/test/fit_tests
     python run_tests.py -stack vagrant -test deploy/rackhd_stack_init.py -v 4
-    python run_tests.py -test tests/
+    python run_tests.py -test tests -group smoke
 
 (On Windows, use Putty to log into the server using IP 127.0.0.1, port 2222, and credentials vagrant/vagrant)
 
