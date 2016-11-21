@@ -8,7 +8,8 @@
       "firewallDisable": true,
       "networkDevices": [
         {
-          "device": "2C-60-0C-AD-D5-B1"
+          "device": "2C-60-0C-AD-D5-B1",
+          "ipv4": {
             "ipAddr": "172.31.128.152",
             "gateway": "172.31.128.5",
             "netmask": "255.255.255.0"
