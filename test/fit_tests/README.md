@@ -120,9 +120,9 @@ It can be run on a Windows or Ubuntu Linux workstation for testing and developme
 
 Install Git, Oracle VirtualBox. and HashiCorp Vagrant from the following links onto a Windows or Linux host machine or workstation
 
-https://git-scm.com/downloads
-https://www.virtualbox.org/wiki/Downloads
-https://www.vagrantup.com/downloads.html
+    https://git-scm.com/downloads
+    https://www.virtualbox.org/wiki/Downloads
+    https://www.vagrantup.com/downloads.html
 
 Open a shell or command prompt on host.
 
