@@ -310,6 +310,7 @@ class SkusTests(object):
                     Api().skus_id_delete(self.__packFolderId)
 
     def generateTarball(self, ruleUpdate= None):
+        current_dir = os.getcwd()
         if os.path.isdir(self.__rootDir ):
             shutil.rmtree(self.__rootDir )
         os.mkdir(self.__rootDir )
@@ -426,6 +427,10 @@ class SkusTests(object):
         with tarfile.open(self.__rootDir + "mytest.tar.gz", mode ="w:gz") as f:
             for name in ["config.json", "profiles", "static", "tasks", "templates", "workflows"]:
                 f.add(name)
+
+        #restore the current directory to the run.py dir
+        #so it doesn't affect other tests
+        os.chdir(current_dir)
 
     def clear(self):
         Api().skus_get()
