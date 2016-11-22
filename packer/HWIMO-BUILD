@@ -87,7 +87,7 @@ if [ $? != 0 ]; then
 fi
 
 if [ "$BUILD_TYPE"  != "vmware" ];  then
-    echo "Skip the signing for virtualbox for the time being ..."
+    echo "Skip the post-processing(signing/clamscan/ovf-template injection) for virtualbox for the time being ..."
     exit 0
 fi
 

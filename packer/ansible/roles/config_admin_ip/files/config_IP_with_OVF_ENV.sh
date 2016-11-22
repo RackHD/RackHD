@@ -31,6 +31,8 @@ EOS
 vmtoolsd --cmd='info-get guestinfo.ovfEnv' >/tmp/ovf.xml
 arr=$(getprops_from_ovfxml /tmp/ovf.xml)
 
+
+### Note : the KEY here should align with the OVF Template Injection Properities' Label
 IP_KEY="adminIP="
 DNS_KEY="adminDNS="
 GW_KEY="adminGateway="
@@ -38,7 +40,9 @@ MASK_KEY="adminNetmask="
 
 if [[ ${#arr[@]} -eq 0  ]]
 then
-    return 0
+    echo "[Info]: Skip IP auto Config for Vagrant Box or unconfigured Vmware VM."
+    echo "[Info]: OVF ENV did not be detected. either VMWare Tools not working or OVA not properily setting. "
+    exit 0
 fi
 
 for line in ${arr[@]}
@@ -46,52 +50,116 @@ do
         echo $line
 done
 
-ETH0_CFG='# The primary network interface\
-auto eth0\
-iface eth0 inet static'
+
+PRI_ETH=eth0
+SEC_ETH=eth1
+##########################################
+## Detect Ubuntu Version and Primary NIC Naming
+##
+##
+## This script is based an asumption that : the secondary NIC exists and NICs follow below convention:
+## eth0 ,  eth1,   eth2
+## ens32,  ens33,  ens34
+## ens160, ens192, ens224
+##########################################
+if [[ $( ip addr|grep eth0 ) != "" ]]
+then
+     PRI_ETH=eth0
+     SEC_ETH=eth1
+fi
+if [[ $( ip addr|grep ens32 ) != "" ]]
+then
+     PRI_ETH=ens32
+     SEC_ETH=ens33
+fi
+if [[ $( ip addr|grep ens160 ) != "" ]]
+then
+     PRI_ETH=ens160
+     SEC_ETH=ens192
+fi
 
 
+
+
+## The initialized primary eth setting
+PRIM_ETH_CFG="#The primary network interface\n
+auto ${PRI_ETH}\n
+iface ${PRI_ETH} inet static"
+
+
+## Below will generate /etc/network/interfaces primary NIC setting lines, like below sample:
+#
+#    auto eth0
+#    iface eth0 inet static
+#    address 1.2.3.4
+#    netmask 255.255.255.0
+#    gateway 1.1.1.1
+#    dns-nameservers 4.3.2.1
+#
 
 for line in ${arr[@]}
 do
      if [[ $(echo $line | grep ${IP_KEY}) != "" ]]
      then
-          IP=${line##*${IP_KEY}}
+          IP=${line##*${IP_KEY}} ## extract the IP from the line "adminIP=1.2.3.4"
+          PRIM_ETH_CFG=$PRIM_ETH_CFG"\n    address $IP"
           echo IP:$IP
-          ETH0_CFG=$ETH0_CFG"\n    address $IP"
+          if [[ -z "$IP" ]]; then
+              echo "[Info] IP Address is blank in OVF ENV, Skip the Static IP Auto Setting. Exit.."
+              exit 0
+          fi;
      fi
      if [[ $(echo $line | grep ${DNS_KEY}) != "" ]]
      then
           DNS=${line##*${DNS_KEY}}
           echo DNS:$DNS
-          ETH0_CFG=$ETH0_CFG"\n    dns-nameserver $DNS"
+          PRIM_ETH_CFG=$PRIM_ETH_CFG"\n    dns-nameserver $DNS"
      fi
      if [[ $(echo $line | grep ${GW_KEY}) != "" ]]
      then
           GW=${line##*${GW_KEY}}
           echo Gateway:$GW
-          ETH0_CFG=$ETH0_CFG"\n    gateway $GW"
+          PRIM_ETH_CFG=$PRIM_ETH_CFG"\n    gateway $GW"
      fi
      if [[ $(echo $line | grep ${MASK_KEY}) != "" ]]
      then
           MASK=${line##*${MASK_KEY}}
           echo NetMask:$MASK
-          ETH0_CFG=$ETH0_CFG"\n    netmask $MASK"
+          PRIM_ETH_CFG=$PRIM_ETH_CFG"\n    netmask $MASK"
      fi
 done
 
 
-if [[ $(echo -e $ETH0_CFG | grep address ) != "" ]]
+########################################
+#
+# Assuming the original /etc/network/interfaces format is as below (take 14.04 as example):
+#
+#   auto lo
+#   iface lo inet loopback
+#   .....
+#   auto eth0
+#   iface eth0 inet xxxx
+#   .....
+#   auto eth1
+#   iface eth1 inet xxxx
+#   ...... 
+#
+# Below script will replace the old lines about "eth0" and replace with new lines in $PRIM_ETH_CFG
+#######################################
+
+target_file=/etc/network/interfaces
+
+if [[ $(echo -e $PRIM_ETH_CFG | grep address ) != "" ]]
 then
-    # remove old eth0 seting
-    sed -i '/auto eth0/,/auto eth1/c\auto eth1' /etc/network/interfaces
-    # add new eth0 setting
-    sed -i "s/iface lo inet loopback/iface lo inet loopback\n$ETH0_CFG/"  /etc/network/interfaces
-    # Force restart eth0 ###
-    ifdown eth0
-    ifup eth0
+    # remove old primary seting( aka: remove lines from 'auto eth0' to 'auto eth1' )
+    sed -i "/auto ${PRI_ETH}/,/auto ${SEC_ETH}/c\auto ${SEC_ETH}" ${target_file}
+    # add new primary setting( use echo ${PRIM_ETH_CFG} to eliminate the newlines to make 'sed' happy
+    sed -i "s/iface lo inet loopback/iface lo inet loopback\n$( echo ${PRIM_ETH_CFG})/"  ${target_file}
+    # Force restart primary nic ###
+    ifdown ${PRI_ETH}
+    ifup ${PRI_ETH}
 else
-    echo "can't detect IP address from OVF ENV, skip the eth0 configuration.."
+    echo "can't detect IP address from OVF ENV, skip the ${PRI_ETH} configuration.."
 fi
 
 
