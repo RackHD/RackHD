@@ -1,4 +1,16 @@
 #!/bin/bash -e
+###################################################
+# Summary:
+#   1. use VMWare Tool(vmtoolsd) to retrieve OVF ENV Parameters
+#   2. parse the XML format( via getprops_from_ovfxml()) and retrieve the network settings
+#   3. modify the /etc/network/interfaces
+#   4. ifdown the primary NIC , then ifup (to let /etc/network/interfaces takes effect)
+#
+# Reference: http://www.v-front.de/2014/01/building-self-configuring-nested-esxi.html
+# Note: for different ESXi version, the OVF XML Propertity format varies.
+# Note: this feature is only supported by vCenter( not supported by vSphere)
+####################################################
+
 
 getprops_from_ovfxml() {
 python - <<EOS
@@ -14,6 +26,7 @@ dom.unlink()
 EOS
 }
 
+#####################################################
 
 vmtoolsd --cmd='info-get guestinfo.ovfEnv' >/tmp/ovf.xml
 arr=$(getprops_from_ovfxml /tmp/ovf.xml)
