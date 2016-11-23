@@ -18,4 +18,5 @@
 
 # On what interfaces should the DHCP server (dhcpd) serve DHCP requests?
 #	Separate multiple interfaces with spaces, e.g. "eth0 eth1".
-INTERFACES="enp0s8"
+#   for 16.04, either ens32(e1000) or ens192(vmnet)
+INTERFACES="ens32 ens192"
