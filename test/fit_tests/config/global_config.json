@@ -13,8 +13,8 @@
     ],
     "ora": [
       {
-        "username": "onrack",
-        "password": "onrack"
+        "username": "vagrant",
+        "password": "vagrant"
       }
     ],
     "bmc": [
