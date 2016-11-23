@@ -115,14 +115,14 @@ For example, to run the test 'test_rackhd11_api_catalogs' in script 'tests/rackh
 
 ## Running FIT tests on Vagrant RackHD
 
-The RackHD 'Vagrant' configuration is a convenient simulated hardware environment with one management server and one node.
+The RackHD 'Vagrant' configuration is a convenient simulated hardware environment with one management server and one node running as VMs.
 It can be run on a Windows or Ubuntu Linux workstation for testing and development.
 
 Install Git, Oracle VirtualBox. and HashiCorp Vagrant from the following links onto a Windows or Linux host machine or workstation
 
     https://git-scm.com/downloads
-    https://www.virtualbox.org/wiki/Downloads
-    https://www.vagrantup.com/downloads.html
+    https://www.virtualbox.org/wiki/Downloads (version 5.1 or greater)
+    https://www.vagrantup.com/downloads.html (version 1.8.5 or greater)
 
 Open a shell or command prompt on host.
 
