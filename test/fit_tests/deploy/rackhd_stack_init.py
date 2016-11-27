@@ -67,17 +67,15 @@ class rackhd_stack_init(unittest.TestCase):
                 if skus not in ["debianstatic", ".git", "packagebuild", "tarballs"] and \
                    os.path.isfile('on-skupack/' + skus + '/config.json'):
                     try:
-                        json.loads(open("on-skupack/" + skus  + "/config.json").read())
+                        configfile = json.loads(open("on-skupack/" + skus  + "/config.json").read())
+                        # check if sku pack got installed
+                        if configfile['name'] not in skulist:
+                            print "FAILURE - Missing SKU: " + configfile['name']
+                            errorcount += "  Missing SKU: " + configfile['name']
                     except:
                         # Check is the sku pack config.json file is valid format, fails skupack install if invalid
                         print "FAILURE - Corrupt config.json in SKU Pack: " + str(skus) + " - not loaded"
                         errorcount += "  Corrupt config.json in SKU Pack: " + str(skus)
-                    else:
-                        configfile = json.loads(open("on-skupack/" + skus  + "/config.json").read())
-                        # if config.json is valid, check if sku pack got installed
-                        if configfile['name'] not in skulist:
-                            print "FAILURE - Missing SKU: " + configfile['name']
-                            errorcount += "  Missing SKU: " + configfile['name']
             break
         self.assertEqual(errorcount, "", errorcount)
 
