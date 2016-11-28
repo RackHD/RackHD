@@ -1,0 +1,9 @@
+---
+- name: Load script, to read IP from OVF Env and set IP to VM
+  copy: src=config_IP_with_OVF_ENV.sh  dest=/etc/init.d/config_IP_with_OVF_ENV.sh mode=0755
+  sudo: yes
+
+- name: register the script with upstart (autorun)
+  shell: update-rc.d config_IP_with_OVF_ENV.sh defaults
+  sudo: yes
+

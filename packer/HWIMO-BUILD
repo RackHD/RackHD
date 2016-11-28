@@ -87,7 +87,7 @@ if [ $? != 0 ]; then
 fi
 
 if [ "$BUILD_TYPE"  != "vmware" ];  then
-    echo "Skip the signing for virtualbox for the time being ..."
+    echo "Skip the post-processing(signing/clamscan/ovf-template injection) for virtualbox for the time being ..."
     exit 0
 fi
 
@@ -107,7 +107,6 @@ BASENAME=${VM_NAME}
 OVA="${BASENAME}.ova"
 ovftool $SIGN_ARGS -o ${VMDIR}/${VM_NAME}.vmx $OVA
 
-
 if [ $? != 0 ]; then
     echo "ovftool exec failed.. exit"
     exit 4
@@ -122,6 +121,86 @@ then
 else
     echo "skip clamscan..."
 fi
+
+
+#### BEGIN ###### Modify the OVF file and update checksum ##############
+#
+#Background:
+#   for the purpose of RackHD deployment enviroment without DHCP on admin port (e.x.: eth0),
+#   "OVF Environment" is leveraged to configure VM's IP during OVA/OVF deployment
+#
+#Implementation:
+#   1. define customized fields in OVF template file(XML format)
+#   2. when deploy RackHD OVA , you can specific the eth0 IP (thru OVF Env Parameter) like ```ovftool --prop:adminIP=1.2.3.4 .....```
+#   3. in VM OS's bootup scripts: use VMWare Tool to retrieve IP and set the primary NIC(eth0 for example)
+#
+#  Reference: http://www.v-front.de/2014/01/building-self-configuring-nested-esxi.html
+#
+###################################################################
+echo "covert to OVF"
+OVF=$"${BASENAME}.ovf"
+ovftool $OVA  $OVF
+echo "modify the OVF"
+
+#######################################################
+# Note : this is ESXi format. (other ESX version may varies )
+# Add ProductSection/Property xml nodes under VirtualSystem xml node( kind of declare OVF Enviromental Properties)
+#######################################################
+
+################
+#[ OVF Template Injection Step #1 ]
+# Below 'sed' will "insert" below XML tree at the end of <VirtualSystem> tag of the OVF template file.
+#     |-ProductSection
+#     |----Info
+#     |----Product
+#     |----Category
+#     |----Property #1
+#     |----Property #..
+#     |----Property #n
+#################
+sed -i 's/<\/VirtualSystem>/ \
+  <ProductSection>    \
+     <Info>Information about the installed software<\/Info> \
+     <Product>Rackhd<\/Product> \
+     <Category>adminnetwork<\/Category>  \
+     <Property ovf:key="adminIP" ovf:type="string" ovf:userConfigurable="true"> \
+        <Label>adminIP<\/Label> \
+     <\/Property> \
+     <Property ovf:key="adminGateway" ovf:type="string" ovf:userConfigurable="true"> \
+        <Label>adminGateway<\/Label> \
+     <\/Property> \
+     <Property ovf:key="adminNetmask" ovf:type="string" ovf:userConfigurable="true"> \
+        <Label>adminNetmask<\/Label> \
+     <\/Property> \
+     <Property ovf:key="adminDNS" ovf:type="string" ovf:userConfigurable="true"> \
+        <Label>adminDNS<\/Label> \
+     <\/Property>  \
+  <\/ProductSection> \
+<\/VirtualSystem>   \
+/'  $OVF
+################
+#[ OVF Template Injection Step #2 ]
+# specific the "OVF enviroment transport" method to VMWare Tools
+###############
+sed -i 's/<VirtualHardwareSection>/<VirtualHardwareSection ovf:transport="com.vmware.guestInfo" > /' $OVF
+
+
+
+echo "recovert back to OVA"
+###############
+#[ OVF Template Injection Step #3 ]
+# update checksum
+###############
+NewChk=$(sha1sum $OVF | awk '{print $1}')
+sed  -i -E  "s/SHA1\(.*ovf\)=.*$/SHA1\($OVF\)= $NewChk/g"  $"${BASENAME}.mf"
+##############
+#[ OVF Template Injection Step #4 ]
+# re-package into OVA
+##############
+rm $OVA
+ovftool $OVF $OVA
+### END ####### Modify the OVF file and update checksum ##############
+
 
 
 # Create MD5 & Sha256 checksum file
@@ -157,4 +236,5 @@ then
 fi
 
 chmod a=r "$OVA"*
+
 
