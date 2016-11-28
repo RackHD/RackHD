@@ -200,7 +200,7 @@ class rackhd_stack_init(unittest.TestCase):
         :return:  True  - No active workflows
                   False - Workflows are active
         '''
-        for dummy in range(0, max_time):
+        for _ in range(0, max_time):
             nodes_data = fit_common.rackhdapi("/api/2.0/nodes")
             if nodes_data['status'] == 200 and len(nodes_data['json']) > 0:
                 # if there are nodes present, determine if discovery has completed on them
@@ -278,7 +278,7 @@ class rackhd_stack_init(unittest.TestCase):
         :return:  True  - Poller active
                   False - Pollers not active
         '''
-        for dummy in range(0, max_time):
+        for _ in range(0, max_time):
             api_data = fit_common.rackhdapi('/api/2.0/pollers')
             if len(api_data['json']) > 0:
                 return True
@@ -300,7 +300,7 @@ class rackhd_stack_init(unittest.TestCase):
             for index in api_data['json']:
                 poller_list.append(index['id'])
             if poller_list != []:
-                for dummy in range(0, max_time):
+                for _ in range(0, max_time):
                     # move backwards through the list allowing completed poller ids to be popped
                     # off the list
                     for i in reversed(range(len(poller_list))):
