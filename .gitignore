@@ -25,6 +25,9 @@ pip-log.txt
 pip-delete-this-directory.txt
 
 # Environment / Unit test / coverage reports
+test/fit_tests/env
+test/fit_tests/log_output
+test/fit_tests/myenv_*
 .tox
 .venv
 .passwdc

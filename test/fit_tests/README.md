@@ -133,6 +133,7 @@ Load virtual environment:
     cd fit_tests/tests/fit_tests
     virtualenv .venv
     source .venv/bin/activate
+    sudo apt-get install python-dev
     pip install -r requirements.txt
 
 Run stack init script to discover nodes and populate database:
