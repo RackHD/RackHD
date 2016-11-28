@@ -77,6 +77,7 @@ class rackhd_source_install(fit_common.unittest.TestCase):
             self.assertEqual(fit_common.remote_shell("git config --global http.proxy " + fit_common.GLOBAL_CONFIG['repos']['proxy']
                                                   )['exitcode'], 0, "Git proxy config failure.")
         # install Ansible
+        self.assertEqual(fit_common.remote_shell(PROXYVARS + "apt-get -y update")['exitcode'], 0, "Update failure.")
         self.assertEqual(fit_common.remote_shell(PROXYVARS + "cd ~;apt-get -y install ansible")['exitcode'], 0, "Ansible Install failure.")
         # create startup files
         self.assertEqual(fit_common.remote_shell(
