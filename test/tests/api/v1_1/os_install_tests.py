@@ -99,7 +99,7 @@ class OSInstallTests(object):
         for entry in network_devices:
             if entry['ipv4'] != None:
                 hostname = entry['ipv4']['ipAddr']
-                response = os.system('ping -c 1 ' + hostname)
+                response = os.system('ping -c 1 -w 20 ' + hostname)
                 assert_equal(response, 0, message='link {0} device {1} is down'.format(entry['device'], hostname))
 
     @test(enabled=ENABLE_FORMAT_DRIVE, groups=['format-drives.v1.1.test'])
