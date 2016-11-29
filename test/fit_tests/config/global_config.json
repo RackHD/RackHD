@@ -13,8 +13,8 @@
     ],
     "ora": [
       {
-        "username": "onrack",
-        "password": "onrack"
+        "username": "vagrant",
+        "password": "vagrant"
       }
     ],
     "bmc": [
@@ -58,20 +58,28 @@
     "community": "onrack"
   },
   "repos": {
-    "_comment": "This is the list of repositories for each category",
-    "proxy": "http://web.hwimo.lab.emc.com:3128",
-    "mirror": "http://mirrors.hwimo.lab.emc.com/mirrors",
+    "_comment":   "This is the list of repositories for each category",
+    "mirror":     "http://mirrors.hwimo.lab.emc.com/mirrors",
     "os": {
-      "esxi55": "http://172.31.128.1:9080/mirror/esxi/5.5/esxi",
-      "esxi60": "http://172.31.128.1:9080/mirror/esxi/6.0/esxi6",
+      "esxi55":   "http://172.31.128.1:9080/mirror/esxi/5.5/esxi",
+      "esxi60":   "http://172.31.128.1:9080/mirror/esxi/6.0/esxi6",
       "centos65": "http://172.31.128.1:9080/mirror/centos/6.5/os/x86_64",
       "centos70": "http://172.31.128.1:9080/mirror/centos/7/os/x86_64",
-      "rhel70": "http://172.31.128.1:9080/mirror/rhel/7.0/os/x86_64"
+      "rhel70":   "http://172.31.128.1:9080/mirror/rhel/7.0/os/x86_64"
     },
     "install": {
-      "template": "http://mirrors.hwimo.lab.emc.com/mirrors/ova/ora-ubuntu-1604.ova",
-      "onrack": "http://onrack.hwimo.lab.emc.com/get/",
-      "rackhd": "https://github.com/rackhd/"
+      "template":     "http://mirrors.hwimo.lab.emc.com/mirrors/ova/ora-ubuntu-1604.ova",
+      "rackhd":       {"repo":"https://github.com/rackhd/rackhd","branch":"master"},
+      "on-core":      {"repo":"https://github.com/rackhd/on-core","branch":"master"},
+      "on-dhcp-proxy":{"repo":"https://github.com/rackhd/on-dhcp-proxy","branch":"master"},
+      "on-http":      {"repo":"https://github.com/rackhd/on-http","branch":"master"},
+      "on-statsd":    {"repo":"https://github.com/rackhd/on-statsd","branch":"master"},
+      "on-syslog":    {"repo":"https://github.com/rackhd/on-syslog","branch":"master"},
+      "on-tasks":     {"repo":"https://github.com/rackhd/on-tasks","branch":"master"},
+      "on-taskgraph": {"repo":"https://github.com/rackhd/on-taskgraph","branch":"master"},
+      "on-tftp":      {"repo":"https://github.com/rackhd/on-tftp","branch":"master"},
+      "on-tools":     {"repo":"https://github.com/rackhd/on-tools","branch":"master"},
+      "on-wss":       {"repo":"https://github.com/rackhd/on-wss","branch":"master"}
       },
     "skupack": [
       "https://github.com/RackHD/on-skupack"
