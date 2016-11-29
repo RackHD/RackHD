@@ -4,8 +4,10 @@
       "vcs": true
     },
     "variables": {
-        "atlas_username": "{{ env `ATLAS_USERNAME` }}",
-        "atlas_name": "{{ env `ATLAS_NAME` }}",
+        "atlas_username": "",
+        "atlas_name": "",
+        "atlas_version": "",
+        "atlas_token": "{{env `ATLAS_TOKEN`}}",
         "vm_name" : "rackhd-vm",
         "playbook": "rackhd_package"
     },
@@ -39,7 +41,8 @@
             "type": "ansible-local",
             "inventory_groups": "local",
             "playbook_file": "ansible/{{user `playbook`}}.yml",
-            "playbook_dir": "ansible"
+            "playbook_dir": "ansible",
+            "extra_arguments": [ "--extra-vars \"rackhd_version={{user `version`}}\"" ]
         },
         {
             "type": "shell",
@@ -200,22 +203,11 @@
         "type": "atlas",
         "only": ["virtualbox-iso"],
         "artifact": "{{user `atlas_username`}}/{{user `atlas_name`}}",
+        "token": "{{user `atlas_token`}}",
         "artifact_type": "vagrant.box",
         "metadata": {
-            "provider": "virtualbox"
-        }
-    }],
-    [{
-        "type": "vagrant",
-        "keep_input_artifact": true
-    },
-    {
-        "type": "atlas",
-        "only": ["vmware-iso"],
-        "artifact": "{{user `atlas_username`}}/{{user `atlas_name`}}",
-        "artifact_type": "vagrant.box",
-        "metadata": {
-            "provider": "vmware_desktop"
+            "provider": "virtualbox",
+            "version": "{{user `atlas_version`}}"
         }
     }]
   ]
