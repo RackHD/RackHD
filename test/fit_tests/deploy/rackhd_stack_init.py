@@ -1,16 +1,27 @@
 '''
-Copyright 2015, EMC, Inc.
+Copyright 2016, EMC, Inc.
 
 Author(s):
 George Paulos
 
 This script initializes RackHD stack after install.
-'''
+    - loads SKU packs
+    - loads default SKU
+    - sets auth user
+    - restarts nodes for discovery
+    - discovers switches and/or PDUs if available
+    - checks node discovery
+    - assigns node OBM settings
+    - checks pollers for data
 
+'''
 
 import os
 import sys
 import subprocess
+import json
+import time
+import unittest
 # set path to common libraries
 sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test/fit_tests/common")
 import fit_common
@@ -19,7 +30,7 @@ import pdu_lib
 # Locals
 MAX_CYCLES = 60
 
-class rackhd_stack_init(fit_common.unittest.TestCase):
+class rackhd_stack_init(unittest.TestCase):
     def test01_preload_sku_packs(self):
         print "**** Processing SKU Packs"
         # Load SKU packs from GutHub
@@ -44,22 +55,29 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
         for subdir, dirs, files in os.walk('on-skupack/tarballs'):
             for skupacks in files:
                 print "\n**** Loading SKU Pack for " + skupacks
-                fit_common.rackhdapi("/api/1.1/skus/pack", action="binary-post",
+                fit_common.rackhdapi("/api/2.0/skus/pack", action="binary-post",
                                      payload=file(fit_common.TEST_PATH + "on-skupack/tarballs/" + skupacks).read())
             break
         print "\n"
         # check SKU directory against source files
-        errorcount = 0
-        skulist = fit_common.json.dumps(fit_common.rackhdapi("/api/2.0/skus")['json'])
+        errorcount = ""
+        skulist = json.dumps(fit_common.rackhdapi("/api/2.0/skus")['json'])
         for subdir, dirs, files in os.walk('on-skupack'):
             for skus in dirs:
-                if skus not in ["debianstatic", ".git", "packagebuild", "tarballs"] and os.path.isfile('on-skupack/' + skus + '/config.json'):
-                    configfile = fit_common.json.loads(open("on-skupack/" + skus  + "/config.json").read())
-                    if configfile['name'] not in skulist:
-                        print "FAILURE - Missing SKU: " + configfile['name']
-                        errorcount += 1
+                if skus not in ["debianstatic", ".git", "packagebuild", "tarballs"] and \
+                   os.path.isfile('on-skupack/' + skus + '/config.json'):
+                    try:
+                        configfile = json.loads(open("on-skupack/" + skus  + "/config.json").read())
+                        # check if sku pack got installed
+                        if configfile['name'] not in skulist:
+                            print "FAILURE - Missing SKU: " + configfile['name']
+                            errorcount += "  Missing SKU: " + configfile['name']
+                    except:
+                        # Check is the sku pack config.json file is valid format, fails skupack install if invalid
+                        print "FAILURE - Corrupt config.json in SKU Pack: " + str(skus) + " - not loaded"
+                        errorcount += "  Corrupt config.json in SKU Pack: " + str(skus)
             break
-        self.assertEqual(errorcount, 0, "SKU pack install error.")
+        self.assertEqual(errorcount, "", errorcount)
 
     def test02_preload_default_sku(self):
         # Load default SKU for unsupported compute nodes
@@ -80,10 +98,12 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
         print '**** Installing default admin user'
         fit_common.remote_shell('rm auth.json')
         auth_json = open('auth.json', 'w')
-        auth_json.write('{"username":"' + fit_common.GLOBAL_CONFIG["api"]["admin_user"] + '", "password":"' + fit_common.GLOBAL_CONFIG["api"]["admin_pass"] + '", "role":"Administrator"}')
+        auth_json.write('{"username":"' + fit_common.GLOBAL_CONFIG["api"]["admin_user"] + '", "password":"' \
+                        + fit_common.GLOBAL_CONFIG["api"]["admin_pass"] + '", "role":"Administrator"}')
         auth_json.close()
         fit_common.scp_file_to_ora('auth.json')
-        rc = fit_common.remote_shell("curl -ks -X POST -H 'Content-Type:application/json' https://localhost:" + str(fit_common.GLOBAL_CONFIG['ports']['https']) + "/api/2.0/users -d @auth.json" )
+        rc = fit_common.remote_shell("curl -ks -X POST -H 'Content-Type:application/json' https://localhost:" \
+                                     + str(fit_common.GLOBAL_CONFIG['ports']['https']) + "/api/2.0/users -d @auth.json")
         if rc['exitcode'] != 0:
             print "ALERT: Auth admin user not set! Please manually set the admin user account if https access is desired."
 
@@ -104,7 +124,7 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
             self.assertNotEqual(fit_common.power_control_all_nodes("on"), 0, 'No BMC IP addresses found')
 
     # Optionally install control switch node if present
-    @fit_common.unittest.skipUnless("control" in fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']],"")
+    @unittest.skipUnless("control" in fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']], "")
     def test05_discover_control_switch_node(self):
         print "**** Creating control switch node."
         payload = {
@@ -121,7 +141,7 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
                          + str(api_data['status']))
 
     # Optionally install data switch node if present
-    @fit_common.unittest.skipUnless("data" in fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']], "")
+    @unittest.skipUnless("data" in fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']], "")
     def test06_discover_data_switch_node(self):
         print "**** Creating data switch node."
         payload = {
@@ -138,7 +158,7 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
                          + str(api_data['status']))
 
     # Optionally install PDU node if present
-    @fit_common.unittest.skipUnless("pdu" in fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']], "")
+    @unittest.skipUnless("pdu" in fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']], "")
     def test07_discover_pdu_node(self):
         print "**** Creating PDU node."
         payload = {
@@ -161,7 +181,7 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
             if "compute" in fit_common.rackhdapi("/api/2.0/nodes")['text']:
                 break
             else:
-                fit_common.time.sleep(30)
+                time.sleep(30)
         self.assertLess(c_index, MAX_CYCLES-1, "No compute nodes found.")
 
     def test09_check_discovery(self):
@@ -172,7 +192,7 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
         # workflows have not completed.
         # Wait 10 minutes ( MAX_CYCLES * 10 seconds) for this to occur.
         self.assertTrue(self.check_for_active_workflows(MAX_CYCLES), "Node discovery not completed")
-        
+
     def check_for_active_workflows(self, max_time):
         '''
         Determine if are any active workflows.
@@ -180,7 +200,7 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
         :return:  True  - No active workflows
                   False - Workflows are active
         '''
-        for dummy in range(0, max_time):
+        for _ in range(0, max_time):
             nodes_data = fit_common.rackhdapi("/api/2.0/nodes")
             if nodes_data['status'] == 200 and len(nodes_data['json']) > 0:
                 # if there are nodes present, determine if discovery has completed on them
@@ -195,15 +215,15 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
                             break
                 if discovery_complete:
                     return True
-                fit_common.time.sleep(10)
+                time.sleep(10)
         return False
 
     def test10_apply_obm_settings(self):
         print "**** Apply OBM setting to compute nodes."
         self.assertTrue(fit_common.apply_obm_settings(), "OBM settings failed.")
 
-    @fit_common.unittest.skipUnless("bmc" in fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']],"")
-    @fit_common.unittest.skip("Skipping 'test10_add_management_server' code incomplete")
+    @unittest.skipUnless("bmc" in fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']], "")
+    @unittest.skip("Skipping 'test10_add_management_server' code incomplete")
     def test11_add_management_server(self):
         print "**** Creating management server."
         usr = ""
@@ -258,12 +278,13 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
         :return:  True  - Poller active
                   False - Pollers not active
         '''
-        for dummy in range(0, max_time):
+        for _ in range(0, max_time):
             api_data = fit_common.rackhdapi('/api/2.0/pollers')
             if len(api_data['json']) > 0:
                 return True
-            fit_common.time.sleep(30)
+            time.sleep(30)
         return False
+
 
     def check_for_active_poller_data(self, max_time):
         '''
@@ -272,19 +293,29 @@ class rackhd_stack_init(fit_common.unittest.TestCase):
         :return:  True  - Poller have data
                   False - Not all poller have data
         '''
+        poller_list = []
         api_data = fit_common.rackhdapi('/api/2.0/pollers')
         if api_data:
-            for dummy in range(0, max_time):
-                good_poller_data = True
-                for index in  api_data['json']:
-                    poll_data = fit_common.rackhdapi("/api/2.0/pollers/" + index['id'] + "/data")
-                    if poll_data['status'] != 200 or len(poll_data['json']) == 0:
-                        good_poller_data = False
-                        break
-                if good_poller_data:
-                    return True
-                fit_common.time.sleep(10)
+            # set up a list of poller ids
+            for index in api_data['json']:
+                poller_list.append(index['id'])
+            if poller_list != []:
+                for _ in range(0, max_time):
+                    # move backwards through the list allowing completed poller ids to be popped
+                    # off the list
+                    for i in reversed(range(len(poller_list))):
+                        id = poller_list[i]
+                        poll_data = fit_common.rackhdapi("/api/2.0/pollers/" + id + "/data/current")
+                        # Check if data current returned 200 and data in the poll, if so, remove from list
+                        if poll_data['status'] == 200 and len(poll_data['json']) != 0:
+                            poller_list.pop(i)
+                    if poller_list == []:
+                        # return when all pollers look good
+                        return True
+                    time.sleep(10)
+        if poller_list != []:
+            print "Poller IDs with error or no data: {}".format(json.dumps(poller_list, indent=4))
         return False
 
 if __name__ == '__main__':
-    fit_common.unittest.main()
+    unittest.main()
