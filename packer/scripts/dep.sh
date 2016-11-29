@@ -8,4 +8,4 @@ apt-get -y install ansible
 
 # set a friendly hostname
 rm -f /etc/hostname
-echo "rackhd-demo" > /etc/hostname
+echo "rackhd" > /etc/hostname
