@@ -42,8 +42,7 @@
             "scripts": [
                 "scripts/addnetif.sh"
             ],
-            "execute_command": "echo 'vagrant'|sudo -S bash '{{.Path}}'",
-            "only": ["vmware-iso"]
+            "execute_command": "echo 'vagrant'|sudo -S bash '{{.Path}}'"
         },
         {
             "type": "ansible-local",
