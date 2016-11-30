@@ -28,3 +28,11 @@ rm -f /lib/udev/rules.d/75-persistent-net-generator.rules
 
 echo "Adding a 2 sec delay to the interface up, to make the dhclient happy"
 echo "pre-up sleep 2" >> /etc/network/interfaces
+
+
+# Modify the /etc/hosts to align with hostname setting in RackHD/packer/scripts/dep.sh
+# by default, the hostname in both /etc/hosts & /etc/hostname are obtained from DHCP server during install.
+# in RackHD/packer/scripts/dep.sh, it's modified , but /etc/hosts(127.0.1.1) never get changed.
+
+NEW_HOST_NAME=$(hostname)
+sed -i  "/127.0.1.1/,/$/c127.0.1.1\t${NEW_HOST_NAME}" /etc/hosts
