@@ -16,8 +16,8 @@ login() {
 }
 
 
-# Load Library function
-source common/get_nic_name_by_index.sh
+#Load library func, it was loaded by packer to /tmp/ in previous steps
+source /tmp/get_nic_name_by_index.sh
 
 
 # Include the on-* services in case we're installing from .deb packages
