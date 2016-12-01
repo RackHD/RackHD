@@ -2,8 +2,8 @@
 set -e
 
 
-#Load library func
-source get_nic_name_by_index.sh
+#Load library func, was copied by packer to /tmp/
+source /tmp/get_nic_name_by_index.sh
 
 ########################################
 # Main
