@@ -16,38 +16,8 @@ login() {
 }
 
 
-##########################################################
-# retrieve NIC name via ```ip addr``` command, by given id
-##########################################################
-get_nic_name_by_index()
-{
-    tmp=$( ip addr|grep "^${1}:" | awk '{print $2}')
-    if [[ "$tmp" == "" ]];
-    then
-        echo "[Error]: Invalid Parameter passed to get_nic_name_by_index(): NIC ID=$1";
-        exit 1
-    fi
-    name=${tmp/:/}  # remove the ":" surrfix
-    echo $name
-}
-
-#################################
-# retrieve secondary NIC Name(control port of RackHD)
-################################
-get_secondary_nic_name()
-{
-    # By Default, the Control Port index is 3. say: eth1/enp0s8/ens33...
-    Sec_NIC_Index=3;
-    # if the index 1 is not loopback device, then eth0 may starts from index 1.
-    NIC1=$(get_nic_name_by_index 1)
-    if [[ $NIC1 != "lo" ]]; then
-        Sec_NIC_Index=$(expr $Sec_NIC_Index - 1 )
-    fi
-    Sec_NIC=$(get_nic_name_by_index $Sec_NIC_Index)
-    echo $Sec_NIC
-}
-
-
+# Load Library function
+source common/get_nic_name_by_index.sh
 
 
 # Include the on-* services in case we're installing from .deb packages

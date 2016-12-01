@@ -9,6 +9,10 @@
   copy: src=isc-dhcp-server.in dest=/etc/default/isc-dhcp-server
   sudo: yes
 
+- name: Copy nic name utility script to guest( was in packer/scripts/common/ and was copied here by dep.sh)
+  copy: src=get_nic_name_by_index.sh  dest=~/get_nic_name_by_index.sh  mode=0755
+  sudo: yes
+
 - name: Copy isc-dhcp-server config script to guest
   copy: src=config_isc-dhcp-server.sh  dest=~/config_isc-dhcp-server.sh mode=0755
   sudo: yes
