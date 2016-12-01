@@ -15,6 +15,11 @@ login() {
         -d '{"username": "'"${USER}"'", "password":"'"${PASS}"'"}'`
 }
 
+
+# Load Library function
+source common/get_nic_name_by_index.sh
+
+
 # Include the on-* services in case we're installing from .deb packages
 SERVICES="isc-dhcp-server rabbitmq-server mongodb postgresql \
     on-http on-taskgraph on-dhcp-proxy on-syslog on-tftp"
@@ -29,15 +34,7 @@ cleanServicesPIDs() {
 
 startServices() {
 
-  secondary_nic=eth1
-  if [[ $( ip addr|grep ens33 ) != "" ]]
-  then
-      secondary_nic=ens33
-  fi
-  if [[ $( ip addr|grep ens192 ) != "" ]]
-  then
-      secondary_nic=ens192
-  fi
+  secondary_nic=$(get_secondary_nic_name)
   # Config the Secondary NIC IP to align with the default /opt/monorail/config.json IP setting
   sudo ifconfig $secondary_nic 172.31.128.1 netmask 255.255.255.0
 

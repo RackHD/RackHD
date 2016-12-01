@@ -5,20 +5,23 @@
     - isc-dhcp-server
   sudo: yes
 
-- name: Copy isc-dhcp-server file to guest
-  copy: src=isc-dhcp-server dest=/etc/default/isc-dhcp-server
+- name: Copy isc-dhcp-server template file to guest
+  copy: src=isc-dhcp-server.in dest=/etc/default/isc-dhcp-server
   sudo: yes
-  when: ansible_distribution == "Ubuntu" and ansible_distribution_version | int < 16
 
-- name: Copy systemd control network interface file to guest
-  copy: src=systemd-control.cfg dest=/etc/network/interfaces.d/control.cfg
+- name: Copy nic name utility script to guest( was in packer/scripts/common/ and was copied here by dep.sh)
+  copy: src=get_nic_name_by_index.sh  dest=~/get_nic_name_by_index.sh  mode=0755
   sudo: yes
-  when: ansible_distribution == "Ubuntu" and ansible_distribution_version | int >= 16
 
-- name: Copy systemd isc-dhcp-server file to guest
-  copy: src=systemd-isc-dhcp-server dest=/etc/default/isc-dhcp-server
+- name: Copy isc-dhcp-server config script to guest
+  copy: src=config_isc-dhcp-server.sh  dest=~/config_isc-dhcp-server.sh mode=0755
   sudo: yes
-  when: ansible_distribution == "Ubuntu" and ansible_distribution_version | int >= 16
+
+
+- name: Retrieve the control nic name, and update the /etc/default/isc-dhcp-server
+  shell: ~/config_isc-dhcp-server.sh
+  sudo: yes
+
 
 - name: Copy dhcpd.conf file to guest
   copy: src=dhcpd.conf dest=/etc/dhcp/dhcpd.conf
