@@ -4,7 +4,7 @@
 apt-get -y update
 
 # to support using the ansible provisioner
-apt-get -y install expect python-dev python-pip python-yaml libffi-dev
+apt-get -y install expect aptitude python-dev python-pip python-yaml libffi-dev
 pip install --upgrade setuptools
 pip install ansible==2.2.0.0
 
