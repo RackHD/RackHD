@@ -43,18 +43,18 @@
               "destination": "/tmp/get_nic_name_by_index.sh"
         },
         {
-            "type": "ansible-local",
-            "inventory_groups": "local",
-            "playbook_file": "ansible/{{user `playbook`}}.yml",
-            "playbook_dir": "ansible",
-            "extra_arguments": [ "--extra-vars \"rackhd_version={{user `version`}}\"" ]
-        },
-        {
             "type": "shell",
             "scripts": [
                 "scripts/addnetif.sh"
             ],
             "execute_command": "echo 'vagrant'|sudo -S bash '{{.Path}}'"
+        },
+        {
+            "type": "ansible-local",
+            "inventory_groups": "local",
+            "playbook_file": "ansible/{{user `playbook`}}.yml",
+            "playbook_dir": "ansible",
+            "extra_arguments": [ "--extra-vars \"rackhd_version={{user `version`}}\"" ]
         },
         {
             "type": "shell",
