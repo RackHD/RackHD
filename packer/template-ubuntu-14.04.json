@@ -38,16 +38,16 @@
             "execute_command": "echo 'vagrant'|sudo -S bash '{{.Path}}'"
         },
         {
+              "type": "file",
+              "source": "scripts/common/get_nic_name_by_index.sh",
+              "destination": "/tmp/get_nic_name_by_index.sh"
+        },
+        {
             "type": "shell",
             "scripts": [
                 "scripts/addnetif.sh"
             ],
             "execute_command": "echo 'vagrant'|sudo -S bash '{{.Path}}'"
-        },
-        {
-              "type": "file",
-              "source": "scripts/common/get_nic_name_by_index.sh",
-              "destination": "/tmp/get_nic_name_by_index.sh"
         },
         {
             "type": "ansible-local",
