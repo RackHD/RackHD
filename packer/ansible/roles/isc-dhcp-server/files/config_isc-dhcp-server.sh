@@ -2,7 +2,10 @@
 set -e
 
 
-#Load library func, was copied by packer to /tmp/
+#Load library func
+GIT_RAW_FILE_URL=https://raw.githubusercontent.com/RackHD/RackHD/master/
+FILE_PATH=packer/scripts/common/get_nic_name_by_index.sh
+wget ${GIT_RAW_FILE_URL}${FILE_PATH} -O /tmp/get_nic_name_by_index.sh
 source /tmp/get_nic_name_by_index.sh
 
 ########################################
