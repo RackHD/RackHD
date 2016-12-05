@@ -7,10 +7,6 @@
 set -e
 set -x
 
-if [ -f "$1" ];then
-    source $1
-fi
-
 rm -rf packagebuild
 git clone . packagebuild
 pushd packagebuild
@@ -18,14 +14,28 @@ cp -r ../debian .
 
 wget https://raw.githubusercontent.com/RackHD/RackHD/master/packer/ansible/roles/monorail/files/config.json  -O config.json
 
-if [ ! -z "$PKG_VERSION" ];then
-    if [[ $PKG_VERSION =~ ^[0-9.]+$ ]];then
-        dch -r ""
-    else
-        COMMIT_STR=`git log -n 1 --oneline`
-        dch -v $PKG_VERSION -u low $COMMIT_STR -b -m
-    fi
+# If PKG_VERSION is not set as an environment variable
+# compute it as below:
+if [ -z "$PKG_VERSION" ];then
+    GIT_COMMIT_DATE=$(git show -s --pretty="format:%ci")   
+    DATE_STRING=$(date -d "$GIT_COMMIT_DATE" -u +"%Y%m%dUTC")
+
+    GIT_COMMIT_HASH=$(git show -s --pretty="format:%h")
+
+    CHANGELOG_VERSION=$(dpkg-parsechangelog --show-field Version)
+
+    PKG_VERSION="$CHANGELOG_VERSION-$DATE_STRING-$GIT_COMMIT_HASH"
+fi
+
+echo $PKG_VERSION
+if [[ $PKG_VERSION =~ ^([0-9]+\.){2}[0-9]+$ ]];then
+    # If version looks like 1.2.3, the build is official build.
+    # So update the distribution of changelog from "UNRELEASED" to "unstable"
+    dch -r ""
+else
+    COMMIT_STR=`git log -n 1 --oneline`
+    dch -v $PKG_VERSION -u low $COMMIT_STR -b -m
 fi
 
 debuild --no-lintian --no-tgz-check -us -uc 
-
+popd
