@@ -1,0 +1,45 @@
+---
+- name: install dev libraries for NPM installs
+  apt: pkg={{ item }} state=installed
+  with_items:
+    - libkrb5-dev
+    - unzip
+  sudo: yes
+
+- name: Install RackHD from local source
+  copy: ../../* ansible_env.HOME
+
+- name: Npm install Repos
+  npm: path="{{ ansible_env.HOME }}/src/{{ item }}"
+       production=yes
+  with_items:
+    - on-syslog
+    - on-tftp
+    - on-dhcp-proxy
+    - on-taskgraph
+    - on-http
+    - on-wss
+
+- name: Make common static directory
+  file: path="{{ ansible_env.HOME }}/src/on-http/static/http/common" state=directory
+
+- name: Npm install apidoc
+  shell: "npm install apidoc"
+  args:
+    chdir: "{{ ansible_env.HOME }}/src/on-http"
+
+- name: Render 1.1 API docs for local reference
+  shell: "npm run apidoc"
+  args:
+    chdir: "{{ ansible_env.HOME }}/src/on-http"
+
+- name: Generate hosted task documentation
+  shell: "npm run taskdoc"
+  args:
+    chdir: "{{ ansible_env.HOME }}/src/on-http"
+
+- name: set HTTP static directory for RackHD
+  set_fact: http_static_directory="{{ ansible_env.HOME }}/src/on-http/static/http"
+
+- name: set TFTP static directory for RackHD
+  set_fact: tftp_static_directory="{{ ansible_env.HOME }}/src/on-tftp/static/tftp"
