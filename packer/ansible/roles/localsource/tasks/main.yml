@@ -7,7 +7,18 @@
   sudo: yes
 
 - name: Install RackHD from local source
-  copy: ../../* ansible_env.HOME
+  copy: src="../../{{ item }}" dest="{{ ansible_env.HOME }}/src/{{ item }}"
+  with_items:
+    - on-core
+    - on-tasks
+    - on-http
+    - on-tftp
+    - on-dhcp-proxy
+    - on-taskgraph
+    - on-syslog
+    - on-wss
+    - on-tools
+    - on-imagebuilder
 
 - name: Npm install Repos
   npm: path="{{ ansible_env.HOME }}/src/{{ item }}"
