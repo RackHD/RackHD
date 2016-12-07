@@ -7,7 +7,7 @@
   sudo: yes
 
 - name: Install RackHD from local source
-  copy: src="../../{{ item }}" dest="{{ ansible_env.HOME }}/src/{{ item }}"
+  copy: src="../../{{ item }}" dest="{{ ansible_env.HOME }}/src/"
   with_items:
     - on-core
     - on-tasks
@@ -43,6 +43,10 @@
   shell: "npm run apidoc"
   args:
     chdir: "{{ ansible_env.HOME }}/src/on-http"
+
+- file:
+    path: "{{ ansible_env.HOME }}/src/on-http/install-task-doc.sh"
+    mode: 0777
 
 - name: Generate hosted task documentation
   shell: "npm run taskdoc"
