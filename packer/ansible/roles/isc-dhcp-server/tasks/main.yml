@@ -10,12 +10,12 @@
   sudo: yes
 
 - name: Copy isc-dhcp-server config script to guest
-  copy: src=config_isc-dhcp-server.sh  dest=~/config_isc-dhcp-server.sh mode=0755
+  copy: src=config_isc-dhcp-server.sh  dest="{{ ansible_env.HOME }}/config_isc-dhcp-server.sh" mode=0755
   sudo: yes
 
 
 - name: Retrieve the control nic name, and update the /etc/default/isc-dhcp-server
-  shell: ~/config_isc-dhcp-server.sh
+  shell: "{{ ansible_env.HOME }}/config_isc-dhcp-server.sh"
   sudo: yes
 
 
