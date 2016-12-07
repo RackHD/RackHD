@@ -8,7 +8,7 @@ George Paulos
 
 This Script runs nose tests with command-line arguments.
 
-usage: run_tests.py [-h] [-test TEST] [-group GROUP] [-stack STACK] [-ora ORA]
+usage: run_tests.py [-h] [-test TEST] [-group GROUP] [-stack STACK] [-server SERVER]
                     [-version VERSION] [-xunit] [-list] [-sku SKU]
                     [-obmmac OBMMAC | -nodeid NODEID] [-v V]
 
@@ -19,11 +19,9 @@ optional arguments:
   -test TEST        test to execute, default: tests/
   -group GROUP      test group to execute: 'smoke', 'regression', 'extended',
                     default: 'all'
-  -stack STACK      stack label (test bed), overrides -ora
-  -ora ORA          OnRack/RackHD appliance IP address or hostname, default:
+  -stack STACK      stack label (test bed), overrides -server
+  -server SERVER    RackHD appliance IP address or hostname, default:
                     localhost
-  -version VERSION  OnRack version, example:onrack-release-0.3.0, default:
-                    onrack-devel
   -xunit            generates xUnit XML report files
   -list             generates test list only
   -sku SKU          node SKU, example:Phoenix, default=all
@@ -54,13 +52,11 @@ ARG_PARSER.add_argument("-config", default="config",
 ARG_PARSER.add_argument("-group", default="all",
                         help="test group to execute: 'smoke', 'regression', 'extended', default: 'all'")
 ARG_PARSER.add_argument("-stack", default="None",
-                        help="stack label (test bed), overrides -ora")
-ARG_PARSER.add_argument("-ora", default="localhost",
-                        help="OnRack/RackHD appliance IP address or hostname, default: localhost")
-ARG_PARSER.add_argument("-version", default="onrack-devel",
-                        help="OnRack package install version, example:onrack-release-0.3.0, default: onrack-devel")
+                        help="stack label (test bed), overrides -server")
+ARG_PARSER.add_argument("-server", default="localhost",
+                        help="RackHD appliance IP address or hostname, default: localhost")
 ARG_PARSER.add_argument("-template", default=fit_common.GLOBAL_CONFIG['repos']['install']['template'],
-                        help="path or URL link to OVA template or OnRack OVA, default from global_config.json")
+                        help="path or URL link to OVA template, default from global_config.json")
 ARG_PARSER.add_argument("-xunit", default="False", action="store_true",
                         help="generates xUnit XML report files")
 ARG_PARSER.add_argument("-list", default="False", action="store_true",

@@ -4,13 +4,13 @@
     "control": "control switch admin address",
     "data": "data switch admin address",
     "hyper": "hypervisor admin address",
-    "ora": "appliance OVA admin address",
+    "server": "appliance OVA admin address",
     "ovamac": "appliance OVA MAC address",
     "pdu": "PDU admin address",
     "type": "deployment type: esxi, docker, linux, or vagrant"
   },
   "vagrant":{
-    "ora": "localhost",
+    "server": "localhost",
     "type": "vagrant"
   },
   "1": {
@@ -18,7 +18,7 @@
     "control": "stack1-control.admin", 
     "data": "stack1-data.admin", 
     "hyper": "stack1-esxi.admin", 
-    "ora": "stack1-ora.admin",
+    "server": "stack1-ora.admin",
     "ovamac": "00:50:56:00:01:00",
     "pdu": "192.168.1.254",
     "type": "esxi"
@@ -28,7 +28,7 @@
     "control": "stack2-control.admin", 
     "data": "stack2-data.admin", 
     "hyper": "stack2-esxi.admin", 
-    "ora": "stack2-ora.admin",
+    "server": "stack2-ora.admin",
     "ovamac": "00:50:56:00:02:00",
     "pdu": "192.168.1.254",
     "type": "esxi"
@@ -38,7 +38,7 @@
     "control": "stack3-control.admin", 
     "data": "stack3-data.admin", 
     "hyper": "stack3-esxi.admin", 
-    "ora": "stack3-ora.admin",
+    "server": "stack3-ora.admin",
     "ovamac": "00:50:56:00:03:00",
     "pdu": "192.168.1.254",
     "type": "esxi"
@@ -48,7 +48,7 @@
     "control": "stack4-control.admin", 
     "data": "stack4-data.admin", 
     "hyper": "stack4-esxi.admin", 
-    "ora": "stack4-ora.admin",
+    "server": "stack4-ora.admin",
     "ovamac": "00:50:56:00:04:00",
     "pdu": "192.168.1.254",
     "type": "esxi"
@@ -58,7 +58,7 @@
     "control": "stack5-control.admin", 
     "data": "stack5-data.admin", 
     "hyper": "stack5-esxi.admin", 
-    "ora": "stack5-ora.admin",
+    "server": "stack5-ora.admin",
     "ovamac": "00:50:56:00:05:00",
     "pdu": "192.168.1.254",
     "type": "esxi"
@@ -68,7 +68,7 @@
     "control": "stack6-control.admin", 
     "data": "stack6-data.admin", 
     "hyper": "stack6-esxi.admin", 
-    "ora": "stack6-ora.admin",
+    "server": "stack6-ora.admin",
     "ovamac": "00:50:56:00:06:00",
     "pdu": "192.168.1.254",
     "type": "esxi"
@@ -78,7 +78,7 @@
     "control": "stack7-control.admin", 
     "data": "stack7-data.admin", 
     "hyper": "stack7-esxi.admin", 
-    "ora": "stack7-ora.admin",
+    "server": "stack7-ora.admin",
     "ovamac": "00:50:56:00:07:00",
     "pdu": "192.168.1.254",
     "type": "esxi"
@@ -88,7 +88,7 @@
     "control": "stack8-control.admin", 
     "data": "stack8-data.admin", 
     "hyper": "stack8-esxi.admin", 
-    "ora": "stack8-ora.admin",
+    "server": "stack8-ora.admin",
     "ovamac": "00:50:56:00:08:00",
     "pdu": "192.168.1.254",
     "type": "esxi"
@@ -98,7 +98,7 @@
     "control": "stack9-control.admin", 
     "data": "stack9-data.admin", 
     "hyper": "stack9-esxi.admin", 
-    "ora": "stack9-ora.admin",
+    "server": "stack9-ora.admin",
     "ovamac": "00:50:56:00:09:00",
     "pdu": "192.168.1.254",
     "type": "esxi"
@@ -108,7 +108,7 @@
     "control": "stack10-control.admin", 
     "data": "stack10-data.admin", 
     "hyper": "stack10-esxi.admin", 
-    "ora": "stack10-ora.admin",
+    "server": "stack10-ora.admin",
     "ovamac": "00:50:56:00:10:00",
     "pdu": "192.168.1.254",
     "type": "esxi"
@@ -118,7 +118,7 @@
     "control": "stack11-control.admin", 
     "data": "stack11-data.admin", 
     "hyper": "stack11-esxi.admin", 
-    "ora": "stack11-ora.admin",
+    "server": "stack11-ora.admin",
     "ovamac": "00:50:56:00:11:00",
     "pdu": "192.168.1.254",
     "type": "esxi"
@@ -128,7 +128,7 @@
     "control": "stack12-control.admin", 
     "data": "stack12-data.admin", 
     "hyper": "stack12-esxi.admin", 
-    "ora": "stack12-ora.admin",
+    "server": "stack12-ora.admin",
     "ovamac": "00:50:56:00:12:00",
     "pdu": "192.168.1.254",
     "type": "esxi"
@@ -138,7 +138,7 @@
     "control": "stack13-control.admin", 
     "data": "stack13-data.admin", 
     "hyper": "stack13-esxi.admin", 
-    "ora": "stack13-ora.admin",
+    "server": "stack13-ora.admin",
     "ovamac": "00:50:56:00:13:00",
     "pdu": "192.168.1.254",
     "type": "esxi"
@@ -148,7 +148,7 @@
     "control": "stack14-control.admin", 
     "data": "stack14-data.admin", 
     "hyper": "stack14-esxi.admin", 
-    "ora": "stack14-ora.admin",
+    "server": "stack14-ora.admin",
     "ovamac": "00:50:56:00:14:00",
     "pdu": "192.168.1.254",
     "type": "esxi"
@@ -158,7 +158,7 @@
     "control": "stack15-control.admin", 
     "data": "stack15-data.admin", 
     "hyper": "stack15-esxi.admin", 
-    "ora": "stack15-ora.admin",
+    "server": "stack15-ora.admin",
     "ovamac": "00:50:56:00:15:00",
     "pdu": "192.168.1.254",
     "type": "esxi"
@@ -168,7 +168,7 @@
     "control": "stack16-control.admin", 
     "data": "stack16-data.admin", 
     "hyper": "stack16-esxi.admin", 
-    "ora": "stack16-ora.admin",
+    "server": "stack16-ora.admin",
     "ovamac": "00:50:56:00:16:00",
     "pdu": "",
     "type": "esxi"
@@ -178,7 +178,7 @@
     "control": "stack17-control.admin", 
     "data": "stack17-data.admin", 
     "hyper": "stack17-esxi.admin", 
-    "ora": "stack17-ora.admin",
+    "server": "stack17-ora.admin",
     "ovamac": "00:50:56:00:17:00",
     "pdu": "192.168.1.254",
     "type": "esxi"
@@ -188,7 +188,7 @@
     "control": "stack18-control.admin", 
     "data": "stack18-data.admin", 
     "hyper": "stack18-esxi.admin", 
-    "ora": "stack18-ora.admin",
+    "server": "stack18-ora.admin",
     "ovamac": "00:50:56:00:18:00",
     "pdu": "192.168.1.254",
     "type": "esxi"
@@ -198,7 +198,7 @@
     "control": "stack19-control.admin", 
     "data": "stack19-data.admin", 
     "hyper": "stack19-esxi.admin", 
-    "ora": "stack19-ora.admin",
+    "server": "stack19-ora.admin",
     "ovamac": "00:50:56:00:19:00",
     "pdu": "192.168.1.254",
     "type": "esxi"
@@ -208,7 +208,7 @@
     "control": "stack20-control.admin", 
     "data": "stack20-data.admin", 
     "hyper": "stack20-esxi.admin", 
-    "ora": "stack20-ora.admin",
+    "server": "stack20-ora.admin",
     "ovamac": "00:50:56:00:20:00",
     "pdu": "",
     "type": "esxi"
@@ -218,7 +218,7 @@
     "control": "stack21-control.admin", 
     "data": "stack21-data.admin", 
     "hyper": "stack21-esxi.admin", 
-    "ora": "stack21-ora.admin",
+    "server": "stack21-ora.admin",
     "ovamac": "00:50:56:00:21:00",
     "pdu": "",
     "type": "esxi"
@@ -228,7 +228,7 @@
     "control": "stack22-control.admin", 
     "data": "stack22-data.admin", 
     "hyper": "stack22-esxi.admin", 
-    "ora": "stack22-ora.admin",
+    "server": "stack22-ora.admin",
     "ovamac": "00:50:56:00:22:00",
     "pdu": "",
     "type": "esxi"
@@ -238,7 +238,7 @@
     "control": "stack23-control.admin", 
     "data": "stack23-data.admin", 
     "hyper": "stack23-esxi.admin", 
-    "ora": "stack23-ora.admin",
+    "server": "stack23-ora.admin",
     "ovamac": "00:50:56:00:23:00",
     "pdu": "",
     "type": "esxi"
@@ -248,7 +248,7 @@
     "control": "stack24-control.admin", 
     "data": "stack24-data.admin", 
     "hyper": "stack24-esxi.admin", 
-    "ora": "stack24-ora.admin",
+    "server": "stack24-ora.admin",
     "ovamac": "00:50:56:00:24:00",
     "pdu": "",
     "type": "esxi"
@@ -258,7 +258,7 @@
     "control": "stack25-control.admin", 
     "data": "stack25-data.admin", 
     "hyper": "stack25-esxi.admin", 
-    "ora": "stack25-ora.admin",
+    "server": "stack25-ora.admin",
     "ovamac": "00:50:56:00:25:00",
     "pdu": "",
     "type": "esxi"
@@ -268,7 +268,7 @@
     "control": "stack26-control.admin", 
     "data": "stack26-data.admin", 
     "hyper": "stack26-esxi.admin", 
-    "ora": "stack26-ora.admin",
+    "server": "stack26-ora.admin",
     "ovamac": "00:50:56:00:26:00",
     "pdu": "",
     "type": "esxi"
@@ -278,7 +278,7 @@
     "control": "stack27-control.admin", 
     "data": "stack27-data.admin", 
     "hyper": "stack27-esxi.admin", 
-    "ora": "stack27-ora.admin",
+    "server": "stack27-ora.admin",
     "ovamac": "00:50:56:00:27:00",
     "pdu": "",
     "type": "esxi"
@@ -288,7 +288,7 @@
     "control": "stack28-control.admin", 
     "data": "stack28-data.admin", 
     "hyper": "stack28-esxi.admin", 
-    "ora": "stack28-ora.admin",
+    "server": "stack28-ora.admin",
     "ovamac": "00:50:56:00:28:00",
     "pdu": "",
     "type": "esxi"
@@ -298,7 +298,7 @@
     "control": "stack29-control.admin", 
     "data": "stack29-data.admin", 
     "hyper": "stack29-esxi.admin", 
-    "ora": "stack29-ora.admin",
+    "server": "stack29-ora.admin",
     "ovamac": "00:50:56:00:29:00",
     "pdu": "",
     "type": "esxi"
@@ -308,7 +308,7 @@
     "control": "stack30-control.admin", 
     "data": "stack30-data.admin", 
     "hyper": "stack30-esxi.admin", 
-    "ora": "stack30-ora.admin",
+    "server": "stack30-ora.admin",
     "ovamac": "00:50:56:00:30:00",
     "pdu": "",
     "type": "esxi"

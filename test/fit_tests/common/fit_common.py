@@ -4,8 +4,8 @@ Copyright 2016, EMC, Inc.
 Author(s):
 George Paulos
 
-OnRack/RackHD Functional Integration Test (FIT) library
-This is the main common function library for OnRack/RackHD FIT tests.
+RackHD Functional Integration Test (FIT) library
+This is the main common function library for RackHD FIT tests.
 '''
 
 # Standard imports
@@ -29,13 +29,12 @@ ARGS_LIST = \
     "v": os.getenv("VERBOSITY", "0"),
     "config":  os.getenv("CONFIG", "config"),
     "stack": os.getenv("STACK", "None"), # Stack label
-    "ora": os.getenv("ORA", "localhost"), # Appliance IP or hostname
+    "server": os.getenv("SERVER", "localhost"), # Appliance IP or hostname
     "bmc": "None", # BMC IP or hostname
     "sku": os.getenv("SKU", "all"), # node SKU name
     "obmmac": os.getenv("OBMMAC", "all"), # node OBM MAC address
     "nodeid": os.getenv("NODEID", "None"), # node ID
     "hyper": "None", # hypervisor address
-    "version": os.getenv("VERSION", "onrack-devel"), # code version
     "template": os.getenv("TEMPLATE", "None"), # path or URL link to OVA for deployment
     "xunit": os.getenv("XUNIT", False), # XUNIT output
     "list": os.getenv("LIST", False), # list tests
@@ -88,20 +87,22 @@ for entry in os.listdir(CONFIG_PATH):
 # This section derives default stack configuration data from STACK-CONFIG, use environment to override
 ARGS_LIST.update(
     {
-        "usr": GLOBAL_CONFIG['credentials']['ora'][0]['username'],
-        "pwd": GLOBAL_CONFIG['credentials']['ora'][0]['password']
+        "usr": GLOBAL_CONFIG['credentials']['server'][0]['username'],
+        "pwd": GLOBAL_CONFIG['credentials']['server'][0]['password']
     }
 )
 
 if ARGS_LIST["stack"] != "None":
-    if "ora" in STACK_CONFIG[ARGS_LIST["stack"]]:
-        ARGS_LIST["ora"] = STACK_CONFIG[ARGS_LIST["stack"]]['ora']
+    if "server" in STACK_CONFIG[ARGS_LIST["stack"]]:
+        ARGS_LIST["server"] = STACK_CONFIG[ARGS_LIST["stack"]]['server']
     else:
-        ARGS_LIST["ora"] = "localhost"
+        ARGS_LIST["server"] = "localhost"
     if "bmc" in STACK_CONFIG[ARGS_LIST["stack"]]:
         ARGS_LIST["bmc"] = STACK_CONFIG[ARGS_LIST["stack"]]['bmc']
     if "hyper" in STACK_CONFIG[ARGS_LIST["stack"]]:
         ARGS_LIST["hyper"] = STACK_CONFIG[ARGS_LIST["stack"]]['hyper']
+
+ARGS_LIST["ora"] = ARGS_LIST["server"]
 
 # set api port and protocol from command line
 if ARGS_LIST['port'] != "None":
@@ -114,7 +115,7 @@ if ARGS_LIST['https'] == "True":
     API_PROTOCOL = "https"
     if API_PORT == "None":
         API_PORT = GLOBAL_CONFIG['ports']['https']
-if ARGS_LIST["ora"] == "localhost":
+if ARGS_LIST["server"] == "localhost":
     if API_PROTOCOL == "None":
         API_PROTOCOL = 'http'
     if API_PORT == "None":
@@ -138,9 +139,9 @@ def countdown(sleep_time, sleep_interval=1):
     print "Waking!"
     return
 
-def remote_shell(shell_cmd, expect_receive="", expect_send="", timeout=300, address=ARGS_LIST['ora'], user=ARGS_LIST['usr'], password=ARGS_LIST['pwd']):
+def remote_shell(shell_cmd, expect_receive="", expect_send="", timeout=300, address=ARGS_LIST['server'], user=ARGS_LIST['usr'], password=ARGS_LIST['pwd']):
     '''
-    Run ssh based shell command on a remote machine at ARGS_LIST["ora"]
+    Run ssh based shell command on a remote machine at ARGS_LIST["server"]
 
     :param shell_cmd: string based command
     :param expect_receive:
@@ -162,7 +163,7 @@ def remote_shell(shell_cmd, expect_receive="", expect_send="", timeout=300, addr
         logfile_redirect = sys.stdout
 
     # if localhost just run the command local
-    if ARGS_LIST['ora'] == 'localhost':
+    if ARGS_LIST['server'] == 'localhost':
         (command_output, exitstatus) = \
             pexpect.run("sudo bash -c \"" + shell_cmd + "\"",
                         withexitstatus=1,
@@ -195,10 +196,12 @@ def remote_shell(shell_cmd, expect_receive="", expect_send="", timeout=300, addr
 
     return {'stdout':command_output, 'exitcode':exitstatus}
 
-
 def scp_file_to_ora(src_file_name):
+    return scp_file_to_server(src_file_name)
+
+def scp_file_to_server(src_file_name):
     '''
-    scp the given file over to the ORA and place it in onrack's
+    scp the given file over to the SERVER and place it in onrack's
     home directory.
 
     :param src_file_name: name of file to copy over. May include path
@@ -210,14 +213,14 @@ def scp_file_to_ora(src_file_name):
     logfile_redirect = file('/dev/null', 'w')
     just_fname = os.path.basename(src_file_name)
     # if localhost just copy to home dir
-    if ARGS_LIST['ora'] == 'localhost':
+    if ARGS_LIST['server'] == 'localhost':
         remote_shell('cp ' + src_file_name + ' ~/' + src_file_name)
         return src_file_name
 
-    scp_target = ARGS_LIST['usr'] + '@{0}:'.format(ARGS_LIST["ora"])
+    scp_target = ARGS_LIST['usr'] + '@{0}:'.format(ARGS_LIST["server"])
     cmd = 'scp -o StrictHostKeyChecking=no {0} {1}'.format(src_file_name, scp_target)
     if VERBOSITY >= 4:
-        print "scp_file_to_ora: '{0}'".format(cmd)
+        print "scp_file_to_server: '{0}'".format(cmd)
 
     if VERBOSITY >= 9:
         logfile_redirect = sys.stdout
@@ -227,7 +230,7 @@ def scp_file_to_ora(src_file_name):
         events={'(?i)assword: ':ARGS_LIST['pwd'] + '\n'},
         logfile=logfile_redirect)
     if VERBOSITY >= 4:
-        print "scp_file_to_ora: Exit Code = {0}".format(ecode)
+        print "scp_file_to_server: Exit Code = {0}".format(ecode)
 
     assert ecode == 0, \
         'failed "{0}" because {1}. Output={2}'.format(cmd, ecode, command_output)
@@ -240,17 +243,17 @@ def get_auth_token():
     api_login = {"username": GLOBAL_CONFIG["api"]["admin_user"], "password": GLOBAL_CONFIG["api"]["admin_pass"]}
     redfish_login = {"UserName": GLOBAL_CONFIG["api"]["admin_user"], "Password": GLOBAL_CONFIG["api"]["admin_pass"]}
     try:
-        restful("https://" + ARGS_LIST['ora'] + ":" + str(API_PORT) +
+        restful("https://" + ARGS_LIST['server'] + ":" + str(API_PORT) +
                        "/login", rest_action="post", rest_payload=api_login, rest_timeout=2)
     except:
         AUTH_TOKEN = "Unavailable"
         return False
     else:
-        api_data = restful("https://" + ARGS_LIST['ora'] + ":" + str(API_PORT) +
+        api_data = restful("https://" + ARGS_LIST['server'] + ":" + str(API_PORT) +
                            "/login", rest_action="post", rest_payload=api_login, rest_timeout=2)
         if api_data['status'] == 200:
             AUTH_TOKEN = str(api_data['json']['token'])
-            redfish_data = restful("https://" + ARGS_LIST['ora'] + ":" + str(API_PORT) +
+            redfish_data = restful("https://" + ARGS_LIST['server'] + ":" + str(API_PORT) +
                                "/redfish/v1/SessionService/Sessions", rest_action="post", rest_payload=redfish_login, rest_timeout=2)
             if 'x-auth-token' in redfish_data['headers']:
                 REDFISH_TOKEN =  redfish_data['headers']['x-auth-token']
@@ -286,7 +289,7 @@ def rackhdapi(url_cmd, action='get', payload=[], timeout=None, headers={}):
     if API_PROTOCOL == "None":
         if API_PORT == "None":
             API_PORT = str(GLOBAL_CONFIG['ports']['http'])
-        if restful("http://" + ARGS_LIST['ora'] + ":" + str(API_PORT) + "/", rest_timeout=2)['status'] == 0:
+        if restful("http://" + ARGS_LIST['server'] + ":" + str(API_PORT) + "/", rest_timeout=2)['status'] == 0:
             API_PROTOCOL = 'https'
             API_PORT = str(GLOBAL_CONFIG['ports']['https'])
         else:
@@ -297,7 +300,7 @@ def rackhdapi(url_cmd, action='get', payload=[], timeout=None, headers={}):
     if AUTH_TOKEN == "None":
         get_auth_token()
 
-    return restful(API_PROTOCOL + "://" + ARGS_LIST['ora'] + ":" + str(API_PORT) + url_cmd,
+    return restful(API_PROTOCOL + "://" + ARGS_LIST['server'] + ":" + str(API_PORT) + url_cmd,
                        rest_action=action, rest_payload=payload, rest_timeout=timeout, rest_headers=headers)
 
 def restful(url_command, rest_action='get', rest_payload=[], rest_timeout=None, sslverify=False, rest_headers={}):
@@ -864,12 +867,11 @@ def run_nose(nosepath):
         return subprocess.call(
                          [
                              'export VERBOSITY=' + str(ARGS_LIST['v']) + ';' +
-                             'export ORA=' + str(ARGS_LIST['ora']) + ';' +
+                             'export SERVER=' + str(ARGS_LIST['server']) + ';' +
                              'export STACK=' + str(ARGS_LIST['stack']) + ';' +
                              'export SKU="' + str(ARGS_LIST['sku']) + '";' +
                              'export NODEID=' + str(ARGS_LIST['nodeid']) + ';' +
                              'export OBMMAC=' + str(ARGS_LIST['obmmac']) + ';' +
-                             'export VERSION=' + str(ARGS_LIST['version']) + ';' +
                              'export TEMPLATE=' + str(ARGS_LIST['template']) + ';' +
                              'export XUNIT=' + str(ARGS_LIST['xunit']) + ';' +
                              'export GROUP=' + str(ARGS_LIST['group']) + ';' +
