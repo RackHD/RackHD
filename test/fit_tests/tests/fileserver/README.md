@@ -1,7 +1,7 @@
 # External File Server(On-static) Test:
 
 This test validate the function of RackHD On-static file server. You need put an config file in the /config directory containing the test file url. The test date should write in jon format and save as fileserver_config.jon. The following is an example.
-The first part contains external OS image repos, the second part contains microkernel image repos.
+The first part contains external OS image repos, the second part contains microkernel image repos, the third party is the credential of fileserver used for testing local iso mount.
 
 Sample global_config.json file:
 
@@ -35,6 +35,9 @@ Sample global_config.json file:
     "microkernel":["http://web.hwimo.lab.emc.com/autotest/staticfile/vmlinuz-3.16.0-25-generic",
                    "http://web.hwimo.lab.emc.com/autotest/staticfile/discovery.overlay.cpio.gz",
                    "http://web.hwimo.lab.emc.com/autotest/staticfile/initrd.img-3.16.0-25-generic",
-                   "http://web.hwimo.lab.emc.com/autotest/staticfile/base.trusty.3.16.0-25-generic.squashfs.img"]
+                   "http://web.hwimo.lab.emc.com/autotest/staticfile/base.trusty.3.16.0-25-generic.squashfs.img"],
+    "usr":"onrack",
+    "pwd":"onrack"
+
 }
 

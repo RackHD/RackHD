@@ -262,6 +262,20 @@ def upload_iso_file(osname,osversion,filename):
          print 'Incorrect HTTP return code, expected 201, got:' + str(response['status'])
          return "fail"
 
+
+def upload_iso_file_to_store(filename):
+
+    serverip=os.getenv("IMAGESERVER", "localhost")
+    mon_url = '/iso?name='+ filename
+    file = open(filename, 'rb')
+    response =filerestful( "http://" + serverip + ":7070" + mon_url,rest_action="binary-put", rest_payload=file, rest_timeout=None, rest_headers={})
+    if response['status'] in range(200,205):
+         return response['json']
+    else:
+         print 'Incorrect HTTP return code, expected 201, got:' + str(response['status'])
+         return "fail"
+
+
 def upload_os_by_network(osname,osversion,source_url):
     mon_url = '/images?name='+osname+'&version='+osversion+'&isoweb='+source_url
     serverip=os.getenv("IMAGESERVER", "localhost")
@@ -272,6 +286,27 @@ def upload_os_by_network(osname,osversion,source_url):
     else:
          print 'Incorrect HTTP return code, expected 201, got:' + str(response['status'])
          return "fail"
+
+def upload_os_by_store(osname,osversion,filename):
+    mon_url = '/images?name='+osname+'&version='+osversion+'&isostore='+filename
+    serverip=os.getenv("IMAGESERVER", "localhost")
+    response =filerestful( "http://" +serverip + ":7070" + mon_url,rest_action="put", rest_payload={}, rest_timeout=None, rest_headers={})
+    if response['status'] in range(200,205):
+         return response['json']
+    else:
+         print 'Incorrect HTTP return code, expected 201, got:' + str(response['status'])
+         return "fail"
+
+def upload_os_from_local(osname,osversion,path):
+    mon_url = '/images?name='+osname+'&version='+osversion+'&isolocal='+path
+    serverip=os.getenv("IMAGESERVER", "localhost")
+    response =filerestful( "http://" +serverip + ":7070" + mon_url,rest_action="put", rest_payload={}, rest_timeout=None, rest_headers={})
+    if response['status'] in range(200,205):
+         return response['json']
+    else:
+         print 'Incorrect HTTP return code, expected 201, got:' + str(response['status'])
+         return "fail"
+
 
 def list_os_image():
     mon_url = '/images'
@@ -370,6 +405,33 @@ class static_os_file_server(fit_common.unittest.TestCase):
                 self.assertTrue(mount_local_os_repo(file_name,os_name),"Could not mount ISO")
                 self.assertTrue(compare_repo(os_name,os_version),"Fileserver compare failed!")
                 release(file_name,os_name)
+
+    def test_create_os_repo_from_store(self):
+        for osrepo in FILE_CONFIG["os_image"]:
+            os_name=osrepo["osname"]
+            os_version=osrepo["version"]
+            iso_url=osrepo["url"]
+            file_name=download_file(iso_url)
+            self.assertNotEqual(upload_iso_file_to_store(file_name),"fail","upload image failed!")
+            self.assertNotEqual(upload_os_by_store(os_name,os_version,file_name),"fail","upload image failed!")
+            self.assertTrue(mount_local_os_repo(file_name,os_name),"Could not mount ISO")
+            self.assertTrue(compare_repo(os_name,os_version),"Fileserver compare failed!")
+            release(file_name,os_name)
+
+    def test_create_os_repo_from_local(self):
+        for osrepo in FILE_CONFIG["os_image"]:
+            os_name=osrepo["osname"]
+            os_version=osrepo["version"]
+            iso_url=osrepo["url"]
+            servercmd="wget "+osrepo["url"]
+            serverip=os.getenv("IMAGESERVER", "localhost")
+            fit_common.remote_shell(shell_cmd=servercmd, address=serverip, user=FILE_CONFIG['usr'], password=FILE_CONFIG['pwd'])
+            path="/home/"+FILE_CONFIG['usr']
+            file_name=download_file(iso_url)
+            self.assertNotEqual(upload_os_from_local(os_name,os_version,path+'/'+file_name),"fail","upload image failed!")
+            self.assertTrue(mount_local_os_repo(file_name,os_name),"Could not mount ISO")
+            self.assertTrue(compare_repo(os_name,os_version),"Fileserver compare failed!")
+            release(file_name,os_name)
 
     def test_list_images(self):
         os_id_list=[]
