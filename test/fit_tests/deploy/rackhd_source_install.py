@@ -123,7 +123,7 @@ class rackhd_source_install(fit_common.unittest.TestCase):
         print "**** Run RackHD Ansible installer."
         self.assertEqual(fit_common.remote_shell(PROXYVARS +
                                                  "cd ~/rackhd/packer/ansible/;"
-                                                 "ansible-playbook -i 'local,' -c local rackhd_local.yml",
+                                                 "ansible-playbook -i 'local,' -c local rackhd_source.yml",
                                                  timeout=2000,
                                                  )['exitcode'], 0, "RackHD Install failure.")
 
