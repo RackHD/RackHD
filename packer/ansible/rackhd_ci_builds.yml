@@ -11,6 +11,7 @@
     - node
     - isc-dhcp-server
     - monorail
+    - config_admin_ip
     - snmptool
     - ipmitool
     - integrationtest
