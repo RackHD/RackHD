@@ -89,5 +89,6 @@
     "_comment": "These are the northbound rest API port assignments",
     "http": 8080,
     "https": 443
-  }
+  },
+  "ovaoui": "00:50:56"
 }
