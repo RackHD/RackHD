@@ -156,6 +156,13 @@ then
     # add new primary setting( use echo ${PRIM_ETH_CFG} to eliminate the newlines to make 'sed' happy
     sed -i "s/iface lo inet loopback/iface lo inet loopback\n$( echo ${PRIM_ETH_CFG})/"  ${target_file}
     # Force restart primary nic ###
+    if [[ -f /run/network/ifup-${PRI_ETH}.pid ]]
+    then
+       DHCP_PID=$(cat /run/network/ifup-${PRI_ETH}.pid )
+       echo "process ${DHCP_PID} is already running to get DHCP for ${PRI_ETH}. But because user assign static IP ${IP}, so force kill the DHCP process.."
+       kill -9 ${DHCP_PID}
+       sleep 2  # wait a while for clean killing
+    fi
     ifdown ${PRI_ETH}
     ifup ${PRI_ETH}
 else
