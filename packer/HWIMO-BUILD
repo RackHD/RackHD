@@ -227,6 +227,7 @@ fi
 #  Reference: http://www.v-front.de/2014/01/building-self-configuring-nested-esxi.html
 #
 ###################################################################
+rm -f $"${BASENAME}.mf" # remove checksum file, otherwise, existing mf file will prevent ovftool coverting
 echo "covert to OVF"
 OVF=$"${BASENAME}.ovf"
 ovftool $OVA  $OVF
