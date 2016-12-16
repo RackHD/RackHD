@@ -171,9 +171,13 @@ def filerestful(url_command, rest_action='get', rest_payload=[], rest_timeout=No
 
 def mount_local_os_repo(file_name,mountpoint):
     try:
+        password=FILE_CONFIG["supwd"]
         if os.path.exists(mountpoint)==False:
-            os.system("sudo mkdir "+mountpoint)
-        os.system("sudo mount -o rw,loop "+file_name+" "+mountpoint)
+            command="mkdir "+mountpoint #os.system("sudo mkdir "+mountpoint)
+            os.popen("sudo -S %s" % (command), 'w').write(password)
+        #os.system("sudo mount -o rw,loop "+file_name+" "+mountpoint)
+        command ="mount -o rw,loop "+file_name+" "+mountpoint
+        os.popen("sudo -S %s" % (command), 'w').write(password)
         return True
     except OSError:
         return False
@@ -373,6 +377,12 @@ def wait_for_task_complete(taskid, retries=60):
 from nose.plugins.attrib import attr
 @attr(all=True, regression=False, smoke=False)
 class static_os_file_server(fit_common.unittest.TestCase):
+    def setUp(self):
+        self.test_delete_all_images()
+
+    def tearDown(self):
+        self.test_delete_all_images()
+
     def test_create_os_repo_from_iso_upload(self):
         for osrepo in FILE_CONFIG["os_image"]:
             file_name=download_file(osrepo["url"])
@@ -380,6 +390,7 @@ class static_os_file_server(fit_common.unittest.TestCase):
             self.assertTrue(mount_local_os_repo(file_name,osrepo["osname"]),"Could not mount ISO")
             self.assertTrue(compare_repo(osrepo["osname"],osrepo["version"]),"Fileserver compare failed!")
             release(file_name,osrepo["osname"])
+        self.test_delete_all_images()
 
 
     def test_create_os_repo_from_http(self):
@@ -393,6 +404,7 @@ class static_os_file_server(fit_common.unittest.TestCase):
                 self.assertTrue(mount_local_os_repo(file_name,os_name),"Could not mount ISO")
                 self.assertTrue(compare_repo(os_name,os_version),"Fileserver compare failed!")
                 release(file_name,os_name)
+        self.test_delete_all_images()
 
     def test_create_os_repo_from_ftp(self):
         for osrepo in FILE_CONFIG["os_image"]:
@@ -405,6 +417,7 @@ class static_os_file_server(fit_common.unittest.TestCase):
                 self.assertTrue(mount_local_os_repo(file_name,os_name),"Could not mount ISO")
                 self.assertTrue(compare_repo(os_name,os_version),"Fileserver compare failed!")
                 release(file_name,os_name)
+        self.test_delete_all_images()
 
     def test_create_os_repo_from_store(self):
         for osrepo in FILE_CONFIG["os_image"]:
@@ -417,6 +430,7 @@ class static_os_file_server(fit_common.unittest.TestCase):
             self.assertTrue(mount_local_os_repo(file_name,os_name),"Could not mount ISO")
             self.assertTrue(compare_repo(os_name,os_version),"Fileserver compare failed!")
             release(file_name,os_name)
+        self.test_delete_all_images()
 
     def test_create_os_repo_from_local(self):
         for osrepo in FILE_CONFIG["os_image"]:
@@ -432,6 +446,7 @@ class static_os_file_server(fit_common.unittest.TestCase):
             self.assertTrue(mount_local_os_repo(file_name,os_name),"Could not mount ISO")
             self.assertTrue(compare_repo(os_name,os_version),"Fileserver compare failed!")
             release(file_name,os_name)
+        self.test_delete_all_images()
 
     def test_list_images(self):
         os_id_list=[]
@@ -452,22 +467,6 @@ class static_os_file_server(fit_common.unittest.TestCase):
                     break
             self.assertTrue(found_flag,"image with id "+osid+" not found!")
         print "Found all os, list is correct!"
-
-    def test_delete_all_images(self):
-        os_image_list=list_os_image()
-        serverip=os.getenv("IMAGESERVER", "localhost")
-        for image_repo in os_image_list:
-            self.assertNotEqual(delete_os_image(image_repo["name"],image_repo["version"]),"fail","delete image failed!")
-            fileurlprefix="http://"+serverip+":9090/"+image_repo["name"]+'/'+image_repo["version"]+'/'
-            self.assertFalse(file_exists(fileurlprefix),"The repo url does not deleted completely")
-        os_image_list_clear=list_os_image()
-        self.assertTrue(os_image_list_clear==[])
-        os_iso_list=list_os_iso()
-        for iso_repo in os_iso_list:
-            self.assertNotEqual(delete_os_iso(iso_repo["name"]),"fail","delete iso failed!")
-        os_iso_list_clear=list_os_iso()
-        self.assertTrue(os_iso_list_clear==[],"The iso does not deleted completely")
-        print "All repo is cleared!"
 
     def test_bootstrapping_ext_esxi6(self):
         NODECATALOG = fit_common.node_select()
@@ -505,6 +504,22 @@ class static_os_file_server(fit_common.unittest.TestCase):
                          'Was expecting code 201. Got ' + str(result['status']))
         self.assertEqual(wait_for_task_complete(result['json']["instanceId"], retries=80), True,
                          'TaskID ' + result['json']["instanceId"] + ' not successfully completed.')
+
+    def test_delete_all_images(self):
+        os_image_list=list_os_image()
+        serverip=os.getenv("IMAGESERVER", "localhost")
+        for image_repo in os_image_list:
+            self.assertNotEqual(delete_os_image(image_repo["name"],image_repo["version"]),"fail","delete image failed!")
+            fileurlprefix="http://"+serverip+":9090/"+image_repo["name"]+'/'+image_repo["version"]+'/'
+            self.assertFalse(file_exists(fileurlprefix),"The repo url does not deleted completely")
+        os_image_list_clear=list_os_image()
+        self.assertTrue(os_image_list_clear==[])
+        os_iso_list=list_os_iso()
+        for iso_repo in os_iso_list:
+            self.assertNotEqual(delete_os_iso(iso_repo["name"]),"fail","delete iso failed!")
+        os_iso_list_clear=list_os_iso()
+        self.assertTrue(os_iso_list_clear==[],"The iso does not deleted completely")
+        print "All repo is cleared!"
 
 if __name__ == '__main__':
     fit_common.unittest.main()

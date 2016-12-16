@@ -1,7 +1,12 @@
 # External File Server(On-static) Test:
 
-This test validate the function of RackHD On-static file server. You need put an config file in the /config directory containing the test file url. The test date should write in jon format and save as fileserver_config.jon. The following is an example.
-The first part contains external OS image repos, the second part contains microkernel image repos, the third party is the credential of fileserver used for testing local iso mount.
+This test validate the function of RackHD On-static file server. You need put an config file in the /config directory containing the test file url. The test date should write in json format and save as fileserver_config.jon. The following is an example.
+The first part contains external OS image repos, the second part contains microkernel image repos, the third part is the credential of fileserver used for testing local iso mount.
+When test the fileserver, you need set a environment variable $IMAGESERVER first, then you can run the FIT test.
+`export IMAGESERVER=XX.XX.XX.XX
+python run_tests.py -test ./tests/fileserver/test_os_static_file_server.py  -ora XX.XX.XX.XX 
+`
+
 
 Sample global_config.json file:
 

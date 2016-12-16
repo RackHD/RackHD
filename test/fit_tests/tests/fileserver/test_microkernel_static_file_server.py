@@ -297,8 +297,15 @@ def apply_obmsetting(nodeid):
 
 # Select test group here using @attr
 from nose.plugins.attrib import attr
-@attr(all=True, regression=True, smoke=True)
+@attr(all=True, regression=False, smoke=False)
 class static_microkernel_file_server(fit_common.unittest.TestCase):
+    def setUp(self):
+        self.test_delete_microkernels()
+
+
+    def tearDown(self):
+        self.test_delete_microkernels()
+
     def test_upload_list_microkernel(self):
         microkernel_list=[]
         serverip=os.getenv("IMAGESERVER", "localhost")
@@ -333,6 +340,7 @@ class static_microkernel_file_server(fit_common.unittest.TestCase):
 
     def test_rediscover(self):
         #Select one node at random that's not a management server
+        self.test_upload_list_microkernel()
         NODECATALOG = fit_common.node_select()
         NODE = ""
         for dummy in NODECATALOG:
