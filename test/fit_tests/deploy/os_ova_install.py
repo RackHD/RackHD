@@ -4,7 +4,11 @@ Copyright 2015, EMC, Inc.
 Author(s):
 George Paulos
 
-This script installs blank OVA template.
+This script installs blank OVA templates into selected stack.
+if numvms is greater than 1, MAC address installation on OVA is done by stack number convention
+
+usage:
+    python run_tests.py -stack <stack ID> -numvms <number> -test deploy/os_ova_install.py
 '''
 
 import os
@@ -52,7 +56,6 @@ class os_ova_install(fit_common.unittest.TestCase):
                 break
 
         # Run OVA installer
-        oui = fit_common.GLOBAL_CONFIG['ovaoui']
         for vm in range(0, numvms):
             print '**** Deploying OVA file on hypervisor ' + fit_common.ARGS_LIST['hyper']
             rc = subprocess.call("ovftool --X:injectOvfEnv --overwrite "
@@ -72,12 +75,18 @@ class os_ova_install(fit_common.unittest.TestCase):
 
             # Wait for VM to settle
             fit_common.countdown(30)
+
+            # check number of vms for deployment
+            if numvms == 1:
+                ovamacs = fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']]['ovamac']
+            else:
+                ovamacs = fit_common.GLOBAL_CONFIG['ovaoui'] + ":00:" + fit_common.ARGS_LIST['stack'] + ":0" + str(vm)
             # Install MAC address by editing OVA .vmx file, then startup VM
-            esxi_command = "export fullpath=`find vmfs -name ora-stack-" + fit_common.ARGS_LIST['stack'] + "-" + str(vm) + ".vmx`;" \
+            esxi_command = "export fullpath=`find vmfs -name ora-stack-" + fit_common.ARGS_LIST['stack'] + "-" + str(vm) + "*.vmx`;" \
                            "for file in $fullpath;" \
                            "do " \
                            "export editline=`cat $file |grep \\\'ethernet0.generatedAddress =\\\'`;" \
-                           "export editcmd=\\\'/\\\'$editline\\\'\/ c\\\ethernet0.address = \\\"" + oui + ":00:" + fit_common.ARGS_LIST['stack'] + ":0" + str(vm) + "\\\"\\\';" \
+                           "export editcmd=\\\'/\\\'$editline\\\'\/ c\\\ethernet0.address = \\\"" + ovamacs + "\\\"\\\';" \
                            "sed -i \\\"$editcmd\\\" $file;" \
                            "sed -i \\\'/ethernet0.addressType = \\\"vpx\\\"/ c\\\ethernet0.addressType = \\\"static\\\"\\\' $file;" \
                            "sed -i \\\'/ethernet0.addressType = \\\"generated\\\"/ c\\\ethernet0.addressType = \\\"static\\\"\\\' $file;" \
