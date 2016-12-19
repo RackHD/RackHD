@@ -1,0 +1,25 @@
+---
+- name: Development Server
+  hosts: local
+  sudo: no
+  roles:
+    - apt
+    - build
+    - git
+    - rabbitmq
+    - mongodb
+    - node
+    - isc-dhcp-server
+    - monorail
+    - snmptool
+    - ipmitool
+    - foreman
+    - pm2
+    - localsource
+    - images
+    - swagger
+    - integrationtest
+    - postgresql
+  vars:
+# branch of https://github.com/rackhd/rackhd to be used
+    - branch: "master"
