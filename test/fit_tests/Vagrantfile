@@ -30,10 +30,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             sudo apt-get -y update
             sudo apt-get -y install python-pip
             sudo apt-get -y install virtualenv
-            virtualenv .venv
-            source .venv/bin/activate
-            pip install -r fit_tests/requirements.txt
             cd fit_tests/test/fit_tests
+	    ./mkenv.sh vagrant
+	    source myenv_vagrant
             python run_tests.py -test deploy/rackhd_source_install.py -v 9
             python run_tests.py -test deploy/rackhd_stack_init.py:rackhd_stack_init.test01_preload_sku_packs -stack vagrant -v 9
         SHELL
