@@ -1,0 +1,76 @@
+######################
+# Vagrant File Start #
+######################
+
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+    config.vm.provider 'virtualbox' do |vb|
+      vb.customize ['modifyvm', :id, '--cableconnected1', 'on']
+    end
+
+    # RackHD SERVER (Install and start RackHD server)
+    config.vm.define "dev" do |target|
+        target.vm.box = "bento/ubuntu-16.04"
+        target.vm.provider "virtualbox" do |v|
+            v.memory = 4096
+            v.cpus = 4
+            v.customize ["modifyvm", :id, "--nicpromisc2", "allow-all", "--ioapic", "on"]
+        end
+        target.ssh.username = "vagrant"
+        target.ssh.password = "vagrant"
+        target.vm.network "private_network", ip: "172.31.128.1", virtualbox__intnet: "closednet"
+        target.ssh.forward_agent = true
+        target.vm.network "forwarded_port", guest: 8080, host: 8080
+        target.vm.network "forwarded_port", guest: 9080, host: 9080
+        target.vm.network "forwarded_port", guest: 9090, host: 9090
+        target.vm.network "forwarded_port", guest: 443, host: 443
+        target.vm.provision "shell", inline: <<-SHELL
+            git clone https://github.com/RackHD/RackHD fit_tests
+            sudo apt-get -y update
+            sudo apt-get -y install python-pip
+            sudo apt-get -y install virtualenv
+            virtualenv .venv
+            source .venv/bin/activate
+            pip install -r fit_tests/requirements.txt
+            cd fit_tests/test
+            python run_tests.py -test deploy/rackhd_source_install.py -v 9
+            python run_tests.py -test deploy/rackhd_stack_init.py:rackhd_stack_init.test01_preload_sku_packs -stack vagrant -v 9
+        SHELL
+    end
+
+    # Virtual HW SERVER (Virtual Quanta D51 node)
+    config.vm.define "quanta_d51" do |d51|
+        d51.vm.box = "InfraSIM/quanta_d51"
+        d51.vm.provider "virtualbox" do |v|
+            v.memory = 4096
+            v.cpus = 4
+            v.customize ["modifyvm", :id, "--nicpromisc2", "allow-all", "--ioapic", "on"]
+        end
+        d51.vm.network "private_network", virtualbox__intnet: "closednet", auto_config: false, nic_type: "82540EM"
+        d51.vm.provision "shell", inline: <<-SHELL
+            sudo ifconfig eth1 up
+            sleep 10
+            sudo udhcpc -i br1
+        SHELL
+    end
+
+    # RackHD SERVER TEMPLATE (RackHD installer downloaded but not installed)
+    config.vm.define "template", autostart: false do |target|
+        target.vm.box = "bento/ubuntu-16.04"
+        target.vm.provider "virtualbox" do |v|
+            v.memory = 4096
+            v.cpus = 4
+            v.customize ["modifyvm", :id, "--nicpromisc2", "allow-all", "--ioapic", "on"]
+        end
+        target.ssh.username = "vagrant"
+        target.ssh.password = "vagrant"
+        target.vm.network "private_network", ip: "172.31.128.1", virtualbox__intnet: "closednet"
+        target.ssh.forward_agent = true
+        target.vm.provision "shell", inline: <<-SHELL
+            git clone https://github.com/RackHD/RackHD fit_tests
+        SHELL
+    end
+
+
+end
