@@ -174,22 +174,34 @@ def remote_shell(shell_cmd, expect_receive="", expect_send="", timeout=300, addr
     subprocess.call(["touch ~/.ssh/known_hosts;ssh-keygen -R "
                      + address  + " -f ~/.ssh/known_hosts >/dev/null 2>&1"], shell=True)
 
-    shell_cmd.replace("'", "\\\'")
+    shell_cmd.replace("'", "\\\'") # fix for single quotes
+
+    # for vagrant deployments use port 2222
+    sshcmd = "ssh -q -o StrictHostKeyChecking=no -t "
+    try:
+        STACK_CONFIG[ARGS_LIST["stack"]]["type"]
+    except:
+        pass
+    else:
+        if STACK_CONFIG[ARGS_LIST["stack"]]["type"] == "vagrant":
+            sshcmd = sshcmd + "-p 2222 "
+
     if expect_receive == "" or expect_send == "":
         (command_output, exitstatus) = \
-            pexpect.run("ssh -q -o StrictHostKeyChecking=no -t " + user + "@"
+            pexpect.run(sshcmd + user + "@"
                         + address + " sudo bash -c \\\"" + shell_cmd + "\\\"",
                         withexitstatus=1,
                         events={"assword": password + "\n"},
                         timeout=timeout, logfile=logfile_redirect)
     else:
         (command_output, exitstatus) = \
-            pexpect.run("ssh -q -o StrictHostKeyChecking=no -t " + user + "@"
+            pexpect.run(sshcmd + user + "@"
                         + address + " sudo bash -c \\\"" + shell_cmd + "\\\"",
                         withexitstatus=1,
                         events={"assword": password + "\n",
                                 expect_receive: expect_send + "\n"},
                         timeout=timeout, logfile=logfile_redirect)
+
     if VERBOSITY >= 4:
         print shell_cmd, "\nremote_shell: Exit Code =", exitstatus
 
@@ -214,8 +226,19 @@ def scp_file_to_ora(src_file_name):
         remote_shell('cp ' + src_file_name + ' ~/' + src_file_name)
         return src_file_name
 
+    # otherwise run scp to upload files
     scp_target = ARGS_LIST['usr'] + '@{0}:'.format(ARGS_LIST["ora"])
+
+    # for vagrant deployments use port 2222
     cmd = 'scp -o StrictHostKeyChecking=no {0} {1}'.format(src_file_name, scp_target)
+    try:
+        STACK_CONFIG[ARGS_LIST["stack"]]["type"]
+    except:
+        pass
+    else:
+        if STACK_CONFIG[ARGS_LIST["stack"]]["type"] == "vagrant":
+            cmd = 'scp -P 2222 -o StrictHostKeyChecking=no {0} {1}'.format(src_file_name, scp_target)
+
     if VERBOSITY >= 4:
         print "scp_file_to_ora: '{0}'".format(cmd)
 
