@@ -11,7 +11,7 @@
         "password": "password"
       }
     ],
-    "ora": [
+    "server": [
       {
         "username": "vagrant",
         "password": "vagrant"

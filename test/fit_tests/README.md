@@ -47,7 +47,7 @@ More details in config/README.md.
 All FIT tests can be run from the wrapper 'run_tests.py':
 
     usage: run_tests.py [-h] [-test TEST] [-config CONFIG] [-group GROUP]
-                        [-stack STACK] [-ora ORA] [-version VERSION] [-xunit]
+                        [-stack STACK] [-server SERVER] [-version VERSION] [-xunit]
                         [-list] [-sku SKU] [-obmmac OBMMAC | -nodeid NODEID]
                         [-http | -https] [-v V]
 
@@ -59,8 +59,8 @@ All FIT tests can be run from the wrapper 'run_tests.py':
       -config CONFIG      config file location, default: fit_tests/config
       -group GROUP        test group to execute: 'smoke', 'regression',
                           'extended', default: 'all'
-      -stack STACK        stack label (test bed), overrides -ora
-      -ora ORA            OnRack/RackHD appliance IP address or hostname, default:
+      -stack STACK        stack label (test bed), overrides -server
+      -server SERVER 	  RackHD appliance IP address or hostname, default:
                           localhost
       -version VERSION    OnRack package install version, example:onrack-
                           release-0.3.0, default: onrack-devel
@@ -86,18 +86,18 @@ This example will run the RackHD installer onto stack 1 via the wrapper script:
     python run_tests.py -stack 1 -test deploy/run_rackhd_installer.py
 
 
-The -stack or -ora argument can be omitted when running on the server or appliance. The test defaults to localhost:8080 for API calls.
+The -stack or -server argument can be omitted when running on the server or appliance. The test defaults to localhost:8080 for API calls.
 
 This example will run the smoke test from the appliance node or the default Vagrant test bed:
 
     python run_tests.py -test tests -group smoke
 
 
-Alternatively tests can be run directly from nose. Runtime parameters such as ORA address must be set in the environment.
+Alternatively tests can be run directly from nose. Runtime parameters such as SERVER address must be set in the environment.
 
-The following example will run all the entire test harness from a third party machine to ORA at 192.168.1.1:
+The following example will run all the entire test harness from a third party machine to SERVER at 192.168.1.1:
 
-    export ORA=192.168.1.1
+    export SERVER=192.168.1.1
     nosetests -s tests
 
 
