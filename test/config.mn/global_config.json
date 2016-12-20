@@ -1,0 +1,96 @@
+{
+  "credentials": {
+    "_comment": "This is the list of credentials for each type of node or service",
+    "hyper": [
+      {
+        "username": "root",
+        "password": "1234567"
+      },
+      {
+        "username": "root",
+        "password": "password"
+      }
+    ],
+    "ora": [
+      {
+        "username": "onrack",
+        "password": "onrack"
+      }
+    ],
+    "bmc": [
+      {
+        "username": "admin",
+        "password": "admin"
+      },
+      {
+        "username": "root",
+        "password": "1234567"
+      }
+    ],
+    "node": [
+      {
+        "username": "root",
+        "password": "1234567"
+      },
+      {
+        "username": "onrack",
+        "password": "onrack"
+      }
+    ],
+    "switch": [
+      {
+        "username": "admin",
+        "password": "1234567"
+      }
+    ],
+    "pdu": [
+      {
+        "username": "admn",
+        "password": "admn"
+      }
+    ]
+  },
+  "api": {
+      "admin_user": "admin",
+      "admin_pass": "admin123"
+  },
+  "snmp":{
+    "community": "onrack"
+  },
+  "repos": {
+    "_comment":   "This is the list of repositories for each category",
+    "proxy":      "http://web.hwimo.lab.emc.com:3128",
+    "proxyhost":  "web.hwimo.lab.emc.com",
+    "proxyport":  "3128",
+    "mirror":     "http://mirrors.hwimo.lab.emc.com/mirrors",
+    "os": {
+      "esxi55":   "http://172.31.128.1:9080/mirror/esxi/5.5/esxi",
+      "esxi60":   "http://172.31.128.1:9080/mirror/esxi/6.0/esxi6",
+      "centos65": "http://172.31.128.1:9080/mirror/centos/6.5/os/x86_64",
+      "centos70": "http://172.31.128.1:9080/mirror/centos/7/os/x86_64",
+      "rhel70":   "http://172.31.128.1:9080/mirror/rhel/7.0/os/x86_64"
+    },
+    "install": {
+      "template":     "http://mirrors.hwimo.lab.emc.com/mirrors/ova/ora-ubuntu-1604.ova",
+      "rackhd":       {"repo":"https://github.com/rackhd/rackhd","branch":"master"},
+      "on-core":      {"repo":"https://github.com/rackhd/on-core","branch":"master"},
+      "on-dhcp-proxy":{"repo":"https://github.com/rackhd/on-dhcp-proxy","branch":"master"},
+      "on-http":      {"repo":"https://github.com/rackhd/on-http","branch":"master"},
+      "on-statsd":    {"repo":"https://github.com/rackhd/on-statsd","branch":"master"},
+      "on-syslog":    {"repo":"https://github.com/rackhd/on-syslog","branch":"master"},
+      "on-tasks":     {"repo":"https://github.com/rackhd/on-tasks","branch":"master"},
+      "on-taskgraph": {"repo":"https://github.com/rackhd/on-taskgraph","branch":"master"},
+      "on-tftp":      {"repo":"https://github.com/rackhd/on-tftp","branch":"master"},
+      "on-tools":     {"repo":"https://github.com/rackhd/on-tools","branch":"master"},
+      "on-wss":       {"repo":"https://github.com/rackhd/on-wss","branch":"master"}
+      },
+    "skupack": [
+      "https://github.com/RackHD/on-skupack"
+      ]
+  },
+  "ports": {
+    "_comment": "These are the northbound rest API port assignments",
+    "http": 8080,
+    "https": 443
+  }
+}
