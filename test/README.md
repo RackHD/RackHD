@@ -68,7 +68,7 @@ All FIT tests can be run from the wrapper 'run_tests.py':
       -template TEMPLATE  path or URL link to OVA template or OnRack OVA, default
                           from global_config.json
       -xunit              generates xUnit XML report files
-      -numvms NUMVMS      number of virtual machine for deployment on specified
+      -numvms NUMVMS      number of virtual machines for deployment on specified
                           stack
       -list               generates test list only
       -sku SKU            node SKU, example:Phoenix, default=all

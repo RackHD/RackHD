@@ -9,6 +9,7 @@ if numvms is greater than 1, MAC address installation on OVA is done by stack nu
 
 usage:
     python run_tests.py -stack <stack ID> -numvms <number> -test deploy/os_ova_install.py
+    python run_tests.py -stack <stack ID> -test deploy/os_ova_install.py
 '''
 
 import os
@@ -27,14 +28,20 @@ class os_ova_install(fit_common.unittest.TestCase):
         self.assertEqual(fit_common.subprocess.call('which ovftool', shell=True), 0, "FAILURE: 'ovftool' not installed.")
         # Ping for valid ESXi host
         self.assertEqual(fit_common.subprocess.call('ping -c 1 ' + fit_common.ARGS_LIST['hyper'], shell=True), 0, "FAILURE: ESXi hypervisor not found.")
-        # Shutdown previous ORA
-        if fit_common.subprocess.call('ping -c 1 ' + fit_common.ARGS_LIST['ora'], shell=True) == 0:
-            fit_common.remote_shell('shutdown -h now')
-            fit_common.time.sleep(5)
 
         # Run probe to check for valid OVA file
         rc = fit_common.subprocess.call("ovftool " + ovafile, shell=True)
         self.assertEqual(rc, 0,'Invalid or missing OVA file: ' + ovafile)
+
+        # check for number of virtual machine and stack ID as number
+        self.assertTrue(numvms < 100, "Number of vms should not be greater than 99")
+        if numvms > 1:
+            self.assertTrue(fit_common.ARGS_LIST['stack'].isdigit(), "Stack ID must be a number if numvms is greater than 1")
+
+        # Shutdown previous ORA
+        if fit_common.subprocess.call('ping -c 1 ' + fit_common.ARGS_LIST['ora'], shell=True) == 0:
+            fit_common.remote_shell('shutdown -h now')
+            fit_common.time.sleep(5)
 
         # this clears the hypervisor ssh key from ~/.ssh/known_hosts
         subprocess.call(["touch ~/.ssh/known_hosts;ssh-keygen -R "
@@ -78,15 +85,17 @@ class os_ova_install(fit_common.unittest.TestCase):
 
             # check number of vms for deployment
             if numvms == 1:
-                ovamacs = fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']]['ovamac']
+                ovamac = fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']]['ovamac']
             else:
-                ovamacs = fit_common.GLOBAL_CONFIG['ovaoui'] + ":00:" + fit_common.ARGS_LIST['stack'] + ":0" + str(vm)
+                stacknum = '{0:02}'.format(int(fit_common.ARGS_LIST['stack']))
+                vmnum = '{0:02}'.format(int(vm))
+                ovamac = fit_common.GLOBAL_CONFIG['ova']['oui'] + ":00:" + stacknum + ":" + vmnum
             # Install MAC address by editing OVA .vmx file, then startup VM
             esxi_command = "export fullpath=`find vmfs -name ora-stack-" + fit_common.ARGS_LIST['stack'] + "-" + str(vm) + "*.vmx`;" \
                            "for file in $fullpath;" \
                            "do " \
                            "export editline=`cat $file |grep \\\'ethernet0.generatedAddress =\\\'`;" \
-                           "export editcmd=\\\'/\\\'$editline\\\'\/ c\\\ethernet0.address = \\\"" + ovamacs + "\\\"\\\';" \
+                           "export editcmd=\\\'/\\\'$editline\\\'\/ c\\\ethernet0.address = \\\"" + ovamac + "\\\"\\\';" \
                            "sed -i \\\"$editcmd\\\" $file;" \
                            "sed -i \\\'/ethernet0.addressType = \\\"vpx\\\"/ c\\\ethernet0.addressType = \\\"static\\\"\\\' $file;" \
                            "sed -i \\\'/ethernet0.addressType = \\\"generated\\\"/ c\\\ethernet0.addressType = \\\"static\\\"\\\' $file;" \
