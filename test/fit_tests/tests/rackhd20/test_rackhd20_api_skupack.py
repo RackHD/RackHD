@@ -1,8 +1,8 @@
 '''
-Copyright 2016, EMC, Inc.
+Copyright 2016, DELL|EMC, Inc.
 
 Author(s):
-George Paulos
+Norton Luo
 
 '''
 
@@ -11,10 +11,18 @@ import sys
 import subprocess
 import urllib2
 import string
+import json
+
 # set path to common libraries
 sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test/fit_tests/common")
 import fit_common
 import time
+try:
+    FW_CONFIG = json.loads(open(fit_common.CONFIG_PATH + "fw_config.json").read())
+except:
+    print "**** Global Config file: " + fit_common.CONFIG_PATH + "fw_config.json" + " missing or corrupted! Exiting...."
+    sys.exit(255)
+
 
 # Select test group here using @attr
 from nose.plugins.attrib import attr
@@ -39,7 +47,7 @@ class test_rackhd20_api_skupack(fit_common.unittest.TestCase):
             return 1
 
     def rackhd_api_20_create_skupack(self,skutype):
-        url = fit_common.GLOBAL_CONFIG["repos"]["skupacks"][skutype]
+        url = FW_CONFIG["skupacks"][skutype]
         print "downloading url=",url
         file_name = url.split('/')[-1]
         u = urllib2.urlopen(url)
@@ -73,7 +81,7 @@ class test_rackhd20_api_skupack(fit_common.unittest.TestCase):
 
 
     def rackhd_api_20_update_skupack(self,skutype):
-        url = fit_common.GLOBAL_CONFIG["repos"]["skupacks"][skutype]
+        url = FW_CONFIG["skupacks"][skutype]
         print "downloading url=",url
         file_name = url.split('/')[-1]
         u = urllib2.urlopen(url)
@@ -102,7 +110,7 @@ class test_rackhd20_api_skupack(fit_common.unittest.TestCase):
 
 
     def rackhd_api_20_post_firmware_file(self,skutype,updatetype):
-        url = fit_common.GLOBAL_CONFIG["repos"]["firmware"][skutype][updatetype]
+        url =FW_CONFIG["firmware"][skutype][updatetype]
         print "downloading url=",url
         file_name = url.split('/')[-1]
         u = urllib2.urlopen(url)
@@ -160,17 +168,17 @@ class test_rackhd20_api_skupack(fit_common.unittest.TestCase):
         # delete Quanta skus before test
         api_data = fit_common.rackhdapi("/api/2.0/skus")
         if updatetype=="quantabios" or updatetype=="quantabmc":
-            url= fit_common.GLOBAL_CONFIG["repos"]["firmware"][skutype]["bios"]
+            url= FW_CONFIG["firmware"][skutype]["bios"]
             biosimgfile=url.split('/')[-1]
             print "file_name=",biosimgfile
-            url=fit_common.GLOBAL_CONFIG["repos"]["firmware"][skutype]["bmc"]
+            url=FW_CONFIG["firmware"][skutype]["bmc"]
             bmcimgfile= url.split('/')[-1]
             print "file_name=",bmcimgfile
             intelimgfile=""
         else:
             biosimgfile=""
             bmcimgfile=""
-            url=fit_common.GLOBAL_CONFIG["repos"]["firmware"][skutype]["firmware"]
+            url=FW_CONFIG["firmware"][skutype]["firmware"]
             intelimgfile= url.split('/')[-1]
         graphlist={
                    "quantabios":"Graph.Flash.Quanta.BIOS",
