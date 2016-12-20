@@ -1,4 +1,30 @@
 {
+  "cit-config": {
+    "_comment": "CIT-specific configuration",
+    "RACKHD_TEST_LOGLVL": "WARNING",
+    "RACKHD_HOST": "localhost",
+    "RACKHD_PORT": 9090,
+    "RACKHD_PORT_AUTH": 9093,
+    "RACKHD_HTTPD_PORT": 9010,
+    "RACKHD_AMQP_URL": "amqp://localhost:9091",
+    "RACKHD_SSH_USER": "vagrant",
+    "RACKHD_SSH_PASSWORD": "vagrant",
+    "RACKHD_SSH_PORT": 2222,
+    "RACKHD_USER_AUTH_PORT": 8443,
+    "RACKHD_GLOBAL_OBM_SERVICE_NAME": "ipmi-obm-service",
+    "RACKHD_BASE_REPO_URL": "http://172.31.128.1:8080",
+    "RACKHD_SMB_USER": "onrack",
+    "RACKHD_SMB_PASSWORD": "onrack",
+    "RACKHD_SMB_WINDOWS_REPO_PATH": "\\172.31.128.1\\windowsServer2012",
+    "RACKHD_SAMPLE_PAYLOADS_PATH": "../example/samples/",
+    "RACKHD_CENTOS_REPO_PATH": "http://172.31.128.1:8080/repo/centos",
+    "RACKHD_ESXI_REPO_PATH": "http://172.31.128.1:8080/repo/esxi",
+    "RACKHD_UBUNTU_REPO_PATH": "http://172.31.128.1:8080/repo/ubuntu",
+    "RACKHD_SUSE_REPO_PATH": "http://172.31.128.1:8080/repo/suse",
+    "RACKHD_WINPE_REPO_PATH": "http://172.31.128.1:8080/repo/winpe",
+    "RACKHD_REDFISH_URL": "https://192.168.1.100/redfish/v1",
+    "RACKHD_REDFISH_EMC_OEM": false
+  },
   "credentials": {
     "_comment": "This is the list of credentials for each type of node or service",
     "hyper": [
