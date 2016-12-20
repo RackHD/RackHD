@@ -95,6 +95,9 @@ ARGS_LIST.update(
 )
 
 if ARGS_LIST["stack"] != "None":
+    if ARGS_LIST["stack"] not in STACK_CONFIG:
+        print "**** Stack {0} not found in stack config file {1}.  Exiting....".format(ARGS_LIST["stack"], CONFIG_PATH + "stack_config.json")
+        sys.exit(255)
     if "ora" in STACK_CONFIG[ARGS_LIST["stack"]]:
         ARGS_LIST["ora"] = STACK_CONFIG[ARGS_LIST["stack"]]['ora']
     else:
