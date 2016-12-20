@@ -89,5 +89,9 @@
     "_comment": "These are the northbound rest API port assignments",
     "http": 8080,
     "https": 443
+  },
+  "ova":{
+    "_comment": "This is VMware default OUI allocation",
+    "oui": "00:50:56"
   }
 }

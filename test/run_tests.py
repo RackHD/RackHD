@@ -63,6 +63,8 @@ ARG_PARSER.add_argument("-template", default=fit_common.GLOBAL_CONFIG['repos']['
                         help="path or URL link to OVA template or OnRack OVA, default from global_config.json")
 ARG_PARSER.add_argument("-xunit", default="False", action="store_true",
                         help="generates xUnit XML report files")
+ARG_PARSER.add_argument("-numvms", default=1, type=int,
+                        help="number of virtual machines for deployment on specified stack")
 ARG_PARSER.add_argument("-list", default="False", action="store_true",
                         help="generates test list only")
 ARG_PARSER.add_argument("-sku", default="all",

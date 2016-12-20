@@ -48,8 +48,9 @@ All FIT tests can be run from the wrapper 'run_tests.py':
 
     usage: run_tests.py [-h] [-test TEST] [-config CONFIG] [-group GROUP]
                         [-stack STACK] [-ora ORA] [-version VERSION] [-xunit]
-                        [-list] [-sku SKU] [-obmmac OBMMAC | -nodeid NODEID]
-                        [-http | -https] [-v V]
+                        [-numvms NUMVMS] [-list] [-sku SKU]
+                        [-obmmac OBMMAC | -nodeid NODEID] [-http | -https]
+                        [-v V]
 
     Command Help
 
@@ -67,6 +68,8 @@ All FIT tests can be run from the wrapper 'run_tests.py':
       -template TEMPLATE  path or URL link to OVA template or OnRack OVA, default
                           from global_config.json
       -xunit              generates xUnit XML report files
+      -numvms NUMVMS      number of virtual machines for deployment on specified
+                          stack
       -list               generates test list only
       -sku SKU            node SKU, example:Phoenix, default=all
       -obmmac OBMMAC      node OBM MAC address, example:00:1e:67:b1:d5:64
