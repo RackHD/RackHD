@@ -10,6 +10,7 @@ from workflows_tests import WorkflowsTests
 from auth_tests import AuthTests
 from os_install_tests import OSInstallTests
 from redfish_endpoint_tests import RedfishEndpointTests
+from decomission_node_tests import DecommissionNodesTests
 
 tests = [
     'nodes.tests',
@@ -25,5 +26,6 @@ tests = [
 ]
 
 regression_tests = [
-    'os-install.v1.1.tests'
+    'os-install.v1.1.tests',
+    'deccommission-nodes.v1.1.tests'
 ]

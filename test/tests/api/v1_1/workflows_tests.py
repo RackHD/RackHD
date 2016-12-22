@@ -194,6 +194,7 @@ class WorkflowsTests(object):
     def run_workflow_tasks(self, tasks, timeout_sec):
         def thread_func(worker, id):
             worker.start()
+        tasks = self.__tasks if tasks is None else tasks
         worker_tasks = WorkerTasks(tasks=self.__tasks, func=thread_func)
         worker_tasks.run()
         worker_tasks.wait_for_completion(timeout_sec=timeout_sec)
