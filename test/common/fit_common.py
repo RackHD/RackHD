@@ -38,6 +38,7 @@ ARGS_LIST = \
     "version": os.getenv("VERSION", "onrack-devel"), # code version
     "template": os.getenv("TEMPLATE", "None"), # path or URL link to OVA for deployment
     "xunit": os.getenv("XUNIT", False), # XUNIT output
+    "numvms" : os.getenv("NUMVMS", 1), # number of OVA for deployment
     "list": os.getenv("LIST", False), # list tests
     "group": os.getenv("GROUP", "all"), # test group
     "http": os.getenv("HTTP", "False"), # force http api protocol
@@ -94,6 +95,9 @@ ARGS_LIST.update(
 )
 
 if ARGS_LIST["stack"] != "None":
+    if ARGS_LIST["stack"] not in STACK_CONFIG:
+        print "**** Stack {0} not found in stack config file {1}.  Exiting....".format(ARGS_LIST["stack"], CONFIG_PATH + "stack_config.json")
+        sys.exit(255)
     if "ora" in STACK_CONFIG[ARGS_LIST["stack"]]:
         ARGS_LIST["ora"] = STACK_CONFIG[ARGS_LIST["stack"]]['ora']
     else:
@@ -872,6 +876,7 @@ def run_nose(nosepath):
                              'export VERSION=' + str(ARGS_LIST['version']) + ';' +
                              'export TEMPLATE=' + str(ARGS_LIST['template']) + ';' +
                              'export XUNIT=' + str(ARGS_LIST['xunit']) + ';' +
+                             'export NUMVMS=' + str(ARGS_LIST['numvms']) + ';' +
                              'export GROUP=' + str(ARGS_LIST['group']) + ';' +
                              'export CONFIG=' + str(ARGS_LIST['config']) + ';' +
                              'export HTTP=' + str(ARGS_LIST['http']) + ';' +
