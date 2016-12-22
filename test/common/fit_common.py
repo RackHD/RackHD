@@ -891,14 +891,14 @@ def run_nose(nosepath):
     if ARGS_LIST['group'] != 'all' and ARGS_LIST['group'] != '':
         noseopts += ' -a ' + str(ARGS_LIST['group']) + ' '
     if ARGS_LIST['list'] == True or ARGS_LIST['list'] == "True":
-        noseopts += ' -v --collect-only '
+        noseopts += ' --collect-only '
         ARGS_LIST['v'] = 0
         print "\nTest Listing for:", ARGS_LIST['test']
         print "----------------------------------------------------------------------"
     if ARGS_LIST['xunit'] == True or ARGS_LIST['xunit'] == "True":
         noseopts += ' --with-xunit '
     else:
-        noseopts += ' -s -v '
+        noseopts += ' -s -v'
     # if nosepath is a directory, recurse through subdirs else run single test file
     if os.path.isdir(nosepath):
         # Skip the CIT test directories that match these expressions
