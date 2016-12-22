@@ -22,52 +22,6 @@ import fit_common
 import pdu_lib
 
 class os_ova_install(fit_common.unittest.TestCase):
-    def test01_install_ova_template(self):
-        ovafile = fit_common.ARGS_LIST['template']
-        numvms = int(fit_common.ARGS_LIST['numvms'])
-        # Check for ovftool
-        self.assertEqual(fit_common.subprocess.call('which ovftool', shell=True), 0, "FAILURE: 'ovftool' not installed.")
-        # Ping for valid ESXi host
-        self.assertEqual(fit_common.subprocess.call('ping -c 1 ' + fit_common.ARGS_LIST['hyper'], shell=True), 0, "FAILURE: ESXi hypervisor not found.")
-
-        # Run probe to check for valid OVA file
-        rc = fit_common.subprocess.call("ovftool " + ovafile, shell=True)
-        self.assertEqual(rc, 0,'Invalid or missing OVA file: ' + ovafile)
-
-        # check for number of virtual machine
-        self.assertTrue(numvms < 100, "Number of vms should not be greater than 99")
-
-        # check stack ID as number to generate MAC address for multiple OVA
-        if numvms > 1:
-            self.assertTrue(fit_common.ARGS_LIST['stack'].isdigit(), "Stack ID must be a number if numvms is greater than 1")
-
-        # Shutdown previous ORA
-        if fit_common.subprocess.call('ping -c 1 ' + fit_common.ARGS_LIST['ora'], shell=True) == 0:
-            fit_common.remote_shell('shutdown -h now')
-            fit_common.time.sleep(5)
-
-        # this clears the hypervisor ssh key from ~/.ssh/known_hosts
-        subprocess.call(["touch ~/.ssh/known_hosts;ssh-keygen -R "
-                         + fit_common.ARGS_LIST['hyper']  + " -f ~/.ssh/known_hosts >/dev/null 2>&1"], shell=True)
-
-        # Find correct hypervisor credentials by testing each entry in the list
-        cred_list = fit_common.GLOBAL_CONFIG['credentials']['hyper']
-        for entry in cred_list:
-            uname = entry['username']
-            passwd = entry['password']
-            (command_output, exitstatus) = \
-                fit_common.pexpect.run(
-                                "ssh -q -o StrictHostKeyChecking=no -t " + uname + "@"
-                                + fit_common.ARGS_LIST['hyper'] + " pwd",
-                                withexitstatus=1,
-                                events={"assword": passwd + "\n"},
-                                timeout=20, logfile=None)
-            if exitstatus == 0:
-                break
-        # Run OVA installer
-        for vm in range(0, numvms):
-            self.deploy_ova(vm,uname,passwd,numvms,ovafile)
-
     def deploy_ova(self,vm,uname,passwd,numvms,ovafile):
         print '**** Deploying OVA file on hypervisor ' + fit_common.ARGS_LIST['hyper']
         rc = subprocess.call("ovftool --X:injectOvfEnv --overwrite "
@@ -140,6 +94,52 @@ class os_ova_install(fit_common.unittest.TestCase):
         localdate = fit_common.subprocess.check_output("date +%s", shell=True)
         fit_common.remote_shell("/bin/date -s @" + localdate.replace("\n", "") + ";/sbin/hwclock --systohc")
         return None
+
+    def test01_install_ova_template(self):
+        ovafile = fit_common.ARGS_LIST['template']
+        numvms = int(fit_common.ARGS_LIST['numvms'])
+        # Check for ovftool
+        self.assertEqual(fit_common.subprocess.call('which ovftool', shell=True), 0, "FAILURE: 'ovftool' not installed.")
+        # Ping for valid ESXi host
+        self.assertEqual(fit_common.subprocess.call('ping -c 1 ' + fit_common.ARGS_LIST['hyper'], shell=True), 0, "FAILURE: ESXi hypervisor not found.")
+
+        # Run probe to check for valid OVA file
+        rc = fit_common.subprocess.call("ovftool " + ovafile, shell=True)
+        self.assertEqual(rc, 0,'Invalid or missing OVA file: ' + ovafile)
+
+        # check for number of virtual machine
+        self.assertTrue(numvms < 100, "Number of vms should not be greater than 99")
+
+        # check stack ID as number to generate MAC address for multiple OVA
+        if numvms > 1:
+            self.assertTrue(fit_common.ARGS_LIST['stack'].isdigit(), "Stack ID must be a number if numvms is greater than 1")
+
+        # Shutdown previous ORA
+        if fit_common.subprocess.call('ping -c 1 ' + fit_common.ARGS_LIST['ora'], shell=True) == 0:
+            fit_common.remote_shell('shutdown -h now')
+            fit_common.time.sleep(5)
+
+        # this clears the hypervisor ssh key from ~/.ssh/known_hosts
+        subprocess.call(["touch ~/.ssh/known_hosts;ssh-keygen -R "
+                         + fit_common.ARGS_LIST['hyper']  + " -f ~/.ssh/known_hosts >/dev/null 2>&1"], shell=True)
+
+        # Find correct hypervisor credentials by testing each entry in the list
+        cred_list = fit_common.GLOBAL_CONFIG['credentials']['hyper']
+        for entry in cred_list:
+            uname = entry['username']
+            passwd = entry['password']
+            (command_output, exitstatus) = \
+                fit_common.pexpect.run(
+                                "ssh -q -o StrictHostKeyChecking=no -t " + uname + "@"
+                                + fit_common.ARGS_LIST['hyper'] + " pwd",
+                                withexitstatus=1,
+                                events={"assword": passwd + "\n"},
+                                timeout=20, logfile=None)
+            if exitstatus == 0:
+                break
+        # Run OVA installer
+        for vm in range(0, numvms):
+            self.deploy_ova(vm,uname,passwd,numvms,ovafile)
 
     def test02_power_off_nodes(self):
         print "**** Configuring power interface: "
