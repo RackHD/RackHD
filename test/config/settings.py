@@ -2,18 +2,28 @@ from imp import load_source
 from getpass import getpass
 from base64 import b64encode, b64decode
 import logging
+import json
 import os, sys
 import ConfigParser
 
-CONFIG = 'config/config.ini'
-for v in sys.argv:
-    if 'config' in v:
-        CONFIG = v.split('=')[1:]
-config_parser = ConfigParser.RawConfigParser()
-config_parser.read(CONFIG)
-defaults = {}
-for k,v in config_parser.items('DEFAULT'):
-    defaults[k.upper()] = v
+# Check for fit-based configuration
+CONFIG = os.environ.get('FIT_CONFIG', None)
+if CONFIG:
+    # Load FIT configuration (.json format)
+    with open(CONFIG) as config_file:
+        config_blob = json.load(config_file)
+        defaults = config_blob['cit-config']
+else:
+    # Load CIT configuration (.ini format)
+    CONFIG = 'config/config.ini'
+    for v in sys.argv:
+        if 'config' in v:
+            CONFIG = v.split('=')[1:]
+    config_parser = ConfigParser.RawConfigParser()
+    config_parser.read(CONFIG)
+    defaults = {}
+    for k,v in config_parser.items('DEFAULT'):
+        defaults[k.upper()] = v
 
 HOST_IP = defaults['RACKHD_HOST']
 HOST_PORT = defaults['RACKHD_PORT']

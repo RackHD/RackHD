@@ -877,6 +877,7 @@ def run_nose(nosepath):
                              'export HTTP=' + str(ARGS_LIST['http']) + ';' +
                              'export HTTPS=' + str(ARGS_LIST['https']) + ';' +
                              'export PORT=' + str(ARGS_LIST['port']) + ';' +
+                             'export FIT_CONFIG=' + CONFIG_PATH + "global_config.json" + ';' +
                              'nosetests ' + noseopts + ' --xunit-file ' + xmlfile + ' ' + pathspec
                          ], shell=True)
     exitcode = 0
