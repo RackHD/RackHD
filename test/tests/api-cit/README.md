@@ -15,6 +15,8 @@ Current updates to a CIT script file, more will be coming:
   - change class Name(object) to class Name(unittest.TestCase)
   - comment out all "@test" proboscis specific groups 
   - add @depends()  - for nosedep on def test_xxx.
+    - If orderning is needed, which looks to be in most scripts, update the test names to be alphabetical.
+      This due to issue with unittest and nosedep and we are working on a fix. **
     - @depends(after=test_one), @depends(before=test_two)
 
   - Comments using the format """ test info """ placed directly after def test_name(self) causes unittest to pick that up as the test name.
@@ -26,8 +28,8 @@ Current updates to a CIT script file, more will be coming:
     	 assert_equal = self.assertEqual
     	 change parameter "message" to "msg"  - for assert call
 	 example:
-	   proboscis: assert_not_equal(0, len(obms), message='OBMs list was empty!')
-  	   unittest:  self.assertNotEqual(0, len(obms), msg='OBMs list was empty!')
+	     proboscis: assert_not_equal(0, len(obms), message='OBMs list was empty!')
+  	     unittest:  self.assertNotEqual(0, len(obms), msg='OBMs list was empty!')
 
   - Dependency updates
     - some of the dependencies look for discovered nodes.  We want to move the dependcies from a test calling another test to the test
