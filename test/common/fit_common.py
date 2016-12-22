@@ -38,7 +38,7 @@ ARGS_LIST = \
     "version": os.getenv("VERSION", "onrack-devel"), # code version
     "template": os.getenv("TEMPLATE", "None"), # path or URL link to OVA for deployment
     "xunit": os.getenv("XUNIT", False), # XUNIT output
-    "numvms" : os.getenv("NUMVMS", 1), # number of OVA for reployment
+    "numvms" : os.getenv("NUMVMS", 1), # number of OVA for deployment
     "list": os.getenv("LIST", False), # list tests
     "group": os.getenv("GROUP", "all"), # test group
     "http": os.getenv("HTTP", "False"), # force http api protocol
