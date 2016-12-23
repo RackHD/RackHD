@@ -20,117 +20,282 @@ import re
 import requests
 import pexpect
 import shutil
+import inspect
+
 import nose
+import argparse
+from flogging import get_loggers, logger_config_api
+from mkcfg import mkcfg
 
-# Globals
+sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test")
 
-# Pull arguments from environment into ARGS_LIST
-ARGS_LIST = \
-    {
-    "v": os.getenv("VERBOSITY", "0"),
-    "config":  os.getenv("CONFIG", "config"),
-    "stack": os.getenv("STACK", "None"), # Stack label
-    "ora": os.getenv("ORA", "localhost"), # Appliance IP or hostname
-    "bmc": "None", # BMC IP or hostname
-    "sku": os.getenv("SKU", "all"), # node SKU name
-    "obmmac": os.getenv("OBMMAC", "all"), # node OBM MAC address
-    "nodeid": os.getenv("NODEID", "None"), # node ID
-    "hyper": "None", # hypervisor address
-    "version": os.getenv("VERSION", "onrack-devel"), # code version
-    "template": os.getenv("TEMPLATE", "None"), # path or URL link to OVA for deployment
-    "xunit": os.getenv("XUNIT", False), # XUNIT output
-    "numvms" : os.getenv("NUMVMS", 1), # number of OVA for deployment
-    "list": os.getenv("LIST", False), # list tests
-    "group": os.getenv("GROUP", "all"), # test group
-    "http": os.getenv("HTTP", "False"), # force http api protocol
-    "https": os.getenv("HTTPS", "False"), # force https api protocol
-    "port": os.getenv("PORT", "None") # port number override
-}
-
-# Get top level path via git
-TEST_PATH = subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test/"
-CONFIG_PATH = TEST_PATH + ARGS_LIST["config"] + "/"
-if ARGS_LIST["config"] != 'config':
-    print "**** Using config file path:", ARGS_LIST["config"]
 VERBOSITY = int(os.getenv("VERBOSITY", "1"))
 # The global "VERBOSITY" will go away once all usages are removed. At that point,
 # the following call can migrate some place that makes more sense (not sure where
 # that is yet!)
 
-GLOBAL_CONFIG = []
-STACK_CONFIG = []
+ARGS_LIST = {}
+GLOBAL_CONFIG = {}
+STACK_CONFIG = {}
+TEST_PATH = None
+CONFIG_PATH = None
 API_PORT = "None"
 API_PROTOCOL = "None"
 AUTH_TOKEN = "None"
 REDFISH_TOKEN = "None"
-
-# List of BMC IP addresses
 BMC_LIST = []
 
+def cfg():
+    """
+    returns the configuration dictionary
+    :return: dictionary of current config
+    """
+    return mkcfg().get()
 
-# Global Config files
-try:
-    GLOBAL_CONFIG = json.loads(open(CONFIG_PATH + "global_config.json").read())
-except:
-    print "**** Global Config file: " + CONFIG_PATH + "global_config.json" + " missing or corrupted! Exiting...."
-    sys.exit(255)
-try:
-    STACK_CONFIG = json.loads(open(CONFIG_PATH + "stack_config.json").read())
-except:
-    print "**** Stack Config file:" + CONFIG_PATH + "stack_config.json" + " missing or corrupted! Creating empty stack file...."
-    STACK_CONFIG = []
+def compose_global_config():
+    """
+    creates a configuration using the global_config.json file.
+    this is the old method for generating configurations but
+    is still being used.  Will be phased out eventually.
+    :return: None
+    """
+    global ARGS_LIST
+    global GLOBAL_CONFIG
+    global STACK_CONFIG
+    global TEST_PATH
+    global CONFIG_PATH
+    global API_PORT
+    global API_PROTOCOL
+    global VERBOSITY
 
-# apply stack detail files from config dir to STACK_CONFIG dict
-for entry in os.listdir(CONFIG_PATH):
-    if entry != "global_config.json" and entry != "stack_config.json" and ".json" in entry:
-        try:
-            detailfile = json.loads(open(CONFIG_PATH + entry).read())
-        except:
-            print "**** Invalid JSON file:", CONFIG_PATH + entry
-        else:
-            STACK_CONFIG.update(detailfile)
-
-
-# This section derives default stack configuration data from STACK-CONFIG, use environment to override
-ARGS_LIST.update(
-    {
-        "usr": GLOBAL_CONFIG['credentials']['ora'][0]['username'],
-        "pwd": GLOBAL_CONFIG['credentials']['ora'][0]['password']
+    # Pull arguments from environment into ARGS_LIST
+    ARGS_LIST = \
+        {
+        "v": os.getenv("VERBOSITY", "0"),
+        "config":  os.getenv("CONFIG", "config"),
+        "stack": os.getenv("STACK", "None"), # Stack label
+        "ora": os.getenv("ORA", "localhost"), # Appliance IP or hostname
+        "bmc": "None", # BMC IP or hostname
+        "sku": os.getenv("SKU", "all"), # node SKU name
+        "obmmac": os.getenv("OBMMAC", "all"), # node OBM MAC address
+        "nodeid": os.getenv("NODEID", "None"), # node ID
+        "hyper": "None", # hypervisor address
+        "version": os.getenv("VERSION", "onrack-devel"), # code version
+        "template": os.getenv("TEMPLATE", "None"), # path or URL link to OVA for deployment
+        "xunit": os.getenv("XUNIT", False), # XUNIT output
+        "numvms" : os.getenv("NUMVMS", 1), # number of OVA for deployment
+        "list": os.getenv("LIST", False), # list tests
+        "group": os.getenv("GROUP", "all"), # test group
+        "http": os.getenv("HTTP", "False"), # force http api protocol
+        "https": os.getenv("HTTPS", "False"), # force https api protocol
+        "port": os.getenv("PORT", "None") # port number override
     }
-)
 
-if ARGS_LIST["stack"] != "None":
-    if ARGS_LIST["stack"] not in STACK_CONFIG:
-        print "**** Stack {0} not found in stack config file {1}.  Exiting....".format(ARGS_LIST["stack"], CONFIG_PATH + "stack_config.json")
+    # transfer argparse args to ARGS_LIST
+    for key in cfg()['cmd-args-list']:
+        ARGS_LIST[key] = cfg()['cmd-args-list'][key]
+
+    # Get top level path via git
+    TEST_PATH = subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test/"
+    CONFIG_PATH = TEST_PATH + ARGS_LIST["config"] + "/"
+    if ARGS_LIST["config"] != 'config':
+        print "*** Using config file path:", ARGS_LIST["config"]
+    VERBOSITY = int(os.getenv("VERBOSITY", "1"))
+    # The global "VERBOSITY" will go away once all usages are removed. At that point,
+    # the following call can migrate some place that makes more sense (not sure where
+    # that is yet!)
+
+    # Global Config files
+    try:
+        GLOBAL_CONFIG = json.loads(open(CONFIG_PATH + "global_config.json").read())
+    except:
+        print "**** Global Config file: " + CONFIG_PATH + "global_config.json" + " missing or corrupted! Exiting...."
         sys.exit(255)
-    if "ora" in STACK_CONFIG[ARGS_LIST["stack"]]:
-        ARGS_LIST["ora"] = STACK_CONFIG[ARGS_LIST["stack"]]['ora']
-    else:
-        ARGS_LIST["ora"] = "localhost"
-    if "bmc" in STACK_CONFIG[ARGS_LIST["stack"]]:
-        ARGS_LIST["bmc"] = STACK_CONFIG[ARGS_LIST["stack"]]['bmc']
-    if "hyper" in STACK_CONFIG[ARGS_LIST["stack"]]:
-        ARGS_LIST["hyper"] = STACK_CONFIG[ARGS_LIST["stack"]]['hyper']
+    try:
+        STACK_CONFIG = json.loads(open(CONFIG_PATH + "stack_config.json").read())
+    except:
+        print "**** Stack Config file:" + CONFIG_PATH + "stack_config.json" + " missing or corrupted! Creating empty stack file...."
+        STACK_CONFIG = []
 
-# set api port and protocol from command line
-if ARGS_LIST['port'] != "None":
-    API_PORT = ARGS_LIST['port']
-if ARGS_LIST['http'] == "True":
-    API_PROTOCOL = "http"
-    if API_PORT == "None":
-        API_PORT = GLOBAL_CONFIG['ports']['http']
-if ARGS_LIST['https'] == "True":
-    API_PROTOCOL = "https"
-    if API_PORT == "None":
-        API_PORT = GLOBAL_CONFIG['ports']['https']
-if ARGS_LIST["ora"] == "localhost":
-    if API_PROTOCOL == "None":
-        API_PROTOCOL = 'http'
-    if API_PORT == "None":
-        API_PORT = '8080'
-# set OVA template from command line
-if ARGS_LIST["template"] == "None":
-    ARGS_LIST["template"] = GLOBAL_CONFIG['repos']['install']['template']
+    # apply stack detail files from config dir to STACK_CONFIG dict
+    for entry in os.listdir(CONFIG_PATH):
+        if entry != "global_config.json" and entry != "stack_config.json" and ".json" in entry:
+            try:
+                detailfile = json.loads(open(CONFIG_PATH + entry).read())
+            except:
+                print "**** Invalid JSON file:", CONFIG_PATH + entry
+            else:
+                STACK_CONFIG.update(detailfile)
+
+
+    # This section derives default stack configuration data from STACK-CONFIG, use environment to override
+    ARGS_LIST.update(
+        {
+            "usr": GLOBAL_CONFIG['credentials']['ora'][0]['username'],
+            "pwd": GLOBAL_CONFIG['credentials']['ora'][0]['password']
+        }
+    )
+
+    if ARGS_LIST["stack"] != "None":
+        if ARGS_LIST["stack"] not in STACK_CONFIG:
+            print "**** Stack {0} not found in stack config file {1}.  Exiting....".format(ARGS_LIST["stack"], CONFIG_PATH + "stack_config.json")
+            sys.exit(255)
+        if "ora" in STACK_CONFIG[ARGS_LIST["stack"]]:
+            ARGS_LIST["ora"] = STACK_CONFIG[ARGS_LIST["stack"]]['ora']
+        else:
+            ARGS_LIST["ora"] = "localhost"
+        if "bmc" in STACK_CONFIG[ARGS_LIST["stack"]]:
+            ARGS_LIST["bmc"] = STACK_CONFIG[ARGS_LIST["stack"]]['bmc']
+        if "hyper" in STACK_CONFIG[ARGS_LIST["stack"]]:
+            ARGS_LIST["hyper"] = STACK_CONFIG[ARGS_LIST["stack"]]['hyper']
+
+    # set api port and protocol from command line
+    if ARGS_LIST['port'] != "None":
+        API_PORT = ARGS_LIST['port']
+    if ARGS_LIST['http'] == "True":
+        API_PROTOCOL = "http"
+        if API_PORT == "None":
+            API_PORT = GLOBAL_CONFIG['ports']['http']
+    if ARGS_LIST['https'] == "True":
+        API_PROTOCOL = "https"
+        if API_PORT == "None":
+            API_PORT = GLOBAL_CONFIG['ports']['https']
+    if ARGS_LIST["ora"] == "localhost":
+        if API_PROTOCOL == "None":
+            API_PROTOCOL = 'http'
+        if API_PORT == "None":
+            API_PORT = '8080'
+    # set OVA template from command line
+    if ARGS_LIST["template"] == "None":
+        ARGS_LIST["template"] = GLOBAL_CONFIG['repos']['install']['template']
+
+def compose_config(use_sysargs=False):
+    """
+    creates a configuration based on
+    :param use_sysargs: set to true if sys.argv is to be processed.
+    :return: None
+    """
+    args_list = {}
+    if use_sysargs:
+        # Args from command line
+        args_list['cmd-args-list'] = mkargs()
+        config = args_list['cmd-args-list']['config']
+        cfg = mkcfg(config)
+    else:
+        # Args from default set
+        no_args = {}
+        args_list['cmd-args-list'] = mkargs(no_args)
+        cfg = mkcfg()
+
+    if cfg.get_path() is None:
+
+        # How to build a configuration:
+        #
+        # 1. Start with the default config json file composition.
+        # 2. Add stack overlay
+        # 3. Add cmd line args
+        # 4. Process any overrides from the command line.
+        # 5. Save (generate) the configuration to a file
+        #
+        default_composition = ['rackhd_default.json',
+                               'credentials_default.json',
+                               'install_default.json',
+                               'cit_default.json']
+
+        # config file composition
+        cfg.add_from_file_list(default_composition)
+
+        # stack overlay configuration
+        stack = args_list['cmd-args-list']['stack']
+        if stack is not None:
+            cfg.add_from_file("stack_config.json", stack)
+
+        # add the args_list
+        cfg.add_from_dict(args_list)
+
+        # save
+        args = args_list['cmd-args-list']
+        cfg.add_from_dict({
+            'env': {
+                'VERBOSITY':  str(args['v']),
+                'ORA':  str(args['ora']),
+                'STACK':  str(args['stack']),
+                'SKU':  str(args['sku']) ,
+                'NODEID':  str(args['nodeid']),
+                'OBMMAC':  str(args['obmmac']),
+                'VERSION':  str(args['version']),
+                'TEMPLATE':  str(args['template']),
+                'XUNIT':  str(args['xunit']),
+                'NUMVMS':  str(args['numvms']),
+                'GROUP':  str(args['group']),
+                'CONFIG':  str(args['config']),
+                'HTTP':  str(args['http']),
+                'HTTPS':  str(args['https']),
+                'PORT':  str(args['port']),
+                'PATH':  os.environ['PATH']
+            }
+        })
+
+        # generate the configuration file
+        cfg.generate()
+        print "*** Using config file: {0}".format(cfg.get_path())
+
+def mkargs(in_args=None):
+    """
+    processes the command line options as passed in by in_args.
+    :param in_args: input arguments
+    :return: dictionary of processed arguments
+    """
+    if in_args is None:
+        in_args = sys.argv[1:]
+
+    # command line argument parser returns cmd_args dict
+    arg_parser = argparse.ArgumentParser(description="Command Help")
+    arg_parser.add_argument("-test", default="tests/",
+                            help="test to execute, default: tests/")
+    arg_parser.add_argument("-config", default="config",
+                            help="config file location, default: config")
+    arg_parser.add_argument("-group", default="all",
+                            help="test group to execute: 'smoke', 'regression', 'extended', default: 'all'")
+    arg_parser.add_argument("-stack", default=None,
+                            help="stack label (test bed), overrides -ora")
+    arg_parser.add_argument("-ora", default="localhost",
+                            help="OnRack/RackHD appliance IP address or hostname, default: localhost")
+    arg_parser.add_argument("-version", default="onrack-devel",
+                            help="OnRack package install version, example:onrack-release-0.3.0, default: onrack-devel")
+    arg_parser.add_argument("-template", default=None,
+                            help="path or URL link to OVA template or OnRack OVA")
+    arg_parser.add_argument("-xunit", default="False", action="store_true",
+                            help="generates xUnit XML report files")
+    arg_parser.add_argument("-numvms", default=1, type=int,
+                            help="number of virtual machines for deployment on specified stack")
+    arg_parser.add_argument("-list", default="False", action="store_true",
+                            help="generates test list only")
+    arg_parser.add_argument("-sku", default="all",
+                            help="node SKU, example:Phoenix, default=all")
+    group = arg_parser.add_mutually_exclusive_group(required=False)
+    group.add_argument("-obmmac", default="all",
+                       help="node OBM MAC address, example:00:1e:67:b1:d5:64")
+    group.add_argument("-nodeid", default="None",
+                       help="node identifier string of a discovered node, example: 56ddcf9a8eff16614e79ec74")
+    group2 = arg_parser.add_mutually_exclusive_group(required=False)
+    group2.add_argument("-http", default="False", action="store_true",
+                        help="forces the tests to utilize the http API protocol")
+    group2.add_argument("-https", default="False", action="store_true",
+                        help="forces the tests to utilize the https API protocol")
+    arg_parser.add_argument("-port", default="None",
+                            help="API port number override, default from global_config.json")
+    arg_parser.add_argument("-v", default=1, type=int,
+                            help="Verbosity level of console output, default=0, Built Ins: " +
+                                 "0: No debug, " +
+                                 "2: User script output, " +
+                                 "4: rest calls and status info, " +
+                                 "6: other common calls (ipmi, ssh), " +
+                                 "9: all the rest ")
+
+    # parse arguments to cmd_args dict
+    cmd_args = vars(arg_parser.parse_args(in_args))
+    return cmd_args
 
 def timestamp(): # return formatted current timestamp
     return time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime())
@@ -147,7 +312,8 @@ def countdown(sleep_time, sleep_interval=1):
     print "Waking!"
     return
 
-def remote_shell(shell_cmd, expect_receive="", expect_send="", timeout=300, address=ARGS_LIST['ora'], user=ARGS_LIST['usr'], password=ARGS_LIST['pwd']):
+def remote_shell(shell_cmd, expect_receive="", expect_send="", timeout=300,
+                 address=None, user=None, password=None):
     '''
     Run ssh based shell command on a remote machine at ARGS_LIST["ora"]
 
@@ -160,6 +326,12 @@ def remote_shell(shell_cmd, expect_receive="", expect_send="", timeout=300, addr
     :param password: password of remote host
     :return: dict = {'stdout': str:ouput, 'exitcode': return code}
     '''
+    if not address:
+        address=ARGS_LIST['ora']
+    if not user:
+        user=ARGS_LIST['usr']
+    if not password:
+        password=ARGS_LIST['pwd']
 
     logfile_redirect = None
     if VERBOSITY >= 4:
@@ -215,7 +387,6 @@ def scp_file_to_ora(src_file_name):
     :return: just name of file on target (no path)
     :rtype: basestring
     '''
-
     logfile_redirect = file('/dev/null', 'w')
     just_fname = os.path.basename(src_file_name)
     # if localhost just copy to home dir
@@ -260,9 +431,10 @@ def get_auth_token():
         if api_data['status'] == 200:
             AUTH_TOKEN = str(api_data['json']['token'])
             redfish_data = restful("https://" + ARGS_LIST['ora'] + ":" + str(API_PORT) +
-                               "/redfish/v1/SessionService/Sessions", rest_action="post", rest_payload=redfish_login, rest_timeout=2)
+                                   "/redfish/v1/SessionService/Sessions",
+                                   rest_action="post", rest_payload=redfish_login, rest_timeout=2)
             if 'x-auth-token' in redfish_data['headers']:
-                REDFISH_TOKEN =  redfish_data['headers']['x-auth-token']
+                REDFISH_TOKEN = redfish_data['headers']['x-auth-token']
                 return True
             else:
                 print "WARNING: Redfish API token not available."
@@ -346,7 +518,7 @@ def restful(url_command, rest_action='get', rest_payload=[], rest_timeout=None, 
 
     rest_headers.update({"Content-Type": "application/json"})
     if VERBOSITY >= 5:
-         print "restful: Request Headers =", rest_headers, "\n"
+        print "restful: Request Headers =", rest_headers, "\n"
 
     # If AUTH_TOKEN is set, add to header
     if AUTH_TOKEN != "None" and AUTH_TOKEN != "Unavailable" and "authorization" not in rest_headers:
@@ -517,11 +689,13 @@ def mongo_reset():
     return 0
 
 def appliance_reset():
+
     return_code = subprocess.call("ipmitool -I lanplus -H " + ARGS_LIST["bmc"] \
                                   + " -U root -P 1234567 chassis power reset", shell=True)
     return return_code
 
 def node_select():
+
     # returns a list with valid compute node IDs that match ARGS_LIST["sku"] in 'Name' or 'Model' field
     # and matches node BMC MAC address in ARGS_LIST["obmmac"] if specified
     # Otherwise returns list of all IDs that are not 'Unknown' or 'Unmanaged'
@@ -621,7 +795,7 @@ def cancel_active_workflows(nodeid):
     apistatus = rackhdapi('/api/2.0/nodes/' + nodeid + '/workflows/action',
                           action='put', payload={"command": "cancel"})['status']
     if apistatus != 202:
-       exitstatus = False
+        exitstatus = False
     return exitstatus
 
 def apply_obm_settings(retry=30):
@@ -866,7 +1040,11 @@ def apply_obm_settings_seq():
         return False
     return True
 
-def run_nose(nosepath):
+def run_nose(nosepath=None):
+
+    if not nosepath:
+        nosepath = cfg()['cmd-args-list']['test']
+
     # this routine runs nosetests from wrapper using path spec 'nosepath'
     def _noserunner(pathspecs, noseopts):
         xmlfile = str(time.time()) + ".xml" # XML report file name
@@ -886,7 +1064,7 @@ def run_nose(nosepath):
             'HTTP':  str(ARGS_LIST['http']),
             'HTTPS':  str(ARGS_LIST['https']),
             'PORT':  str(ARGS_LIST['port']),
-            'FIT_CONFIG': CONFIG_PATH + "global_config.json",
+            'FIT_CONFIG': mkcfg().get_path(),
             'HOME':  os.environ['HOME'],
             'PATH':  os.environ['PATH']
         }
@@ -931,3 +1109,21 @@ def run_from_module(file_name):
     # Use this method in 'name == "__main__"' style test invocations
     # within individual test files
     run_nose(file_name)
+
+# determine who imported us.
+importer=inspect.getframeinfo(inspect.getouterframes(inspect.currentframe())[1][0])[0]
+if 'run_tests.py' in importer:
+    # we are being imported through run_tests.py (the fit wrapper)
+    # process sys.args as received by run_tests.py
+    compose_config(True)
+
+    # Bridge between old and new.  Remove when conversion complete
+    compose_global_config()
+
+else:
+    # we are being imported directly through a unittest module
+    # args will be nose-base args
+    compose_config(False)
+
+    # Bridge between old and new.  Remove when conversion complete
+    compose_global_config()
