@@ -143,7 +143,86 @@ def api_node_select(client,
             print '**** Empty node ID list.\n'
     return node_id_list
 
+def api_validate_node_pollers(client, node_id_list, all_pollers=False):
+    """
+    This function validates that the presented list of node contains active pollers. By default
+    only the fist poller of the pollers associated with a node is validated. Setting the
+    "all_pollers" flag to True allows all poller associated with a node to be validated.
+    :param  client: reference to config.api2_0_config
+    :param  node_id_list - list of node id's
+    :param  type - type of node to be used (default: 'compute')     #TODO if no node_list, collect all nodes
+    :param  all_pollers - Test all poller assocaited with a node (default: False)
+    return: True  - all nodes have active poller
+            False - all nodes do not have active pollers
+    """
+    pollers_list = []
+    good_pollers = True
+    # TODO: this will change in the near future
+    verbosity = int(os.getenv("VERBOSITY", "0"))
 
+    if not isinstance(node_id_list, (tuple, list, set)):
+        print '**** Provided node_list is not a [list]'
+        # return no good pollers
+        return False
+
+    for node_ld in node_id_list:
+        Api().nodes_get_pollers_by_id(node_ld)
+        node_poller_rsp = client.last_response
+        node_poller_list = loads(node_poller_rsp.data)
+        if node_poller_rsp.status != 200:
+            print '**** Unable to retrieve node: {} pollers via API. status ({})\n'.format(node.get('id'),
+                                                                                           node_poller_rsp.status)
+            # unable to get poller for this node, so return a False
+            return False
+
+        # if the poller return None or an empty list, return a False
+        if not node_poller_list:
+            print 'Node {} has no pollers.'.format(node_ld)
+            # no poller on this node, so return a False
+            return False
+
+        for poller in node_poller_list:
+            pollers_list.append(poller)
+            if not all_pollers:
+                # all_pollers is False so only validate the first poller
+                break
+
+    for poller in pollers_list:
+        Api().pollers_data_get(poller['id'])
+        poller_rsp = client.last_response
+        poller_data = loads(poller_rsp.data)
+
+        if poller_rsp.status != 200 and poller_rsp.status != 204:
+            print "Failure to retrieve poller data for node: {} poller: {} command: {}".format(poller['node'],
+                                                                                               poller['id'],
+                                                                                               poller['config']['command'])
+            good_pollers = False
+            break
+
+        if verbosity >= 6:
+            print "**** node: {} poller: {} command: {}".format(poller['node'],
+                                                                poller['id'],
+                                                                poller['config']['command'])
+
+        if poller_rsp.status == 200:
+            # This will process a status of 200
+            if not poller_data:
+                print "No poller data for node: {} poller: {} command: {}".format(poller['node'],
+                                                                                  poller['id'],
+                                                                                  poller['config']['command'])
+                good_pollers = False
+                break
+        else:
+            # This assumes a status of 204
+            if  poller_data:
+                print "Non zero poller data (exspected zero) for node {} poller {} command {}".format(poller['node'],
+                                                                                                      poller['id'],
+                                                                                                      poller['config']['command'])
+                good_pollers = False
+                break
+
+    return good_pollers
+    
 def validate_obm_settings(client, identifier):
     """
     The OBM objectis are obtained for the requested node. They are then searched to 
