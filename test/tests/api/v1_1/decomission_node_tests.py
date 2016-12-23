@@ -107,11 +107,13 @@ class DecommissionNodesTests(object):
                     ssh_conn.is_up = True
                     LOG.info('set it to True {0}'.format(ssh_conn.is_up))
                     return True 
-                except pxssh.ExceptionPxssh  as error:
-                    LOG.info('ssh login error {0}'.format(error))
-                    #log error
+                except Exception  as error:
+                    LOG.info('ssh login error for node {0}, hostname {1}'
+                            .format(ssh_conn.node_id, ssh_conn.host))
                     time.sleep(delay)
-            LOG.warning('could not connet to host {0} node id {1}'.format(ssh_conn.hostname, ssh_conn.node_id))
+                    pass
+            LOG.warning('could not connect to host {0} node id {1}'
+                    .format(ssh_conn.host, ssh_conn.node_id))
             return False
 
         thread_list = []
