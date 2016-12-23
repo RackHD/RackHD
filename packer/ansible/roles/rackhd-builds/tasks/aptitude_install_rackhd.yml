@@ -1,0 +1,24 @@
+---
+# aptitude install RackHD with spawn/expect 
+
+- name: Aptitude Install RackHD 
+  shell: |
+    set timeout -1
+    spawn sudo aptitude install {{ package }}
+    expect {
+        "*Do you want to continue*" {send "y\r";set latest 1}
+        "*Accept this solution*" {send "n\r"; set latest 0}
+    }
+    if { $latest == 0 } {
+        expect "*Accept this solution*" {send "Y\r"}
+        expect "*Do you want to continue*" {send "Y\r"}
+       
+    }
+    expect { 
+        "*To continue*" {send "Yes\r"}
+    }
+    expect eof
+    catch wait result
+    exit [lindex $result 3]
+  args:
+    executable: /usr/bin/expect

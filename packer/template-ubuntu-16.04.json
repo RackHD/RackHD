@@ -95,6 +95,7 @@
         "<enter><wait>"
       ],
       "boot_wait": "10s",
+      "headless": true,
       "disk_size": 40960,
       "headless": true,
       "guest_os_type": "Ubuntu_64",
