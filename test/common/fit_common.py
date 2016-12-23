@@ -887,29 +887,28 @@ def run_nose(nosepath):
                          ], shell=True)
     exitcode = 0
     # set nose options
-    noseopts = ' --exe '
+    noseopts = ' --exe --with-nosedep '
     if ARGS_LIST['group'] != 'all' and ARGS_LIST['group'] != '':
         noseopts += ' -a ' + str(ARGS_LIST['group']) + ' '
     if ARGS_LIST['list'] == True or ARGS_LIST['list'] == "True":
-        noseopts += ' -v --collect-only '
+        noseopts += ' --collect-only '
         ARGS_LIST['v'] = 0
         print "\nTest Listing for:", ARGS_LIST['test']
         print "----------------------------------------------------------------------"
     if ARGS_LIST['xunit'] == True or ARGS_LIST['xunit'] == "True":
         noseopts += ' --with-xunit '
     else:
-        noseopts += ' -s '
+        noseopts += ' -s -v'
     # if nosepath is a directory, recurse through subdirs else run single test file
     if os.path.isdir(nosepath):
-        cmdline = ""
-        # Skip the CIT test directories when running groups
-        skipdirs = ["tests/api"]
-        for subdir, dirs, files in os.walk(nosepath):
-            if any(item in subdir for item in skipdirs):
-                continue
-            else:
-                cmdline += " " + subdir
-        exitcode += _noserunner(cmdline)
+        # Skip the CIT test directories that match these expressions
+        regex = '(tests$)|(tests/api$)|(tests/api/.*)'
+        cmd_list = []
+        for root, _, _ in os.walk(nosepath):
+            if not re.search(regex, root):
+                cmd_list.append(root)
+        cmds = ' '.join(cmd_list)
+        exitcode += _noserunner(cmds)
     else:
         exitcode += _noserunner(nosepath)
     return exitcode
