@@ -7,7 +7,7 @@
 # Note that we use `"$@"' to let each command-line parameter expand to a
 # separate word. The quotes around `$@' are essential!
 # We need TEMP as the `eval set --' would nuke the return value of getopt.
-TEMP=`getopt -o dins:r:o:t: --long dryrun,install,no-install,stack,release:,template:,script: -n '$0' -- "$@"`
+TEMP=`getopt -o s:r:o:t:c: --long stack,release:,template:,script:,config: -n '$0' -- "$@"`
 
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
 
@@ -15,43 +15,21 @@ if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
 eval set -- "$TEMP"
 
 # inbound parameters from environment
-DRYRUN=${DRYRUN-false}
-INSTALL=${INSTALL-true}
-STACK_NUMBER=${STACK_NUMBER-}
-RELEASE_NAME=${RELEASE_NAME-onrack-devel}
+STACK_NAME=${STACK_NAME-}
 OVA_NAME=${OVA_NAME-None}
-TEST_SCRIPT=${TEST_SCRIPT-autotest/run_onrack_smoke_test.py}
-TEST_RUN="smoketest"
+TEST_SCRIPT=${TEST_SCRIPT-deploy/run_vagrant_installer.py}
 
 while true ; do
         case "$1" in
-                -s|--stack) STACK_NUMBER=$2 ; shift 2 ;;
+                -s|--stack) STACK_NAME=$2 ; shift 2 ;;
                 -r|--release) RELEASE_NAME=$2 ; shift 2 ;;
                 -o|--template) OVA_NAME=$2 ; shift 2 ;;
-                -n|--no-install) INSTALL=false ; shift ;;
-                -d|--dryrun) DRYRUN=true ; shift ;;
                 -t|--script) TEST_SCRIPT=$2 ; shift 2 ;;
+                -c|--config) CONFIG=$2 ; shift 2 ;;
                 --) shift; break ;;
                 *) echo "Internal error!" ; exit 1 ;;
         esac
 done
-
-if [ -z "$STACK_NUMBER" ]
-then
-   echo "Must specify a stack (-s N) or \$STACK_NUMBER"
-   exit 1
-fi
-
-set -x
-STACK_NUMBER=$(echo "$STACK_NUMBER" | sed -r 's/^([0-9]+)?.*$/\1/')
-set +x
-
-if [ "$STACK_NUMBER" = "" ]
-then
-  echo "Must specify a valid stack number"
-  exit 1
-fi
-
 
 # create virtual environment in tests/myenv_hwimobuild
 echo "Installing Virtual Environment..."
@@ -67,9 +45,8 @@ fi
 
 set -x
 set -o pipefail
-python run_tests.py -v 9 -xunit -test "$TEST_SCRIPT" -stack "$STACK_NUMBER" -template "$OVA_NAME" -version "$RELEASE_NAME" | tee test_console.log
+python run_tests.py -v 9 -xunit -test "$TEST_SCRIPT" -stack "$STACK_NAME" -template "$OVA_NAME" -config "$CONFIG" | tee test_console.log
 STATUS=${PIPESTATUS[0]}
 set +x
 
 exit $STATUS
-
