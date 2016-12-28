@@ -119,7 +119,7 @@ class rackhd20_api_pollers(fit_common.unittest.TestCase):
         for item in api_data['json']:
             poll_data = fit_common.rackhdapi('/api/2.0/pollers/' + item['id'] + '/data/current')
             self.assertEqual(poll_data['status'], 200, 'Incorrect HTTP return code, expected 200, got:' + str(poll_data['status']))
-            entrylist = ['host', 'node', 'timestamp', 'user']
+            entrylist = ['host', 'node', 'timestamp']
             for record in poll_data['json']:
                 for entry in entrylist:
                     self.assertIn(entry, record, 'Missing entry: ' + entry)
