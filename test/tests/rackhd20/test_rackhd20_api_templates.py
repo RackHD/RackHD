@@ -40,13 +40,6 @@ class rackhd20_api_templates(fit_common.unittest.TestCase):
                     print "Checking:", item['name'], subitem
                 self.assertGreater(len(item[subitem]), 0, subitem + ' field error')
 
-    def test_api_20_templates_library_ID_get(self):
-        api_data = fit_common.rackhdapi("/api/2.0/templates/metadata")
-        self.assertEqual(api_data['status'], 200, "Was expecting code 200. Got " + str(api_data['status']))
-        for item in api_data['json']:
-            lib_data = fit_common.rackhdapi("/api/2.0/templates/library/" + item['name'])
-            self.assertEqual(lib_data['status'], 200, "Was expecting code 200. Got " + str(lib_data['status']))
-
     def test_api_20_templates_library_ID_put_get_delete(self):
         api_data = fit_common.rackhdapi("/api/2.0/templates/library/testid?scope=global", action="text-put", payload="null")
         self.assertEqual(api_data['status'], 201, "Was expecting code 201. Got " + str(api_data['status']))
