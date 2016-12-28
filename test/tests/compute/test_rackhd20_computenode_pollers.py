@@ -53,7 +53,7 @@ class rackhd20_computenode_pollers(fit_common.unittest.TestCase):
             print "\t{0}".format(msg)
 
         errorlist = []
-        poller_list = ['driveHealth', 'sel', 'chassis', 'selInformation', 'sdr']
+        poller_list = ['driveHealth', 'sel', 'chassis', 'selInformation', 'sdr', 'selEntries']
         if fit_common.VERBOSITY >= 2:
             print "Expected Pollers for a Node: ".format(poller_list)
         for node in NODELIST:
@@ -70,7 +70,10 @@ class rackhd20_computenode_pollers(fit_common.unittest.TestCase):
                 if fit_common.VERBOSITY >= 3:
                     print "Poller list retreived", poller_dict
             else:
-                errorlist.append("Error: Node {0} Pollers not running {1}".format(node, list(set(poller_list) - set(poller_dict))))
+                if list(set(poller_list) - set(poller_dict)):
+                    errorlist.append("Error: Node {} Pollers not running {}".format(node, list(set(poller_list) - set(poller_dict))))
+                if list(set(poller_dict) - set(poller_list)):
+                    errorlist.append("Error: Node {} Unexpected Pollers running {}".format(node, list(set(poller_dict) - set(poller_list))))
 
         if errorlist != []:
             if fit_common.VERBOSITY >= 2:
