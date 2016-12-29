@@ -17,7 +17,8 @@ from nose.plugins.attrib import attr
 @attr(all=True, regression=True, smoke=True)
 class rackhd20_api_templates(fit_common.unittest.TestCase):
     def setUp(self):
-        api_data = fit_common.rackhdapi("/api/2.0/templates/library/testid", action="delete")
+        fit_common.rackhdapi("/api/2.0/templates/library/testid", action="delete")
+
     def test_api_20_templates_metadata(self):
         api_data = fit_common.rackhdapi("/api/2.0/templates/metadata")
         self.assertEqual(api_data['status'], 200, "Was expecting code 200. Got " + str(api_data['status']))
