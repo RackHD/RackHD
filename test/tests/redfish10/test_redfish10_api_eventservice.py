@@ -52,12 +52,12 @@ class redfish10_api_eventservice(fit_common.unittest.TestCase):
         api_data = fit_common.rackhdapi('/redfish/v1/EventService/Subscriptions/' + api_data['json']['Id'])
         self.assertEqual(api_data['status'], 200, "Was expecting code 200. Got " + str(api_data['status']))
         api_data = fit_common.rackhdapi('/redfish/v1/EventService/Subscriptions/' + api_data['json']['Id'], action="delete")
-        self.assertEqual(api_data['status'], 204, "Was expecting code 200. Got " + str(api_data['status']))
+        self.assertEqual(api_data['status'], 204, "Was expecting code 204. Got " + str(api_data['status']))
 
     def test_redfish_v1_eventservice_actions_submittestevent_post(self):
         payload = {}
         api_data = fit_common.rackhdapi('/redfish/v1/EventService/Actions/EventService.SubmitTestEvent', action="post", payload=payload)
-        self.assertEqual(api_data['status'], 202, "Was expecting code 200. Got " + str(api_data['status']))
+        self.assertEqual(api_data['status'], 202, "Was expecting code 202. Got " + str(api_data['status']))
 
 if __name__ == '__main__':
     fit_common.unittest.main()
