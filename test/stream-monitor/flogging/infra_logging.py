@@ -94,6 +94,7 @@ class _LevelLoggerClass(Logger):
 
 
 class _LoggerSetup(object):
+    _SAVED_LOGDIR_COUNT=10
     def __init__(self):
         self.__prelog_data = []
         self.__do_dirs()
@@ -135,7 +136,7 @@ class _LoggerSetup(object):
                 matches[key] = file_name
 
         keys = sorted(matches.keys(), reverse=True)
-        trim_these = keys[3:]
+        trim_these = keys[self._SAVED_LOGDIR_COUNT:]
         for trim_inx in trim_these:
             trim_name = os.path.join(lg_base_dir, matches[trim_inx])
             self.__prelog(logging.INFO, 'removing previous logging dir %s', trim_name)
