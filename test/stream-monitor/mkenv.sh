@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright 2015-2016, EMC, Inc.
+# Copyright 2016, EMC, Inc.
 
 #
 # Run this without options to create a virtual

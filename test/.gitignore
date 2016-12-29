@@ -1,0 +1,7 @@
+on-skupack
+myenv_*
+log_output
+startup.sh
+nohup.out
+*~
+auth.json

@@ -20,9 +20,8 @@ Test harness may be run on appliance host (localhost), or third party machine.
 Deployment scripts must be run under third party Ubuntu Linux host.
 Tests require the following virtual environment commands be executed:
 
-    virtualenv .venv
-    source .venv/bin/activate
-    pip install -r requirements.txt
+    ./mkenv.sh
+    source myenv_fit
 
 
 ## Directory Organization
@@ -32,6 +31,8 @@ The FIT test framework is under RackHD/test
 - 'tests' is the test 'harness'
 - 'common' contains any common library functions
 - 'deploy' contains deployment and installation scripts
+- 'stream-monitor' contains a nose-plugin to help with monitoring various
+   streams (logs/amqp) and providing services around that
 - 'templates' contains script templates for making new tests
 - 'util' contains non-test utilities
 
@@ -141,8 +142,9 @@ Use the following commands to initialize the server and run a Smoke Test:
 
     vagrant ssh dev
     sudo bash
-    source .venv/bin/activate
     cd fit_tests/test
+    ./mkenv.sh vagrant
+    source myenv_vagrant
     python run_tests.py -stack vagrant -test deploy/rackhd_stack_init.py -v 4
     python run_tests.py -test tests -group smoke
 

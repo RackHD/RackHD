@@ -20,6 +20,8 @@ import re
 import requests
 import pexpect
 import shutil
+import nose
+from flogging import get_loggers, logger_config_api
 
 # Globals
 
@@ -52,6 +54,10 @@ CONFIG_PATH = TEST_PATH + ARGS_LIST["config"] + "/"
 if ARGS_LIST["config"] != 'config':
     print "**** Using config file path:", ARGS_LIST["config"]
 VERBOSITY = int(os.getenv("VERBOSITY", "1"))
+# The global "VERBOSITY" will go away once all usages are removed. At that point,
+# the following call can migrate some place that makes more sense (not sure where
+# that is yet!)
+
 GLOBAL_CONFIG = []
 STACK_CONFIG = []
 API_PORT = "None"
@@ -863,53 +869,65 @@ def apply_obm_settings_seq():
 
 def run_nose(nosepath):
     # this routine runs nosetests from wrapper using path spec 'nosepath'
-    def _noserunner(pathspec):
+    def _noserunner(pathspecs, noseopts):
         xmlfile = str(time.time()) + ".xml" # XML report file name
-        return subprocess.call(
-                         [
-                             'export VERBOSITY=' + str(ARGS_LIST['v']) + ';' +
-                             'export ORA=' + str(ARGS_LIST['ora']) + ';' +
-                             'export STACK=' + str(ARGS_LIST['stack']) + ';' +
-                             'export SKU="' + str(ARGS_LIST['sku']) + '";' +
-                             'export NODEID=' + str(ARGS_LIST['nodeid']) + ';' +
-                             'export OBMMAC=' + str(ARGS_LIST['obmmac']) + ';' +
-                             'export VERSION=' + str(ARGS_LIST['version']) + ';' +
-                             'export TEMPLATE=' + str(ARGS_LIST['template']) + ';' +
-                             'export XUNIT=' + str(ARGS_LIST['xunit']) + ';' +
-                             'export NUMVMS=' + str(ARGS_LIST['numvms']) + ';' +
-                             'export GROUP=' + str(ARGS_LIST['group']) + ';' +
-                             'export CONFIG=' + str(ARGS_LIST['config']) + ';' +
-                             'export HTTP=' + str(ARGS_LIST['http']) + ';' +
-                             'export HTTPS=' + str(ARGS_LIST['https']) + ';' +
-                             'export PORT=' + str(ARGS_LIST['port']) + ';' +
-                             'export FIT_CONFIG=' + CONFIG_PATH + "global_config.json" + ';' +
-                             'nosetests ' + noseopts + ' --xunit-file ' + xmlfile + ' ' + pathspec
-                         ], shell=True)
+        env = {
+            'VERBOSITY':  str(ARGS_LIST['v']),
+            'ORA':  str(ARGS_LIST['ora']),
+            'STACK':  str(ARGS_LIST['stack']),
+            'SKU':  str(ARGS_LIST['sku']) ,
+            'NODEID':  str(ARGS_LIST['nodeid']),
+            'OBMMAC':  str(ARGS_LIST['obmmac']),
+            'VERSION':  str(ARGS_LIST['version']),
+            'TEMPLATE':  str(ARGS_LIST['template']),
+            'XUNIT':  str(ARGS_LIST['xunit']),
+            'NUMVMS':  str(ARGS_LIST['numvms']),
+            'GROUP':  str(ARGS_LIST['group']),
+            'CONFIG':  str(ARGS_LIST['config']),
+            'HTTP':  str(ARGS_LIST['http']),
+            'HTTPS':  str(ARGS_LIST['https']),
+            'PORT':  str(ARGS_LIST['port']),
+            'FIT_CONFIG': CONFIG_PATH + "global_config.json",
+            'PATH':  os.environ['PATH']
+        }
+        argv = ['nosetests']
+        argv.extend(noseopts)
+        argv.append('--xunit-file')
+        argv.append(xmlfile)
+        argv.extend(pathspecs)
+        return subprocess.call(argv, env=env)
+
     exitcode = 0
     # set nose options
-    noseopts = ' --exe --with-nosedep '
+    noseopts = ['--exe', '--with-nosedep']
     if ARGS_LIST['group'] != 'all' and ARGS_LIST['group'] != '':
-        noseopts += ' -a ' + str(ARGS_LIST['group']) + ' '
+        noseopts.append('-a')
+        noseopts.append(str(ARGS_LIST['group']))
     if ARGS_LIST['list'] == True or ARGS_LIST['list'] == "True":
-        noseopts += ' --collect-only '
+        noseopts.append('--collect-only')
         ARGS_LIST['v'] = 0
         print "\nTest Listing for:", ARGS_LIST['test']
         print "----------------------------------------------------------------------"
     if ARGS_LIST['xunit'] == True or ARGS_LIST['xunit'] == "True":
-        noseopts += ' --with-xunit '
+        noseopts.append('--with-xunit')
     else:
-        noseopts += ' -s -v'
+        noseopts.append('-s')
+        noseopts.append('-v')
+
     # if nosepath is a directory, recurse through subdirs else run single test file
     if os.path.isdir(nosepath):
         # Skip the CIT test directories that match these expressions
         regex = '(tests$)|(tests/api$)|(tests/api/.*)'
-        cmd_list = []
+        pathspecs = []
         for root, _, _ in os.walk(nosepath):
             if not re.search(regex, root):
-                cmd_list.append(root)
-        cmds = ' '.join(cmd_list)
-        exitcode += _noserunner(cmds)
+                pathspecs.append(root)
+        exitcode += _noserunner(pathspecs, noseopts)
     else:
-        exitcode += _noserunner(nosepath)
+        exitcode += _noserunner([nosepath], noseopts)
     return exitcode
 
+def run_from_module(file_name):
+    # Use this method in 'name == "__main__"' style test invocations
+    # within individual test files
+    run_nose(file_name)

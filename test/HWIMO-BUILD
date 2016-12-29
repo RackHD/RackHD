@@ -34,14 +34,8 @@ done
 # create virtual environment in tests/myenv_hwimobuild
 echo "Installing Virtual Environment..."
 rm -rf myenv_hwimobuild
-virtualenv --no-site-packages myenv_hwimobuild
-source myenv_hwimobuild/bin/activate
-echo "Installing Python Modules..."
-pip install -r requirements.txt > pipinstall.log
-if [ $? != 0 ]
-then
-  cat pipinstall.log
-fi
+./mkenv.sh hwimobuild
+source myenv_hwimobuild
 
 set -x
 set -o pipefail
