@@ -20,6 +20,12 @@ class StreamMonitorPlugin(Plugin):
         self.__stream_plugins = {}
         super(StreamMonitorPlugin, self).__init__(*args, **kwargs)
 
+    @classmethod
+    def get_singleton_instance(klass):
+        assert klass._singleton is not None, \
+            "Attempt to retrieve singleton before first instance created"
+        return klass._singleton
+
     def _self_test_print_step_enable(self):
         self.__save_call_sequence = []
 
@@ -45,7 +51,7 @@ class StreamMonitorPlugin(Plugin):
         super(StreamMonitorPlugin, self).configure(options,conf)
         if not self.enabled:
             return
-        if conf.options.collect_only:
+        if getattr(conf.options, 'collect_only', False):
             # we don't want to be spitting stuff out during -list!
             self.enabled = False
 
@@ -78,3 +84,12 @@ class StreamMonitorPlugin(Plugin):
         self.__take_step('stopTest', test=test)
         for pg in self.__stream_plugins.values():
             pg.handle_stop_test(test)
+
+
+def smp_get_stream_monitor_plugin():
+    """
+    Get the plugin that nose will have created. ONLY nose should 
+    create the main instance!
+    """
+    smp = StreamMonitorPlugin.get_singleton_instance()
+    return smp
