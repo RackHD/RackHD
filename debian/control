@@ -20,6 +20,7 @@ Depends: ${misc:Depends},
          on-syslog,
          on-taskgraph,
          on-tftp,
+         on-imagebuilder,
          rabbitmq-server
 Description: base package for all of RackHD
  uber package for all rackhd installation
