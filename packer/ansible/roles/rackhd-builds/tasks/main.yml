@@ -7,12 +7,12 @@
 - apt: pkg=python-pycurl state=present
   sudo: yes
 
-- apt_repository: repo="deb https://dl.bintray.com/rackhd-mirror/debian trusty main"
+- apt_repository: repo="deb https://dl.bintray.com/rackhd/debian trusty main"
                   state=present
   sudo: yes
   when: (is_release is undefined) or (not is_release)
 
-- apt_repository: repo="deb https://dl.bintray.com/rackhd-mirror/debian trusty release"
+- apt_repository: repo="deb https://dl.bintray.com/rackhd/debian trusty release"
                   state=present
   sudo: yes
   when: (is_relaese is not undefined) and is_release
