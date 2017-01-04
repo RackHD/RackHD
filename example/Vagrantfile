@@ -37,9 +37,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             target.vm.synced_folder "#{ENV['WORKSPACE']}/#{ENV['REPO']}", "/home/vagrant/src/on-http/node_modules/on-core/"
             target.vm.synced_folder "#{ENV['WORKSPACE']}/#{ENV['REPO']}", "/home/vagrant/src/on-tftp/node_modules/on-core/"
             target.vm.synced_folder "#{ENV['WORKSPACE']}/#{ENV['REPO']}", "/home/vagrant/src/on-dhcp-proxy/node_modules/on-core/"
-          else
-            target.vm.synced_folder "#{ENV['WORKSPACE']}/#{ENV['REPO']}", "/home/vagrant/src/#{ENV['REPO']}"
           end
+          target.vm.synced_folder "#{ENV['WORKSPACE']}/#{ENV['REPO']}", "/home/vagrant/src/#{ENV['REPO']}"
           if ENV['CONFIG_DIR']
             target.vm.synced_folder "#{ENV['WORKSPACE']}/#{ENV['CONFIG_DIR']}", "/opt/onrack/etc/"
             target.vm.synced_folder "#{ENV['WORKSPACE']}/#{ENV['CONFIG_DIR']}", "/home/vagrant/opt/monorail/"

@@ -1,6 +1,9 @@
 ---
 - name: RackHD Demonstration Server
   hosts: local
+  vars:
+    rackhd_version: ""
+    is_release: false
   sudo: no
   roles:
     - apt
@@ -11,9 +14,10 @@
     - node
     - isc-dhcp-server
     - monorail
+    - config_admin_ip
     - snmptool
     - ipmitool
     - integrationtest
     - postgresql
     - setuptools
-    - rackhd-ci-builds
+    - rackhd-builds

@@ -36,7 +36,7 @@ class WorkerTasks(object):
             raise TypeError('expected callable function')
     
     def __wait(self, timeout_sec):
-        while len(self.__tasks):
+        while self.__check_tasks():
             for task in self.__tasks:
                 elapsed_time = int(time.mktime(datetime.now().timetuple()) - task.start_time)
                 if timeout_sec != -1 and elapsed_time >= timeout_sec:
@@ -49,13 +49,15 @@ class WorkerTasks(object):
                     self.__stop(task)
             time.sleep(1)
 
+    def __check_tasks(self):
+        for task in self.__tasks:
+            if task.running == True:
+                return True
+        return False
+
     def __stop(self, task):
         LOG.info('stopping subtask for {0}'.format(task.id))
         task.thread.join()
-        try:
-            self.__tasks.remove(task)
-        except IndexError:
-            LOG.error('index error while removing subtask from list!')
 				
     def __run(self):
         for task in self.__tasks:

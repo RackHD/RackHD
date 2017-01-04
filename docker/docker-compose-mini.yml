@@ -1,0 +1,117 @@
+# Copyright 2016, EMC, Inc.
+
+version: '2'
+
+volumes:
+  dhcp-leases:
+    external: false
+
+services:
+
+  mongo: # 27017
+    image: mongo:latest
+    network_mode: "host"
+    privileged: true
+
+  rabbitmq: # 5672, 15672
+    image: rabbitmq:management
+    network_mode: "host"
+    privileged: true
+
+  dhcp: # 67/udp
+    image: rackhd/isc-dhcp-server
+    build: "./dhcp"
+    network_mode: "host"
+    privileged: true
+    volumes:
+      - "dhcp-leases:/var/lib/dhcp"
+      - "./dhcp/config:/etc/dhcp"
+      - "./dhcp/defaults:/etc/defaults"
+
+  files:
+    build: "./files"
+    image: "rackhd/files"
+    network_mode: "host"
+    privileged: true
+    volumes:
+      - "./files/mount:/RackHD/files"
+
+  # test:
+  #   build: "../test"
+  #   image: "rackhd/test"
+  #   network_mode: "host"
+  #   privileged: true
+
+  # RackHD services
+
+  #  core:
+  #    build: "../on-core"
+  #    image: rackhd/on-core:latest
+  #    command: "/bin/echo \"exit\""
+
+  dhcp-proxy: # 68/udp, 4011
+    build: "../on-dhcp-proxy"
+    depends_on:
+      - dhcp
+      - mongo
+      - rabbitmq
+    image: rackhd/on-dhcp-proxy:latest
+    network_mode: "host"
+    privileged: true
+    volumes:
+      - "dhcp-leases:/var/lib/dhcp"
+      - "./monorail:/opt/monorail"
+
+  http: # 9090, 9080
+    build: "../on-http"
+    depends_on:
+      - files
+      - mongo
+      - rabbitmq
+    image: rackhd/on-http:latest
+    network_mode: "host"
+    privileged: true
+    volumes:
+      - "./files/mount/common:/RackHD/on-http/static/http/common"
+      - "./monorail:/opt/monorail"
+
+
+  syslog: # 514/udp
+    build: "../on-syslog"
+    depends_on:
+      - mongo
+      - rabbitmq
+    image: rackhd/on-syslog:latest
+    network_mode: "host"
+    privileged: true
+    volumes:
+      - "./monorail:/opt/monorail"
+
+  taskgraph:
+    build: "../on-taskgraph"
+    depends_on:
+      - dhcp
+      - mongo
+      - rabbitmq
+      - syslog
+    image: rackhd/on-taskgraph:latest
+    network_mode: "host"
+    privileged: true
+    volumes:
+      - "./monorail:/opt/monorail"
+
+  tftp: # 69/udp
+    build: "../on-tftp"
+    depends_on:
+      - files
+      - mongo
+      - rabbitmq
+      - syslog
+    image: rackhd/on-tftp:latest
+    network_mode: "host"
+    privileged: true
+    volumes:
+      - "./files/mount:/RackHD/on-tftp/static/tftp"
+      - "./monorail:/opt/monorail"
+
+

@@ -2,29 +2,99 @@
 
 ###################################################
 # input (enviromental variable):
-# * OS_VER        -   ubuntu-14.04 or ubuntu-16.04
-# * BUILD_TYPE    -   vmware or virtualbox
-# * RACKHD_INSTALL_ANSIBLE - which is the ansible yml playbook used. now are rackhd_package or rackhd_local
+# * OS_VER        -   ubuntu-14.04 or ubuntu-16.04, by default is ubuntu-14.04
+# * BUILD_TYPE    -   vmware or virtualbox, by default is virtualbox
+# * ANSIBLE_PLAYBOOK - which is the ansible yml playbook used. options are rackhd_package, rackhd_ci_builds, rackhd_release or rackhd_local, default is rackhd_local.
+# * RACKHD_VERSION        - optional , by default is blank(will apt-get install latest rackhwill apt-get install latest rackhd). used for rackhd_ci_builds.yml to install specific version of rackhd.deb(refer to https://bintray.com/rackhd to find correct version you need)
+# * UPLOAD_BOX_TO_ATLAS   - optional, by default is false. tell packer if upload the vagrant box generated to ATLAS. NOTE: ATLAS user/token and target ATLAS repo name should be specificed.
+# * ATLAS_USERNAME - optional, required only when UPLOAD_BOX_TO_ATLAS is true.
+# * ATLAS_NAME     - optional, required only when UPLOAD_BOX_TO_ATLAS is true.
+# * ATLAS_TOKEN    - optional, required only when UPLOAD_BOX_TO_ATLAS is true.
+# * ATLAS_VERSION  - optional, by default is "".when UPLOAD_BOX_TO_ATLAS is true, the box will be uploaded to ATLAS as ATLAS_VERSION( format only accepts like 1.2.3).
 ###################################################
 
-
-
+INFO_HEADER="[Info]"
+WARNING_HEADER="[Warning]"
+ERROR_HEADER="[Error]"
 
 # early exit on command failure
 set -e
 
-#Ubuntu Version, can become an ENV VAR in the future
+echo ${INFO_HEADER}" Please use ENV VAR to pass customized parameter to this script. Please refer to the usage on the top of script file."
+
+############################  Parameter Process ################ start #############
+
+####  Ubuntu Version  ###
 if  [ ! -n "${OS_VER}" ];  then
     OS_VER=ubuntu-14.04
 fi
-echo "Packer Build based on $OS_VER"
+echo "${INFO_HEADER} Packer Build based on $OS_VER ( using template-${OS_VER}.json)"
 
-# Build Vagrant or VMware OVA
+#### Build Vagrant or VMware OVA ? ###
 if  [ ! -n "${BUILD_TYPE}" ];  then
-    BUILD_TYPE=vmware  # option is vmware or vitrualbox , case senstive
+    BUILD_TYPE=virtualbox  # option is vmware or vitrualbox , case senstive
+fi
+if [[ ${BUILD_TYPE} != "virtualbox" ]] && [[ ${BUILD_TYPE} != "vmware" ]] ; then
+    echo "${ERROR_HEADER} Bad Env Var: the BUILD_TYPE=$BUILD_TYPE is invalid, it should be either virtualbox or vmware.. "
+    exit 2
+fi
+
+echo "${INFO_HEADER} Packer Build : ${BUILD_TYPE}"
+
+#### if upload vagrant box to ATLAS ###
+IS_UPLOAD_ATLAS=false
+if [[ ${UPLOAD_BOX_TO_ATLAS,,} == "true" ]];
+then
+    IS_UPLOAD_ATLAS=true
+fi
+if [ $BUILD_TYPE != "virtualbox" ] && [ $IS_UPLOAD_ATLAS == true ]; then
+    echo "${ERROR_HEADER} Bad Env Var: only when for Vagrant Box build. ( BUILD_TYPE=virtualbox), the $UPLOAD_BOX_TO_ATLAS can be set to true . Abort !"
+    exit 2
+fi
+
+### Check the ATLAS accounts ###
+if [ $IS_UPLOAD_ATLAS == true ]; then
+   if [ ! -n "${ATLAS_USERNAME}" ] || [ ! -n "${ATLAS_NAME}" ] || [ ! -n "${ATLAS_TOKEN}" ];  then
+       echo "${ERROR_HEADER} Bad Env Var: When ENV VAR \$UPLOAD_BOX_TO_ATLAS is true, the ATLAS_USERNAME/ATLAS_NAME/ATLAS_TOKEN should be given.  Abort !"
+       exit 2
+   fi
+   if [ ! -n "${ATLAS_VERSION}" ];  then
+       ATLAS_VERSION=""
+   else
+       if [[ $ATLAS_VERSION != +([0-9]).+([0-9]).+([0-9]) ]] ; then
+           echo "${ERROR_HEADER}: ATLAS_VERSION(${ATLAS_VERSION}) should be X.Y.Z (X.Y.Z is digit), that's only format accepted by ATLAS."
+          exit 2
+      fi
+   fi
 fi
 
 
+# By default. use ansible playbook : rackhd_local.yml
+# can become an ENV VAR in the future
+if  [ ! -n "${ANSIBLE_PLAYBOOK}" ];  then
+    ANSIBLE_PLAYBOOK=rackhd_local
+fi
+if [ ! -f "ansible/${ANSIBLE_PLAYBOOK}.yml" ]; then
+    echo "${ERROR_HEADER} The target ansible playbook(ansible/${ANSIBLE_PLAYBOOK}.yml) does not exist. Aborting..."
+    exit 3
+fi
+echo "${INFO_HEADER} Install RackHD with ansible :  ${ANSIBLE_PLAYBOOK}.yml "
+
+### $RACKHD_VERSION is used for package install provisioner:  `apt-get install rackhd=$RACKHD_VERSION` ###
+
+if [  -n "${RACKHD_VERSION}" ];  then
+   if [ $ANSIBLE_PLAYBOOK != "rackhd_local" ]; then
+       echo "${INFO_HEADER} Build VM based on RackHD Debian Package ${RACKHD_VERSION} "
+  else
+       echo "${WARNING_HEADER} Skip the ENV VAR: RACKHD_VERSION=$RACKHD_VERSION, this variable is useless for rackhd_local.yml (build from src code)".
+   fi
+else
+   if [ $ANSIBLE_PLAYBOOK != "rackhd_local" ]; then
+       echo "${INFO_HEADER} Install RackHD Package without specific version."
+   fi
+fi
+
+############################  Parameter Process ################ end #############
 
 # Enable Verbose Packer Logging
 # see https://www.packer.io/docs/other/environmental-variables.html for details
@@ -32,13 +102,6 @@ export PACKER_LOG=1
 export PACKER_LOG_PATH=./packer-debug.log
 export PACKER_NO_COLOR=1  # for Jenkins usage. if manual run, suggest to turn color on (set to 0)
 
-
-# By default. use ansible playbook : rackhd_package.yml
-# can become an ENV VAR in the future
-if  [ ! -n "${RACKHD_INSTALL_ANSIBLE}" ];  then
-    RACKHD_INSTALL_ANSIBLE=rackhd_package
-fi
-echo "Install RackHD with ansible ${RACKHD_INSTALL_ANSIBLE}.yml"
 
 
 
@@ -48,9 +111,23 @@ VMDIR=output-${BUILD_TYPE}-iso
 VM_NAME=rackhd-${OS_VER}
 
 
+CFG_FILE=template.cfg
 # parameter file pass to packer
-echo { \"playbook\": \"${RACKHD_INSTALL_ANSIBLE}\",   > template.cfg
-echo  \"vm_name\": \"${VM_NAME}\" } >> template.cfg
+echo {                                                > $CFG_FILE
+echo  \"playbook\": \"${ANSIBLE_PLAYBOOK}\",         >> $CFG_FILE
+echo  \"vm_name\": \"${VM_NAME}\",                   >> $CFG_FILE
+echo  \"rackhd_version\": \"${RACKHD_VERSION}\"      >> $CFG_FILE
+
+if [[ $IS_UPLOAD_ATLAS == true ]]
+then
+    # NOTE: the ATLAS_TOKEN should be hiden in ENV Variable for security sake.
+    echo ,                                           >> $CFG_FILE
+    echo \"atlas_username\": \"${ATLAS_USERNAME}\" , >> $CFG_FILE
+    echo \"atlas_name\": \"${ATLAS_NAME}\" ,         >> $CFG_FILE
+    echo \"atlas_version\": \"${ATLAS_VERSION}\"     >> $CFG_FILE
+fi
+echo }                                               >> $CFG_FILE
+# parameter file --- done
 
 
 PACKER=packer
@@ -67,8 +144,8 @@ else
 fi
 
 
+# Check Free Disk Space,  VMWare Workstation may stuck if disk space too small
 if [ "$BUILD_TYPE"  == "vmware" ];  then
-    # Check Free Disk Space,  VMWare Workstation may stuck if disk space too small
     fd_in_kb=$(df  .  | awk '/^\/dev/ {print $4}')
     fd_thres=$(expr 1024 '*' 1024 '*' 8)  # set to 8G as threshold.
     if [ $fd_in_kb -lt  $fd_thres ]
@@ -78,16 +155,30 @@ if [ "$BUILD_TYPE"  == "vmware" ];  then
     fi
 fi
 
-#build RackHD OVA
-$PACKER build --force --only=${BUILD_TYPE}-iso --var-file=template.cfg template-${OS_VER}.json | $TS | tee packer-install.log
+# pre-process the packer template file
+PACKER_TEMP=$(cat template-${OS_VER}.json)
+if [[ $IS_UPLOAD_ATLAS == false ]]
+then
+    if [ ! -n "$(which jq)" ] ; then
+        echo "${ERROR_HEADER} jq is not installed . please install it, e.x. sudo apt-get install jq... Aborting. "
+        exit 5
+    fi
+    # Delete the post-processors blocks in the template.json, before sending to 'packer build'
+#    PACKER_TEMP=$( jq 'del(."post-processors")'  template-${OS_VER}.json)
+     PACKER_TEMP=$( jq 'del(.["post-processors"][0][1])' template-${OS_VER}.json | jq 'del(.["push"])')
+fi
+
+
+# execute 'packer build'
+echo ${PACKER_TEMP} | $PACKER build --force --only=${BUILD_TYPE}-iso --var-file=$CFG_FILE  - | $TS | tee packer-install.log 
 
 if [ $? != 0 ]; then
-    echo "Packer Build failed.. exit"
+    echo "${ERROR_HEADER} Packer Build failed.. exit"
     exit 3
 fi
 
 if [ "$BUILD_TYPE"  != "vmware" ];  then
-    echo "Skip the signing for virtualbox for the time being ..."
+    echo "${INFO_HEADER} Skip the post-processing(signing/clamscan/ovf-template injection) for virtualbox for the time being ..."
     exit 0
 fi
 
@@ -96,9 +187,9 @@ fi
 if [ -f "$CI_SIGNING_KEY" ]
 then
     SIGN_ARGS="--privateKey=$CI_SIGNING_KEY"
-    echo "Signing the OVA with the CI key"
+    echo "${INFO_HEADER}Signing the OVA with the CI key"
 else
-    echo "No signing to be performed.. skip."
+    echo "${INFO_HEADER}No signing to be performed.. skip."
 fi
 
 # Conver the VM Disk and VMX folder into an OVA
@@ -107,21 +198,101 @@ BASENAME=${VM_NAME}
 OVA="${BASENAME}.ova"
 ovftool $SIGN_ARGS -o ${VMDIR}/${VM_NAME}.vmx $OVA
 
-
 if [ $? != 0 ]; then
-    echo "ovftool exec failed.. exit"
+    echo "${ERROR_HEADER} ovftool exec failed.. exit"
     exit 4
 fi
 
 # Do Virus Scan
 if [ -x /usr/bin/clamscan ]
 then
-    echo "Doing ClamScan"
+    echo "${INFO_HEADER} Doing ClamScan"
     rm -rf "$OVA.avscan"
     /usr/bin/clamscan --log="$OVA.avscan" --max-filesize=4000M --max-scansize=4000M -r ${VMDIR} --allmatch
 else
-    echo "skip clamscan..."
+    echo "${INFO_HEADER} skip clamscan..."
 fi
+
+
+#### BEGIN ###### Modify the OVF file and update checksum ##############
+#
+#Background:
+#   for the purpose of RackHD deployment enviroment without DHCP on admin port (e.x.: eth0),
+#   "OVF Environment" is leveraged to configure VM's IP during OVA/OVF deployment
+#
+#Implementation:
+#   1. define customized fields in OVF template file(XML format)
+#   2. when deploy RackHD OVA , you can specific the eth0 IP (thru OVF Env Parameter) like ```ovftool --prop:adminIP=1.2.3.4 .....```
+#   3. in VM OS's bootup scripts: use VMWare Tool to retrieve IP and set the primary NIC(eth0 for example)
+#
+#  Reference: http://www.v-front.de/2014/01/building-self-configuring-nested-esxi.html
+#
+###################################################################
+rm -f $"${BASENAME}.mf" # remove checksum file, otherwise, existing mf file will prevent ovftool coverting
+echo "covert to OVF"
+OVF=$"${BASENAME}.ovf"
+ovftool $OVA  $OVF
+echo "modify the OVF"
+
+#######################################################
+# Note : this is ESXi format. (other ESX version may varies )
+# Add ProductSection/Property xml nodes under VirtualSystem xml node( kind of declare OVF Enviromental Properties)
+#######################################################
+
+################
+#[ OVF Template Injection Step #1 ]
+# Below 'sed' will "insert" below XML tree at the end of <VirtualSystem> tag of the OVF template file.
+#     |-ProductSection
+#     |----Info
+#     |----Product
+#     |----Category
+#     |----Property #1
+#     |----Property #..
+#     |----Property #n
+#################
+sed -i 's/<\/VirtualSystem>/ \
+  <ProductSection>    \
+     <Info>Information about the installed software<\/Info> \
+     <Product>Rackhd<\/Product> \
+     <Category>adminnetwork<\/Category>  \
+     <Property ovf:key="adminIP" ovf:type="string" ovf:userConfigurable="true"> \
+        <Label>adminIP<\/Label> \
+     <\/Property> \
+     <Property ovf:key="adminGateway" ovf:type="string" ovf:userConfigurable="true"> \
+        <Label>adminGateway<\/Label> \
+     <\/Property> \
+     <Property ovf:key="adminNetmask" ovf:type="string" ovf:userConfigurable="true"> \
+        <Label>adminNetmask<\/Label> \
+     <\/Property> \
+     <Property ovf:key="adminDNS" ovf:type="string" ovf:userConfigurable="true"> \
+        <Label>adminDNS<\/Label> \
+     <\/Property>  \
+  <\/ProductSection> \
+<\/VirtualSystem>   \
+/'  $OVF
+################
+#[ OVF Template Injection Step #2 ]
+# specific the "OVF enviroment transport" method to VMWare Tools
+###############
+sed -i 's/<VirtualHardwareSection>/<VirtualHardwareSection ovf:transport="com.vmware.guestInfo" > /' $OVF
+
+
+
+echo "recovert back to OVA"
+###############
+#[ OVF Template Injection Step #3 ]
+# update checksum
+###############
+NewChk=$(sha1sum $OVF | awk '{print $1}')
+sed  -i -E  "s/SHA1\(.*ovf\)=.*$/SHA1\($OVF\)= $NewChk/g"  $"${BASENAME}.mf"
+##############
+#[ OVF Template Injection Step #4 ]
+# re-package into OVA
+##############
+rm $OVA
+ovftool $OVF $OVA
+### END ####### Modify the OVF file and update checksum ##############
+
 
 
 # Create MD5 & Sha256 checksum file
@@ -157,4 +328,5 @@ then
 fi
 
 chmod a=r "$OVA"*
+
 

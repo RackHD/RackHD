@@ -1,0 +1,32 @@
+---
+# vagrant ansible uses 1.5, which doesn't have the keyserver option enabled
+- shell: "apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 379CE192D401AB61"
+  sudo: yes
+
+# apt_repository apparently requires this to run in Ansible 1.5
+- apt: pkg=python-pycurl state=present
+  sudo: yes
+
+- apt_repository: repo="deb https://dl.bintray.com/rackhd/debian trusty main"
+                  state=present
+  sudo: yes
+  when: (is_release is undefined) or (not is_release)
+
+- apt_repository: repo="deb https://dl.bintray.com/rackhd/debian trusty release"
+                  state=present
+  sudo: yes
+  when: (is_relaese is not undefined) and is_release
+
+- name: Install RackHD Packages latest
+  include: aptitude_install_rackhd.yml
+  vars:
+    package: rackhd
+  sudo: yes
+  when: (rackhd_version is undefined) or (not rackhd_version)
+
+- name: Install RackHD Packages specific version
+  include: aptitude_install_rackhd.yml
+  vars:
+    package: rackhd={{ rackhd_version }}
+  sudo: yes
+  when: (rackhd_version is not undefined) and rackhd_version

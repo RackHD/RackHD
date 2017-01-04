@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# Copyright 2016, EMC, Inc.
+
+# This script is used to launch automated testing from Jenkins
+
+# Note that we use `"$@"' to let each command-line parameter expand to a
+# separate word. The quotes around `$@' are essential!
+# We need TEMP as the `eval set --' would nuke the return value of getopt.
+TEMP=`getopt -o s:r:o:t:c: --long stack,release:,template:,script:,config: -n '$0' -- "$@"`
+
+if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
+
+# Note the quotes around `$TEMP': they are essential!
+eval set -- "$TEMP"
+
+# inbound parameters from environment
+STACK_NAME=${STACK_NAME-}
+OVA_NAME=${OVA_NAME-None}
+TEST_SCRIPT=${TEST_SCRIPT-deploy/run_vagrant_installer.py}
+
+while true ; do
+        case "$1" in
+                -s|--stack) STACK_NAME=$2 ; shift 2 ;;
+                -r|--release) RELEASE_NAME=$2 ; shift 2 ;;
+                -o|--template) OVA_NAME=$2 ; shift 2 ;;
+                -t|--script) TEST_SCRIPT=$2 ; shift 2 ;;
+                -c|--config) CONFIG=$2 ; shift 2 ;;
+                --) shift; break ;;
+                *) echo "Internal error!" ; exit 1 ;;
+        esac
+done
+
+# create virtual environment in tests/myenv_hwimobuild
+echo "Installing Virtual Environment..."
+rm -rf myenv_hwimobuild
+./mkenv.sh hwimobuild
+source myenv_hwimobuild
+
+set -x
+set -o pipefail
+python run_tests.py -v 9 -xunit -test "$TEST_SCRIPT" -stack "$STACK_NAME" -template "$OVA_NAME" -config "$CONFIG" | tee test_console.log
+STATUS=${PIPESTATUS[0]}
+set +x
+
+exit $STATUS

@@ -20,6 +20,9 @@ EXCHANGE_EVENT          = Exchange('on.events', type='topic')
 QUEUE_GRAPH_FINISH      = Queue('graph.finished',
                                 EXCHANGE_EVENT,
                                 routing_key='graph.finished.*')
+QUEUE_SEL_ALERT      = Queue('poller.alert.sel',
+                                EXCHANGE_EVENT,
+                                routing_key='poller.alert.sel.#')
                                 
 def make_queue_obj(exchange, queue, routing_key, type='topic'):
     return Queue(queue, \

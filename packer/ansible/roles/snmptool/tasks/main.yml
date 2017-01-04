@@ -3,4 +3,8 @@
   apt: pkg={{ item }} state=installed
   with_items:
     - snmp
+    - snmp-mibs-downloader
+  sudo: yes
+
+- shell: "download-mibs"
   sudo: yes

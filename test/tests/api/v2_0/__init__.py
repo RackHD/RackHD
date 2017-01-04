@@ -12,6 +12,7 @@ from lookups_tests import LookupsTests
 from skupack_tests import SkusTests
 from users_tests import UsersTests
 from swagger_tests import SwaggerTests
+from sel_alert_poller_tests import SELPollerAlertTests
 
 tests = [
     'nodes_api2.tests',
@@ -28,7 +29,8 @@ tests = [
     'skus_api2.tests',
     'lookups_api2.tests',
     'users_api2.tests',
-    'swagger.tests'
+    'swagger.tests',
+    'sel_alert_poller_api2.tests'
 ]
 
 regression_tests = [

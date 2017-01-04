@@ -99,7 +99,7 @@ class OSInstallTests(object):
         for entry in network_devices:
             if entry['ipv4'] != None:
                 hostname = entry['ipv4']['ipAddr']
-                response = os.system('ping -c 1 ' + hostname)
+                response = os.system('ping -c 1 -w 20 ' + hostname)
                 assert_equal(response, 0, message='link {0} device {1} is down'.format(entry['device'], hostname))
 
     @test(enabled=ENABLE_FORMAT_DRIVE, groups=['format-drives.v1.1.test'])
@@ -263,16 +263,25 @@ class OSInstallTests(object):
         if 'networkDevices' in body['options']['defaults']:
             self.__test_link_up(body['options']['defaults']['networkDevices'])
 
-    def install_coreos(self, nodes=[], options=None):
+    def install_coreos(self, payloadFile, nodes=[], options=None):
         graph_name = 'Graph.InstallCoreOS'
         os_repo = defaults.get('RACKHD_COREOS_REPO_PATH', \
             self.__base + '/repo/coreos')
-        body = options
-        if body == None:
-            body = self.__get_os_install_payload('install_coreos_payload_minimal.json')
-            if body != None:
-                body['options']['defaults']['repo'] = os_repo
+        if options == None:
 
+            options = {
+                'options': {
+                    'defaults': {
+                        'repo': os_repo
+                    }
+                }
+            }
+        if(payloadFile):
+            body = self.__get_os_install_payload(payloadFile)
+        else:
+            body = self.__get_os_install_payload('install_coreos_payload_minimum.json')
+
+        self.__update_body(body, options)
         self.__post_workflow(graph_name, nodes, body)
 
     @test(enabled=True, groups=['centos-6-5-install.v1.1.test'])
@@ -372,10 +381,15 @@ class OSInstallTests(object):
         """ Testing Windows Server 2012 Installer Workflow with Min payload"""
         self.install_windowsServer2012('10.40','install_windows_payload_minimal.json')
 
-    @test(enabled=True, groups=['coreos-install.v1.1.test'])
-    def test_install_coreos(self, nodes=[], options=None):
-        """ Testing CoreOS Installer Workflow """
-        self.install_coreos()
+    @test(enabled=True, groups=['coreos-minimum-install.v1.1.test'])
+    def test_install_coreos_min(self, nodes=[]):
+        """ Testing CoreOS Installer Workflow with Minimum Payload"""
+        self.install_coreos(payloadFile='install_coreos_payload_minimum.json')
+
+    @test(enabled=True, groups=['coreos-full-install.v1.1.test'])
+    def test_install_coreos_full(self, nodes=[] ):
+        """ Testing CoreOS Installer Workflow with Full Payload"""
+        self.install_coreos(payloadFile='install_coreos_payload_full.json')
 
     @test(enabled=True, groups=['centos-6-5-minimal-install.v1.1.test'])
     def test_install_centos_6_minimal(self):

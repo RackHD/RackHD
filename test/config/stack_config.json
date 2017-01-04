@@ -1,0 +1,20 @@
+{
+  "_comment":{
+    "bmc": "appliance bmc address",
+    "control": "control switch admin address",
+    "data": "data switch admin address",
+    "hyper": "hypervisor admin address",
+    "ora": "appliance OVA admin address",
+    "ovamac": "appliance OVA MAC address",
+    "pdu": "PDU admin address",
+    "type": "deployment type: esxi, docker, linux, or vagrant"
+  },
+  "vagrant":{
+    "ora": "localhost",
+    "type": "vagrant"
+  },
+  "vagrant_remote": {
+    "ora": "127.0.0.1",
+    "type": "vagrant"
+  }
+}

@@ -4,10 +4,13 @@
       "vcs": true
     },
     "variables": {
-        "atlas_username": "{{ env `ATLAS_USERNAME` }}",
-        "atlas_name": "{{ env `ATLAS_NAME` }}",
+        "atlas_username": "",
+        "atlas_name": "",
+        "atlas_version": "",
+        "atlas_token": "{{env `ATLAS_TOKEN`}}",
         "vm_name" : "rackhd-vm",
-        "playbook": "rackhd_package"
+        "playbook": "rackhd_package",
+        "rackhd_version": ""
     },
     "provisioners": [
         {
@@ -36,18 +39,23 @@
             "execute_command": "echo 'vagrant'|sudo -S bash '{{.Path}}'"
         },
         {
+              "type": "file",
+              "source": "scripts/common/get_nic_name_by_index.sh",
+              "destination": "/tmp/get_nic_name_by_index.sh"
+        },
+        {
             "type": "shell",
             "scripts": [
                 "scripts/addnetif.sh"
             ],
-            "execute_command": "echo 'vagrant'|sudo -S bash '{{.Path}}'",
-            "only": ["vmware-iso"]
+            "execute_command": "echo 'vagrant'|sudo -S bash '{{.Path}}'"
         },
         {
             "type": "ansible-local",
             "inventory_groups": "local",
             "playbook_file": "ansible/{{user `playbook`}}.yml",
-            "playbook_dir": "ansible"
+            "playbook_dir": "ansible",
+            "extra_arguments": [ "--extra-vars \"rackhd_version={{user `rackhd_version`}}\"" ]
         },
         {
             "type": "shell",
@@ -78,8 +86,8 @@
         " keyboard-configuration/layout=USA<wait>",
         " keyboard-configuration/variant=USA<wait>",
         " locale=en_US<wait>",
-        " netcfg/get_hostname=rackhd-demo<wait>",
-        " netcfg/hostname=rackhd-demo<wait>",
+        " netcfg/get_hostname=rackhd<wait>",
+        " netcfg/hostname=rackhd<wait>",
         " noapic<wait>",
         " interface=auto",
         " preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.cfg<wait>",
@@ -87,6 +95,7 @@
         "<enter><wait>"
       ],
       "boot_wait": "10s",
+      "headless": true,
       "disk_size": 40960,
       "guest_os_type": "Ubuntu_64",
       "http_directory": "http",
@@ -125,7 +134,7 @@
           " keyboard-configuration/variant=USA ",
           " locale=en_US ",
           " noapic ",
-          " hostname=RackHD ",
+          " netcfg/get_hostname=rackhd ",
           " netcfg/choose_interface=eth0 ",
           " preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.cfg ",
           " -- <wait>",
@@ -194,22 +203,11 @@
         "type": "atlas",
         "only": ["virtualbox-iso"],
         "artifact": "{{user `atlas_username`}}/{{user `atlas_name`}}",
+        "token": "{{user `atlas_token`}}",
         "artifact_type": "vagrant.box",
         "metadata": {
-            "provider": "virtualbox"
-        }
-    }],
-    [{
-        "type": "vagrant",
-        "keep_input_artifact": true
-    },
-    {
-        "type": "atlas",
-        "only": ["vmware-iso"],
-        "artifact": "{{user `atlas_username`}}/{{user `atlas_name`}}",
-        "artifact_type": "vagrant.box",
-        "metadata": {
-            "provider": "vmware_desktop"
+            "provider": "virtualbox",
+            "version": "{{user `atlas_version`}}"
         }
     }]
   ]
