@@ -888,6 +888,7 @@ def run_nose(nosepath):
             'HTTPS':  str(ARGS_LIST['https']),
             'PORT':  str(ARGS_LIST['port']),
             'FIT_CONFIG': CONFIG_PATH + "global_config.json",
+            'HOME':  os.environ['HOME'],
             'PATH':  os.environ['PATH']
         }
         argv = ['nosetests']
