@@ -9,7 +9,8 @@
         "atlas_version": "",
         "atlas_token": "{{env `ATLAS_TOKEN`}}",
         "vm_name" : "rackhd-vm",
-        "playbook": "rackhd_package"
+        "playbook": "rackhd_package",
+        "rackhd_version": ""
     },
     "provisioners": [
         {
@@ -54,7 +55,7 @@
             "inventory_groups": "local",
             "playbook_file": "ansible/{{user `playbook`}}.yml",
             "playbook_dir": "ansible",
-            "extra_arguments": [ "--extra-vars \"rackhd_version={{user `version`}}\"" ]
+            "extra_arguments": [ "--extra-vars \"rackhd_version={{user `rackhd_version`}}\"" ]
         },
         {
             "type": "shell",
