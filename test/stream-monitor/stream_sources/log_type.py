@@ -5,6 +5,7 @@ from .monitor_abc import StreamMonitorABC
 import sys
 from itertools import count
 
+
 class LoggingMarker(StreamMonitorABC):
     _all_blocks = 0
 
@@ -41,6 +42,7 @@ class LoggingMarker(StreamMonitorABC):
         self.__test_cnt += 1
 
     def __mark_all_in_logger(self, level, logger, msg, args, exc_info=None, extra=None):
+        # Note: 'handlers' only exists on Logger() instances.
         handlers = getattr(logger, 'handlers', [])
         if len(handlers) == 0:
             return  # Nothing to do!
@@ -60,6 +62,46 @@ class LoggingMarker(StreamMonitorABC):
         record = logger.makeRecord(logger.name, level, fn, lno, msg, args, exc_info, func, extra)
         for handler in handlers:
             handler.handle(record)
+
+    def __capture_to_log(self, lg, log_level, cap_type, test, sout, serr, tb):
+        """
+        Common routine to push capture data into a logger at a given level.
+        Note: this, along with "handle_capture" are a bit of a stop-gap for
+        RAC-3869. Well, technically this is a solution for this one case, but
+        RAC-3869 covers the general logcapture case, and this would make use
+        of its abilities rather than manually walking loggers in handle_capture
+        and dealing with propagate in such a hacky fashion here.
+        """
+        save_propagate = lg.propagate
+        try:
+            lg.propagate = 0
+            lg.log(log_level, '------start captured data for %s in %s', cap_type, test)
+            lg.log(log_level, 'stdout: %s', sout)
+            lg.log(log_level, 'stderr: %s', serr)
+            lg.log(log_level, 'traceback: %s', tb)
+            lg.log(log_level, '------end captured data for %s in %s', cap_type, test)
+        except:
+            lg.propagate = save_propagate
+            raise
+        lg.propagate = save_propagate
+
+    def handle_capture(self, log_level, cap_type, test, sout, serr, traceback):
+        """
+        StreamMonitorPlugin call-if-present method to handle moving
+        post-test capture data (in the case of error or failures) into
+        the logs. We decide which loggers to add to (currently hard coded
+        to the infra.run, test.run, and the root), and then use __capture_to_log to
+        do the common work.
+        """
+        irlg = real_getLogger('infra.run')
+        self.__capture_to_log(irlg, log_level, cap_type, test, sout, serr,
+                              traceback)
+        trlg = real_getLogger('test.run')
+        self.__capture_to_log(trlg, log_level, cap_type, test, sout, serr,
+                              traceback)
+        root = real_getLogger()
+        self.__capture_to_log(root, log_level, cap_type, test, sout, serr,
+                              traceback)
 
     def __mark_logger_block(self, logger, bracket, level, fmat, *args, **kwargs):
         if bracket:

@@ -3,11 +3,17 @@ import os
 from nose.plugins import Plugin
 from stream_sources import LoggingMarker
 import sys
+from nose.pyversion import format_exception
+from nose.plugins.xunit import Tee
+from nose import SkipTest
+from StringIO import StringIO
+from logging import ERROR, WARNING
 
 
 class StreamMonitorPlugin(Plugin):
     _singleton = None
     name = "stream-monitor"
+    encoding = 'UTF-8'
     def __init__(self, *args, **kwargs):
         assert StreamMonitorPlugin._singleton is None, \
             "infrastructure fault: more than one StreamMonitorPlugin exists"
@@ -18,6 +24,9 @@ class StreamMonitorPlugin(Plugin):
         # self.__print_to = sys.stderr
         # todo: use nose plugin debug options.
         self.__stream_plugins = {}
+        self.__capture_stack = []
+        self.__current_stdout = None
+        self.__current_stderr = None
         super(StreamMonitorPlugin, self).__init__(*args, **kwargs)
 
     @classmethod
@@ -71,9 +80,13 @@ class StreamMonitorPlugin(Plugin):
     def beforeTest(self, test):
         # order is beforeTest->startTest->stopTest->afterTest
         self.__take_step('beforeTest', test=test)
+        self.__start_capture()
 
     def afterTest(self, test):
         self.__take_step('afterTest', test=test)
+        self.__end_capture()
+        self.__current_stdout = None
+        self.__current_stderr = None
 
     def startTest(self, test):
         self.__take_step('startTest', test=test)
@@ -84,6 +97,85 @@ class StreamMonitorPlugin(Plugin):
         self.__take_step('stopTest', test=test)
         for pg in self.__stream_plugins.values():
             pg.handle_stop_test(test)
+
+    def __start_capture(self):
+        """
+        __start_capture and __end_capture bracket a zone of time that we might want to
+        dump captured information from. E.G. we normally don't WANT to see stdout and stderr
+        from "test_did_this_work()"... unless they fail. In which case, we want to see them!
+
+        Both capture and logcapture report all this at the END of the entire run, however.
+        This is great and very handy (since they are all there at the end of the run). But,
+        in the context of looking at a single test, it's really annoying. So, this logic
+        is stolen from the xunit plugin (which does capture better than capture!). We are
+        basically tucking away stdout/stderrs while letting the data flow to prior levels
+        using the Tee. 
+        """
+        self.__capture_stack.append((sys.stdout, sys.stderr))
+        self.__current_stdout = StringIO()
+        self.__current_stderr = StringIO()
+        sys.stdout = Tee(self.encoding, self.__current_stdout, sys.stdout)
+        sys.stderr = Tee(self.encoding, self.__current_stderr, sys.stderr)
+
+    def __end_capture(self):
+        if self.__capture_stack:
+            sys.stdout, sys.stderr = self.__capture_stack.pop()
+
+    def __get_captured_stdout(self):
+        if self.__current_stdout:
+            value = self.__current_stdout.getvalue()
+            if value:
+                return value
+        return ''
+
+    def __get_captured_stderr(self):
+        if self.__current_stderr:
+            value = self.__current_stderr.getvalue()
+            if value:
+                return value
+        return ''
+
+    def startContext(self, context):
+        self.__start_capture()
+
+    def stopContext(self, context):
+        self.__end_capture()
+
+    def addError(self, test, err):
+        """
+        Handle capturing data on an error being seen. If the "error"
+        is a Skip, we don't care at this point. Otherwise,
+        we want to grab our stdout, stderr, and traceback and asking
+        logging to record all this stuff about the error.
+
+        Note: since 'errors' are related to _running_ the test (vs the
+        test deciding to fail because of an incorrect value), we asking
+        logging to record it as an error.
+        """
+        if issubclass(err[0], SkipTest):
+            # Nothing to see here...
+            return
+
+        self.__propagate_capture(ERROR, 'ERROR', test, err)
+
+    def addFailure(self, test, err):
+        """
+        Handle capturing data on a failure being seen. This covers the case
+        of a test deciding it failed, so we record as a warning level.
+        """
+        self.__propagate_capture(WARNING, 'FAIL', test, err)
+
+    def __propagate_capture(self, log_level, cap_type, test, err):
+        """
+        Common routine to recover capture data and asking logging to
+        deal with it nicely.
+        """
+        tb = format_exception(err, self.encoding)
+        sout = self.__get_captured_stdout()
+        serr = self.__get_captured_stderr()
+        for pg in self.__stream_plugins.values():
+            if hasattr(pg, 'handle_capture'):
+                pg.handle_capture(log_level, cap_type, test, sout, serr, tb)
 
 
 def smp_get_stream_monitor_plugin():
