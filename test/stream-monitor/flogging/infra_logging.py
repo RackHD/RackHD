@@ -46,8 +46,18 @@ class _GeventInfoFilter(logging.Filter):
         else:
             gname = getattr(cur, 'log_facility', str(cur))
         record.greenlet = '{0!s}'.format(gname)
-        return True
 
+        # This section removes the process, path, and greenlet information 
+        # from any mssage that starts with any of the characters ' +-'. 
+        # These are well known stream monitor messages and this informtion
+        # is not required to be displayed.
+        # TODO: there is probably a better way to do this but this will
+        #       work until it is setup.
+        if any(elem in record.msg[0] for elem in r' +-?%'):
+            record.location_info_string = ''
+        else:    
+            record.location_info_string = '{r.process} {r.processName} {r.pathname}:{r.funcName}@{r.lineno} {r.greenlet}'.format(r=record)
+        return True
 
 class _LevelLoggerClass(Logger):
     _log_call_matcher = re.compile(r'''^(?P<base>[a-zA-Z]\w*?)_(?P<post_num>\d)$''')
@@ -276,6 +286,10 @@ class _LoggerSetup(object):
             },
             'formatters': {
                 'simple': {
+                    'format': '%(asctime)s %(levelname)-7s %(message)-90s'
+                              ' %(location_info_string)s'
+                },
+                'original': {
                     'format': '%(asctime)s %(process)d %(processName)s '
                               '%(pathname)s:%(funcName)s@%(lineno)d %(greenlet)s %(levelname)s %(message)s'
                 }
