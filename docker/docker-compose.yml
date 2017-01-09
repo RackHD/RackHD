@@ -2,21 +2,24 @@
 
 version: '2'
 
-volumes:
-  dhcp-leases:
-    external: false
-
 services:
 
   mongo: # 27017
     image: mongo:latest
     network_mode: "host"
     privileged: true
+    volumes:
+      - "./mongo/db:/data/db"
+
 
   rabbitmq: # 5672, 15672
     image: rabbitmq:management
     network_mode: "host"
     privileged: true
+    volumes:
+      - "./rabbitmq/mnesia:/data/mnesia"
+      - "./rabbitmq/log:/data/log"
+
 
   dhcp: # 67/udp
     image: rackhd/isc-dhcp-server
@@ -24,7 +27,7 @@ services:
     network_mode: "host"
     privileged: true
     volumes:
-      - "dhcp-leases:/var/lib/dhcp"
+      - "./dhcp/libdhcp:/var/lib/dhcp"
       - "./dhcp/config:/etc/dhcp"
       - "./dhcp/defaults:/etc/defaults"
 
@@ -66,7 +69,7 @@ services:
     network_mode: "host"
     privileged: true
     volumes:
-      - "dhcp-leases:/var/lib/dhcp"
+      - "./dhcp/libdhcp:/var/lib/dhcp"
       - "./monorail:/opt/monorail"
 
   http: # 9090, 9080
@@ -125,6 +128,7 @@ services:
     network_mode: "host"
     privileged: true
     volumes:
+      - "./dhcp/libdhcp:/var/lib/dhcp"
       - "./monorail:/opt/monorail"
 
   tftp: # 69/udp
@@ -170,6 +174,7 @@ services:
     privileged: true
     volumes:
       - "./elasticsearch/config:/usr/share/elasticsearch/config"
+      - "./elasticsearch/data:/data"
 
   logstash: # 5000
     command: logstash -f /etc/logstash/conf.d/logstash.conf

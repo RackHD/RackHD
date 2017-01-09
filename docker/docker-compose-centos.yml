@@ -2,16 +2,14 @@
 
 version: '2'
 
-volumes:
-  dhcp-leases:
-    external: false
-
 services:
 
   mongo: # 27017
     image: mongo:latest
     network_mode: "host"
     privileged: true
+    volumes:
+      - "./mongo/db:/data/db"
 
   files:
     build: "./files"
@@ -31,7 +29,7 @@ services:
     network_mode: "host"
     privileged: true
     volumes:
-      - "dhcp-leases:/var/lib/dhcp"
+      - "./dhcp/libdhcp:/var/lib/dhcp"
       - "./monorail:/opt/monorail"
 
   http: # 9090, 9080
@@ -65,6 +63,7 @@ services:
     network_mode: "host"
     privileged: true
     volumes:
+      - "./dhcp/libdhcp:/var/lib/dhcp"
       - "./monorail:/opt/monorail"
 
   tftp: # 69/udp
