@@ -153,18 +153,23 @@ class _LoggerSetup(object):
             shutil.rmtree(trim_name)
 
         ts_ext = datetime.now().strftime('%Y-%m-%d_%X')
-        self.__lg_run_dir = os.path.join(lg_base_dir, 'run_{0}.d'.format(ts_ext))
+        run_name = 'run_{0}.d'.format(ts_ext)
+        self.__lg_run_dir = os.path.join(lg_base_dir, run_name)
         self.__prelog(logging.INFO, "this runs logging dir %s", self.__lg_run_dir)
         self.__makedirs_dash_p(os.path.join(self.__lg_run_dir))
 
         # now deal with and easy to use 'last'
-        last_name = os.path.join(lg_base_dir, 'run_last.d')
-        if os.path.islink(last_name):
-            os.unlink(last_name)
+        last_name = 'run_last.d'
+        last_path = os.path.join(lg_base_dir, last_name)
+        if os.path.islink(last_path):
+            os.unlink(last_path)
 
-        assert not os.path.lexists(last_name), \
+        assert not os.path.lexists(last_path), \
             "'{0}' still existed after unlink. Check for file/dir and remove manually".format(last_name)
-        os.symlink(self.__lg_run_dir, last_name)
+        cur_dir = os.getcwd()
+        os.chdir(lg_base_dir)
+        os.symlink(run_name, last_name)
+        os.chdir(cur_dir)
 
         self.__infra_run_lgn = os.path.join(self.__lg_run_dir, 'infra_run.log')
         self.__infra_data_lgn = os.path.join(self.__lg_run_dir, 'infra_data.log')
@@ -305,6 +310,11 @@ class _LoggerSetup(object):
     def set_level(self, new_level):
         pass
 
+    def get_logging_dir(self):
+        """
+        Right now mostly for test-test, but may enter infra-use later
+        """
+        return self.__lg_run_dir
 
 setLoggerClass(_LevelLoggerClass)
 
@@ -339,3 +349,5 @@ _logger_setup_instance = _LoggerSetup()
 def logger_config_api(verbosity):
     _logger_setup_instance.set_level(verbosity)
 
+def logger_get_logging_dir():
+    return _logger_setup_instance.get_logging_dir()

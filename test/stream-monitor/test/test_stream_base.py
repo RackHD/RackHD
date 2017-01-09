@@ -1,13 +1,13 @@
 import unittest, os
 import sys
 from nose.plugins import PluginTester
-from sm_plugin import StreamMonitorPlugin
+from sm_plugin import smp_get_stream_monitor_plugin
 
 support = os.path.join(os.path.dirname(__file__), 'support')
 
 class _TestStreamMonitorPluginTester(PluginTester, unittest.TestCase):
     activate = '--with-stream-monitor'
-    _smp = StreamMonitorPlugin()
+    _smp = smp_get_stream_monitor_plugin()
     _smp._self_test_print_step_enable()
     plugins = [_smp]
     def runTest(self):
