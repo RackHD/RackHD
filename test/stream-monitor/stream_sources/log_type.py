@@ -3,9 +3,11 @@ from logging import getLogger as real_getLogger
 from logging import _srcfile  # yes, this is evil. No, we don't have a choice.
 from .monitor_abc import StreamMonitorABC
 import sys
+from itertools import count
 
 class LoggingMarker(StreamMonitorABC):
     _all_blocks = 0
+
     def __init__(self):
         # import HERE to prevent taking over logfiles for things
         # like 'nosetests --help'.
@@ -15,7 +17,7 @@ class LoggingMarker(StreamMonitorABC):
         # self.__print_to = sys.stderr
         # todo: use nose plugin debug options
         self.__loggers = self.__find_loggers()
-        self.__test_cnt = 0
+        self.__test_cnt = 1
 
     @classmethod
     def enabled_for_nose(self):
@@ -23,17 +25,20 @@ class LoggingMarker(StreamMonitorABC):
 
     def handle_begin(self):
         self.__loggers = self.__find_loggers()
-        self.__mark_all_loggers(str(self._all_blocks), 'start-of-all-tests')
         self._all_blocks += 1
+        self.__test_cnt = 1
+        self.__mark_all_loggers('', ' Start Of Test Block: {}'.format(self._all_blocks))
 
     def handle_start_test(self, test):
-        ts = '+{0}'.format(self.__test_cnt)
-        self.__mark_all_loggers(ts, '-------STARTING TEST: %s--------', str(test))
+        self.__mark_all_loggers('', 
+                                '+{0}.{1:02d} - STARTING TEST: %s'.format(self._all_blocks, self.__test_cnt), 
+                                str(test))
 
     def handle_stop_test(self, test):
-        ts = '-{0}'.format(self.__test_cnt)
+        self.__mark_all_loggers('', 
+                                '-{0}.{1:02d} - ENDING TEST: %s'.format(self._all_blocks, self.__test_cnt), 
+                                str(test))
         self.__test_cnt += 1
-        self.__mark_all_loggers(ts, '--------ENDING TEST: %s--------', str(test))
 
     def __mark_all_in_logger(self, level, logger, msg, args, exc_info=None, extra=None):
         handlers = getattr(logger, 'handlers', [])
@@ -57,12 +62,15 @@ class LoggingMarker(StreamMonitorABC):
             handler.handle(record)
 
     def __mark_logger_block(self, logger, bracket, level, fmat, *args, **kwargs):
-        # rep_cnt is used to fill in about X (20) chars with the repeated
-        # text.
-        rep_cnt = int(20/len(bracket))
-        self.__mark_all_in_logger(level, logger, bracket * rep_cnt, [])
-        self.__mark_all_in_logger(level, logger, fmat, args, **kwargs)
-        self.__mark_all_in_logger(level, logger, bracket * rep_cnt, [])
+        if bracket:
+            # rep_cnt is used to fill in about X (20) chars with the repeated
+            # text.
+            rep_cnt = int(20/len(bracket))
+            self.__mark_all_in_logger(level, logger, bracket * rep_cnt, [])
+            self.__mark_all_in_logger(level, logger, fmat, args, **kwargs)
+            self.__mark_all_in_logger(level, logger, bracket * rep_cnt, [])
+        else:
+            self.__mark_all_in_logger(level, logger, fmat, args, **kwargs)
 
     def __mark_all_loggers(self, bracket, fmat, *args, **kwargs):
         root = real_getLogger()
