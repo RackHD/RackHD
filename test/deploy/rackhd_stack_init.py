@@ -121,7 +121,7 @@ class rackhd_stack_init(unittest.TestCase):
             if fit_common.power_control_all_nodes("off") == 0:
                 print '**** No BMC IP addresses found in arp table, continuing without node restart.'
             else:
-                print '**** No supported PDU found, restarting nodes using IMPI.'
+                print '**** No supported PDU found, restarting nodes using IPMI.'
             # power on all nodes under any circumstances
             fit_common.power_control_all_nodes("on")
 
