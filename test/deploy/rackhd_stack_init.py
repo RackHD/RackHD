@@ -117,13 +117,13 @@ class rackhd_stack_init(unittest.TestCase):
             fit_common.countdown(30)
         # no PDU case
         else:
+            print '**** No supported PDU found, restarting nodes using IPMI.'
             # Power cycle all nodes via IPMI, display warning if no nodes found
             if fit_common.power_control_all_nodes("off") == 0:
                 print '**** No BMC IP addresses found in arp table, continuing without node restart.'
             else:
-                print '**** No supported PDU found, restarting nodes using IPMI.'
-            # power on all nodes under any circumstances
-            fit_common.power_control_all_nodes("on")
+                # power on all nodes under any circumstances
+                fit_common.power_control_all_nodes("on")
 
     # Optionally install control switch node if present
     @unittest.skipUnless("control" in fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']], "")
