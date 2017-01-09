@@ -11,8 +11,9 @@ import sys
 import subprocess
 sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test/common")
 import fit_common
+import flogging
 
-logs = fit_common.get_loggers()
+logs = flogging.get_loggers()
 
 # Local methods
 MON_NODES = fit_common.node_select()

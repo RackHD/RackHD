@@ -21,7 +21,6 @@ import requests
 import pexpect
 import shutil
 import nose
-from flogging import get_loggers, logger_config_api
 
 # Globals
 
@@ -900,7 +899,7 @@ def run_nose(nosepath):
 
     exitcode = 0
     # set nose options
-    noseopts = ['--exe', '--with-nosedep']
+    noseopts = ['--exe', '--with-nosedep', '--with-stream-monitor']
     if ARGS_LIST['group'] != 'all' and ARGS_LIST['group'] != '':
         noseopts.append('-a')
         noseopts.append(str(ARGS_LIST['group']))
