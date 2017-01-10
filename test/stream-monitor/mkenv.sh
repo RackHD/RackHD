@@ -49,6 +49,9 @@ source .venv/${env_name}/bin/activate
 # Use locally sourced pip configuration
 export PIP_CONFIG_FILE=`pwd`/pip.conf
 
+# Update local-pip to latest
+pip install --upgrade pip
+
 # Install all required packages
 pip install -r requirements.txt
 
