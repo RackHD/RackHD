@@ -13,6 +13,7 @@ from skupack_tests import SkusTests
 from users_tests import UsersTests
 from swagger_tests import SwaggerTests
 from sel_alert_poller_tests import SELPollerAlertTests
+from os_install_tests import OSInstallTests
 
 tests = [
     'nodes_api2.tests',
@@ -34,4 +35,5 @@ tests = [
 ]
 
 regression_tests = [
+    'os-install.v2.0.tests'
 ]
