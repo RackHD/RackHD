@@ -29,7 +29,9 @@ class SELPollerAlertTests(object):
         self.__skuPackTarball = self.__rootDir + "mytest.tar.gz"
         self.__rootDir = "/tmp/tarball/"
         self.__task_worker = AMQPWorker(queue=QUEUE_SEL_ALERT,
-                                                callbacks=[self.handle_graph_finish])
+                                                callbacks=[self.handle_sel_event])
+        self.__event_total = 1
+        self.__event_count = 0
         self.__amqp_alert = {}
         self.__bmc_credentials = get_bmc_cred()
         self.__skupacknumber = 0
@@ -127,15 +129,17 @@ class SELPollerAlertTests(object):
                 #listen to AMQP
                 LOG.info('starting amqp listener for node {0}'.format(id))
                 self.__task_worker = AMQPWorker(queue=QUEUE_SEL_ALERT,
-                                    callbacks=[self.handle_graph_finish])
+                                    callbacks=[self.handle_sel_event])
+                self.__event_count = 0
+                self.__event_total = 1
                 self.__task_worker.start()
 
                 #In addition to the ipmitool readout, RackHD adds two elements
                 # ("Sensor Type Code" & "Event Type Code") to the alert
                 # validate that the sel raw read is being  decoded correctly
-                assert_equal(self.__amqp_alert["value"]["alerts"][0]["data"]["Description"],"IERR")
-                assert_equal(self.__amqp_alert["value"]["alerts"][0]["data"]["Event Type Code"], "6f")
-                assert_equal(self.__amqp_alert["value"]["alerts"][0]["data"]["Sensor Type Code"], "07")
+                assert_equal(self.__amqp_alert["value"]["data"]["alert"]['reading']["Description"],"IERR")
+                assert_equal(self.__amqp_alert["value"]["data"]["alert"]['reading']["Event Type Code"], "6f")
+                assert_equal(self.__amqp_alert["value"]["data"]["alert"]['reading']["Sensor Type Code"], "07")
                 self.__amqp_alert = {}
 
     @test(groups=['SEL_alert_poller_api2.tests', 'sel_overflow_simulation'], depends_on_groups=['inject_single_error'])
@@ -178,8 +182,7 @@ class SELPollerAlertTests(object):
             # listen to AMQP
             LOG.info('starting amqp listener for node {0}'.format(id))
             self.__task_worker = AMQPWorker(queue=QUEUE_SEL_ALERT,
-                                            callbacks=[self.handle_graph_finish])
-
+                                            callbacks=[self.handle_sel_event])
             self.run_ipmitool_command(n['node_ip'], "sel clear")
             self.verify_empty_sel(n['node_ip'])
 
@@ -188,10 +191,12 @@ class SELPollerAlertTests(object):
             self.__amqp_alert = {}
             self.run_ipmitool_command((n['node_ip']), "sel add /tmp/selError.txt")
             #time.sleep(1)
+            self.__event_count = 0
+            self.__event_total = n["available_sel_entries"]
+
             self.__task_worker.start()
 
-            assert_equal(len(self.__amqp_alert["value"]["alerts"]), n["available_sel_entries"])
-            #self.__amqp_alert = {}
+            assert_equal(self.__event_count, n["available_sel_entries"])
 
     def run_ipmitool_command(self, ip ,command):
         ipmitool_command = "ipmitool -I lanplus -H " + ip +" -U " + self.__bmc_credentials[0] +" -P " + self.__bmc_credentials[1] + " " + command
@@ -212,12 +217,15 @@ class SELPollerAlertTests(object):
         else:
             return
 
-    def handle_graph_finish(self,body,message):
+    def handle_sel_event(self,body,message):
         routeId = message.delivery_info.get('routing_key').split('poller.alert.sel.')[1]
         assert_not_equal(routeId,None)
         message.ack()
         self.__amqp_alert = body
-        self.__task_worker.stop()
+        self.__event_count = self.__event_count + 1
+
+        if self.__event_count == self.__event_total:
+            self.__task_worker.stop()
 
     def generateTarball(self, ruleUpdate=None):
         #This function genetare a skupack tarball with a cutome rule
