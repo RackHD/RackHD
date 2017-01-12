@@ -1,7 +1,7 @@
 {
 	"dell":{
 		"configServerPath": "/smi/config/service",
-		"wsmanCallbackUri": "http://_MANAGEMENT_NETWORK_IP_:9988/api/1.1/wsmanCallback/_IDENTIFIER_",
+		"wsmanCallbackUri": "http://172.31.128.1:9988/api/1.1/wsmanCallback/_IDENTIFIER_",
 		
  		"services":{
 			"firmwareUpdate":{
