@@ -65,7 +65,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         target.ssh.username = "vagrant"
         target.ssh.password = "vagrant"
         target.vm.network "private_network", ip: "172.31.128.1", virtualbox__intnet: "closednet"
-        target.ssh.forward_agent = truei
+        target.ssh.forward_agent = true
         target.vm.network "forwarded_port", guest: 8080, host: 8080
         target.vm.network "forwarded_port", guest: 9080, host: 9080
         target.vm.network "forwarded_port", guest: 9090, host: 9090
