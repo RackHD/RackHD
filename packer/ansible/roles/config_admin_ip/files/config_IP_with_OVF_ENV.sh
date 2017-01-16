@@ -113,7 +113,7 @@ do
      then
           DNS=${line##*${DNS_KEY}}
           echo DNS:$DNS
-          PRIM_ETH_CFG=$PRIM_ETH_CFG"\n    dns-nameserver $DNS"
+          PRIM_ETH_CFG=$PRIM_ETH_CFG"\n    dns-nameservers $DNS"
      fi
      if [[ $(echo $line | grep ${GW_KEY}) != "" ]]
      then
