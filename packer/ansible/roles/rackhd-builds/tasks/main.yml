@@ -15,7 +15,7 @@
 - apt_repository: repo="deb https://dl.bintray.com/rackhd/debian trusty release"
                   state=present
   sudo: yes
-  when: (is_relaese is not undefined) and is_release
+  when: (is_release is not undefined) and is_release
 
 - name: Install RackHD Packages latest
   include: aptitude_install_rackhd.yml
