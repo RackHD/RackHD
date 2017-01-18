@@ -1,11 +1,11 @@
 """
 Copyright 2017, EMC, Inc.
 """
-from .infra_logging import *
 
 # todo: document API (especially for common aka test-writer actor)
 class _LoggerSet(object):
     def __init__(self, name=None):
+        from .infra_logging import getInfraRunLogger, getInfraDataLogger, getTestRunLogger, getTestDataLogger
         self.irl = getInfraRunLogger(name=name)
         self.idl = getInfraDataLogger(name=name)
         self.trl = getTestRunLogger(name=name)

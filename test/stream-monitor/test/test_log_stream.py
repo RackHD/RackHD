@@ -2,90 +2,8 @@ import plugin_test_helper
 import os
 import re
 import sys
+from log_stream_helper import TempLogfileChecker
 
-class _TempLogfileObserver(object):
-    """
-    We don't HAVE the stupid stream monitors yet, so this hack allows
-    us to do basic content testing on the log files infra-logging generated.
-
-    This class gets the logging dir from flogging, figures out where we "are" in
-    the file at the moment, and is then able to do simple regex checking in the
-    data from that point forward (kinda like an "tail -f x.log | fgrep <patterns>")
-    """
-    def __init__(self, lg_name):
-        # defer import till here in order to avoid messing up infra-logging
-        # during test loads
-        from flogging import logger_get_logging_dir
-        self.__full_name = os.path.join(logger_get_logging_dir(), lg_name)
-        self.__current_length = os.stat(self.__full_name).st_size
-
-    def __get_tail_chunk(self):
-        log_data = ''
-        with open(self.__full_name, 'r') as log_file:
-            log_file.seek(self.__current_length)
-            log_data = log_file.read()
-        return log_data
-
-    def check_for_line(self, test, line_re, exp_count):
-        fdata = self.__get_tail_chunk()
-        matches = 0
-        re_matcher = re.compile(line_re)
-        for line in fdata.split('\n'):
-            if re_matcher.search(line):
-                matches += 1
-
-        test.assertTrue(
-            matches == exp_count, 
-            'Saw {0} rather than expected {1} of "{2}" in {3}, raw=[[[{4}]]]'.format(
-                matches, exp_count, line_re, self.__full_name, fdata))
-        
-
-class _TempLogfileChecker(object):
-    """
-    Crude logfile checker that holds the "business logic" to check for backtraces and
-    capture stdout or stderr contents (or lack thereof!)
-    """
-    def __init__(self, file_name):
-        self.__lf_observer = _TempLogfileObserver(file_name)
-
-    def __check_line(self, test, line_re, exp_count):
-        self.__lf_observer.check_for_line(test, line_re, exp_count)
-                
-    def check_backtrace(self, test, ltype, suitepath, test_class, test_file, test_method, exp_count):
-        full_file = os.path.join(suitepath, test_file)
-        tb_line = '{0}\straceback: Traceback \(most recent call last\):'.format(ltype)
-        self.__check_line(test, tb_line, exp_count)
-        file_line = 'File "{0}", line \d+, in {1}'.format(full_file, test_method)
-        self.__check_line(test, file_line, exp_count)
-
-    def check_capture(self, test, cap_type, cap_level, test_class, test_method, exp_count):
-        """
-        param test: test-case (to do test.assertEqual on)
-        param cap_type: 'stdout' or 'stderr'
-        param cap_level: 'ERROR' or 'WARNING'
-        param test_class: test class name
-        param test_method: method name in test class
-        param exp_count: expected sightings in file
-        
-        """
-        eline = '{0}\s{1}:'.format(cap_level, cap_type)
-        self.__check_line(test, eline, exp_count)
-        # Need to check for expected match-data and NOT match data.
-        self.__check_match_data(test, cap_type, test_class, test_method, exp_count)
-
-    def __check_match_data(self, test, which_out, test_class, test_method, exp_count):
-        md_prefix = '{0}-MATCH-DATA: {1}'.format(which_out.upper(), test_class)
-        # Make sure setUp shows up in the one we want.
-        # todo: stream-monitor when we get to it should be able to grab all stdout:
-        #  for example.
-        setup_re = '{0}: {1} setUp'.format(which_out, md_prefix)
-        self.__check_line(test, setup_re, exp_count)
-        method_re = '{0} {1}'.format(md_prefix, test_method)
-        self.__check_line(test, method_re, exp_count)
-        # should see NONE of these:
-        no_see_re = '{0}-MUST-NOT-SEE:'.format(which_out.upper())
-        self.__check_line(test, no_see_re, 0)
-        
 
 class TestSMPLoggingSingleOk(plugin_test_helper.resolve_helper_class()):
     suitepath = plugin_test_helper.resolve_suitepath('stream-source', 'logging', 'one_pass')
@@ -123,7 +41,7 @@ class _BacktraceBase(plugin_test_helper.resolve_helper_class()):
     _expect_nose_success = False
 
     def setUp(self):
-        self.__logfile_checker = _TempLogfileChecker(self._backtrace_finder_file)
+        self.__logfile_checker = TempLogfileChecker(self._backtrace_finder_file)
         super(_BacktraceBase, self).setUp()
         
     def verify(self):
@@ -163,7 +81,7 @@ class TestSMPLoggingBacktrace_console_capture_error(_BacktraceBase):
 class _CaptureBase(plugin_test_helper.resolve_helper_class()):
     _capture_method = None
     def setUp(self):
-        self.__logfile_checker = _TempLogfileChecker(self._capture_finder_file)
+        self.__logfile_checker = TempLogfileChecker(self._capture_finder_file)
         super(_CaptureBase, self).setUp()
         
     def verify(self):

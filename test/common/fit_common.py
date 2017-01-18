@@ -24,7 +24,6 @@ import inspect
 
 import nose
 import argparse
-from flogging import get_loggers, logger_config_api
 from mkcfg import mkcfg
 
 sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test")
@@ -267,7 +266,10 @@ def mkargs(in_args=None):
         in_args = sys.argv[1:]
 
     # command line argument parser returns cmd_args dict
-    arg_parser = argparse.ArgumentParser(description="Command Help")
+    arg_parser = argparse.ArgumentParser(
+        description="Command Help", add_help=False)
+    arg_parser.add_argument('-h', '--help', action='store_true', default=False,
+                            help='show this help message and exit')
     arg_parser.add_argument("-test", default="tests/",
                             help="test to execute, default: tests/")
     arg_parser.add_argument("-config", default="config",
@@ -304,14 +306,66 @@ def mkargs(in_args=None):
                             help="API port number override, default from install_config.json")
     arg_parser.add_argument("-v", default=1, type=int,
                             help="Verbosity level of console output, default=1, Built Ins: " +
-                                 "0: No debug, " +
-                                 "2: User script output, " +
-                                 "4: rest calls and status info, " +
-                                 "6: other common calls (ipmi, ssh), " +
-                                 "9: all the rest ")
+                                 "0: No debug or INFO (ERROR and CRITICAL only), " +
+                                 "1: Default levels with INFO to console, and DEBUG to files, " +
+                                 "2: Display infra.run and test.run DEBUG, " +
+                                 "4: Display test.data (rest calls and status) DEBUG, " +
+                                 "6: infra.data DEBUG (ipmi, ssh), " +
+                                 "9: infra.* and test.* at DEBUG_9 (max output) ")
+    arg_parser.add_argument("-nose-help", default=False, action="store_true", dest="nose_help",
+                            help="display help from underlying nosetests command, including additional log options")
+    # we want to grab the arguments we want, and pass the rest
+    # into the nosetest invocation.
+    parse_results, other_args = arg_parser.parse_known_args(in_args)
+
+    # if 'help' was set, WE to handle it as best we can. We use argparse to
+    # display usage and arguments, and then give nose a shot at printing
+    # things out (if they set that option)
+    if parse_results.help:
+        arg_parser.print_help()
+        if parse_results.nose_help:
+            print
+            print "NOTE: below is the --help output from nosetests."
+            print
+            rcode = _run_nose_help()
+        else:
+            rcode = 0
+        sys.exit(rcode)
+
+    # And if they only did --nose-help
+    if parse_results.nose_help:
+        rcode = _run_nose_help()
+        sys.exit(rcode)
+
+    # Now handle mapping -v to infra-logging. Check stream-monitor/flogging/README.md
+    # for how loggers and handlers fit together.
+    if parse_results.v >= 9:
+        # Turn them all up to 11.
+        vargs = ['--sm-set-combo-level', 'console*', 'DEBUG_9']
+    elif parse_results.v >= 6:
+        # ends up turning everything up to DEBUG (levels 2, 4, and 6)
+        vargs = ['--sm-set-combo-level', 'console*', 'DEBUG']
+    elif parse_results.v >= 4:
+        # infra.run and test.* to DEBUG (levels 2 and 4)
+        vargs = ['--sm-set-combo-level', 'console*:(infra.run|test.*)', 'DEBUG']
+    elif parse_results.v >= 2:
+        # infra and test.run to DEBUG
+        vargs = ['--sm-set-combo-level', 'console*:*.run', 'DEBUG']
+    elif parse_results.v >= 1:
+        vargs = []
+    else:
+        # 0 = no debug and minimal output of just ERROR, CRITICAL to console and logs
+        vargs = ['--sm-set-combo-level', '*', 'ERROR']
+
+    other_args.extend(vargs)
+
+    # Put all the args we did not use and put them
+    # into the parse_results so they can be found
+    # by run_nose()
+    parse_results.unhandled_arguments = other_args
 
     # parse arguments to cmd_args dict
-    cmd_args = vars(arg_parser.parse_args(in_args))
+    cmd_args = vars(parse_results)
     return cmd_args
 
 def timestamp(): # return formatted current timestamp
@@ -1075,6 +1129,7 @@ def run_nose(nosepath=None):
         argv.append('--xunit-file')
         argv.append(xmlfile)
         argv.extend(pathspecs)
+        argv.extend(fitcfg()['cmd-args-list']['unhandled_arguments'])
         return subprocess.call(argv, env=env)
 
     exitcode = 0
@@ -1106,6 +1161,12 @@ def run_nose(nosepath=None):
     else:
         exitcode += _noserunner([nosepath], noseopts)
     return exitcode
+
+def _run_nose_help():
+    # This is used ONLY to fire off 'nosetests --help' for use from mkargs() when
+    # it is handling --help itself.
+    argv = ['nosetests', '--help']
+    return subprocess.call(argv)
 
 def run_from_module(file_name):
     # Use this method in 'name == "__main__"' style test invocations

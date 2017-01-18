@@ -11,8 +11,10 @@ class LoggingMarker(StreamMonitorABC):
 
     def __init__(self):
         # import HERE to prevent taking over logfiles for things
-        # like 'nosetests --help'.
-        import flogging
+        # like 'nosetests --help'. Note that a generic "import flogging" won't trigger this.
+        # We need to explicity pull the infra_logging module.
+        import flogging.infra_logging
+        self.__config_reset_method = flogging.infra_logging.logger_reset_configuration
         self.__print_to = None
         # Uncomment next line to view steps to console live
         # self.__print_to = sys.stderr
@@ -23,6 +25,16 @@ class LoggingMarker(StreamMonitorABC):
     @classmethod
     def enabled_for_nose(self):
         return True
+
+    def reset_configuration(self):
+        """
+        Basically for use during plugin self-test, which runs multiple complete
+        test life-cycles for the plugins, but this watcher needs to survive
+        between them. The config of levels, etc, however, does NOT!
+
+        Note: __config_reset_method is pulled from the flogging module in __init__.
+        """
+        self.__config_reset_method()
 
     def handle_begin(self):
         self.__loggers = self.__find_loggers()
