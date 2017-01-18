@@ -5,7 +5,7 @@ Author(s):
 George Paulos
 
 This script installs RackHD from BIntray packages onto blank Ubuntu 14 or 16 OS via Ansible installer.
-If test bed is behind proxy wall, make sure to enter proxy URL in config/global_config.json.
+If test bed is behind proxy wall, make sure to enter proxy URL in config/install_default.json
 This script performs the following functions:
     - loads prerequisite packages git, ansible, etc.
     - downloads RackHD source to management server
@@ -29,9 +29,9 @@ import fit_common
 
 # set proxy if required
 PROXYVARS = ''
-if 'proxy' in fit_common.GLOBAL_CONFIG['repos'] and fit_common.GLOBAL_CONFIG['repos']['proxy'] != '':
-    PROXYVARS = "export http_proxy=" + fit_common.GLOBAL_CONFIG['repos']['proxy'] + ";" + \
-              "export https_proxy=" + fit_common.GLOBAL_CONFIG['repos']['proxy'] + ";"
+if fit_common.fitproxy() and fit_common.fitproxy['url'] != '':
+    PROXYVARS = "export http_proxy=" + fit_common.fitproxy()['url'] + ";" + \
+              "export https_proxy=" + fit_common.fitproxy()['url'] + ";"
 
 class rackhd_package_install(fit_common.unittest.TestCase):
     def test01_install_rackhd_dependencies(self):
@@ -48,8 +48,8 @@ class rackhd_package_install(fit_common.unittest.TestCase):
         # install git
         self.assertEqual(fit_common.remote_shell(PROXYVARS + "apt-get -y install git")['exitcode'], 0, "Git install failure.")
         self.assertEqual(fit_common.remote_shell("git config --global http.sslverify false")['exitcode'], 0, "Git config failure.")
-        if 'proxy' in fit_common.GLOBAL_CONFIG['repos'] and fit_common.GLOBAL_CONFIG['repos']['proxy'] != '':
-            self.assertEqual(fit_common.remote_shell("git config --global http.proxy " + fit_common.GLOBAL_CONFIG['repos']['proxy']
+        if fit_common.fitproxy() and fit_common.fitproxy()['url'] != '':
+            self.assertEqual(fit_common.remote_shell("git config --global http.proxy " + fit_common.fitproxy()['url']
                                                   )['exitcode'], 0, "Git proxy config failure.")
         # install Ansible
         self.assertEqual(fit_common.remote_shell(PROXYVARS + "apt-get -y update")['exitcode'], 0, "Update failure.")
@@ -64,7 +64,7 @@ class rackhd_package_install(fit_common.unittest.TestCase):
         # clone base repo
         fit_common.remote_shell('rm -rf ~/rackhd')
         self.assertEqual(fit_common.remote_shell(PROXYVARS + "git clone "
-                                                + fit_common.GLOBAL_CONFIG['repos']['install']['rackhd']['repo']
+                                                + fit_common.fitinstall['rackhd']['repo']
                                                 + " ~/rackhd"
                                                 )['exitcode'], 0, "RackHD git clone failure.")
 
@@ -169,7 +169,7 @@ class rackhd_package_install(fit_common.unittest.TestCase):
                     "httpEndpoints": [
                         {
                             "address": "0.0.0.0",
-                            "port": fit_common.GLOBAL_CONFIG['ports']['http'],
+                            "port": fit_common.fitports()['http'],
                             "httpsEnabled": False,
                             "proxiesEnabled": True,
                             "authEnabled": False,
@@ -177,7 +177,7 @@ class rackhd_package_install(fit_common.unittest.TestCase):
                         },
                         {
                             "address": "0.0.0.0",
-                            "port": fit_common.GLOBAL_CONFIG['ports']['https'],
+                            "port": fit_common.fitports()['https'],
                             "httpsEnabled": True,
                             "proxiesEnabled": True,
                             "authEnabled": True,
@@ -195,11 +195,7 @@ class rackhd_package_install(fit_common.unittest.TestCase):
                     "httpDocsRoot": "./build/apidoc",
                     "httpFileServiceRoot": "./static/files",
                     "httpFileServiceType": "FileSystem",
-                    "httpProxies": [{
-                        "localPath": "/mirror",
-                        "remotePath": "/",
-                        "server": fit_common.GLOBAL_CONFIG['repos']['mirror']
-                    }],
+                    "httpProxies": fit_common.fitrackhd()['httpProxies'],
                     "httpStaticRoot": "/opt/monorail/static/http",
                     "minLogLevel": 3,
                     "authUsername": "admin",

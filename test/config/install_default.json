@@ -1,6 +1,11 @@
 {
-  "test-config": {
+  "install-config": {
       "template": "ora-ubuntu-1604.ova",
+      "ports": {
+        "_comment": "These are the northbound rest API port assignments",
+        "http": 8080,
+        "https": 443
+      },
       "install": {
         "rackhd":       {"repo":"https://github.com/rackhd/rackhd","branch":"master"},
         "on-core":      {"repo":"https://github.com/rackhd/on-core","branch":"master"},
@@ -19,9 +24,8 @@
         "https://github.com/RackHD/on-skupack"
         ],
       "proxy": {
-        "url": "",
-        "host": "",
-        "port": ""
+        "host": "web.hwimo.lab.emc.com",
+        "port": "3128"
       }
-    }
+  }
 }

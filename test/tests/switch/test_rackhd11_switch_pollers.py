@@ -27,7 +27,7 @@ def get_switches():
 
     # check if user specified a single nodeid to run against
     # user must know the nodeid and any check for a valid nodeid is skipped
-    nodeid = fit_common.ARGS_LIST['nodeid']
+    nodeid = fit_common.fitargs()['nodeid']
     if nodeid != 'None':
         nodelist.append(nodeid)
     else:
