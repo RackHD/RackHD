@@ -3,7 +3,7 @@
   hosts: local
   vars:
     rackhd_version: ""
-    is_relaese: true
+    is_release: true
   sudo: no
   roles:
     - apt
