@@ -39,8 +39,7 @@ Clone RackHD repo to your local machine.
     cd example
     # create the RackHD instance.
     vagrant up dev
-    # start the RackHD services
-    vagrant ssh dev -c "sudo pm2 start rackhd-pm2-config.yml"
+    # then the RackHD services will start during bootup (they are running as service since box version 1.0.0)
 
 ### LOCAL SOURCE
 
