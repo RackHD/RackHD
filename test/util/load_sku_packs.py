@@ -14,15 +14,13 @@ import subprocess
 sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test/common")
 import fit_common
 
-# Select test group here using @attr, these can be any labels to run groups of tests selectively
-# @attr is a decorator and mus be located in the line just above the class to be labeled
 from nose.plugins.attrib import attr
-@attr(all=True, regression=True, smoke=True)
+@attr(all=True)
 
 class fit_template(fit_common.unittest.TestCase):
 
     def test01_download_sku_packs(self):
-        # Download SKU packs from GutHub
+        # Download SKU packs from GitHub
         subprocess.call("rm -rf temp.sku; rm -rf on-skupack", shell=True)
         os.mkdir("on-skupack")
         # download all SKU repos and merge into on-skupack
@@ -30,6 +28,8 @@ class fit_template(fit_common.unittest.TestCase):
             print "**** Cloning SKU Packs from " + url
             subprocess.call("git clone " + url + " temp.sku", shell=True)
             subprocess.call('cp -R temp.sku/* on-skupack; rm -rf temp.sku', shell=True)
+
+    def test02_build_sku_packs(self):
         # build build SKU packs
         for subdir, dirs, files in os.walk('on-skupack'):
             for skus in dirs:
@@ -40,7 +40,7 @@ class fit_template(fit_common.unittest.TestCase):
                                     + skus + " " + skus + " >/dev/null 2>&1", shell=True)
             break
 
-    def test02_upload_sku_packs(self):
+    def test03_upload_sku_packs(self):
         # upload SKU packs to RackHD
         for subdir, dirs, files in os.walk('on-skupack/tarballs'):
             for skupacks in files:
@@ -50,9 +50,9 @@ class fit_template(fit_common.unittest.TestCase):
             break
         print "\n"
 
-    def test03_verify_sku_packs(self):
+    def test04_verify_sku_packs(self):
         # check SKU directory against source files
-        errorcount = ""
+        error_message = ""
         skulist = fit_common.json.dumps(fit_common.rackhdapi("/api/2.0/skus")['json'])
         for subdir, dirs, files in os.walk('on-skupack'):
             for skus in dirs:
@@ -63,14 +63,13 @@ class fit_template(fit_common.unittest.TestCase):
                         # check if sku pack got installed
                         if configfile['name'] not in skulist:
                             print "FAILURE - Missing SKU: " + configfile['name']
-                            errorcount += "  Missing SKU: " + configfile['name']
+                            error_message += "  Missing SKU: " + configfile['name']
                     except:
                         # Check is the sku pack config.json file is valid format, fails skupack install if invalid
                         print "FAILURE - Corrupt config.json in SKU Pack: " + str(skus) + " - not loaded"
-                        errorcount += "  Corrupt config.json in SKU Pack: " + str(skus)
+                        error_message += "  Corrupt config.json in SKU Pack: " + str(skus)
             break
-        self.assertEqual(errorcount, "", errorcount)
-
+        self.assertEqual(error_message, "", error_message)
 
 if __name__ == '__main__':
     fit_common.unittest.main()
