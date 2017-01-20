@@ -14,6 +14,8 @@ on_http_redfish_1_0>=1.0.0
 pexpect==3.3
 proboscis==1.2.6.0
 requests==2.9.0
+# urllib3 1.20 breaks CIT test, specify version as a temp solution
+urllib3==1.19.1
 
 # WARNING: do not just replace this file with "pip freeze > requirements.txt".
 # You need to keep the following line as is! (freeze will turn it into
