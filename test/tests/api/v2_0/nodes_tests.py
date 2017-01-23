@@ -35,31 +35,19 @@ class NodesTests(object):
                 'identifiers': ["FF:FF:FF:01"],
                 'autoDiscover': 'false',
                 'name': 'test_switch_node',
-                'type': 'switch',
-                'snmpSettings': {
-                    'host': '1.1.1.1',
-                    'community': 'rackhd'
-                }
+                'type': 'switch'
             },
             {
                 'identifiers': ["FF:FF:FF:02"],
                 'autoDiscover': 'false',
                 'name': 'test_mgmt_node',
-                'type': 'mgmt',
-                'snmpSettings': {
-                    'host': '1.1.1.1',
-                    'community': 'rackhd'
-                }
+                'type': 'mgmt'
             },
             {
                 'identifiers': ["FF:FF:FF:03"],
                 'autoDiscover': 'false',
                 'name': 'test_pdu_node',
-                'type': 'pdu',
-                'snmpSettings': {
-                    'host': '1.1.1.2',
-                    'community': 'rackhd'
-                }
+                'type': 'pdu'
             },
             {
                 'identifiers': ["FF:FF:FF:04"],
