@@ -29,44 +29,50 @@ class NodesTests(object):
         self.__task = None
         self.__discovery_duration = None
         self.__discovered = 0
+
         self.__test_nodes = [
             {
+                'identifiers': ["FF:FF:FF:01"],
                 'autoDiscover': 'false',
                 'name': 'test_switch_node',
                 'type': 'switch',
                 'snmpSettings': {
                     'host': '1.1.1.1',
                     'community': 'rackhd'
-                }
-            },
+            }
+        },
             {
+                'identifiers': ["FF:FF:FF:02"],
                 'autoDiscover': 'false',
                 'name': 'test_mgmt_node',
                 'type': 'mgmt',
                 'snmpSettings': {
                     'host': '1.1.1.1',
                     'community': 'rackhd'
-                }
-            },
+            }
+        },
             {
+                'identifiers': ["FF:FF:FF:03"],
                 'autoDiscover': 'false',
                 'name': 'test_pdu_node',
                 'type': 'pdu',
                 'snmpSettings': {
                     'host': '1.1.1.2',
                     'community': 'rackhd'
-                }
-            },
+            }
+        },
             {
+                'identifiers': ["FF:FF:FF:04"],
                 'autoDiscover': 'false',
                 'name': 'test_enclosure_node',
                 'type': 'enclosure'
-            },
+        },
             {
+                'identifiers': ["FF:FF:FF:05"],
                 'autoDiscover': 'false',
                 'name': 'test_compute_node',
                 'type': 'compute'
-            }
+        }
         ]
     
     def __get_data(self):
@@ -166,12 +172,21 @@ class NodesTests(object):
         LOG.debug(nodes,json=True)
         assert_not_equal(0, len(nodes), message='Node list was empty!')
 
-    @test(groups=['test-node-id'], depends_on_groups=['test-nodes'])
+    @test(groups=['create-node'], depends_on_groups=['test-node'])
+    def test_node_create(self):
+        """ Verify POST:/nodes/ """
+        for n in self.__test_nodes:
+            Nodes().nodes_post(n)
+            LOG.info('Creating node (name={0})'.format(n.get('name')))
+            rsp = self.__client.last_response
+            assert_equal(201, rsp.status, message=rsp.reason)
+
+    @test(groups=['test-node-id'], depends_on_groups=['create-node'])
     def test_node_id(self):
         """ Testing GET:/nodes/:id """
         Nodes().nodes_get()
         nodes = self.__get_data()
-        LOG.debug(nodes,json=True)
+        LOG.debug(nodes, json=True)
         codes = []
         for n in nodes:
             LOG.info(n)
@@ -185,16 +200,7 @@ class NodesTests(object):
             assert_equal(200, c.status, message=c.reason)
         assert_raises(rest.ApiException, Nodes().nodes_identifier_get, 'fooey')
 
-    @test(groups=['create-node'], depends_on_groups=['test-node-id'])
-    def test_node_create(self):
-        """ Verify POST:/nodes/ """
-        for n in self.__test_nodes:
-            LOG.info('Creating node (name={0})'.format(n.get('name')))
-            Nodes().nodes_post(n)
-            rsp = self.__client.last_response
-            assert_equal(201, rsp.status, message=rsp.reason)
-
-    @test(groups=['test-node-id-obm'], depends_on_groups=['create-node'])
+    @test(groups=['test-node-id-obm'], depends_on_groups=['test-node-id'])
     def test_node_id_obm(self):
         """ Testing GET:/nodes/:id/obm """
         Nodes().nodes_get()
