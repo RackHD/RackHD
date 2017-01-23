@@ -40,7 +40,6 @@ class mkcfg(object):
 
     # retrieve the path to saved configuration
     cfg_dict = cfg.get_path()
-
     """
 
     # mkcfg is a singleton
@@ -48,24 +47,27 @@ class mkcfg(object):
 
     config_env = 'FIT_CONFIG'
 
-    def __init__(self, config_dir='config'):
-
-        config_path = os.environ.get(self.config_env)
-
-        if config_path:
+    def __init__(self):
+        self.config_path = os.environ.get(self.config_env, None)
+        if self.config_path:
             # load up an existing configuration
-            print "*** Reloading config file: " + config_path
-            self.generated_config_path = config_path
+            print "*** Reloading config file: " + self.config_path
+            self.generated_config_path = self.config_path
             self.config_dict = self.__read_config(self.generated_config_path)
             self.config_dir = self.config_dict['cmd-args-list']['config']
             self.generated_dir = self.config_dir + '/generated'
-        else:
-            # prepare for creation of new configuration
-            self.generated_config_path = None
-            self.config_dict = dict()
-            self.config_dir = config_dir
-            self.generated_dir = self.config_dir + '/generated'
-            config_path = os.environ.get(self.config_env)
+
+    def config_is_loaded(self):
+        return self.config_path is not None
+
+    def create(self, config_dir='config'):
+        if self.config_path:
+            raise mkcfgException('creating configuration on top of existing object')
+        # prepare for creation of new configuration
+        self.generated_config_path = None
+        self.config_dict = dict()
+        self.config_dir = config_dir
+        self.generated_dir = self.config_dir + '/generated'
 
     def add_from_file_list(self, json_config_list):
         """
@@ -210,7 +212,7 @@ if __name__ == "__main__":
 
     # specify a sample argument list
     ARGS_LIST = {
-        "cmd-arg-list": {
+        "cmd-args-list": {
             "v": "v_value",
             "config": "config_value",
             "stack": "stack_value",
@@ -225,8 +227,9 @@ if __name__ == "__main__":
     }
 
     # Test config creation
-    cfg = mkcfg(config_dir_arg)
+    cfg = mkcfg()
 
+    cfg.create()
     cfg.add_from_file_list(json_config_files_arg)
     cfg.add_from_dict(ARGS_LIST)
     cfg.dump()
@@ -244,8 +247,13 @@ if __name__ == "__main__":
     # throw away configuration
     cfg.destroy()
 
-    # reload from FIT_CONFIG_PATH which should be in the environment from original mkcfg
-    cfg = mkcfg(config_dir_arg)
+    # reload from FIT_CONFIG which should be in the environment from original mkcfg
+    cfg = mkcfg()
+    if cfg.config_is_loaded():
+        cfg.dump()
+    else:
+        print 'we should already have configuration'
+        exit(1)
     print "path = " + mkcfg().get_path()
     cfg.dump()
 

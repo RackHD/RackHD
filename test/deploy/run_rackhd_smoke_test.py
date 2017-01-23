@@ -26,7 +26,7 @@ class rackhd_smoke_test(fit_common.unittest.TestCase):
 
     def test04_rackhd_smoke_test(self):
         # set test group to 'smoke'
-        fit_common.ARGS_LIST['group'] = "smoke"
+        fit_common.fitargs()['group'] = "smoke"
         self.assertEqual(fit_common.run_nose(fit_common.TEST_PATH + '/tests'), 0, 'RackHD Smoke Test failed.')
 
 if __name__ == '__main__':

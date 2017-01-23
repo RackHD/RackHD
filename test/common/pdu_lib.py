@@ -17,7 +17,7 @@ ORA_POWER_IP = '192.168.1.1'
 ORA_POWER_NETMASK = '24'
 ORA_POWER_BCAST = '192.168.1.255'
 SERVERTECH_PDU_IP = '192.168.1.254'
-SERVERTECH_PDU_COMMUNITY = GLOBAL_CONFIG['snmp']['community']
+SERVERTECH_PDU_COMMUNITY = fitcreds()['snmp'][0]['community']
 SERVERTECH_CONTROL_ACTION_OID = '.1.3.6.1.4.1.1718.3.2.3.1.11.1.1.'
 SERVERTECH_CONTROL_STATUS_OID = '.1.3.6.1.4.1.1718.3.2.3.1.10.1.1.'
 SERVERTECH_CONTROL_ACTION_MAPPER = {
@@ -49,12 +49,12 @@ SERVERTECH_CONTROL_STATUS_MAPPER = {
 def check_pdu_type():
     # execute check_pdu_type() to return PDU type if available, else return 'Unknown'
     # check if PDU is defined in Stack dict
-    if 'pdu' in  STACK_CONFIG[ARGS_LIST['stack']]:
-        pduaddr = STACK_CONFIG[ARGS_LIST['stack']]['pdu']
+    if 'pdu' in fitcfg():
+        pduaddr = fitcfg()['pdu']
     else:
         return "Unknown"
     if remote_shell('ping -c 1 ' + pduaddr)['exitcode'] == 0:
-        if STACK_CONFIG[ARGS_LIST['stack']]['pdu'] == "192.168.1.254":
+        if fitcfg()['pdu'] == "192.168.1.254":
             return "ServerTech"
     return "Unknown"
 
@@ -102,16 +102,15 @@ def config_power_interface():
 # We need snmp commands before OnRack is installed
 def install_snmp():
     ENVVARS = ''
-    if 'proxy' in GLOBAL_CONFIG['repos'] and GLOBAL_CONFIG['repos']['proxy'] != '':
-        ENVVARS = "export http_proxy=" + GLOBAL_CONFIG['repos']['proxy'] + ";" + \
-                  "export https_proxy=" + GLOBAL_CONFIG['repos']['proxy'] + ";"
+    if fitproxy()['host'] != '':
+        ENVVARS = "export http_proxy=http://" + fitproxy()['host'] + ":" + fitproxy()['port'] + ";" + \
+                  "export https_proxy=http://" + fitproxy()['host'] + ":" + fitproxy()['port'] + ";"
     response = remote_shell(ENVVARS + 'apt-get -y install snmp')
     if response['exitcode'] != 0:
         print "Failed to install snmp"
         return False
 
     return True
-
 
 # Control the PDU outlets for all compute nodes
 # Assumes compute nodes are plugged into outlets 7-16 of a ServerTech PDU
