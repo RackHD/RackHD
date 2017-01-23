@@ -58,7 +58,7 @@ class rackhd20_api_nodes(fit_common.unittest.TestCase):
                 self.assertGreater(len(api_data['json'][item]), 0, item + ' field error')
 
     def test_api_20_create_delete_node(self):
-        data_payload = {"name": "testnode", "type": "compute"}
+        data_payload = {"name": "testnode", "identifiers": ["FF", "FF"], "type": "compute"}
         api_data = fit_common.rackhdapi("/api/2.0/nodes", action='post', payload=data_payload)
         self.assertEqual(api_data['status'], 201, 'Incorrect HTTP return code, expected 201, got:' + str(api_data['status']))
         nodeid = api_data['json']['id']
@@ -111,7 +111,7 @@ class rackhd20_api_nodes(fit_common.unittest.TestCase):
 
     def test_api_20_nodes_ID_obmsettings(self):
         # create fake node
-        data_payload = {"name": "fakenode", "type": "compute"}
+        data_payload = {"name": "testnode", "identifiers": ["FF", "FF"], "type": "compute"}
         api_data = fit_common.rackhdapi("/api/2.0/nodes", action="post",
                                            payload=data_payload)
         self.assertEqual(api_data['status'], 201, 'Incorrect HTTP return code, expected 201, got:' + str(api_data['status']))
