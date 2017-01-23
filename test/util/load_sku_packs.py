@@ -3,7 +3,7 @@ Copyright 2016, EMC, Inc.
 
 Author(s):
 
-This utility loads SKU packs from the repo specified in the config/install_default.json files
+This script load SKU packs from sources specified in install_default.json
 '''
 
 import os
@@ -24,7 +24,7 @@ class fit_template(fit_common.unittest.TestCase):
         subprocess.call("rm -rf temp.sku; rm -rf on-skupack", shell=True)
         os.mkdir("on-skupack")
         # download all SKU repos and merge into on-skupack
-        for url in fit_common.cfg()['install-config']['skupack']:
+        for url in fit_common.fitskupacks():
             print "**** Cloning SKU Packs from " + url
             subprocess.call("git clone " + url + " temp.sku", shell=True)
             subprocess.call('cp -R temp.sku/* on-skupack; rm -rf temp.sku', shell=True)
