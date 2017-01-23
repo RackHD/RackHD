@@ -19,12 +19,12 @@ BRANCH=${2:-master} # can be a tag like 1.0.0
 
 
 
-NODE_CORE_REPOS=("on-core" "on-tasks" "di.js" )
-NODE_OTHER_REPOS=("on-http" "on-taskgraph" "on-dhcp-proxy" "on-tftp" "on-syslog" )
-NODE_REPOS=("${NODE_CORE_REPOS[@]}" "${NODE_OTHER_REPOS[@]}")
-OTHER_REPOS=( "on-wss" "on-tools" "on-imagebuilder" "RackHD")
-REPOS=( "${NODE_REPOS[@]}"  "${OTHER_REPOS[@]}" )
-#GITHUB="https://eos2git.cec.lab.emc.com/RackHD" # https://github.com/RackHD
+RACKHD_CORE_REPOS=("on-core" "on-tasks" "di.js" )
+RACKHD_DEP_REPOS=("on-http" "on-taskgraph" "on-dhcp-proxy" "on-tftp" "on-syslog" )
+RACKHD_NODE_REPOS=("${RACKHD_CORE_REPOS[@]}" "${RACKHD_DEP_REPOS[@]}")
+RACKHD_OTHER_REPOS=( "on-wss" "on-tools" "on-imagebuilder" "RackHD")
+REPOS=( "${RACKHD_NODE_REPOS[@]}"  "${RACKHD_OTHER_REPOS[@]}" )
+
 GITHUB="https://github.com/RackHD"
 
 
@@ -42,9 +42,9 @@ for r in ${REPOS[@]}; do
     popd
 done
 
-for r in ${NODE_REPOS[@]}; do
+for r in ${RACKHD_NODE_REPOS[@]}; do
     pushd ${r}
-    npm install --production
+    npm install
     popd
 done
 
@@ -68,23 +68,24 @@ TFTP_BASE_URL=https://bintray.com/artifact/download/rackhd/binary/builds/
 SYSL_BASE_URL=https://bintray.com/artifact/download/rackhd/binary/syslinux/
 HTTP_STATIC_FILES=( discovery.overlay.cpio.gz base.trusty.3.16.0-25-generic.squashfs.img initrd.img-3.16.0-25-generic vmlinuz-3.16.0-25-generic )
 TFTP_STATIC_FILES=( monorail.ipxe monorail-undionly.kpxe monorail-efi32-snponly.efi monorail-efi64-snponly.efi monorail.intel.ipxe )
-SYSL_STATIC_FILES=( undionly.kkpxe )
+#SYSL_STATIC_FILES=( undionly.kkpxe )
 for f in ${HTTP_STATIC_FILES[@]}; do
     wget ${HTTP_BASE_URL}/${f}  ${HTTP_STATIC_FOLDER}/${f}
 done
 for f in ${TFTP_STATIC_FILES[@]}; do
     wget ${TFTP_BASE_URL}/${f}  ${TFTP_STATIC_FOLDER}/${f}
 done
-for f in ${SYSL_STATIC_FILES[@]}; do
-    wget ${SYSL_BASE_URL}/${f}  ${SYSL_STATIC_FOLDER}/${f}
-done
+#### undionly.kkpxe is no longer used ###
+#for f in ${SYSL_STATIC_FILES[@]}; do
+#    wget ${SYSL_BASE_URL}/${f}  ${SYSL_STATIC_FOLDER}/${f}
+#done
 
 
 echo "[Info] Move the on-core/on-tasks into each dependent repo's node_modueles..."
-for r in ${NODE_OTHER_REPOS[@]}; do
+for r in ${RACKHD_DEP_REPOS[@]}; do
     pushd ${r}/node_modules/
     #remove the on-core/on-tasks, and replace by a link to local folder
-    for dep in ${NODE_CORE_REPOS[@]}; do
+    for dep in ${RACKHD_CORE_REPOS[@]}; do
        rm ${dep} -rf
        ln -s ../../${dep}     ${dep}
     done
