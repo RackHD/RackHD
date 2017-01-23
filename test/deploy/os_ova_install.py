@@ -46,9 +46,10 @@ class os_ova_install(fit_common.unittest.TestCase):
         if numvms == 1:
             ovamac = fit_common.fitcfg()['ovamac']
         else:
-            stacknum = '{0:02}'.format(int(fit_common.fitargs()['stack']))
+            # compose appropriate MAC address using lab convention
             vmnum = '{0:02}'.format(int(vm))
-            ovamac = fitcommon.fitcfg()['test-config']['ova']['oui'] + ":00:" + stacknum + ":" + vmnum
+            macsplit = fit_common.fitcfg()['ovamac'].split(":")
+            ovamac = macsplit[0] + ":" + macsplit[1] + ":" + macsplit[2] + ":" + macsplit[3] + ":" + macsplit[4] + ":"  + vmnum
         # Install MAC address by editing OVA .vmx file, then startup VM
         esxi_command = "export fullpath=`find vmfs -name ora-stack-" + fit_common.fitargs()['stack'] + "-" + str(vm) + "*.vmx`;" \
                        "for file in $fullpath;" \
