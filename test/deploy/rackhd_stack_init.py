@@ -31,7 +31,20 @@ import pdu_lib
 MAX_CYCLES = 60
 
 class rackhd_stack_init(unittest.TestCase):
-    def test01_preload_sku_packs(self):
+    def test01_set_auth_user(self):
+        print '**** Installing default admin user'
+        fit_common.remote_shell('rm auth.json')
+        auth_json = open('auth.json', 'w')
+        auth_json.write('{"username":"' + fit_common.fitcreds()["api"][0]["admin_user"] + '", "password":"' \
+                        + fit_common.fitcreds()["api"][0]["admin_pass"] + '", "role":"Administrator"}')
+        auth_json.close()
+        fit_common.scp_file_to_ora('auth.json')
+        rc = fit_common.remote_shell("curl -ks -X POST -H 'Content-Type:application/json' https://localhost:" \
+                                     + str(fit_common.fitports()['https']) + "/api/2.0/users -d @auth.json")
+        if rc['exitcode'] != 0:
+            print "ALERT: Auth admin user not set! Please manually set the admin user account if https access is desired."
+
+    def test02_preload_sku_packs(self):
         print "**** Processing SKU Packs"
         # Load SKU packs from GutHub
         subprocess.call("rm -rf temp.sku; rm -rf on-skupack", shell=True)
@@ -79,7 +92,7 @@ class rackhd_stack_init(unittest.TestCase):
             break
         self.assertEqual(errorcount, "", errorcount)
 
-    def test02_preload_default_sku(self):
+    def test03_preload_default_sku(self):
         # Load default SKU for unsupported compute nodes
         print '**** Installing default SKU'
         payload = {
@@ -91,21 +104,8 @@ class rackhd_stack_init(unittest.TestCase):
                         ]
                     }
         api_data = fit_common.rackhdapi("/api/2.0/skus", action='post', payload=payload)
-        self.assertEqual(api_data['status'], 201, 'Incorrect HTTP return code, expecting 201, got '
+        self.assertIn(api_data['status'], [201, 409], 'Incorrect HTTP return code, expecting 201 or 409, got '
                          + str(api_data['status']))
-
-    def test03_set_auth_user(self):
-        print '**** Installing default admin user'
-        fit_common.remote_shell('rm auth.json')
-        auth_json = open('auth.json', 'w')
-        auth_json.write('{"username":"' + fit_common.fitcreds()["api"][0]["admin_user"] + '", "password":"' \
-                        + fit_common.fitcreds()["api"][0]["admin_pass"] + '", "role":"Administrator"}')
-        auth_json.close()
-        fit_common.scp_file_to_ora('auth.json')
-        rc = fit_common.remote_shell("curl -ks -X POST -H 'Content-Type:application/json' https://localhost:" \
-                                     + str(fit_common.fitports()['https']) + "/api/2.0/users -d @auth.json")
-        if rc['exitcode'] != 0:
-            print "ALERT: Auth admin user not set! Please manually set the admin user account if https access is desired."
 
     def test04_power_on_nodes(self):
         # This powers on nodes via PDU or, if no PDU, power cycles nodes via IPMI to start discovery
@@ -230,36 +230,33 @@ class rackhd_stack_init(unittest.TestCase):
         print "**** Creating management server."
         usr = ""
         pwd = ""
-        # find correct BMC passwords from global config
+        # find correct BMC passwords from credentials list
         for creds in fit_common.fitcreds()['bmc']:
-            if fit_common.remote_shell('ipmitool -I lanplus -H ' + fit_common.fitargs()['bmc']
+            if fit_common.remote_shell('ipmitool -I lanplus -H ' + fit_common.fitcfg()['bmc']
                                    + ' -U ' + creds['username'] + ' -P '
                                    + creds['password'] + ' fru')['exitcode'] == 0:
                 usr = creds['username']
                 pwd = creds['password']
         # create management node using these creds
-        payload = {
-                    "name": "Management Server",
-                    "type": "mgmt",
-                    "autoDiscover": "true",
-                    "ipmi-obm-service": {
-                        "host": fit_common.fitargs()['bmc'],
-                        "user": usr,
-                        "password": pwd
-                    }
-                    }
-        api_data = fit_common.rackhdapi("/api/2.0/nodes", action='post', payload=payload)
-        self.assertEqual(api_data['status'], 201, 'Incorrect HTTP return code, expecting 201, got '
-                         + str(api_data['status']))
-        # run discovery workflow
-        payload = {
-                    "name": "Graph.MgmtSKU.Discovery",
-                    "options":{"defaults": {"nodeId": api_data['json']['id']}}
-                    }
-        api_data = fit_common.rackhdapi("/api/2.0/nodes/" + api_data['json']['id'] + "/workflows",
-                                        action='post', payload=payload)
-        self.assertEqual(api_data['status'], 201, 'Incorrect HTTP return code, expecting 201, got '
-                         + str(api_data['status']))
+        if usr != "" and pwd != "":
+            payload = {
+                        "name":"Management Server " + str(time.time()),
+                        "type": "mgmt",
+                        "autoDiscover": "true",
+                        "obms": [
+                            { "service": "ipmi-obm-service",
+                            "config": { "host": fit_common.fitcfg()['bmc'],
+                                        "user": usr,
+                                        "password": pwd
+                                        }
+                                }
+                            ]
+                        }
+            api_data = fit_common.rackhdapi("/api/2.0/nodes", action='post', payload=payload)
+            self.assertEqual(api_data['status'], 201, 'Incorrect HTTP return code, expecting 201, got '
+                             + str(api_data['status']))
+        else:
+            self.fail("Unable to contact management server BMC, skipping MGMT node create")
 
     def test12_check_pollers(self):
         print "**** Waiting for pollers."
