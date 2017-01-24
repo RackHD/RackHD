@@ -14,6 +14,8 @@ on_http_redfish_1_0>=1.0.0
 pexpect==3.3
 proboscis==1.2.6.0
 requests==2.9.0
+# there are problems with the 34.0.x setuptools and nosedeps. Pin for now.
+setuptools==33.1.1
 # urllib3 1.20 breaks CIT test, specify version as a temp solution
 urllib3==1.19.1
 
