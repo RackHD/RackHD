@@ -26,15 +26,16 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         target.vm.network "forwarded_port", guest: 9090, host: 9090
         target.vm.network "forwarded_port", guest: 443, host: 443
         target.vm.provision "shell", inline: <<-SHELL
-            git clone https://github.com/RackHD/RackHD fit_tests
+            git clone https://github.com/RackHD/RackHD 
             sudo apt-get -y update
             sudo apt-get -y install python-pip
             sudo apt-get -y install virtualenv
-            cd fit_tests/test
+            sudo apt-get -y install libghc-hsopenssl-dev
+            cd RackHD/test
             ./mkenv.sh vagrant
             source myenv_vagrant
-            python run_tests.py -test deploy/rackhd_source_install.py -v 9
-            python run_tests.py -test deploy/rackhd_stack_init.py:rackhd_stack_init.test01_preload_sku_packs -stack vagrant -v 9
+            python run_tests.py -test deploy/rackhd_source_install.py -v 9 -stack vagrant;echo
+            python run_tests.py -test util/load_sku_packs.py -v 9 -stack vagrant;echo
         SHELL
     end
 
@@ -66,8 +67,12 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         target.ssh.password = "vagrant"
         target.vm.network "private_network", ip: "172.31.128.1", virtualbox__intnet: "closednet"
         target.ssh.forward_agent = true
+        target.vm.network "forwarded_port", guest: 8080, host: 8080
+        target.vm.network "forwarded_port", guest: 9080, host: 9080
+        target.vm.network "forwarded_port", guest: 9090, host: 9090
+        target.vm.network "forwarded_port", guest: 443, host: 443
         target.vm.provision "shell", inline: <<-SHELL
-            git clone https://github.com/RackHD/RackHD fit_tests
+            git clone https://github.com/RackHD/RackHD
         SHELL
     end
 
