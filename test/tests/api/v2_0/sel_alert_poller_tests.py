@@ -16,6 +16,7 @@ import shutil
 import requests
 from config.amqp import *
 from modules.amqp import AMQPWorker
+from modules.worker import WorkerThread, WorkerTasks
 import time
 
 LOG = Log(__name__)
@@ -28,13 +29,12 @@ class SELPollerAlertTests(object):
         self.__rootDir = "/tmp/tarball/"
         self.__skuPackTarball = self.__rootDir + "mytest.tar.gz"
         self.__rootDir = "/tmp/tarball/"
-        self.__task_worker = AMQPWorker(queue=QUEUE_SEL_ALERT,
-                                                callbacks=[self.handle_sel_event])
         self.__event_total = 1
         self.__event_count = 0
         self.__amqp_alert = {}
         self.__bmc_credentials = get_bmc_cred()
         self.__skupacknumber = 0
+        self.__task = None
         self.delete_skus()# clear any skus
 
     @test(groups=['SEL_alert_poller_api2.tests', 'post_skupacks'])
@@ -128,18 +128,25 @@ class SELPollerAlertTests(object):
 
                 #listen to AMQP
                 LOG.info('starting amqp listener for node {0}'.format(id))
-                self.__task_worker = AMQPWorker(queue=QUEUE_SEL_ALERT,
-                                    callbacks=[self.handle_sel_event])
+                self.__task = WorkerThread(AMQPWorker(queue=QUEUE_SEL_ALERT,
+                                    callbacks=[self.handle_sel_event]), 'singleAlert')
                 self.__event_count = 0
                 self.__event_total = 1
-                self.__task_worker.start()
 
+                def start(worker, id):
+                    worker.start()
+                tasks = WorkerTasks(tasks=[self.__task], func=start)
+
+                tasks.run()
+                tasks.wait_for_completion(timeout_sec=600)
+                assert_false(self.__task.timeout, \
+                        message='timeout waiting for task {0}'.format(self.__task.id))
                 #In addition to the ipmitool readout, RackHD adds two elements
                 # ("Sensor Type Code" & "Event Type Code") to the alert
                 # validate that the sel raw read is being  decoded correctly
-                assert_equal(self.__amqp_alert["value"]["data"]["alert"]['reading']["Description"],"IERR")
-                assert_equal(self.__amqp_alert["value"]["data"]["alert"]['reading']["Event Type Code"], "6f")
-                assert_equal(self.__amqp_alert["value"]["data"]["alert"]['reading']["Sensor Type Code"], "07")
+                assert_equal(self.__amqp_alert["data"]["alert"]['reading']["Description"],"IERR")
+                assert_equal(self.__amqp_alert["data"]["alert"]['reading']["Event Type Code"], "6f")
+                assert_equal(self.__amqp_alert["data"]["alert"]['reading']["Sensor Type Code"], "07")
                 self.__amqp_alert = {}
 
     @test(groups=['SEL_alert_poller_api2.tests', 'sel_overflow_simulation'], depends_on_groups=['inject_single_error'])
@@ -181,11 +188,10 @@ class SELPollerAlertTests(object):
         for n in self.__computeNodes:
             # listen to AMQP
             LOG.info('starting amqp listener for node {0}'.format(id))
-            self.__task_worker = AMQPWorker(queue=QUEUE_SEL_ALERT,
-                                            callbacks=[self.handle_sel_event])
+            self.__task = WorkerThread(AMQPWorker(queue=QUEUE_SEL_ALERT,
+                                            callbacks=[self.handle_sel_event]), 'fullSel')
             self.run_ipmitool_command(n['node_ip'], "sel clear")
             self.verify_empty_sel(n['node_ip'])
-
 
             self.create_selEntries_file(n["available_sel_entries"])
             self.__amqp_alert = {}
@@ -194,8 +200,13 @@ class SELPollerAlertTests(object):
             self.__event_count = 0
             self.__event_total = n["available_sel_entries"]
 
-            self.__task_worker.start()
-
+            def start(worker, id):
+                worker.start()
+            tasks = WorkerTasks(tasks=[self.__task], func=start)
+            tasks.run()
+            tasks.wait_for_completion(timeout_sec=600)
+            assert_false(self.__task.timeout, \
+                    message='timeout waiting for task {0}'.format(self.__task.id))
             assert_equal(self.__event_count, n["available_sel_entries"])
 
     def run_ipmitool_command(self, ip ,command):
@@ -218,14 +229,15 @@ class SELPollerAlertTests(object):
             return
 
     def handle_sel_event(self,body,message):
-        routeId = message.delivery_info.get('routing_key').split('poller.alert.sel.')[1]
+        routeId = message.delivery_info.get('routing_key').split('polleralert.sel.updated')[1]
         assert_not_equal(routeId,None)
         message.ack()
         self.__amqp_alert = body
         self.__event_count = self.__event_count + 1
 
         if self.__event_count == self.__event_total:
-            self.__task_worker.stop()
+            self.__task.worker.stop()
+            self.__task.running = False
 
     def generateTarball(self, ruleUpdate=None):
         #This function genetare a skupack tarball with a cutome rule
