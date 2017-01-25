@@ -54,7 +54,7 @@ class AMQPWorker(ConsumerMixin):
             self.__max_error -= 1
         else:
             LOG.error('max connection errors exceeded.')
-            stop()
+            self.stop()
 
     def start(self):
         LOG.info('Starting AMQP worker {0}'.format(self.__queue))

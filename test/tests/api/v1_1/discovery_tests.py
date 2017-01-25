@@ -2,6 +2,7 @@ from config.api1_1_config import *
 from config.amqp import *
 from modules.logger import Log
 from on_http_api1_1 import NodesApi as Nodes
+from on_http_api1_1.rest import ApiException
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_is_not_none
@@ -70,8 +71,10 @@ class DiscoveryTests(object):
                 uuid = n.get('id')
                 try:
                     Nodes().nodes_identifier_workflows_active_delete(uuid)
-                except Exception,e:
+                except ApiException as e:
                     assert_equal(404, e.status, message = 'status should be 404')
+                except (TypeError, ValueError) as e:
+                    assert(e.message)
 
                 Nodes().nodes_identifier_delete(uuid)
                 codes.append(self.__client.last_response)

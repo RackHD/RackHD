@@ -4,6 +4,8 @@ from benchmark.manipulator import manipulator
 from proboscis import register
 from proboscis import TestProgram
 
+# pylint: disable=no-name-in-module
+
 def run_tests(api_ver, selected):
 
     if api_ver == '2':
@@ -33,6 +35,7 @@ def run_tests(api_ver, selected):
     else:
         TestProgram().run_and_exit()
 
+    # pylint: disable=no-member
     benchmark.tests.ansible_ctl.dispose()
 
 

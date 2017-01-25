@@ -607,7 +607,7 @@ def restful(url_command, rest_action='get', rest_payload=[], rest_timeout=None, 
                                          verify=sslverify
                                          )
     except requests.exceptions.Timeout:
-        return {'json':'', 'text':'',
+        return {'json':{}, 'text':'',
                 'status':0,
                 'headers':'',
                 'timeout':True}

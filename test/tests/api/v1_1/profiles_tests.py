@@ -3,6 +3,7 @@ import json
 from config.api1_1_config import *
 from on_http_api1_1 import ProfilesApi as Profiles
 from on_http_api1_1 import rest
+from on_http_api1_1.rest import ApiException
 from modules.logger import Log
 from datetime import datetime
 from proboscis.asserts import assert_equal
@@ -109,9 +110,10 @@ class ProfilesTests(object):
         """ Negative Testing GET:/library/:id"""
         try:
             Profiles().profiles_library_identifier_get('wrongProfileName')
-        except Exception,e:
+        except ApiException as e:
            assert_equal(404,e.status, message = 'status should be 404')
-
+        except (TypeError, ValueError) as e:
+           assert(e.message);
 
 
 

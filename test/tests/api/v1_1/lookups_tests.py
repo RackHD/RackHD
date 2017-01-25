@@ -1,6 +1,7 @@
 from config.api1_1_config import *
 from on_http_api1_1 import LookupsApi as Lookups
 from on_http_api1_1 import NodesApi as Nodes
+from on_http_api1_1.rest import ApiException
 from modules.logger import Log
 from datetime import datetime
 from proboscis.asserts import assert_equal
@@ -104,8 +105,10 @@ class LookupsTests(object):
         #Validate that a POST for a lookup with same id as an existing one gets rejected
         try:
             Lookups().lookups_post(self.lookup)
-        except Exception,e:
+        except ApiException as e:
            assert_equal(400,e.status, message = 'status should be 400')
+        except (TypeError, ValueError) as e:
+           assert(e.message);
 
     @test(groups=['check-patch-lookup'],depends_on_groups=['check-lookups-query','check-post-lookup','check-post-lookup-negativeTesting'])
     def patch_lookup(self):
@@ -134,5 +137,8 @@ class LookupsTests(object):
         #Validate that the lookup has been deleted and the returned value is an empty list
         try:
             Lookups().lookups_id_get(self.id)
-        except Exception,e:
-           assert_equal(404,e.status)
+        except ApiException as e:
+           assert_equal(404, e.status, message = 'status should be 404')
+        except (TypeError, ValueError) as e:
+           assert(e.message);
+       

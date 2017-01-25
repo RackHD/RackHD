@@ -165,19 +165,19 @@ def api_validate_node_pollers(client, node_id_list, all_pollers=False):
         # return no good pollers
         return False
 
-    for node_ld in node_id_list:
-        Api().nodes_get_pollers_by_id(node_ld)
+    for node_id in node_id_list:
+        Api().nodes_get_pollers_by_id(node_id)
         node_poller_rsp = client.last_response
         node_poller_list = loads(node_poller_rsp.data)
         if node_poller_rsp.status != 200:
-            print '**** Unable to retrieve node: {} pollers via API. status ({})\n'.format(node.get('id'),
+            print '**** Unable to retrieve node: {} pollers via API. status ({})\n'.format(node_id,
                                                                                            node_poller_rsp.status)
             # unable to get poller for this node, so return a False
             return False
 
         # if the poller return None or an empty list, return a False
         if not node_poller_list:
-            print 'Node {} has no pollers.'.format(node_ld)
+            print 'Node {} has no pollers.'.format(node_id)
             # no poller on this node, so return a False
             return False
 
@@ -222,7 +222,7 @@ def api_validate_node_pollers(client, node_id_list, all_pollers=False):
                 break
 
     return good_pollers
-    
+
 def validate_obm_settings(client, identifier):
     """
     The OBM objectis are obtained for the requested node. They are then searched to 
@@ -253,7 +253,7 @@ def validate_obm_settings(client, identifier):
         if get_by_string(obm_entry, 'config.properties.community'):
             return True
     return False
-    
+
 def get_by_string(source_dict, search_string, default_if_not_found=None):
     '''
     Search a dictionary using keys provided by the search string.
@@ -275,4 +275,4 @@ def get_by_string(source_dict, search_string, default_if_not_found=None):
         except StopIteration:
             return default_if_not_found
     return dict_obj
-        
+

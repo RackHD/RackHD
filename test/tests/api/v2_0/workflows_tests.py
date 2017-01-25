@@ -3,6 +3,7 @@ from config.api2_0_config import *
 from config.amqp import *
 from on_http_api2_0 import ApiApi as Api
 from on_http_api2_0 import rest
+from on_http_api2_0.rest import ApiException
 from modules.logger import Log
 from modules.amqp import AMQPWorker
 from modules.worker import WorkerThread, WorkerTasks
@@ -59,7 +60,7 @@ class WorkflowsTests(object):
                 assert_not_equal(id, None)
                 try:
                     Api().nodes_workflow_action_by_id(id, {'command': 'cancel'})
-                except rest.ApiException as err:
+                except ApiException as err:
                     LOG.warning(err)
 
     @test(groups=['workflows_get_api2'], depends_on_groups=['delete_all_active_workflows_api2'])
@@ -98,8 +99,10 @@ class WorkflowsTests(object):
         try:
             Api().workflows_get_by_instance_id("WrongIdentifier")
             assert_equal(404, self.__client.last_response.status, message='status should be 404. No exception raised')
-        except Exception,e:
+        except ApiException as e:
             assert_equal(404,e.status, message = 'status should be 404')
+        except (TypeError, ValueError) as e:
+            assert(e.message)
 
     @test(groups=['workflows_graphs_get_api2'])
     def test_workflows_graphs_get(self):
@@ -203,8 +206,10 @@ class WorkflowsTests(object):
                 tasks.append(thread)
                 try:
                     Api().nodes_workflow_action_by_id(id, {'command': 'cancel'})
-                except Exception,e:
+                except ApiException as e:
                     assert_equal(404,e.status, message='status should be 404')
+                except (TypeError, ValueError) as e:
+                    assert(e.message)
                 Api().nodes_post_workflow_by_id(id, name=self.__graph_name, body=data)
 
         if run_now:
