@@ -111,10 +111,6 @@ class os_ova_install(fit_common.unittest.TestCase):
         # check for number of virtual machine
         self.assertTrue(numvms < 100, "Number of vms should not be greater than 99")
 
-        # check stack ID as number to generate MAC address for multiple OVA
-        if numvms > 1:
-            self.assertTrue(fit_common.fitargs()['stack'].isdigit(), "Stack ID must be a number if numvms is greater than 1")
-
         # Shutdown previous ORA
         if fit_common.subprocess.call('ping -c 1 ' + fit_common.fitargs()['ora'], shell=True) == 0:
             fit_common.remote_shell('shutdown -h now')
