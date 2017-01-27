@@ -30,6 +30,7 @@ import fit_common
 # set proxy if required
 PROXYVARS = ''
 if fit_common.fitproxy()['host'] != '':
+    # note that both proxy server settings below are set to the same http: URL
     PROXYVARS = "export http_proxy=http://" + fit_common.fitproxy()['host'] + ":" + fit_common.fitproxy()['port'] + ";" + \
                 "export https_proxy=http://" + fit_common.fitproxy()['host'] + ":" + fit_common.fitproxy()['port'] + ";"
     # maven proxy settings
@@ -93,6 +94,8 @@ class rackhd_source_install(fit_common.unittest.TestCase):
         self.assertEqual(fit_common.remote_shell("cd ~/rackhd/" + ";git checkout "
                                                  + fit_common.fitinstall()['rackhd']['branch']
                                                  )['exitcode'], 0, "Branch not found on RackHD repo.")
+        '''
+        # this section is for future use
         # clone modules
         for repo in fit_common.fitinstall().keys():
             self.assertEqual(fit_common.remote_shell(PROXYVARS
@@ -104,6 +107,7 @@ class rackhd_source_install(fit_common.unittest.TestCase):
             self.assertEqual(fit_common.remote_shell("cd ~/rackhd/" + repo + ";git checkout "
                                                      + fit_common.fitinstall()[repo]['branch']
                                                      )['exitcode'], 0, "Branch not found on module:" + repo)
+        '''
 
     def test03_run_ansible_installer(self):
         print "**** Run RackHD Ansible installer."
@@ -209,14 +213,11 @@ class rackhd_source_install(fit_common.unittest.TestCase):
         fit_common.remote_shell('mkdir -p ~/src/on-http/static/swagger-ui')
 
     def test06_startup(self):
-        print "Start services."
-        startup = open('startup.sh', 'w')
-        startup.write('cd ~/;nf start&\n')
-        startup.close()
-        fit_common.scp_file_to_ora('startup.sh')
+        print "**** Start services."
         self.assertEqual(fit_common.remote_shell("chmod 777 startup.sh;/etc/init.d/isc-dhcp-server restart")['exitcode'], 0, "dhcp startup failure.")
-        self.assertEqual(fit_common.remote_shell("nohup ./startup.sh")['exitcode'], 0, "RackHD startup failure.")
+        self.assertEqual(fit_common.remote_shell("cd ~/;pm2 start rackhd-pm2-config.yml > /dev/null 2>&1")['exitcode'], 0, "RackHD startup failure.")
         print "**** Check installation."
+        fit_common.time.sleep(10)
         for dummy in range(0, 10):
             try:
                 fit_common.rackhdapi("/api/2.0/config")
