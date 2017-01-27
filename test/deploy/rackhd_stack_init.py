@@ -42,7 +42,7 @@ class rackhd_stack_init(unittest.TestCase):
         rc = fit_common.remote_shell("curl -ks -X POST -H 'Content-Type:application/json' https://localhost:" \
                                      + str(fit_common.fitports()['https']) + "/api/2.0/users -d @auth.json")
         if rc['exitcode'] != 0:
-            print "ALERT: Auth admin user not set! Please manually set the admin user account if https access is desired."
+            print "ALERT: Auth admin user not set! Please manually set the admin user account if authenticated access is desired."
 
     def test02_preload_sku_packs(self):
         print "**** Processing SKU Packs"
