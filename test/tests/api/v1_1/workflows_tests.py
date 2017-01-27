@@ -164,7 +164,7 @@ class WorkflowsTests(object):
                 status = self.__client.last_response.status
                 LOG.warning('Workflow status for Node {0} (status={1},retries={2})' \
                     .format(node, status, retries))
-                sleep(1)
+                time.sleep(1)
                 retries -= 1
                 Nodes().nodes_identifier_workflows_active_get(node)
             assert_equal(HTTP_NO_CONTENT, status, \
