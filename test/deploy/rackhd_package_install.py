@@ -28,6 +28,7 @@ import fit_common
 # set proxy if required
 PROXYVARS = ''
 if fit_common.fitproxy()['host'] != '':
+    # note that both proxy server settings below are set to the same http: URL
     PROXYVARS = "export http_proxy=http://" + fit_common.fitproxy()['host'] + ":" + fit_common.fitproxy()['port'] + ";" + \
                 "export https_proxy=http://" + fit_common.fitproxy()['host'] + ":" + fit_common.fitproxy()['port'] + ";"
 
