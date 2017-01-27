@@ -21,8 +21,8 @@ class fit_template(fit_common.unittest.TestCase):
 
     def test01_download_sku_packs(self):
         # Download SKU packs from GitHub
-        subprocess.call("rm -rf temp.sku; rm -rf on-skupack", shell=True)
-        os.mkdir("on-skupack")
+        rc = subprocess.call("rm -rf temp.sku; rm -rf on-skupack;mkdir -p on-skupack", shell=True)
+        self.assertEqual(rc, 0, "Unable to make on-skupack directory")
         # download all SKU repos and merge into on-skupack
         for url in fit_common.fitskupack():
             print "**** Cloning SKU Packs from " + url
@@ -65,7 +65,7 @@ class fit_template(fit_common.unittest.TestCase):
                             print "FAILURE - Missing SKU: " + configfile['name']
                             error_message += "  Missing SKU: " + configfile['name']
                     except:
-                        # Check is the sku pack config.json file is valid format, fails skupack install if invalid
+                        # Check if the sku pack config.json file is valid format, fails skupack install if invalid
                         print "FAILURE - Corrupt config.json in SKU Pack: " + str(skus) + " - not loaded"
                         error_message += "  Corrupt config.json in SKU Pack: " + str(skus)
             break
