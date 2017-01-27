@@ -214,7 +214,7 @@ class rackhd_source_install(fit_common.unittest.TestCase):
 
     def test06_startup(self):
         print "**** Start services."
-        self.assertEqual(fit_common.remote_shell("chmod 777 startup.sh;/etc/init.d/isc-dhcp-server restart")['exitcode'], 0, "dhcp startup failure.")
+        self.assertEqual(fit_common.remote_shell("/etc/init.d/isc-dhcp-server restart")['exitcode'], 0, "dhcp startup failure.")
         self.assertEqual(fit_common.remote_shell("cd ~/;pm2 start rackhd-pm2-config.yml > /dev/null 2>&1")['exitcode'], 0, "RackHD startup failure.")
         print "**** Check installation."
         fit_common.time.sleep(10)
