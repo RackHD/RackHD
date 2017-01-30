@@ -362,14 +362,14 @@ def run_ipmi_command_to_node(node_id, str_ipmi_cmd):
     :return: running result on success.
              Different return codes otherwise.
     '''
-
+    str_ip = get_compute_bmc_ip(node_id)
     if (str_ip == 2 or str_ip == 1) or str_ip == '0.0.0.0' :
         if fit_common.VERBOSITY >= 2:
             print "Unable to find the bmc ip at given node id"
         return 1
 
     dict_cred = get_compute_node_username(node_id)
-    if (dict_cred == 2 or dict_cred == 1) or dict_cred == 3:
+    if dict_cred == 1 or dict_cred == 2 or dict_cred == 3:
         if fit_common.VERBOSITY >= 2:
             print "No username or password found at given node id"
         return 1
@@ -404,7 +404,7 @@ def get_supported_pollers(node_id):
 
     if mondata['status'] not in [200,201,202,204]:
         if fit_common.VERBOSITY >= 2:
-            print "Status: {},  Failed to get data for poller id: {}".format(mondata['status'], str(poller_id))
+            print "Status: {},  Failed to get pollers for node: {}".format(mondata['status'], node_id)
     else:
         pollers = mondata['json']
         poller_dict = dict()

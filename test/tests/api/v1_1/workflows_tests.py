@@ -4,6 +4,7 @@ from config.amqp import *
 from on_http_api1_1 import WorkflowApi as Workflows
 from on_http_api1_1 import NodesApi as Nodes
 from on_http_api1_1 import rest
+from on_http_api1_1.rest import ApiException
 from modules.logger import Log
 from modules.amqp import AMQPWorker
 from modules.worker import WorkerThread, WorkerTasks
@@ -78,9 +79,11 @@ class WorkflowsTests(object):
         """ Negative Testing GET:/identifier"""
         try:
             Workflows().nodes_identifier_workflows_get("WrongIdentifier")
-        except Exception,e:
+        except ApiException as e:
             assert_equal(HTTP_NOT_FOUND, e.status, \
                 message = 'status should be {0}'.format(HTTP_NOT_FOUND))
+        except (TypeError, ValueError) as e:
+            assert(e.message);
 
     def put_workflow(self, workflowDict):
         #adding/updating  a workflow task
@@ -153,9 +156,11 @@ class WorkflowsTests(object):
             
             try:
                 Nodes().nodes_identifier_workflows_active_delete(node)
-            except Exception,e:
+            except ApiException as e:
                 assert_equal(HTTP_NOT_FOUND, e.status, \
                     message = 'status should be {0}'.format(HTTP_NOT_FOUND))
+            except (TypeError, ValueError) as e:
+                assert(e.message)
 
             retries = 5
             Nodes().nodes_identifier_workflows_active_get(node)
@@ -164,7 +169,7 @@ class WorkflowsTests(object):
                 status = self.__client.last_response.status
                 LOG.warning('Workflow status for Node {0} (status={1},retries={2})' \
                     .format(node, status, retries))
-                sleep(1)
+                time.sleep(1)
                 retries -= 1
                 Nodes().nodes_identifier_workflows_active_get(node)
             assert_equal(HTTP_NO_CONTENT, status, \
