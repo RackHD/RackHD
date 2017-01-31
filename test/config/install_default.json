@@ -24,8 +24,8 @@
         "https://github.com/RackHD/on-skupack"
         ],
       "proxy": {
-        "host": "web.hwimo.lab.emc.com",
-        "port": "3128"
+        "host": "",
+        "port": ""
       }
   }
 }
