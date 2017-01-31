@@ -1,6 +1,7 @@
 amqp==1.4.8
 ansible==1.8.4
 anyjson==0.3.3
+flake8==3.2.1
 gevent==1.1.2
 greenlet==0.4.10
 jsonmerge==1.2.1
