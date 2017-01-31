@@ -19,11 +19,8 @@ import fit_common
 NODECATALOG = fit_common.node_select()
 
 NODE = ""
-# Select one node at random that's not a management server
-for dummy in NODECATALOG:
-    NODE = NODECATALOG[random.randint(0, len(NODECATALOG)-1)]
-    if fit_common.rackhdapi('/api/2.0/nodes/' + NODE)['json']['name'] != "Management Server":
-        break
+# Select one node at random
+NODE = NODECATALOG[random.randint(0, len(NODECATALOG)-1)]
 
 # this routine polls a task ID for completion
 def wait_for_task_complete(taskid, retries=60):
@@ -42,6 +39,15 @@ def wait_for_task_complete(taskid, retries=60):
     print "Task failed with the following state: " + result['json']['TaskState']
     return False
 
+# download OS proxy config from host
+httpProxies = fit_common.rackhdapi('/api/2.0/config')['json']['httpProxies']
+# helper routine for selecting OS image path by matching proxy path
+def proxySelect(tag):
+    for entry in httpProxies:
+        if tag in entry['localPath']:
+            return entry['localPath']
+    return ''
+
 # ------------------------ Tests -------------------------------------
 from nose.plugins.attrib import attr
 @attr(all=True, regression=True)
@@ -49,15 +55,16 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
     def setUp(self):
         #delete active workflows for specified node
         fit_common.cancel_active_workflows(NODE)
-    #@fit_common.unittest.skipUnless('esxi55' in fit_common.GLOBAL_CONFIG['repos']['os'], "Skipping ESXi5.5")
-    @fit_common.unittest.skipUnless(False, "Skipping ESXi5.5")
+
+    @fit_common.unittest.skipUnless(proxySelect('ESXi/5.5') != '', "Skipping ESXi5.5")
     def test_bootstrap_esxi55(self):
         if fit_common.VERBOSITY >= 2:
             print 'Running ESXI 5.5 bootstrap.'
         nodehostname = 'esxi55'
-        payload_data = {"osName": "ESXi",
+        payload_data = {
+                        "osName": "ESXi",
                         "version": "5.5",
-                        "repo": fit_common.GLOBAL_CONFIG['repos']['os']['esxi55'],
+                        "repo": "http://172.31.128.1:9080" + proxySelect('ESXi/5.5'),
                         "rootPassword": "1234567",
                         "hostname": nodehostname,
                         "domain": "hwimo.lab.emc.com",
@@ -77,15 +84,15 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
         self.assertEqual(wait_for_task_complete(result['json']['@odata.id'], retries=80), True,
                          'TaskID ' + result['json']['@odata.id'] + ' not successfully completed.')
 
-    #@fit_common.unittest.skipUnless('esxi60' in fit_common.GLOBAL_CONFIG['repos']['os'], "Skipping ESXi6.0")
-    @fit_common.unittest.skipUnless(False, "Skipping ESXi6.0")
-    def test_bootstrap_esxi6(self):
+
+    @fit_common.unittest.skipUnless(proxySelect('ESXi/6.0') != '', "Skipping ESXi6.0")
+    def test_bootstrap_esxi60(self):
         if fit_common.VERBOSITY >= 2:
             print 'Running ESXI 6.0 bootstrap.'
         nodehostname = 'esxi60'
         payload_data = {"osName": "ESXi",
                         "version": "6.0",
-                        "repo": fit_common.GLOBAL_CONFIG['repos']['os']['esxi60'],
+                        "repo": "http://172.31.128.1:9080" + proxySelect('ESXi/6.0'),
                         "rootPassword": "1234567",
                         "hostname": nodehostname,
                         "domain": "hwimo.lab.emc.com",
@@ -105,15 +112,15 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
         self.assertEqual(wait_for_task_complete(result['json']['@odata.id'], retries=80), True,
                          'TaskID ' + result['json']['@odata.id'] + ' not successfully completed.')
 
-    #@fit_common.unittest.skipUnless('centos65' in fit_common.GLOBAL_CONFIG['repos']['os'], "Skipping Centos 6.5")
-    @fit_common.unittest.skipUnless(False, "Skipping Centos 6.5")
+
+    @fit_common.unittest.skipUnless(proxySelect('CentOS/6.5') != '', "Skipping Centos 6.5")
     def test_bootstrap_centos65(self):
         if fit_common.VERBOSITY >= 2:
             print 'Running CentOS 6.5 bootstrap.'
         nodehostname = 'centos65'
         payload_data = {"osName": "CentOS",
                         "version": "6.5",
-                        "repo": fit_common.GLOBAL_CONFIG['repos']['os']['centos65'],
+                        "repo": "http://172.31.128.1:9080" + proxySelect('CentOS/6.5'),
                         "rootPassword": "1234567",
                         "hostname": nodehostname,
                         "domain": "hwimo.lab.emc.com",
@@ -133,15 +140,15 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
         self.assertEqual(wait_for_task_complete(result['json']['@odata.id']), True,
                          'TaskID ' + result['json']['@odata.id'] + ' not successfully completed.')
 
-    #@fit_common.unittest.skipUnless('centos70' in fit_common.GLOBAL_CONFIG['repos']['os'], "Skipping Centos 7.0")
-    @fit_common.unittest.skipUnless(False, "Skipping Centos 7.0")
-    def test_bootstrap_centos7(self):
+
+    @fit_common.unittest.skipUnless(proxySelect('CentOS/7.0') != '', "Skipping Centos 7.0")
+    def test_bootstrap_centos70(self):
         if fit_common.VERBOSITY >= 2:
             print 'Running CentOS 7 bootstrap...'
         nodehostname = 'centos70'
         payload_data = {"osName": "CentOS",
                         "version": "7",
-                        "repo": fit_common.GLOBAL_CONFIG['repos']['os']['centos70'],
+                        "repo": "http://172.31.128.1:9080" + proxySelect('CentOS/7.0'),
                         "rootPassword": "1234567",
                         "hostname": nodehostname,
                         "domain": "hwimo.lab.emc.com",
@@ -162,15 +169,15 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
         self.assertEqual(wait_for_task_complete(result['json']['@odata.id']), True,
                          'TaskID ' + result['json']['@odata.id'] + ' not successfully completed.')
 
-    #@fit_common.unittest.skipUnless('centos65' in fit_common.GLOBAL_CONFIG['repos']['os'], "Skipping Centos 6.5 KVM")
-    @fit_common.unittest.skipUnless(False, "Skipping Centos 6.5 KVM")
+
+    @fit_common.unittest.skipUnless(proxySelect('CentOS/6.5') != '', "Skipping Centos 6.5 KVM")
     def test_bootstrap_centos65_kvm(self):
         if fit_common.VERBOSITY >= 2:
             print 'Running CentOS 6.5 KVM bootstrap.'
         nodehostname = 'centos65'
         payload_data = {"osName": "CentOS+KVM",
                         "version": "6.5",
-                        "repo": fit_common.GLOBAL_CONFIG['repos']['os']['centos65'],
+                        "repo": "http://172.31.128.1:9080" + proxySelect('CentOS/6.5'),
                         "rootPassword": "1234567",
                         "hostname": nodehostname,
                         "domain": "hwimo.lab.emc.com",
@@ -190,15 +197,15 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
         self.assertEqual(wait_for_task_complete(result['json']['@odata.id']), True,
                          'TaskID ' + result['json']['@odata.id'] + ' not successfully completed.')
 
-    #@fit_common.unittest.skipUnless('rhel70' in fit_common.GLOBAL_CONFIG['repos']['os'], "Skipping Redhat 7.0")
-    @fit_common.unittest.skipUnless(False, "Skipping Redhat 7.0")
-    def test_bootstrap_rhel7_kvm(self):
+
+    @fit_common.unittest.skipUnless(proxySelect('RHEL/7.0') != '', "Skipping Redhat 7.0")
+    def test_bootstrap_rhel70_kvm(self):
         if fit_common.VERBOSITY >= 2:
             print 'Running RHEL 7 KVM bootstrap.'
         nodehostname = 'rhel70'
         payload_data = {"osName": "RHEL+KVM",
                         "version": "7",
-                        "repo": fit_common.GLOBAL_CONFIG['repos']['os']['rhel70'],
+                        "repo": "http://172.31.128.1:9080" + proxySelect('RHEL/7.0'),
                         "rootPassword": "1234567",
                         "hostname": nodehostname,
                         "domain": "hwimo.lab.emc.com",
