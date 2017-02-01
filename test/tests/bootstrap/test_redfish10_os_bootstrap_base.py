@@ -75,8 +75,11 @@ def wait_for_task_complete(taskid, retries=60):
     print "Task failed with the following state: " + result['json']['TaskState']
     return False
 
-# download OS proxy config from host
-httpProxies = fit_common.rackhdapi('/api/2.0/config')['json']['httpProxies']
+# download RackHD config from host
+rackhdconfig = fit_common.rackhdapi('/api/2.0/config')['json']
+httpProxies = rackhdconfig['httpProxies']
+rackhdhost = "http://" + rackhdconfig['apiServerAddress'] + ":" + rackhdconfig['apiServerPort']
+
 # helper routine for selecting OS image path by matching proxy path
 def proxySelect(tag):
     for entry in httpProxies:
@@ -100,7 +103,7 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
         payload_data = {
                         "osName": "ESXi",
                         "version": "5.5",
-                        "repo": "http://172.31.128.1:9080" + proxySelect('ESXi/5.5'),
+                        "repo": rackhdhost + proxySelect('ESXi/5.5'),
                         "rootPassword": "1234567",
                         "hostname": nodehostname,
                         "domain": "hwimo.lab.emc.com",
@@ -128,7 +131,7 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
         nodehostname = 'esxi60'
         payload_data = {"osName": "ESXi",
                         "version": "6.0",
-                        "repo": "http://172.31.128.1:9080" + proxySelect('ESXi/6.0'),
+                        "repo": rackhdhost + proxySelect('ESXi/6.0'),
                         "rootPassword": "1234567",
                         "hostname": nodehostname,
                         "domain": "hwimo.lab.emc.com",
@@ -156,7 +159,7 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
         nodehostname = 'centos65'
         payload_data = {"osName": "CentOS",
                         "version": "6.5",
-                        "repo": "http://172.31.128.1:9080" + proxySelect('CentOS/6.5'),
+                        "repo": rackhdhost + proxySelect('CentOS/6.5'),
                         "rootPassword": "1234567",
                         "hostname": nodehostname,
                         "domain": "hwimo.lab.emc.com",
@@ -184,7 +187,7 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
         nodehostname = 'centos70'
         payload_data = {"osName": "CentOS",
                         "version": "7",
-                        "repo": "http://172.31.128.1:9080" + proxySelect('CentOS/7.0'),
+                        "repo": rackhdhost + proxySelect('CentOS/7.0'),
                         "rootPassword": "1234567",
                         "hostname": nodehostname,
                         "domain": "hwimo.lab.emc.com",
@@ -213,7 +216,7 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
         nodehostname = 'centos65'
         payload_data = {"osName": "CentOS+KVM",
                         "version": "6.5",
-                        "repo": "http://172.31.128.1:9080" + proxySelect('CentOS/6.5'),
+                        "repo": rackhdhost + proxySelect('CentOS/6.5'),
                         "rootPassword": "1234567",
                         "hostname": nodehostname,
                         "domain": "hwimo.lab.emc.com",
@@ -241,7 +244,7 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
         nodehostname = 'rhel70'
         payload_data = {"osName": "RHEL+KVM",
                         "version": "7",
-                        "repo": "http://172.31.128.1:9080" + proxySelect('RHEL/7.0'),
+                        "repo": rackhdhost + proxySelect('RHEL/7.0'),
                         "rootPassword": "1234567",
                         "hostname": nodehostname,
                         "domain": "hwimo.lab.emc.com",
