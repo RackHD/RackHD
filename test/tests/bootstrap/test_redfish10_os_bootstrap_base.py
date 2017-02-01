@@ -1,9 +1,45 @@
-# Copyright 2016, EMC, Inc.
+# Copyright 2017, EMC, Inc.
 
 '''
 This script tests base case of the OnRack BootImage API and OS bootstrap workflows
 The test will select a single eligible node to run all currently supported bootstrap workflows
 This is a LONG-RUNNING script which will typically take 1-2 hours to execute
+
+Bootstrap tests require special RackHD configuration and mirror repositories for the OS images
+OS images are loaded via RackHD "httpProxies" settings in config.json.
+
+Example:
+      "httpProxies": [
+          {
+              "localPath": "/ESXi/5.5",
+              "remotePath": "/",
+              "server": "http://os-mirror-server/esxi/5.5/esxi"
+          },
+          {
+              "localPath": "/ESXi/6.0",
+              "remotePath": "/",
+              "server": "http://os-mirror-server/6.0/esxi6"
+          },
+          {
+              "localPath": "/CentOS/6.5",
+              "remotePath": "/",
+              "server": "http://os-mirror-server/centos/6.5/os/x86_64"
+          },
+          {
+              "localPath": "/CentOS/7.0",
+              "remotePath": "/",
+              "server": "http://os-mirror-server/centos/7/os/x86_64"
+          },
+          {
+              "localPath": "/RHEL/7.0",
+              "remotePath": "/",
+              "server": "http://os-mirror-server/rhel/7.0/os/x86_64"
+          }
+      ],
+
+For each OS type, the "localpath" string must conform to the schema above.
+The "server' URL points to the location of the OS executables in an image repository.
+
 '''
 
 import os
