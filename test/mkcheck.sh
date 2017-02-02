@@ -2,40 +2,31 @@
 
 # Copyright 2017, EMC, Inc.
 
-# Run code checks (pylint for example)
+# Run code checks (pylint, flake8, etc)
 #
 # Command forms:
 #   mkcheck.sh
 #       Runs checker and writes to to local file
-#   mkcheck.sh <pkg_format>
-#       <pkg-formmat> can be either "text" or "html"
-#       with "text" being the default if no option
-#       specified.
+#   mkcheck.sh
 #
 #   output file:
-#        rackhd_test_pylint.<pkg_format>
+#        rackhd_test_check.txt
 #
 
-format="text"
-if [ $# -eq 1 ]; then
-    format="$1"
-fi
+output_file=rackhd_test_check.txt
 
-if [[ "${format}" != "text" && "${format}" != "html" ]]; then
-    echo "bad command form"
-    echo "mkcheck.sh <[text|html]>"
-    exit 1
-fi
-
-pylint_output_file=rackhd_test_pylint.${format}
 status=0
 
-scandirs="*.py common modules stream-monitor util tests templates deploy config benchmark"
-errors_only="-E"
-pylint ${errors_only} --rcfile=pylintrc --output-format=${format} . ${scandirs} > ${pylint_output_file}
+# move existing output_file aside (add ~)
+if [ -f ${output_file} ]; then
+    mv ${output_file} ${output_file}~
+fi
+
+# make changes to flake8 parameters in .flake8 file
+flake8 --config=../.flake8 --statistics --tee --output-file=${output_file}
 if [ $? -ne 0 ]; then
     if [ "${format}" == "text" ]; then
-        cat ${pylint_output_file}
+        cat ${output_file}
     fi
     echo "Python checker failed.  Clean up code and retry"
     status=1
