@@ -1,7 +1,7 @@
 # Copyright 2017, EMC, Inc.
 
 '''
-This script tests base case of the OnRack BootImage API and OS bootstrap workflows
+This script tests base case of the RackHD Redfish BootImage API and OS bootstrap workflows
 The test will select a single eligible node to run all currently supported bootstrap workflows
 This is a LONG-RUNNING script which will typically take 1-2 hours to execute
 
