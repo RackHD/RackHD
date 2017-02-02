@@ -9,96 +9,105 @@ import json
 
 #pylint: disable=invalid-name
 
+class mkcfgException(Exception):
+    pass
+
 class mkcfg(object):
 
     """
     Manages a RackHD test configuration
 
-    Singleton object creation:
-    cfg = mkcfg(config_dir, json_config_files, arg_list)
+    # Singleton object creation:
+    mkcfg()
 
-    Access the singleton
+    # Access the singleton
     cfg = mkcfg()
 
-    Methods:
-        add : adds additional test configurations to an existing
-              mkcfg object.  Individual dictionary values will be
-              overwritten by the inbound json_config_file values.
+    # add a list of json configs
+    cfg.add_from_file_list(json_config_file_list)
 
-              Example:
-              cfg = mkcfg(config_dir, json_config_files, arg_list)
-              cfg.add(stack_config_file)
+    # add a single json config
+    cfg.add_from_file_list(json_config_file_list)
 
-        get : returns the config dictionary
+    # add a json config from dict
+    cfg.add_from_dict(config_dict)
 
-              Example:
-              myconfig_dict = cfg.get()
+    # write out configuration
+    cfg.generate()
 
-        get_path : returns the config dictionary
+    # retrieve the config as a dict
+    cfg_dict = cfg.get()
 
-              Example:
-              config_path = cfg.get_path()
-
-        destroy : destroys the singleton to allow for a new configuration
-
-              Example:
-              cfg.destroy()
+    # retrieve the path to saved configuration
+    cfg_dict = cfg.get_path()
     """
 
     # mkcfg is a singleton
     __metaclass__ = Singleton
 
     config_env = 'FIT_CONFIG'
-    default_composition = ['rackhd_default.json', 'credentials_default.json']
 
-    def __init__(self, config_dir=None, json_config_list=None, arg_list=None):
+    def __init__(self):
+        self.config_path = os.environ.get(self.config_env, None)
+        if self.config_path:
+            # load up an existing configuration
+            print "*** Reloading config file: " + self.config_path
+            self.generated_config_path = self.config_path
+            self.config_dict = self.__read_config(self.generated_config_path)
+            self.config_dir = self.config_dict['cmd-args-list']['config']
+            self.generated_dir = self.config_dir + '/generated'
 
-        # handle default mutable types
-        if json_config_list is None:
-            json_config_list = []
-        if arg_list is None:
-            arg_list = []
+    def config_is_loaded(self):
+        return self.config_path is not None
 
+    def create(self, config_dir='config'):
+        if self.config_path:
+            raise mkcfgException('creating configuration on top of existing object')
+        # prepare for creation of new configuration
         self.generated_config_path = None
         self.config_dict = dict()
         self.config_dir = config_dir
         self.generated_dir = self.config_dir + '/generated'
-        config_path = os.environ.get(self.config_env)
-        if not config_path:
-            # no test configuration from environment.  create the config
-            self.add(json_config_list, arg_list)
-        else:
-            # load up an existing configuration
-            self.generated_config_path = config_path
-            self.config_dict = self.__read_config(self.generated_config_path)
 
-    def add(self, json_config_list, arg_list=None):
+    def add_from_file_list(self, json_config_list):
         """
-        add a test configuration
+        add a list of json configuration files
+        :param json_config_list: file list
+        :return: None
+        """
+        for json_config in json_config_list:
+            self.add_from_file(json_config)
 
-        :config_dir: path to configuration files
-        :param config_list: list of json configurations to be applied in order
-        :param arg_list: command-line arguments
+    def add_from_file(self, json_config, key=None):
+        """
+        add a single json configuration file
+        :param json_config: json config file
+        :return: None
+        """
+        config_dict = self.__read_config(self.config_dir + '/' + json_config)
+        if key:
+            if key in config_dict:
+                config_dict = config_dict[key]
+            else:
+                raise mkcfgException('unknown key = ' + key)
+        self.__merge(config_dict)
+
+    def add_from_dict(self, add_dict):
+        """
+        merge a dictionary into config dict
+        :param add_dict:
         :return:
         """
-        # apply schema overlays
-        schema = {'mergeStrategy': 'objectMerge'}
-        for json_config in json_config_list:
-            self.config_dict = jsonmerge.merge(self.config_dict,
-                                               self.__read_config(self.config_dir + '/' + json_config),
-                                               schema)
+        self.__merge(add_dict)
 
-        # add test-config section
-        if 'test-config' not in self.config_dict:
-            self.config_dict['test-config'] = dict()
-
-        # add cmd-line-args section
-        if 'cmd-line-args' not in self.config_dict:
-            if arg_list:
-                self.config_dict['cmd-line-args'] = arg_list
-
+    def generate(self):
+        """
+        generate a configuration file
+        :return: None
+        """
         self.generated_config_path = self.__write_config_file()
         os.environ[self.config_env] = self.generated_config_path
+        print "*** Created config file: " + self.generated_config_path
 
     def get(self):
         """
@@ -121,13 +130,22 @@ class mkcfg(object):
         """
         Singleton.purge(mkcfg)
 
+    def __merge(self, json_blob):
+        """
+        json merge a json blob into config_dict
+        :param json_blob:
+        :return:
+        """
+        schema = {'mergeStrategy': 'objectMerge'}
+        self.config_dict = jsonmerge.merge(self.config_dict, json_blob, schema)
+
     def __write_config_file(self, prepend=''):
         """
         write a json configuration file with a timestamped name
         :return:
         """
         timestr = prepend + time.strftime("%Y%m%d-%H%M%S")
-        config_path = self.generated_dir + '/' + timestr
+        config_path = self.generated_dir + '/' + 'fit-config-' + timestr
         with open(config_path, 'w') as outf:
             json.dump(self.config_dict, outf, indent=4, sort_keys=True)
         return config_path
@@ -194,25 +212,31 @@ if __name__ == "__main__":
 
     # specify a sample argument list
     ARGS_LIST = {
-        "v": "v_value",
-        "config": "config_value",
-        "stack": "stack_value",
-        "ora": "ora_value",
-        "bmc": "bmc_value",
-        "sku": "sku_value",
-        "obmmac": "obmmac_value",
-        "nodeid": "nodeid_value",
-        "http": 8080,
-        "https": 443
+        "cmd-args-list": {
+            "v": "v_value",
+            "config": "config_value",
+            "stack": "stack_value",
+            "ora": "ora_value",
+            "bmc": "bmc_value",
+            "sku": "sku_value",
+            "obmmac": "obmmac_value",
+            "nodeid": "nodeid_value",
+            "http": 8080,
+            "https": 443
+        }
     }
 
     # Test config creation
-    cfg = mkcfg(config_dir_arg, json_config_files_arg, ARGS_LIST)
+    cfg = mkcfg()
+
+    cfg.create()
+    cfg.add_from_file_list(json_config_files_arg)
+    cfg.add_from_dict(ARGS_LIST)
     cfg.dump()
+    cfg.generate()
 
     # Dump out the configuration path.  We should be able to access with cfg object
     print "path = " + mkcfg().get_path()
-    cfg.dump()
 
     # Get config singleton object and compare dictionaries
     cfg2 = mkcfg()
@@ -223,8 +247,13 @@ if __name__ == "__main__":
     # throw away configuration
     cfg.destroy()
 
-    # reload from FIT_CONFIG_PATH which should be in the environment from original mkcfg
-    cfg = mkcfg(config_dir_arg)
+    # reload from FIT_CONFIG which should be in the environment from original mkcfg
+    cfg = mkcfg()
+    if cfg.config_is_loaded():
+        cfg.dump()
+    else:
+        print 'we should already have configuration'
+        exit(1)
     print "path = " + mkcfg().get_path()
     cfg.dump()
 

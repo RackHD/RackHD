@@ -1,5 +1,7 @@
-rackhd (1.1-1) unstable; urgency=low
+rackhd (1.1.0) UNRELEASED; urgency=low
 
   * Initial release
+  * release 1.0.0
+  * release 1.1.0
 
- -- rackhd <rackhd@emc.com>  Sun, 09 Oct 2016 14:39:48 +0800
+ -- rackhd <rackhd@emc.com>  Fri, 27 Jan 2017 21:03:00 -0500

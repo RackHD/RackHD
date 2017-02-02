@@ -20,118 +20,299 @@ import re
 import requests
 import pexpect
 import shutil
+import inspect
+
 import nose
+import argparse
 from flogging import get_loggers, logger_config_api
+from mkcfg import mkcfg
 
-# Globals
+sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test")
 
-# Pull arguments from environment into ARGS_LIST
-ARGS_LIST = \
-    {
-    "v": os.getenv("VERBOSITY", "0"),
-    "config":  os.getenv("CONFIG", "config"),
-    "stack": os.getenv("STACK", "None"), # Stack label
-    "ora": os.getenv("ORA", "localhost"), # Appliance IP or hostname
-    "bmc": "None", # BMC IP or hostname
-    "sku": os.getenv("SKU", "all"), # node SKU name
-    "obmmac": os.getenv("OBMMAC", "all"), # node OBM MAC address
-    "nodeid": os.getenv("NODEID", "None"), # node ID
-    "hyper": "None", # hypervisor address
-    "version": os.getenv("VERSION", "onrack-devel"), # code version
-    "template": os.getenv("TEMPLATE", "None"), # path or URL link to OVA for deployment
-    "xunit": os.getenv("XUNIT", False), # XUNIT output
-    "numvms" : os.getenv("NUMVMS", 1), # number of OVA for deployment
-    "list": os.getenv("LIST", False), # list tests
-    "group": os.getenv("GROUP", "all"), # test group
-    "http": os.getenv("HTTP", "False"), # force http api protocol
-    "https": os.getenv("HTTPS", "False"), # force https api protocol
-    "port": os.getenv("PORT", "None") # port number override
-}
-
-# Get top level path via git
-TEST_PATH = subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test/"
-CONFIG_PATH = TEST_PATH + ARGS_LIST["config"] + "/"
-if ARGS_LIST["config"] != 'config':
-    print "**** Using config file path:", ARGS_LIST["config"]
-VERBOSITY = int(os.getenv("VERBOSITY", "1"))
-# The global "VERBOSITY" will go away once all usages are removed. At that point,
-# the following call can migrate some place that makes more sense (not sure where
-# that is yet!)
-
-GLOBAL_CONFIG = []
-STACK_CONFIG = []
+VERBOSITY = 1
+TEST_PATH = None
+CONFIG_PATH = None
 API_PORT = "None"
 API_PROTOCOL = "None"
 AUTH_TOKEN = "None"
 REDFISH_TOKEN = "None"
-
-# List of BMC IP addresses
 BMC_LIST = []
 
+def fitcfg():
+    """
+    returns the configuration dictionary
+    :return: dictionary
+    """
+    return mkcfg().get()
 
-# Global Config files
-try:
-    GLOBAL_CONFIG = json.loads(open(CONFIG_PATH + "global_config.json").read())
-except:
-    print "**** Global Config file: " + CONFIG_PATH + "global_config.json" + " missing or corrupted! Exiting...."
-    sys.exit(255)
-try:
-    STACK_CONFIG = json.loads(open(CONFIG_PATH + "stack_config.json").read())
-except:
-    print "**** Stack Config file:" + CONFIG_PATH + "stack_config.json" + " missing or corrupted! Creating empty stack file...."
-    STACK_CONFIG = []
+def fitrackhd():
+    """
+    returns the ['rackhd-config'] dictionary
+    :return: dictionary or None
+    """
+    return fitcfg().get('rackhd-config', None)
 
-# apply stack detail files from config dir to STACK_CONFIG dict
-for entry in os.listdir(CONFIG_PATH):
-    if entry != "global_config.json" and entry != "stack_config.json" and ".json" in entry:
-        try:
-            detailfile = json.loads(open(CONFIG_PATH + entry).read())
-        except:
-            print "**** Invalid JSON file:", CONFIG_PATH + entry
-        else:
-            STACK_CONFIG.update(detailfile)
+def fitargs():
+    """
+    returns the ['cmd-args-list'] dictionary
+    :return: dictionary or None
+    """
+    return fitcfg().get('cmd-args-list', None)
 
+def fitcreds():
+    """
+    returns the ['credentials'] dictionary
+    :return: dictionary or None
+    """
+    return fitcfg().get('credentials', None)
 
-# This section derives default stack configuration data from STACK-CONFIG, use environment to override
-ARGS_LIST.update(
-    {
-        "usr": GLOBAL_CONFIG['credentials']['ora'][0]['username'],
-        "pwd": GLOBAL_CONFIG['credentials']['ora'][0]['password']
-    }
-)
+def fitinstall():
+    """
+    returns the ['install-config']['install'] dictionary
+    :return: dictionary or None
+    """
+    if 'install-config' not in fitcfg():
+        return None
+    return fitcfg()['install-config'].get('install', None)
 
-if ARGS_LIST["stack"] != "None":
-    if ARGS_LIST["stack"] not in STACK_CONFIG:
-        print "**** Stack {0} not found in stack config file {1}.  Exiting....".format(ARGS_LIST["stack"], CONFIG_PATH + "stack_config.json")
-        sys.exit(255)
-    if "ora" in STACK_CONFIG[ARGS_LIST["stack"]]:
-        ARGS_LIST["ora"] = STACK_CONFIG[ARGS_LIST["stack"]]['ora']
+def fitports():
+    """
+    returns the ['install-config']['ports'] dictionary
+    :return: dictionary or None
+    """
+    if 'install-config' not in fitcfg():
+        return None
+    return fitcfg()['install-config'].get('ports', None)
+
+def fitcit():
+    """
+    returns the ['cit-config'] dictionary
+    :return: dictionary or None
+    """
+    return fitcfg().get('cit-config', None)
+
+def fitglobals():
+    """
+    returns the ['install-config']['global'] dictionary
+    :return: dictionary or None
+    """
+    return fitcfg().get('globals', None)
+
+def fitproxy():
+    """
+    returns the ['install-config']['proxy'] dictionary
+    :return: dictionary or None
+    """
+    if 'install-config' not in fitcfg():
+        return None
+    return fitcfg()['install-config'].get('proxy', None)
+
+def fitskupack():
+    if 'install-config' not in fitcfg():
+        return None
+    return fitcfg()['install-config'].get('skupack', None)
+
+def compose_config(use_sysargs=False):
+    """
+    creates a configuration based on
+    :param use_sysargs: set to true if sys.argv is to be processed.
+    :return: None
+    """
+    # create configuration object
+    cfg_obj = mkcfg()
+    if cfg_obj.config_is_loaded():
+        # a previously generated configuration has been loaded
+        # restore previously setup globals
+        update_globals()
     else:
-        ARGS_LIST["ora"] = "localhost"
-    if "bmc" in STACK_CONFIG[ARGS_LIST["stack"]]:
-        ARGS_LIST["bmc"] = STACK_CONFIG[ARGS_LIST["stack"]]['bmc']
-    if "hyper" in STACK_CONFIG[ARGS_LIST["stack"]]:
-        ARGS_LIST["hyper"] = STACK_CONFIG[ARGS_LIST["stack"]]['hyper']
+        # create new configuration
+        #   * add cmd-args-list section
+        #   * add the default config json file composition.
+        #   * add stack overlay
+        #   * save off environment
+        #   * generate a few globals
+        #   * save (generate) the configuration to a file
+        args_list = {}
+        if use_sysargs:
+            # Args from command line, pass -config option to create
+            args_list['cmd-args-list'] = mkargs()
+            config = args_list['cmd-args-list']['config']
+            cfg_obj.create(config)
+        else:
+            # Args from default set
+            no_args = {}
+            args_list['cmd-args-list'] = mkargs(no_args)
+            cfg_obj.create()
 
-# set api port and protocol from command line
-if ARGS_LIST['port'] != "None":
-    API_PORT = ARGS_LIST['port']
-if ARGS_LIST['http'] == "True":
-    API_PROTOCOL = "http"
-    if API_PORT == "None":
-        API_PORT = GLOBAL_CONFIG['ports']['http']
-if ARGS_LIST['https'] == "True":
-    API_PROTOCOL = "https"
-    if API_PORT == "None":
-        API_PORT = GLOBAL_CONFIG['ports']['https']
-if ARGS_LIST["ora"] == "localhost":
-    if API_PROTOCOL == "None":
-        API_PROTOCOL = 'http'
-    if API_PORT == "None":
-        API_PORT = '8080'
-# set OVA template from command line
-if ARGS_LIST["template"] == "None":
-    ARGS_LIST["template"] = GLOBAL_CONFIG['repos']['install']['template']
+        # add the 'cmd-args-list' section
+        cfg_obj.add_from_dict(args_list)
+
+        if fitargs()['config'] != 'config':
+            print "*** Using config file path:", fitcfg()['cmd-args-list']['config']
+
+        if cfg_obj.get_path() is None:
+
+            default_composition = ['rackhd_default.json',
+                                   'credentials_default.json',
+                                   'install_default.json',
+                                   'cit_default.json']
+
+            # config file composition
+            cfg_obj.add_from_file_list(default_composition)
+
+            # stack overlay configuration
+            apply_stack_config()
+
+            # add significant environment variables
+            args = fitargs()
+            cfg_obj.add_from_dict({
+                'env': {
+                    'HOME':  os.environ['HOME'],
+                    'PATH':  os.environ['PATH']
+                }
+            })
+
+            add_globals()
+
+            # generate the configuration file
+            cfg_obj.generate()
+            print "*** Using config file: {0}".format(cfg_obj.get_path())
+
+def apply_stack_config():
+    """
+    does the necessary stack configuration changes
+    :return: None
+    """
+    stack = fitargs()['stack']
+    if stack is not None:
+        mkcfg().add_from_file('stack_config.json', stack)
+        if 'ora' in fitcfg():
+            fitargs()['ora'] = fitcfg()['ora']
+        else:
+            fitargs()['ora'] = 'localhost'
+        if 'bmc' in fitcfg():
+            fitargs()['bmc'] = fitcfg()['bmc']
+        if 'hyper' in fitcfg():
+            fitargs()['hyper'] = fitcfg()['hyper']
+
+def add_globals():
+    """
+    create a handlful of global shortcuts
+    :return:
+    """
+    global TEST_PATH
+    global CONFIG_PATH
+    global API_PORT
+    global API_PROTOCOL
+    global VERBOSITY
+
+    # set api port and protocol from command line
+    if fitargs()['port'] != "None":
+        API_PORT = fitargs()['port']
+
+    if fitargs()['http'] == "True":
+        API_PROTOCOL = "http"
+        if API_PORT == "None":
+            API_PORT = fitports()['http']
+
+    if fitargs()['https'] == "True":
+        API_PROTOCOL = "https"
+        if API_PORT == "None":
+            API_PORT = fitports()['https']
+
+    if fitargs()["ora"] == "localhost":
+        if API_PROTOCOL == "None":
+            API_PROTOCOL = 'http'
+        if API_PORT == "None":
+            API_PORT = '8080'
+
+    # add globals section to base configuration
+    TEST_PATH = subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test/"
+    CONFIG_PATH = TEST_PATH + fitargs()['config'] + "/"
+    mkcfg().add_from_dict({
+        'globals': {
+            'API_PORT': API_PORT,
+            'API_PROTOCOL': API_PROTOCOL,
+            'TEST_PATH': TEST_PATH,
+            'CONFIG_PATH': CONFIG_PATH,
+            'VERBOSITY' : fitargs()['v']
+        }
+    })
+
+    # set OVA template from command line
+    if fitargs()["template"] == "None":
+        fitargs()["template"] = fitcfg()['install-config']['template']
+
+
+def update_globals():
+    global API_PORT
+    global API_PROTOCOL
+    global TEST_PATH
+    global CONFIG_PATH
+    global VERBOSITY
+
+    API_PORT = fitglobals()['API_PORT']
+    API_PROTOCOL = fitglobals()['API_PROTOCOL']
+    TEST_PATH = fitglobals()['TEST_PATH']
+    CONFIG_PATH = fitglobals()['CONFIG_PATH']
+    VERBOSITY = fitglobals()['VERBOSITY']
+
+def mkargs(in_args=None):
+    """
+    processes the command line options as passed in by in_args.
+    :param in_args: input arguments
+    :return: dictionary of processed arguments
+    """
+    if in_args is None:
+        in_args = sys.argv[1:]
+
+    # command line argument parser returns cmd_args dict
+    arg_parser = argparse.ArgumentParser(description="Command Help")
+    arg_parser.add_argument("-test", default="tests/",
+                            help="test to execute, default: tests/")
+    arg_parser.add_argument("-config", default="config",
+                            help="config file location, default: config")
+    arg_parser.add_argument("-group", default="all",
+                            help="test group to execute: 'smoke', 'regression', 'extended', default: 'all'")
+    arg_parser.add_argument("-stack", default="vagrant",
+                            help="stack label (test bed), overrides -ora")
+    arg_parser.add_argument("-ora", default="localhost",
+                            help="OnRack/RackHD appliance IP address or hostname, default: localhost")
+    arg_parser.add_argument("-version", default="onrack-devel",
+                            help="OnRack package install version, example:onrack-release-0.3.0, default: onrack-devel")
+    arg_parser.add_argument("-template", default="None",
+                            help="path or URL link to OVA template or OnRack OVA")
+    arg_parser.add_argument("-xunit", default="False", action="store_true",
+                            help="generates xUnit XML report files")
+    arg_parser.add_argument("-numvms", default=1, type=int,
+                            help="number of virtual machines for deployment on specified stack")
+    arg_parser.add_argument("-list", default="False", action="store_true",
+                            help="generates test list only")
+    arg_parser.add_argument("-sku", default="all",
+                            help="node SKU name, example: Quanta-T41, default=all")
+    group = arg_parser.add_mutually_exclusive_group(required=False)
+    group.add_argument("-obmmac", default="all",
+                       help="node OBM MAC address, example:00:1e:67:b1:d5:64")
+    group.add_argument("-nodeid", default="None",
+                       help="node identifier string of a discovered node, example: 56ddcf9a8eff16614e79ec74")
+    group2 = arg_parser.add_mutually_exclusive_group(required=False)
+    group2.add_argument("-http", default="False", action="store_true",
+                        help="forces the tests to utilize the http API protocol")
+    group2.add_argument("-https", default="False", action="store_true",
+                        help="forces the tests to utilize the https API protocol")
+    arg_parser.add_argument("-port", default="None",
+                            help="API port number override, default from install_config.json")
+    arg_parser.add_argument("-v", default=1, type=int,
+                            help="Verbosity level of console output, default=1, Built Ins: " +
+                                 "0: No debug, " +
+                                 "2: User script output, " +
+                                 "4: rest calls and status info, " +
+                                 "6: other common calls (ipmi, ssh), " +
+                                 "9: all the rest ")
+
+    # parse arguments to cmd_args dict
+    cmd_args = vars(arg_parser.parse_args(in_args))
+    return cmd_args
 
 def timestamp(): # return formatted current timestamp
     return time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime())
@@ -148,9 +329,10 @@ def countdown(sleep_time, sleep_interval=1):
     print "Waking!"
     return
 
-def remote_shell(shell_cmd, expect_receive="", expect_send="", timeout=300, address=ARGS_LIST['ora'], user=ARGS_LIST['usr'], password=ARGS_LIST['pwd']):
+def remote_shell(shell_cmd, expect_receive="", expect_send="", timeout=300,
+                 address=None, user=None, password=None):
     '''
-    Run ssh based shell command on a remote machine at ARGS_LIST["ora"]
+    Run ssh based shell command on a remote machine at fitargs()["ora"]
 
     :param shell_cmd: string based command
     :param expect_receive:
@@ -161,6 +343,12 @@ def remote_shell(shell_cmd, expect_receive="", expect_send="", timeout=300, addr
     :param password: password of remote host
     :return: dict = {'stdout': str:ouput, 'exitcode': return code}
     '''
+    if not address:
+        address = fitargs()['ora']
+    if not user:
+        user = fitcreds()['ora'][0]['username']
+    if not password:
+        password = fitcreds()['ora'][0]['password']
 
     logfile_redirect = None
     if VERBOSITY >= 4:
@@ -172,7 +360,7 @@ def remote_shell(shell_cmd, expect_receive="", expect_send="", timeout=300, addr
         logfile_redirect = sys.stdout
 
     # if localhost just run the command local
-    if ARGS_LIST['ora'] == 'localhost':
+    if fitargs()['ora'] == 'localhost':
         (command_output, exitstatus) = \
             pexpect.run("sudo bash -c \"" + shell_cmd + "\"",
                         withexitstatus=1,
@@ -216,15 +404,14 @@ def scp_file_to_ora(src_file_name):
     :return: just name of file on target (no path)
     :rtype: basestring
     '''
-
     logfile_redirect = file('/dev/null', 'w')
     just_fname = os.path.basename(src_file_name)
     # if localhost just copy to home dir
-    if ARGS_LIST['ora'] == 'localhost':
+    if fitargs()['ora'] == 'localhost':
         remote_shell('cp ' + src_file_name + ' ~/' + src_file_name)
         return src_file_name
 
-    scp_target = ARGS_LIST['usr'] + '@{0}:'.format(ARGS_LIST["ora"])
+    scp_target = fitcreds()['ora'][0]['username'] + '@{0}:'.format(fitargs()["ora"])
     cmd = 'scp -o StrictHostKeyChecking=no {0} {1}'.format(src_file_name, scp_target)
     if VERBOSITY >= 4:
         print "scp_file_to_ora: '{0}'".format(cmd)
@@ -234,7 +421,7 @@ def scp_file_to_ora(src_file_name):
 
     (command_output, ecode) = pexpect.run(
         cmd, withexitstatus=1,
-        events={'(?i)assword: ':ARGS_LIST['pwd'] + '\n'},
+        events={'(?i)assword: ':fitcreds()['ora'][0]['password'] + '\n'},
         logfile=logfile_redirect)
     if VERBOSITY >= 4:
         print "scp_file_to_ora: Exit Code = {0}".format(ecode)
@@ -247,23 +434,24 @@ def get_auth_token():
     # This is run once to get an auth token which is set to global AUTH_TOKEN and used for rest of session
     global AUTH_TOKEN
     global REDFISH_TOKEN
-    api_login = {"username": GLOBAL_CONFIG["api"]["admin_user"], "password": GLOBAL_CONFIG["api"]["admin_pass"]}
-    redfish_login = {"UserName": GLOBAL_CONFIG["api"]["admin_user"], "Password": GLOBAL_CONFIG["api"]["admin_pass"]}
+    api_login = {"username": fitcreds()["api"][0]["admin_user"], "password": fitcreds()["api"][0]["admin_pass"]}
+    redfish_login = {"UserName": fitcreds()["api"][0]["admin_user"], "Password": fitcreds()["api"][0]["admin_pass"]}
     try:
-        restful("https://" + ARGS_LIST['ora'] + ":" + str(API_PORT) +
+        restful("https://" + fitargs()['ora'] + ":" + str(API_PORT) +
                        "/login", rest_action="post", rest_payload=api_login, rest_timeout=2)
     except:
         AUTH_TOKEN = "Unavailable"
         return False
     else:
-        api_data = restful("https://" + ARGS_LIST['ora'] + ":" + str(API_PORT) +
+        api_data = restful("https://" + fitargs()['ora'] + ":" + str(API_PORT) +
                            "/login", rest_action="post", rest_payload=api_login, rest_timeout=2)
         if api_data['status'] == 200:
             AUTH_TOKEN = str(api_data['json']['token'])
-            redfish_data = restful("https://" + ARGS_LIST['ora'] + ":" + str(API_PORT) +
-                               "/redfish/v1/SessionService/Sessions", rest_action="post", rest_payload=redfish_login, rest_timeout=2)
+            redfish_data = restful("https://" + fitargs()['ora'] + ":" + str(API_PORT) +
+                                   "/redfish/v1/SessionService/Sessions",
+                                   rest_action="post", rest_payload=redfish_login, rest_timeout=2)
             if 'x-auth-token' in redfish_data['headers']:
-                REDFISH_TOKEN =  redfish_data['headers']['x-auth-token']
+                REDFISH_TOKEN = redfish_data['headers']['x-auth-token']
                 return True
             else:
                 print "WARNING: Redfish API token not available."
@@ -295,19 +483,19 @@ def rackhdapi(url_cmd, action='get', payload=[], timeout=None, headers={}):
 
     if API_PROTOCOL == "None":
         if API_PORT == "None":
-            API_PORT = str(GLOBAL_CONFIG['ports']['http'])
-        if restful("http://" + ARGS_LIST['ora'] + ":" + str(API_PORT) + "/", rest_timeout=2)['status'] == 0:
+            API_PORT = str(fitports()['http'])
+        if restful("http://" + fitargs()['ora'] + ":" + str(API_PORT) + "/", rest_timeout=2)['status'] == 0:
             API_PROTOCOL = 'https'
-            API_PORT = str(GLOBAL_CONFIG['ports']['https'])
+            API_PORT = str(fitports()['https'])
         else:
             API_PROTOCOL = 'http'
-            API_PORT = str(GLOBAL_CONFIG['ports']['http'])
+            API_PORT = str(fitports()['http'])
 
     # Retrieve authentication token for the session
     if AUTH_TOKEN == "None":
         get_auth_token()
 
-    return restful(API_PROTOCOL + "://" + ARGS_LIST['ora'] + ":" + str(API_PORT) + url_cmd,
+    return restful(API_PROTOCOL + "://" + fitargs()['ora'] + ":" + str(API_PORT) + url_cmd,
                        rest_action=action, rest_payload=payload, rest_timeout=timeout, rest_headers=headers)
 
 def restful(url_command, rest_action='get', rest_payload=[], rest_timeout=None, sslverify=False, rest_headers={}):
@@ -347,7 +535,7 @@ def restful(url_command, rest_action='get', rest_payload=[], rest_timeout=None, 
 
     rest_headers.update({"Content-Type": "application/json"})
     if VERBOSITY >= 5:
-         print "restful: Request Headers =", rest_headers, "\n"
+        print "restful: Request Headers =", rest_headers, "\n"
 
     # If AUTH_TOKEN is set, add to header
     if AUTH_TOKEN != "None" and AUTH_TOKEN != "Unavailable" and "authorization" not in rest_headers:
@@ -419,7 +607,7 @@ def restful(url_command, rest_action='get', rest_payload=[], rest_timeout=None, 
                                          verify=sslverify
                                          )
     except requests.exceptions.Timeout:
-        return {'json':'', 'text':'',
+        return {'json':{}, 'text':'',
                 'status':0,
                 'headers':'',
                 'timeout':True}
@@ -462,7 +650,7 @@ def get_bmc_ips():
         for ipaddr in ipscan:
             if ipaddr[0:3] == "172" and remote_shell('ping -c 1 -w 5 ' + ipaddr)['exitcode'] == 0:
                 # iterate through all known IPMI users
-                for item in GLOBAL_CONFIG['credentials']['bmc']:
+                for item in fitcreds()['bmc']:
                     # check BMC credentials
                     ipmicheck = remote_shell('ipmitool -I lanplus -H ' + ipaddr + ' -U ' + item['username'] \
                                                + ' -P ' + item['password'] + ' -R 1 -N 3 chassis power status')
@@ -518,20 +706,22 @@ def mongo_reset():
     return 0
 
 def appliance_reset():
-    return_code = subprocess.call("ipmitool -I lanplus -H " + ARGS_LIST["bmc"] \
+
+    return_code = subprocess.call("ipmitool -I lanplus -H " + fitargs()["bmc"] \
                                   + " -U root -P 1234567 chassis power reset", shell=True)
     return return_code
 
 def node_select():
-    # returns a list with valid compute node IDs that match ARGS_LIST["sku"] in 'Name' or 'Model' field
-    # and matches node BMC MAC address in ARGS_LIST["obmmac"] if specified
+
+    # returns a list with valid compute node IDs that match fitargs()["sku"] in 'Name' or 'Model' field
+    # and matches node BMC MAC address in fitargs()["obmmac"] if specified
     # Otherwise returns list of all IDs that are not 'Unknown' or 'Unmanaged'
     nodelist = []
     skuid = "None"
     # check if user specified a single nodeid to run against
     # user must know the nodeid and any check for a valid nodeid is skipped
-    if ARGS_LIST["nodeid"] != 'None':
-        nodelist.append(ARGS_LIST["nodeid"])
+    if fitargs()["nodeid"] != 'None':
+        nodelist.append(fitargs()["nodeid"])
         return nodelist
     else:
         # Find SKU ID
@@ -540,7 +730,7 @@ def node_select():
             print '**** Unable to retrieve SKU list via API.\n'
             sys.exit(255)
         for skuentry in skumap['json']:
-            if str(ARGS_LIST['sku']) in json.dumps(skuentry):
+            if str(fitargs()['sku']) in json.dumps(skuentry):
                 skuid = skuentry['id']
         # Collect node IDs
         catalog = rackhdapi('/api/2.0/nodes')
@@ -549,7 +739,7 @@ def node_select():
             sys.exit(255)
         # Select node by SKU
         for nodeentry in catalog['json']:
-            if ARGS_LIST["sku"] == 'all':
+            if fitargs()["sku"] == 'all':
                 # Select only managed compute nodes
                 if nodeentry['type'] == 'compute':
                     nodelist.append(nodeentry['id'])
@@ -557,12 +747,12 @@ def node_select():
                 if 'sku' in nodeentry and skuid in json.dumps(nodeentry['sku']):
                     nodelist.append(nodeentry['id'])
         # Select by node BMC MAC addr
-        if ARGS_LIST["obmmac"] != 'all':
+        if fitargs()["obmmac"] != 'all':
             idlist = nodelist
             nodelist = []
             for member in idlist:
                 nodeentry = rackhdapi('/api/2.0/nodes/' + member)
-                if ARGS_LIST["obmmac"] in json.dumps(nodeentry['json']):
+                if fitargs()["obmmac"] in json.dumps(nodeentry['json']):
                     nodelist = [member]
                     break
     if VERBOSITY >= 6:
@@ -622,13 +812,13 @@ def cancel_active_workflows(nodeid):
     apistatus = rackhdapi('/api/2.0/nodes/' + nodeid + '/workflows/action',
                           action='put', payload={"command": "cancel"})['status']
     if apistatus != 202:
-       exitstatus = False
+        exitstatus = False
     return exitstatus
 
 def apply_obm_settings(retry=30):
     # New routine to install OBM credentials via workflows in parallel
     count = 0
-    for creds in GLOBAL_CONFIG['credentials']['bmc']:
+    for creds in fitcreds()['bmc']:
         # greate graph for setting OBM credentials
         payload = \
         {
@@ -654,7 +844,7 @@ def apply_obm_settings(retry=30):
         count += 1
     # Setup additional OBM settings for nodes that currently use RMM port (still same bmc username/password used)
     count = 0
-    for creds in GLOBAL_CONFIG['credentials']['bmc']:
+    for creds in fitcreds()['bmc']:
         # greate graph for setting OBM credentials for RMM
         payload = \
         {
@@ -739,7 +929,7 @@ def apply_obm_settings(retry=30):
 def apply_obm_settings_seq():
     # legacy routine to install OBM credentials via workflows sequentially one-at-a-time
     count = 0
-    for creds in GLOBAL_CONFIG['credentials']['bmc']:
+    for creds in fitcreds()['bmc']:
         # greate graph for setting OBM credentials
         payload = \
         {
@@ -765,7 +955,7 @@ def apply_obm_settings_seq():
         count += 1
     # Setup additional OBM settings for nodes that currently use RMM port (still same bmc username/password used)
     count = 0
-    for creds in GLOBAL_CONFIG['credentials']['bmc']:
+    for creds in fitcreds()['bmc']:
         # greate graph for setting OBM credentials for RMM
         payload = \
         {
@@ -867,27 +1057,16 @@ def apply_obm_settings_seq():
         return False
     return True
 
-def run_nose(nosepath):
+def run_nose(nosepath=None):
+
+    if not nosepath:
+        nosepath = fitcfg()['cmd-args-list']['test']
+
     # this routine runs nosetests from wrapper using path spec 'nosepath'
     def _noserunner(pathspecs, noseopts):
         xmlfile = str(time.time()) + ".xml" # XML report file name
         env = {
-            'VERBOSITY':  str(ARGS_LIST['v']),
-            'ORA':  str(ARGS_LIST['ora']),
-            'STACK':  str(ARGS_LIST['stack']),
-            'SKU':  str(ARGS_LIST['sku']) ,
-            'NODEID':  str(ARGS_LIST['nodeid']),
-            'OBMMAC':  str(ARGS_LIST['obmmac']),
-            'VERSION':  str(ARGS_LIST['version']),
-            'TEMPLATE':  str(ARGS_LIST['template']),
-            'XUNIT':  str(ARGS_LIST['xunit']),
-            'NUMVMS':  str(ARGS_LIST['numvms']),
-            'GROUP':  str(ARGS_LIST['group']),
-            'CONFIG':  str(ARGS_LIST['config']),
-            'HTTP':  str(ARGS_LIST['http']),
-            'HTTPS':  str(ARGS_LIST['https']),
-            'PORT':  str(ARGS_LIST['port']),
-            'FIT_CONFIG': CONFIG_PATH + "global_config.json",
+            'FIT_CONFIG': mkcfg().get_path(),
             'HOME':  os.environ['HOME'],
             'PATH':  os.environ['PATH']
         }
@@ -900,16 +1079,16 @@ def run_nose(nosepath):
 
     exitcode = 0
     # set nose options
-    noseopts = ['--exe', '--with-nosedep']
-    if ARGS_LIST['group'] != 'all' and ARGS_LIST['group'] != '':
+    noseopts = ['--exe', '--with-nosedep', '--with-stream-monitor']
+    if fitargs()['group'] != 'all' and fitargs()['group'] != '':
         noseopts.append('-a')
-        noseopts.append(str(ARGS_LIST['group']))
-    if ARGS_LIST['list'] == True or ARGS_LIST['list'] == "True":
+        noseopts.append(str(fitargs()['group']))
+    if fitargs()['list'] == True or fitargs()['list'] == "True":
         noseopts.append('--collect-only')
-        ARGS_LIST['v'] = 0
-        print "\nTest Listing for:", ARGS_LIST['test']
+        fitargs()['v'] = 0
+        print "\nTest Listing for:", fitargs()['test']
         print "----------------------------------------------------------------------"
-    if ARGS_LIST['xunit'] == True or ARGS_LIST['xunit'] == "True":
+    if fitargs()['xunit'] == True or fitargs()['xunit'] == "True":
         noseopts.append('--with-xunit')
     else:
         noseopts.append('-s')
@@ -918,7 +1097,7 @@ def run_nose(nosepath):
     # if nosepath is a directory, recurse through subdirs else run single test file
     if os.path.isdir(nosepath):
         # Skip the CIT test directories that match these expressions
-        regex = '(tests$)|(tests/api$)|(tests/api/.*)'
+        regex = '(tests/*$)|(tests/api-cit/*)|(tests/api$)|(tests/api/.*)'
         pathspecs = []
         for root, _, _ in os.walk(nosepath):
             if not re.search(regex, root):
@@ -932,3 +1111,16 @@ def run_from_module(file_name):
     # Use this method in 'name == "__main__"' style test invocations
     # within individual test files
     run_nose(file_name)
+
+# determine who imported us.
+importer=inspect.getframeinfo(inspect.getouterframes(inspect.currentframe())[1][0])[0]
+if 'run_tests.py' in importer:
+    # we are being imported through run_tests.py (the fit wrapper)
+    # process sys.args as received by run_tests.py
+    compose_config(True)
+
+else:
+    # we are being imported directly through a unittest module
+    # args will be nose-base args
+    compose_config(False)
+

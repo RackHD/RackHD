@@ -32,6 +32,7 @@ class NodesTests(object):
         self.__discovered = 0
         self.__test_nodes = [
             {
+                'identifiers': ["FF:FF:FF:01"],
                 'autoDiscover': 'false',
                 'name': 'test_switch_node',
                 'type': 'switch',
@@ -41,6 +42,7 @@ class NodesTests(object):
                 }
             },
             {
+                'identifiers': ["FF:FF:FF:02"],
                 'autoDiscover': 'false',
                 'name': 'test_mgmt_node',
                 'type': 'mgmt',
@@ -50,6 +52,7 @@ class NodesTests(object):
                 }
             },
             {
+                'identifiers': ["FF:FF:FF:03"],
                 'autoDiscover': 'false',
                 'name': 'test_pdu_node',
                 'type': 'pdu',
@@ -59,11 +62,13 @@ class NodesTests(object):
                 }
             },
             {
+                'identifiers': ["FF:FF:FF:04"],
                 'autoDiscover': 'false',
                 'name': 'test_enclosure_node',
                 'type': 'enclosure'
             },
             {
+                'identifiers': ["FF:FF:FF:05"],
                 'autoDiscover': 'false',
                 'name': 'test_compute_node',
                 'type': 'compute'

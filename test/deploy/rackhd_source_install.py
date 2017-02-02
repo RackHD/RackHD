@@ -7,7 +7,7 @@ George Paulos
 This script installs RackHD from GitHub source onto blank Ubuntu 14 or 16 OS via Ansible installer.
 This script performs the following functions:
     - loads prerequisite packages git, ansible, etc.
-    - downloads RackHD source to management server from repos specified in global_config.json
+    - downloads RackHD source to management server from fit_common.fit_install()
     - installs using rackhd_local.yml playbook
     - set up networking
     - load configuration files
@@ -17,8 +17,6 @@ NOTES:
        If the host is rebooted, the RackHD must be restarted by typing 'sudo nf start' at console.
 
 usage:
-    python run_tests.py -ova <ip or host> -test deploy/rackhd_source_install.py
-    or
     python run_tests.py -stack <stack ID> -test deploy/rackhd_source_install.py
 '''
 
@@ -31,9 +29,10 @@ import fit_common
 
 # set proxy if required
 PROXYVARS = ''
-if 'proxy' in fit_common.GLOBAL_CONFIG['repos'] and fit_common.GLOBAL_CONFIG['repos']['proxy'] != '':
-    PROXYVARS = "export http_proxy=" + fit_common.GLOBAL_CONFIG['repos']['proxy'] + ";" + \
-              "export https_proxy=" + fit_common.GLOBAL_CONFIG['repos']['proxy'] + ";"
+if fit_common.fitproxy()['host'] != '':
+    # note that both proxy server settings below are set to the same http: URL
+    PROXYVARS = "export http_proxy=http://" + fit_common.fitproxy()['host'] + ":" + fit_common.fitproxy()['port'] + ";" + \
+                "export https_proxy=http://" + fit_common.fitproxy()['host'] + ":" + fit_common.fitproxy()['port'] + ";"
     # maven proxy settings
     maven_proxy = open('settings.xml', 'w')
     maven_proxy.write(
@@ -47,8 +46,8 @@ if 'proxy' in fit_common.GLOBAL_CONFIG['repos'] and fit_common.GLOBAL_CONFIG['re
               '<id>mavenproxy</id>'
               '<active>true</active>'
               '<protocol>https</protocol>'
-              '<host>' + fit_common.GLOBAL_CONFIG['repos']['proxyhost'] + '</host>'
-              '<port>' + fit_common.GLOBAL_CONFIG['repos']['proxyport'] + '</port>'
+              '<host>' + fit_common.fitproxy()['host'] + '</host>'
+              '<port>' + fit_common.fitproxy()['port'] + '</port>'
               '<nonProxyHosts>localhost</nonProxyHosts>'
             '</proxy>'
           '</proxies>'
@@ -73,8 +72,8 @@ class rackhd_source_install(fit_common.unittest.TestCase):
         # install git
         self.assertEqual(fit_common.remote_shell(PROXYVARS + "apt-get -y install git")['exitcode'], 0, "Git install failure.")
         self.assertEqual(fit_common.remote_shell("git config --global http.sslverify false")['exitcode'], 0, "Git config failure.")
-        if 'proxy' in fit_common.GLOBAL_CONFIG['repos'] and fit_common.GLOBAL_CONFIG['repos']['proxy'] != '':
-            self.assertEqual(fit_common.remote_shell("git config --global http.proxy " + fit_common.GLOBAL_CONFIG['repos']['proxy']
+        if fit_common.fitproxy()['host'] != '':
+            self.assertEqual(fit_common.remote_shell("git config --global http.proxy http://" + fit_common.fitproxy()['host'] + ':' + fit_common.fitproxy()['port']
                                                   )['exitcode'], 0, "Git proxy config failure.")
         # install Ansible
         self.assertEqual(fit_common.remote_shell(PROXYVARS + "apt-get -y update")['exitcode'], 0, "Update failure.")
@@ -86,51 +85,42 @@ class rackhd_source_install(fit_common.unittest.TestCase):
 
     def test02_clone_rackhd_source(self):
         print "**** Cloning RackHD source."
-        modules = [
-            "on-core",
-            "on-dhcp-proxy",
-            "on-http",
-            "on-statsd",
-            "on-syslog",
-            "on-taskgraph",
-            "on-tasks",
-            "on-tftp",
-            "on-tools",
-            "on-wss"
-        ]
         # clone base repo
         fit_common.remote_shell('rm -rf ~/rackhd')
         self.assertEqual(fit_common.remote_shell(PROXYVARS + "git clone "
-                                                + fit_common.GLOBAL_CONFIG['repos']['install']['rackhd']['repo']
+                                                + fit_common.fitinstall()['rackhd']['repo']
                                                 + " ~/rackhd"
                                                 )['exitcode'], 0, "RackHD git clone failure.")
         self.assertEqual(fit_common.remote_shell("cd ~/rackhd/" + ";git checkout "
-                                                 + fit_common.GLOBAL_CONFIG['repos']['install']['rackhd']['branch']
+                                                 + fit_common.fitinstall()['rackhd']['branch']
                                                  )['exitcode'], 0, "Branch not found on RackHD repo.")
+        '''
+        # this section is for future use
         # clone modules
-        for repo in modules:
+        for repo in fit_common.fitinstall().keys():
             self.assertEqual(fit_common.remote_shell(PROXYVARS
                                                     + "rm -rf ~/rackhd/" + repo + ";"
                                                     + "git clone "
-                                                    + fit_common.GLOBAL_CONFIG['repos']['install'][repo]['repo']
+                                                    + fit_common.fitinstall()[repo]['repo']
                                                     + " ~/rackhd/" + repo
                                                      )['exitcode'], 0, "RackHD git clone module failure:" + repo)
             self.assertEqual(fit_common.remote_shell("cd ~/rackhd/" + repo + ";git checkout "
-                                                     + fit_common.GLOBAL_CONFIG['repos']['install'][repo]['branch']
+                                                     + fit_common.fitinstall()[repo]['branch']
                                                      )['exitcode'], 0, "Branch not found on module:" + repo)
+        '''
 
     def test03_run_ansible_installer(self):
         print "**** Run RackHD Ansible installer."
         self.assertEqual(fit_common.remote_shell(PROXYVARS +
                                                  "cd ~/rackhd/packer/ansible/;"
                                                  "ansible-playbook -i 'local,' -c local rackhd_local.yml",
-                                                 timeout=2000,
+                                                 timeout=3000,
                                                  )['exitcode'], 0, "RackHD Install failure.")
 
     def test04_install_network_config(self):
         print "**** Installing RackHD network config."
         # collect nic names
-        getifs = fit_common.remote_shell("ifconfig -s -a |tail -n +2 |grep -v -e Iface -e lo")
+        getifs = fit_common.remote_shell("ifconfig -s -a |tail -n +2 |grep -v -e Iface -e lo -e docker")
         # clean out login stuff
         splitifs = getifs['stdout'].split('\n')
         ifslit = [] # array of valid eth ports
@@ -205,69 +195,7 @@ class rackhd_source_install(fit_common.unittest.TestCase):
     def test05_install_rackhd_config_files(self):
         print "**** Installing RackHD config files."
         # create RackHD config
-        hdconfig = {
-                    "CIDRNet": "172.31.128.0/22",
-                    "amqp": "amqp://localhost",
-                    "apiServerAddress": "172.31.128.1",
-                    "apiServerPort": 9080,
-                    "arpCacheEnabled": True,
-                    "broadcastaddr": "172.31.131.255",
-                    "dhcpGateway": "172.31.128.1",
-                    "dhcpProxyBindAddress": "172.31.128.1",
-                    "dhcpProxyBindPort": 4011,
-                    "dhcpSubnetMask": "255.255.252.0",
-                    "gatewayaddr": "172.31.128.1",
-                    "httpEndpoints": [
-                        {
-                            "address": "0.0.0.0",
-                            "port": fit_common.GLOBAL_CONFIG['ports']['http'],
-                            "httpsEnabled": False,
-                            "proxiesEnabled": True,
-                            "authEnabled": False,
-                            "routers": "northbound-api-router"
-                        },
-                        {
-                            "address": "0.0.0.0",
-                            "port": fit_common.GLOBAL_CONFIG['ports']['https'],
-                            "httpsEnabled": True,
-                            "proxiesEnabled": True,
-                            "authEnabled": True,
-                            "routers": "northbound-api-router"
-                        },
-                        {
-                            "address": "172.31.128.1",
-                            "port": 9080,
-                            "httpsEnabled": False,
-                            "proxiesEnabled": True,
-                            "authEnabled": False,
-                            "routers": "southbound-api-router"
-                        }
-                    ],
-                    "httpDocsRoot": "./build/apidoc",
-                    "httpFileServiceRoot": "./static/files",
-                    "httpFileServiceType": "FileSystem",
-                    "httpProxies": [{
-                        "localPath": "/mirror",
-                        "remotePath": "/",
-                        "server": fit_common.GLOBAL_CONFIG['repos']['mirror']
-                    }],
-                    "httpStaticRoot": "/opt/monorail/static/http",
-                    "minLogLevel": 3,
-                    "authUsername": "admin",
-                    "authPasswordHash": "KcBN9YobNV0wdux8h0fKNqi4uoKCgGl/j8c6YGlG7iA0PB3P9ojbmANGhDlcSBE0iOTIsYsGbtSsbqP4wvsVcw==",
-                    "authPasswordSalt": "zlxkgxjvcFwm0M8sWaGojh25qNYO8tuNWUMN4xKPH93PidwkCAvaX2JItLA3p7BSCWIzkw4GwWuezoMvKf3UXg==",
-                    "authTokenSecret": "RackHDRocks!",
-                    "authTokenExpireIn": 86400,
-                    "mongo": "mongodb://localhost/pxe",
-                    "sharedKey": "qxfO2D3tIJsZACu7UA6Fbw0avowo8r79ALzn+WeuC8M=",
-                    "statsd": "127.0.0.1:8125",
-                    "subnetmask": "255.255.252.0",
-                    "syslogBindAddress": "172.31.128.1",
-                    "syslogBindPort": 514,
-                    "tftpBindAddress": "172.31.128.1",
-                    "tftpBindPort": 69,
-                    "tftpRoot": "./static/tftp",
-                }
+        hdconfig = fit_common.fitcfg()['rackhd-config']
         config_json = open('config.json', 'w')
         config_json.write(fit_common.json.dumps(hdconfig, sort_keys=True, indent=4))
         config_json.close()
@@ -285,14 +213,11 @@ class rackhd_source_install(fit_common.unittest.TestCase):
         fit_common.remote_shell('mkdir -p ~/src/on-http/static/swagger-ui')
 
     def test06_startup(self):
-        print "Start services."
-        startup = open('startup.sh', 'w')
-        startup.write('cd ~/;nf start&\n')
-        startup.close()
-        fit_common.scp_file_to_ora('startup.sh')
-        self.assertEqual(fit_common.remote_shell("chmod 777 startup.sh;/etc/init.d/isc-dhcp-server restart")['exitcode'], 0, "dhcp startup failure.")
-        self.assertEqual(fit_common.remote_shell("nohup ./startup.sh")['exitcode'], 0, "RackHD startup failure.")
+        print "**** Start services."
+        self.assertEqual(fit_common.remote_shell("/etc/init.d/isc-dhcp-server restart")['exitcode'], 0, "dhcp startup failure.")
+        self.assertEqual(fit_common.remote_shell("cd ~/;pm2 start rackhd-pm2-config.yml > /dev/null 2>&1")['exitcode'], 0, "RackHD startup failure.")
         print "**** Check installation."
+        fit_common.time.sleep(10)
         for dummy in range(0, 10):
             try:
                 fit_common.rackhdapi("/api/2.0/config")

@@ -18,9 +18,9 @@ import test_api_utils
 class display_sysinfo(fit_common.unittest.TestCase):
     def test_01_get_product_info(self):
         print "============== Displaying Product Info"
-        nodes = test_api_utils.monorail_get_node_list(fit_common.ARGS_LIST['ora'])
+        nodes = test_api_utils.monorail_get_node_list(fit_common.fitargs()['ora'])
         if len(nodes) == 0:
-            print "No Nodes found on Onrack server "+fit_common.ARGS_LIST['ora']
+            print "No Nodes found on Onrack server "+ fit_common.fitargs()['ora']
         else:
             inode=0
             while inode<len(nodes):
@@ -43,9 +43,9 @@ class display_sysinfo(fit_common.unittest.TestCase):
 
     def test_02_get_catalog_source(self):
         print "============== Displaying Catalog Sources"
-        nodes = test_api_utils.monorail_get_node_list(fit_common.ARGS_LIST['ora'])
+        nodes = test_api_utils.monorail_get_node_list(fit_common.fitargs()['ora'])
         if len(nodes) == 0:
-            print "No Nodes found on Onrack server "+fit_common.ARGS_LIST['ora']
+            print "No Nodes found on Onrack server "+ fit_common.fitargs()['ora']
         else:
             inode=0
             while inode<len(nodes):

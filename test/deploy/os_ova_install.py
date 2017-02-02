@@ -23,20 +23,20 @@ import pdu_lib
 
 class os_ova_install(fit_common.unittest.TestCase):
     def deploy_ova(self,vm,uname,passwd,numvms,ovafile):
-        print '**** Deploying OVA file on hypervisor ' + fit_common.ARGS_LIST['hyper']
+        print '**** Deploying OVA file on hypervisor ' + fit_common.fitargs()['hyper']
         rc = subprocess.call("ovftool --X:injectOvfEnv --overwrite "
                              "--powerOffTarget --skipManifestCheck -q "
                              "--net:'ADMIN'='VM Network' "
                              "--net:'CONTROL'='Control Network' "
                              "--net:'PDU'='PDU Network' "
-                             "--name='ora-stack-" + fit_common.ARGS_LIST['stack'] + "-" + str(vm) + "' "
+                             "--name='ora-stack-" + fit_common.fitargs()['stack'] + "-" + str(vm) + "' "
                              "--noSSLVerify "
                              + ovafile
                              + " vi://" + uname + ":" + passwd + "@"
-                             + fit_common.ARGS_LIST['hyper'], shell=True)
+                             + fit_common.fitargs()['hyper'], shell=True)
         # Check for successful completion
         if rc > 0:
-            print 'OVA installer failed at host: ' + fit_common.ARGS_LIST['hyper'] + "Exiting..."
+            print 'OVA installer failed at host: ' + fit_common.fitargs()['hyper'] + "Exiting..."
             sys.exit(255)
 
         # Wait for VM to settle
@@ -44,13 +44,14 @@ class os_ova_install(fit_common.unittest.TestCase):
 
         # check number of vms for deployment
         if numvms == 1:
-            ovamac = fit_common.STACK_CONFIG[fit_common.ARGS_LIST['stack']]['ovamac']
+            ovamac = fit_common.fitcfg()['ovamac']
         else:
-            stacknum = '{0:02}'.format(int(fit_common.ARGS_LIST['stack']))
+            # compose appropriate MAC address using lab convention
             vmnum = '{0:02}'.format(int(vm))
-            ovamac = fit_common.GLOBAL_CONFIG['ova']['oui'] + ":00:" + stacknum + ":" + vmnum
+            macsplit = fit_common.fitcfg()['ovamac'].split(":")
+            ovamac = macsplit[0] + ":" + macsplit[1] + ":" + macsplit[2] + ":" + macsplit[3] + ":" + macsplit[4] + ":"  + vmnum
         # Install MAC address by editing OVA .vmx file, then startup VM
-        esxi_command = "export fullpath=`find vmfs -name ora-stack-" + fit_common.ARGS_LIST['stack'] + "-" + str(vm) + "*.vmx`;" \
+        esxi_command = "export fullpath=`find vmfs -name ora-stack-" + fit_common.fitargs()['stack'] + "-" + str(vm) + "*.vmx`;" \
                        "for file in $fullpath;" \
                        "do " \
                        "export editline=`cat $file |grep \\\'ethernet0.generatedAddress =\\\'`;" \
@@ -60,7 +61,7 @@ class os_ova_install(fit_common.unittest.TestCase):
                        "sed -i \\\'/ethernet0.addressType = \\\"generated\\\"/ c\\\ethernet0.addressType = \\\"static\\\"\\\' $file;" \
                        "done;" \
                        "sleep 5;" \
-                       "export vmidstring=`vim-cmd vmsvc/getallvms |grep ora-stack-" + fit_common.ARGS_LIST['stack'] + "-" + str(vm) +  "`;" \
+                       "export vmidstring=`vim-cmd vmsvc/getallvms |grep ora-stack-" + fit_common.fitargs()['stack'] + "-" + str(vm) +  "`;" \
                        "for vmid in $vmidstring;" \
                        "do " \
                        "vim-cmd vmsvc/power.on $vmid;" \
@@ -70,7 +71,7 @@ class os_ova_install(fit_common.unittest.TestCase):
         (command_output, exitstatus) = \
             fit_common.pexpect.run(
                             "ssh -q -o StrictHostKeyChecking=no -t " + uname + "@"
-                            + fit_common.ARGS_LIST['hyper'] + " " + esxi_command,
+                            + fit_common.fitargs()['hyper'] + " " + esxi_command,
                             withexitstatus=1,
                             events={"assword": passwd + "\n"},
                             timeout=20, logfile=sys.stdout)
@@ -81,9 +82,9 @@ class os_ova_install(fit_common.unittest.TestCase):
         # Poll the OVA via ping
         for dummy in range(0, 30):
             if vm > 0:
-                hostname = "stack" + fit_common.ARGS_LIST['stack'] + "-ora-" + str(vm) + ".admin"
+                hostname = "stack" + fit_common.fitargs()['stack'] + "-ora-" + str(vm) + ".admin"
             else:
-                hostname = "stack" + fit_common.ARGS_LIST['stack'] + "-ora.admin"
+                hostname = "stack" + fit_common.fitargs()['stack'] + "-ora.admin"
             rc = subprocess.call("ping -c 1 -w 5 " + hostname, shell=True)
             if rc == 0:
                 break
@@ -96,12 +97,12 @@ class os_ova_install(fit_common.unittest.TestCase):
         return None
 
     def test01_install_ova_template(self):
-        ovafile = fit_common.ARGS_LIST['template']
-        numvms = int(fit_common.ARGS_LIST['numvms'])
+        ovafile = fit_common.fitargs()['template']
+        numvms = int(fit_common.fitargs()['numvms'])
         # Check for ovftool
         self.assertEqual(fit_common.subprocess.call('which ovftool', shell=True), 0, "FAILURE: 'ovftool' not installed.")
         # Ping for valid ESXi host
-        self.assertEqual(fit_common.subprocess.call('ping -c 1 ' + fit_common.ARGS_LIST['hyper'], shell=True), 0, "FAILURE: ESXi hypervisor not found.")
+        self.assertEqual(fit_common.subprocess.call('ping -c 1 ' + fit_common.fitargs()['hyper'], shell=True), 0, "FAILURE: ESXi hypervisor not found.")
 
         # Run probe to check for valid OVA file
         rc = fit_common.subprocess.call("ovftool " + ovafile, shell=True)
@@ -110,28 +111,24 @@ class os_ova_install(fit_common.unittest.TestCase):
         # check for number of virtual machine
         self.assertTrue(numvms < 100, "Number of vms should not be greater than 99")
 
-        # check stack ID as number to generate MAC address for multiple OVA
-        if numvms > 1:
-            self.assertTrue(fit_common.ARGS_LIST['stack'].isdigit(), "Stack ID must be a number if numvms is greater than 1")
-
         # Shutdown previous ORA
-        if fit_common.subprocess.call('ping -c 1 ' + fit_common.ARGS_LIST['ora'], shell=True) == 0:
+        if fit_common.subprocess.call('ping -c 1 ' + fit_common.fitargs()['ora'], shell=True) == 0:
             fit_common.remote_shell('shutdown -h now')
             fit_common.time.sleep(5)
 
         # this clears the hypervisor ssh key from ~/.ssh/known_hosts
         subprocess.call(["touch ~/.ssh/known_hosts;ssh-keygen -R "
-                         + fit_common.ARGS_LIST['hyper']  + " -f ~/.ssh/known_hosts >/dev/null 2>&1"], shell=True)
+                         + fit_common.fitargs()['hyper']  + " -f ~/.ssh/known_hosts >/dev/null 2>&1"], shell=True)
 
         # Find correct hypervisor credentials by testing each entry in the list
-        cred_list = fit_common.GLOBAL_CONFIG['credentials']['hyper']
+        cred_list = fit_common.fitcreds()['hyper']
         for entry in cred_list:
             uname = entry['username']
             passwd = entry['password']
             (command_output, exitstatus) = \
                 fit_common.pexpect.run(
                                 "ssh -q -o StrictHostKeyChecking=no -t " + uname + "@"
-                                + fit_common.ARGS_LIST['hyper'] + " pwd",
+                                + fit_common.fitargs()['hyper'] + " pwd",
                                 withexitstatus=1,
                                 events={"assword": passwd + "\n"},
                                 timeout=20, logfile=None)

@@ -1,25 +1,31 @@
 {
-  "template": "ora-ubuntu-1604.ova",
-  "install": {
-    "rackhd":       {"repo":"https://github.com/rackhd/rackhd","branch":"master"},
-    "on-core":      {"repo":"https://github.com/rackhd/on-core","branch":"master"},
-    "on-dhcp-proxy":{"repo":"https://github.com/rackhd/on-dhcp-proxy","branch":"master"},
-    "on-http":      {"repo":"https://github.com/rackhd/on-http","branch":"master"},
-    "on-statsd":    {"repo":"https://github.com/rackhd/on-statsd","branch":"master"},
-    "on-syslog":    {"repo":"https://github.com/rackhd/on-syslog","branch":"master"},
-    "on-tasks":     {"repo":"https://github.com/rackhd/on-tasks","branch":"master"},
-    "on-taskgraph": {"repo":"https://github.com/rackhd/on-taskgraph","branch":"master"},
-    "on-tftp":      {"repo":"https://github.com/rackhd/on-tftp","branch":"master"},
-    "on-tools":     {"repo":"https://github.com/rackhd/on-tools","branch":"master"},
-    "on-imagebuilder": {"repo":"https://github.com/rackhd/on-imagebuilder","branch":"master"},
-    "on-wss":       {"repo":"https://github.com/rackhd/on-wss","branch":"master"}
-    },
-  "skupack": [
-    "https://github.com/RackHD/on-skupack"
-    ],
-  "proxy": {
-    "url": "",
-    "host": "",
-    "port": ""
+  "install-config": {
+      "template": "ora-ubuntu-1604.ova",
+      "ports": {
+        "_comment": "These are the northbound rest API port assignments",
+        "http": 8080,
+        "https": 443
+      },
+      "install": {
+        "rackhd":       {"repo":"https://github.com/rackhd/rackhd","branch":"master"},
+        "on-core":      {"repo":"https://github.com/rackhd/on-core","branch":"master"},
+        "on-dhcp-proxy":{"repo":"https://github.com/rackhd/on-dhcp-proxy","branch":"master"},
+        "on-http":      {"repo":"https://github.com/rackhd/on-http","branch":"master"},
+        "on-statsd":    {"repo":"https://github.com/rackhd/on-statsd","branch":"master"},
+        "on-syslog":    {"repo":"https://github.com/rackhd/on-syslog","branch":"master"},
+        "on-tasks":     {"repo":"https://github.com/rackhd/on-tasks","branch":"master"},
+        "on-taskgraph": {"repo":"https://github.com/rackhd/on-taskgraph","branch":"master"},
+        "on-tftp":      {"repo":"https://github.com/rackhd/on-tftp","branch":"master"},
+        "on-tools":     {"repo":"https://github.com/rackhd/on-tools","branch":"master"},
+        "on-imagebuilder": {"repo":"https://github.com/rackhd/on-imagebuilder","branch":"master"},
+        "on-wss":       {"repo":"https://github.com/rackhd/on-wss","branch":"master"}
+        },
+      "skupack": [
+        "https://github.com/RackHD/on-skupack"
+        ],
+      "proxy": {
+        "host": "",
+        "port": ""
+      }
   }
 }

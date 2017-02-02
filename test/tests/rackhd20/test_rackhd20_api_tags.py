@@ -32,7 +32,7 @@ class rackhd20_api_tags(fit_common.unittest.TestCase):
             self.assertIn("test_tag_" + nodeid, fit_common.json.dumps(api_data['json']), "Tag not set:" + fit_common.json.dumps(api_data['json']))
     def test_api_20_tags_post_delete(self):
         # create dummy node
-        data_payload = {"name": "test", "type": "compute"}
+        data_payload = {"name": "testnode", "identifiers": ["FF", "FF"], "type": "compute"}
         nodeid = fit_common.rackhdapi("/api/2.0/nodes", action='post', payload=data_payload)['json']['id']
         # add tags
         api_data = fit_common.rackhdapi("/api/2.0/nodes/" + nodeid + "/tags", action="patch", payload={"tags":["test_node","dummy_node"]})

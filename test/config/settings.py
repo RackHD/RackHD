@@ -59,6 +59,8 @@ def get_b64_cred(req):
     rsp = []
     for key in req:
         rsp.append(b64decode(getattr(creds, key)))
+    if len(rsp) != len(req):
+        rsp = [None, None]
     return rsp
 
 def get_cred(service):

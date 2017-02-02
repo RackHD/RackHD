@@ -29,8 +29,8 @@ services:
       - "./dhcp/defaults:/etc/defaults"
 
   files:
-    build: "./files"
-    image: "rackhd/files"
+    build: "../on-imagebuilder"
+    image: rackhd/files:${TAG}
     network_mode: "host"
     privileged: true
     volumes:
@@ -46,12 +46,12 @@ services:
 
   core:
     build: "../on-core"
-    image: rackhd/on-core:latest
+    image: rackhd/on-core:${TAG}
     command: "/bin/echo \"exit\""
 
   tasks:
     build: "../on-tasks"
-    image: rackhd/on-tasks:latest
+    image: rackhd/on-tasks:${TAG}
     command: "/bin/echo \"exit\""
 
   dhcp-proxy: # 68/udp, 4011
@@ -62,7 +62,7 @@ services:
       - mongo
       - rabbitmq
       - statsd
-    image: rackhd/on-dhcp-proxy:latest
+    image: rackhd/on-dhcp-proxy:${TAG}
     network_mode: "host"
     privileged: true
     volumes:
@@ -78,7 +78,7 @@ services:
       - rabbitmq
       - statsd
       - tasks
-    image: rackhd/on-http:latest
+    image: rackhd/on-http:${TAG}
     network_mode: "host"
     privileged: true
     volumes:
@@ -92,7 +92,7 @@ services:
       - logstash
       - mongo
       - rabbitmq
-    image: rackhd/on-statsd:latest
+    image: rackhd/on-statsd:${TAG}
     network_mode: "host"
     privileged: true
     volumes:
@@ -105,7 +105,7 @@ services:
       - logstash
       - rabbitmq
       - statsd
-    image: rackhd/on-syslog:latest
+    image: rackhd/on-syslog:${TAG}
     network_mode: "host"
     privileged: true
     volumes:
@@ -121,7 +121,7 @@ services:
       - syslog
       - statsd
       - tasks
-    image: rackhd/on-taskgraph:latest
+    image: rackhd/on-taskgraph:${TAG}
     network_mode: "host"
     privileged: true
     volumes:
@@ -136,7 +136,7 @@ services:
       - rabbitmq
       - statsd
       - syslog
-    image: rackhd/on-tftp:latest
+    image: rackhd/on-tftp:${TAG}
     network_mode: "host"
     privileged: true
     volumes:
@@ -153,7 +153,7 @@ services:
       - rabbitmq
       - statsd
       - syslog
-    image: rackhd/on-wss:latest
+    image: rackhd/on-wss:${TAG}
     network_mode: "host"
     privileged: true
     volumes:
