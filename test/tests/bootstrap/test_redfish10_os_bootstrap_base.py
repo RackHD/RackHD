@@ -78,7 +78,7 @@ def wait_for_task_complete(taskid, retries=60):
 # download RackHD config from host
 rackhdconfig = fit_common.rackhdapi('/api/2.0/config')['json']
 httpProxies = rackhdconfig['httpProxies']
-rackhdhost = "http://" + rackhdconfig['apiServerAddress'] + ":" + rackhdconfig['apiServerPort']
+rackhdhost = "http://" + str(rackhdconfig['apiServerAddress']) + ":" + str(rackhdconfig['apiServerPort'])
 
 # helper routine for selecting OS image path by matching proxy path
 def proxySelect(tag):
