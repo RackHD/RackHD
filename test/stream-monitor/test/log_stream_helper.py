@@ -134,8 +134,11 @@ class TempLogfileChecker(object):
         else:
             test_levelno = start_at_levelno
             info_base = 'start_at_levelno={0}, lg_name={1}'.format(start_at_levelno, lg_name)
-            # "CRITICAL" is our max log-value injected in makeSuite in test_logopts.pyh
-            exp_count = logging.getLevelName('CRITICAL') - test_levelno
+            # "CRITICAL_0" is our max log-value injected in makeSuite in test_logopts.pyh
+            #  That -seems- backwards at first glance, but this is the -threshold- value we are
+            #  working with normally. In this case, CRITICAL_0 will hold the highest possible int
+            #  value that CAN be checked against.
+            exp_count = logging.getLevelName('CRITICAL_0') - test_levelno
 
         count = 0
         for match in self.__lf_observer.iter_on_re(line_re):
@@ -169,15 +172,21 @@ def levelno_to_name(levelno):
     This test infra does not have access to the plugins expanded
     logger names. So, find the base number and then add an _<remaimder>
     for non-predefined levels.
+
+    Each base name (DEBUG, INFO, etc) covers a range from base + 2 for base_0 to base - 7 for base_9.
+    Or more accuratlly: base + (2 - X) (where 'X' is the number from base_#. 
+    For example debug_0 is 12 and debug_9 is 3.
+    So first we want to isolate the tens digit for the range we are in to get the base...
     """
-    # this will turn 21 into 20, 20 into 20, 15 into 10 and so on.
-    adjusted_tens =    (4 + levelno) / 10
+    # Add 7 to the levelno to shift into right ten's place (3->10 and 12->19)
+    adjusted_tens =    (7 + levelno) / 10
     adjusted_base =    (adjusted_tens * 10)
     name = logging.getLevelName(adjusted_base)
-    remainder = (4 + levelno) % 10
+    # Now get the part to hang out after the '_'. 
+    remainder = (7 + levelno) % 10
     # and reverse because remainder is currently reversed vs range.
     remainder = 9 - remainder
-    if remainder != 5:
+    if remainder != 2:
         name = '{0}_{1}'.format(name, remainder)
     return name
 
@@ -192,7 +201,7 @@ def levelname_to_number(level_name):
         base_name, num_str = level_name.split('_', 1)
         base_value = logging.getLevelName(base_name)
         offset_val = int(num_str)
-        ret_val = base_value + (5 - offset_val)
+        ret_val = base_value + (2 - offset_val)
     else:
         ret_val = logging.getLevelName(level_name)
     return ret_val

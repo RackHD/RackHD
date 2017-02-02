@@ -12,7 +12,7 @@ from StringIO import StringIO
 
 
 class _Expector(object):
-    def __init__(self, use_logger, at_level, all_all_at='NOTSET', concap_at='INFO', real_at='INFO'):
+    def __init__(self, use_logger, at_level, all_all_at='NOTSET', concap_at='INFO_5', real_at='INFO_5'):
         """
         Simple class to automate some of the compare setups.
         """
@@ -150,7 +150,7 @@ class _OutputScannerBase(plugin_test_helper.resolve_no_verify_helper_class()):
                 lg_name = expector.logger_name
                 lg = logging.getLogger(lg_name)
                 start_level = logging.getLevelName('DEBUG_9')
-                end_level = logging.getLevelName('CRITICAL')
+                end_level = logging.getLevelName('CRITICAL_0')
                 for lvl in xrange(start_level, end_level):
                     lg.log(lvl, 'MATCH-START %s %d(%s) MATCH-END',
                            lg_name, lvl, logging.getLevelName(lvl))
@@ -166,7 +166,7 @@ set a different batch of command line args to nosetest, and define an
 
 class OutputScannerBaseInfraRun(_OutputScannerBase):
     args=[]
-    _expector = _Expector('infra.run', 'DEBUG')
+    _expector = _Expector('infra.run', 'DEBUG_5')
 
 
 class LevelsForAnOutputInfraRun(_OutputScannerBase):
@@ -180,8 +180,8 @@ class LevelsForAnOutputInfraData(_OutputScannerBase):
 
 
 class LevelsForAnOutputTestRun(_OutputScannerBase):
-    args=['--sm-set-logger-level', 'test.run', 'WARNING']
-    _expector = _Expector('test.run', 'WARNING')
+    args=['--sm-set-logger-level', 'test.run', 'WARNING_5']
+    _expector = _Expector('test.run', 'WARNING_5')
 
 
 class LevelsForAnOutputTestData(_OutputScannerBase):
@@ -195,8 +195,8 @@ class HandlerRemapForALogger(_OutputScannerBase):
     by default, no debug is making it into log-capture. THIS lets the debugs out.
     """
     args=['--sm-set-logger-level', 'infra.run', 'DEBUG_7',
-          '--sm-set-handler-level', 'console-capture', 'DEBUG']
-    _expector = _Expector('infra.run', 'DEBUG_7', concap_at='DEBUG')
+          '--sm-set-handler-level', 'console-capture', 'DEBUG_5']
+    _expector = _Expector('infra.run', 'DEBUG_7', concap_at='DEBUG_5')
 
 
 class ComboRemapForALoggerSingleHandler(_OutputScannerBase):

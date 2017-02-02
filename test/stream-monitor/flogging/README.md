@@ -2,7 +2,7 @@
 
 This logging system is part of the overall 'stream_monitor' nose plugin, but can
 in theory work independently of that. This document starts with a set of examples
-for how someone working with run_test.py might accomplish different different
+for how someone working with run_test.py might accomplish different
 use-cases. After that, it goes on to describe the basic structure of
 the logging system, the options available to control it, and how to use it within FIT
 tests.
@@ -18,7 +18,7 @@ one for an overview of how python's logging system works, and how that is used f
 * console output (including the 'console_capture.log' mentioned in the files bullets) is limited to INFO and above. It is meant to show high-level status/flow by default, with the main logger files containing more detailed diagnostic/debug information for post-morterm and debug.
 * levels are based on syslog style DEBUG, INFO, WARNING, ERROR, and CRITICAL levels, but have been expanded:
     * There are now levels like {name}_0, {name}_1, through {name}_9. For example DEBUG_0, DEBUG_1, INFO_5 and so on.
-    * Each base name maps to {name}_5. For example 'INFO' and 'INFO_5' are the same.
+    * Each base name maps to {name}_2. For example 'INFO' and 'INFO_2' are the same.
 
 The following are "if you want to see _this_, use a command like _this_" recipes. In some cases, there is more
 than one way to accomplish the goal, often including use of the run_test.py's "-v" option. The latter may change
@@ -113,8 +113,8 @@ The default syslog based loglevels are limited to 'CRITICAL', 'ERROR', 'WARNING,
 the same problem all syslog derived system face of only having one level of, say, DEBUG.
 
 Luckily, the values assigned to the level names are DEBUG=10, INFO=20, and so on. The infra-logging system takes
-advantage of this, and adds entries for each primary level plus _0, _1, _2, through _9 where _5 is the same as the
-primary. I.E. DEBUG_5 is the same as plain DEBUG. So, a test writer can use the 'test.run' logger.debug_1(message)
+advantage of this, and adds entries for each primary level plus _0, _1, _2, through _9 where _2 is the same as the
+primary. I.E. DEBUG_2 is the same as plain DEBUG. So, a test writer can use the 'test.run' logger.debug_1(message)
 to indicate a message more verbose than logger.debug_0. Under default settings, this means that data flowing
 to the main log files include DEBUG_0 to DEBUG_5, leavning _6 to _9 for levels of debug/diagnostic information
 considered too verbose for including on every run. Note that because the logging is still syslog-like in
@@ -171,10 +171,10 @@ The following goes through each option and explains what it does:
                             Set a logger's capture threshold. Loggers are
                             evaluated before handlers.
 
-This will change the logger level. For example, '--sm-set-logger-level test.run DEBUG_5' will change the logger level
-from DEBUG(_0) to DEBUG_5. I.E. DEBUG_6 will still be dropped by the test.run logger. The way things are wired,
+This will change the logger level. For example, '--sm-set-logger-level test.run DEBUG_6' will change the logger level
+from DEBUG(_5) to DEBUG_6. I.E. DEBUG_7 will still be dropped by the test.run logger. The way things are wired,
 this only impacts the level of messages flowing to test_run.log and combined_all_all.log. The messages would still be
-dropped by the root-logger, since it is at INFO.
+dropped by the root-logger, since it is at INFO_5.
 
 Note that the logger name can be wild-carded: 'test.*' or 'test*' to change both test.run and test.data, or '*.data' to raise up the volume of data dumps.
 
@@ -197,8 +197,8 @@ Mostly, this is here for completeness, and for use 'behind the scenes' on the mo
 Doing a '--sm-set-combo-level console DEBUG' will go and change the handler level for 'console' AND all loggers
 feeding into it. Because 'console' is attached to the root logger, this ends up override ALL the
 loggers (that had been created at this point. That is a key limitation). Of course, this means that the console is
-being spammed with DEBUG output from everything. '--sm-set-combo-level console*:*.run DEBUG_5' will have the
-affect of of routing 'infra.run', and 'test.run' at DEBUG_5 to both the console and console_capture.
+being spammed with DEBUG output from everything. '--sm-set-combo-level console*:*.run DEBUG_6' will have the
+affect of of routing 'infra.run', and 'test.run' at DEBUG_6 to both the console and console_capture.
 
 Finally:
     --sm-set-file-level=('file-pattern', '[handler-name[:logger-name] [level-name-or-value]]')

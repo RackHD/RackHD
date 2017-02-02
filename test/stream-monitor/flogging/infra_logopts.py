@@ -185,13 +185,13 @@ class LoggerArgParseHelper(object):
             pass
         if levelno is None:
             # could not parse, so should be a name?
-            # Note: we need to handle that foo_5 == foo, BUT there won't be
-            #  a mapping inside logging for foo_5. (It would cause 'FOO' to always show up in
+            # Note: we need to handle that foo_2 == foo, BUT there won't be
+            #  a mapping inside logging for foo_2. (It would cause 'FOO' to always show up in
             #  the logs as 'FOO_5'. Still iffy on if it should or shoudn't, but that's why
-            #  we check and strip _5 here!)
+            #  we check and strip _2 here!)
             str_level = str(level)
-            if str_level.endswith('_5'):
-                str_level = str_level[:-2]   # hack of _5!
+            if str_level.endswith('_2'):
+                str_level = str_level[:-2]   # hack off _2!
 
             levelno = logging.getLevelName(str_level)
             if not isinstance(levelno, int):
@@ -224,7 +224,7 @@ class LoggerArgParseHelper(object):
 
     def __do_logger_settings(self, logger_level_list):
         """
-        Routine to look through the list of options like 'infra.run' 'DEBUG_5'.
+        Routine to look through the list of options like 'infra.run' 'DEBUG_2'.
         For each one, we search for loggers matching the name (wildcards are allowed) and
         for each of those, go in and set the level of the logger to the requested
         level. Remember loggers are independent of handlers. FIRST a candidate message

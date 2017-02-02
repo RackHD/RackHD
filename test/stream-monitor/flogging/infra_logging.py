@@ -72,10 +72,19 @@ class _LevelLoggerClass(Logger):
         the base level for levelname plus or minus the value of the _n part
         of the attribute. An example is easier to understand:
         A Logger instance has a .debug() method, which uses the int value
-        of DEBUG to check/emit. DEBUG happens to be equal to the int 10.
-        debug_0 ends up mapping to the int value 15 (DEBUG + 5 - 0)
-        debug_5 ends up mapping to the int value 10  (DEBUG + 5 - 5)
-        debug_9 ends up mapping to the int value 6  (DEBUG + 5 - 9)
+        of DEBUG to check/emit. DEBUG happens to be equal to the int 10. The following
+        list shows the name and numeric value of each debug_n (or DEBUG_n)
+        name           int-value    'on'-by-default     note
+        debug_0        12           yes
+        debug_1        11           yes
+        debug_2        10           yes                 DEBUG synonym
+        debug_3         9           yes
+        debug_4         8           yes
+        debug_5         7           yes                 most detailed 'always on'
+        debug_6         6            no
+        debug_7         5            no
+        debug_8         4            no
+        debug_9         3            no
 
         Since the logging system treats higher int values as "more important"
         (e.g. CRITICAL is 50), this means debug_9 would be used to represent
@@ -95,7 +104,7 @@ class _LevelLoggerClass(Logger):
 
         base_name = attr_match.group("base").upper()
         val_adj = int(attr_match.group("post_num"))
-        actual_value = _levelNames[base_name] + (5 - val_adj)
+        actual_value = _levelNames[base_name] + (2 - val_adj)
 
         def wrapper(msg, *args, **kw):
             return self.log(actual_value, msg, *args, **kw)
@@ -190,9 +199,9 @@ class _LoggerSetup(object):
             for lvl_key, lvl_value in lvl_copy.items():
                 if isinstance(lvl_key, str) and lvl_key != 'NOTSET':
                     new_name = "{0}_{1}".format(lvl_key, adj)
-                    new_val = lvl_value + (5 - adj)
-                    # Note: we can't insert our overlap (DEBUG_5 == DEBUG)
-                    # here without changing what _appears_ in the log to be the _0
+                    new_val = lvl_value + (2 - adj)
+                    # Note: we can't insert our overlap (DEBUG_2 == DEBUG)
+                    # here without changing what _appears_ in the log to be the _2
                     # version. We let __getattr__ mapping handle this case.
                     if new_val != lvl_value:
                         addLevelName(new_val, new_name)
@@ -211,13 +220,13 @@ class _LoggerSetup(object):
             'handlers': {
                 'console': {
                     # catch all. May not need to exist?
-                    'level': 'INFO',
+                    'level': 'INFO_5',
                     'class': 'logging.StreamHandler',
                     'filters': ['ctx_add_filter'],
                     'formatter': 'simple'
                 },
                 'console-capture': {
-                    'level': 'INFO',
+                    'level': 'INFO_5',
                     'class': 'logging.handlers.RotatingFileHandler',
                     'filename': self.__console_capture_lgn,
                     'filters': ['ctx_add_filter'],
@@ -269,28 +278,28 @@ class _LoggerSetup(object):
                 '': {
                     'handlers': ['console', 'console-capture'],
                     'propagate': True,
-                    'level': 'INFO',
+                    'level': 'INFO_5',
                     'stream': 'ext://sys.stdout'
                 },
                 'infra.run': {
                     'handlers': ['infra-run', 'combined-all-all'],
                     'propagate': True,
-                    'level': 'DEBUG',
+                    'level': 'DEBUG_5',
                 },
                 'infra.data': {
                     'handlers': ['infra-data', 'combined-all-all'],
                     'propagate': True,
-                    'level': 'DEBUG',
+                    'level': 'DEBUG_5',
                 },
                 'test.run': {
                     'handlers': ['test-run', 'combined-all-all'],
                     'propagate': True,
-                    'level': 'DEBUG',
+                    'level': 'DEBUG_5',
                 },
                 'test.data': {
                     'handlers': ['test-data', 'combined-all-all'],
                     'propagate': True,
-                    'level': 'DEBUG',
+                    'level': 'DEBUG_5',
                 }
             },
             'formatters': {

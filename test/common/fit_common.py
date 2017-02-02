@@ -304,21 +304,23 @@ def mkargs(in_args=None):
                         help="forces the tests to utilize the https API protocol")
     arg_parser.add_argument("-port", default="None",
                             help="API port number override, default from install_config.json")
-    arg_parser.add_argument("-v", default=1, type=int,
-                            help="Verbosity level of console output, default=1, Built Ins: " +
-                                 "0: No debug or INFO (ERROR and CRITICAL only), " +
-                                 "1: Default levels with INFO to console, and DEBUG to files, " +
-                                 "2: Display infra.run and test.run DEBUG, " +
-                                 "4: Display test.data (rest calls and status) DEBUG, " +
-                                 "6: infra.data DEBUG (ipmi, ssh), " +
-                                 "9: infra.* and test.* at DEBUG_9 (max output) ")
+    arg_parser.add_argument("-v", default=4, type=int,
+                            help="Verbosity level of console and log output (see -nose-help for more options), Built Ins: " +
+                                 "0: Minimal logging, "+
+                                 "1: Display ERROR and CRITICAL to console and to files, " +
+                                 "3: Display INFO to console and to files, " +
+                                 "4: (default) Display INFO to console, and DEBUG to files, " +
+                                 "5: Display infra.run and test.run DEBUG to both, " +
+                                 "6: Add display of test.data (rest calls and status) DEBUG to both, " +
+                                 "7: Add display of infra.data (ipmi, ssh) DEBUG to both, " +
+                                 "9: Display infra.* and test.* at DEBUG_9 (max output) ")
     arg_parser.add_argument("-nose-help", default=False, action="store_true", dest="nose_help",
                             help="display help from underlying nosetests command, including additional log options")
     # we want to grab the arguments we want, and pass the rest
     # into the nosetest invocation.
     parse_results, other_args = arg_parser.parse_known_args(in_args)
 
-    # if 'help' was set, WE to handle it as best we can. We use argparse to
+    # if 'help' was set, handle it as best we can. We use argparse to
     # display usage and arguments, and then give nose a shot at printing
     # things out (if they set that option)
     if parse_results.help:
@@ -342,20 +344,27 @@ def mkargs(in_args=None):
     if parse_results.v >= 9:
         # Turn them all up to 11.
         vargs = ['--sm-set-combo-level', 'console*', 'DEBUG_9']
+    elif parse_results.v >= 7:
+        # ends up turning everything up to DEBUG_5 (levels 5 + 6 + infra.data)
+        vargs = ['--sm-set-combo-level', 'console*', 'DEBUG_5']
     elif parse_results.v >= 6:
-        # ends up turning everything up to DEBUG (levels 2, 4, and 6)
-        vargs = ['--sm-set-combo-level', 'console*', 'DEBUG']
-    elif parse_results.v >= 4:
-        # infra.run and test.* to DEBUG (levels 2 and 4)
-        vargs = ['--sm-set-combo-level', 'console*:(infra.run|test.*)', 'DEBUG']
-    elif parse_results.v >= 2:
+        # infra.run and test.* to DEBUG (level 5 + test.data)
+        vargs = ['--sm-set-combo-level', 'console*:(test.data|*.run)', 'DEBUG_5']
+    elif parse_results.v >= 5:
         # infra and test.run to DEBUG
-        vargs = ['--sm-set-combo-level', 'console*:*.run', 'DEBUG']
-    elif parse_results.v >= 1:
+        vargs = ['--sm-set-combo-level', 'console*:*.run', 'DEBUG_5']
+    elif parse_results.v >= 4:
+        # default
         vargs = []
+    elif parse_results.v >= 3:
+        # dial BACK output to files to INFO_5
+        vargs = ['--sm-set-logger-level', '*', 'INFO_5']
+    elif parse_results.v >= 1:
+        # dial BACK output to everything to just ERROR, CRITICAL to console and logs
+        vargs = ['--sm-set-combo-level', '*', 'ERROR_5']
     else:
-        # 0 = no debug and minimal output of just ERROR, CRITICAL to console and logs
-        vargs = ['--sm-set-combo-level', '*', 'ERROR']
+        # 0 and 1 currently try to squish ALL logging output.
+        vargs = ['--sm-set-combo-level', '*', 'CRITICAL_0']
 
     other_args.extend(vargs)
 
