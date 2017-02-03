@@ -73,7 +73,7 @@ def wait_for_task_complete(taskid, retries=60):
     for dummy in range(0, retries):
         result = fit_common.rackhdapi(taskid)
         if result['status'] != 200:
-            log.tdl.error(" " + result['text'])
+            log.error(" " + result['text'])
             return False
         if result['json']['TaskState'] == 'Running' or result['json']['TaskState'] == 'Pending':
             if fit_common.VERBOSITY >= 2:
@@ -82,12 +82,12 @@ def wait_for_task_complete(taskid, retries=60):
         elif result['json']['TaskState'] == 'Completed':
             if fit_common.VERBOSITY >= 2:
                 print "OS Install workflow state: {}".format(result['json']['TaskState'])
-            log.tdl.info_5(" " + result['text'])
+            log.info_5(" " + result['text'])
             return True
         else:
-            log.tdl.error(" " + result['text'])
+            log.error(" " + result['text'])
             return False
-    log.tdl.error(" Workflow Timeout: " + result['text'])
+    log.error(" Workflow Timeout: " + result['text'])
     return False
 
 # helper routine for selecting OS image path by matching proxy path
@@ -127,12 +127,12 @@ def run_bootstrap_instance(node, osname, version, path):
                                         action='post', payload=payload_data)
     if result['status'] == 202:
         status[node] = {"os":osname, "version":version, "id":result['json']['@odata.id']}
-        log.tdl.info_5(" TaskID: " + result['text'])
-        log.tdl.info_5(" Payload: " + fit_common.json.dumps(payload_data))
+        log.info_5(" TaskID: " + result['text'])
+        log.info_5(" Payload: " + fit_common.json.dumps(payload_data))
     else:
         status[node] = {"os":osname, "version":version, 'id':"/redfish/v1/taskservice/tasks/failed"}
-        log.tdl.error(" TaskID: " + result['text'])
-        log.tdl.error(" Payload: " + fit_common.json.dumps(payload_data))
+        log.error(" TaskID: " + result['text'])
+        log.error(" Payload: " + fit_common.json.dumps(payload_data))
 
 # run all bootstraps on available nodes
 def launch_bootstraps():
