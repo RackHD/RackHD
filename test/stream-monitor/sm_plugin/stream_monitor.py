@@ -8,7 +8,7 @@ from nose.plugins.xunit import Tee
 from nose import SkipTest
 from StringIO import StringIO
 from logging import ERROR, WARNING
-
+from flogging import LoggerArgParseHelper
 
 class StreamMonitorPlugin(Plugin):
     _singleton = None
@@ -53,6 +53,7 @@ class StreamMonitorPlugin(Plugin):
     def options(self, parser, env=os.environ):
         self.__take_step('options', parser=parser, env=env)
         self.__log = logging.getLogger('nose.plugins.streammonitor')
+        self.__flogger_opts_helper = LoggerArgParseHelper(parser)
         super(StreamMonitorPlugin, self).options(parser, env=env)
 
     def configure(self, options, conf):
@@ -73,6 +74,13 @@ class StreamMonitorPlugin(Plugin):
         # tood: check class "enabled_for_nose()"
         if len(self.__stream_plugins) == 0:
             self.__stream_plugins['logging'] = LoggingMarker()
+        else:
+            # This is basically for self-testing the plugin, since the
+            # logging monitor stays around between test-classes. If we don't do
+            # this, the prior logging settings "stick".
+            self.__stream_plugins['logging'].reset_configuration()
+
+        self.__flogger_opts_helper.process_parsed(self.conf.options)
 
         for pg in self.__stream_plugins.values():
             pg.handle_begin()

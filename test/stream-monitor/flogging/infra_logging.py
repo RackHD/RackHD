@@ -16,8 +16,8 @@ import gevent
 import os
 import errno
 import shutil
-
 import sys
+
 
 class _GeventInfoFilter(logging.Filter):
     _main_greenlet = gevent.getcurrent()
@@ -57,7 +57,11 @@ class _GeventInfoFilter(logging.Filter):
             record.location_info_string = ''
         else:    
             record.location_info_string = '{r.process} {r.processName} {r.pathname}:{r.funcName}@{r.lineno} {r.greenlet}'.format(r=record)
+
         return True
+
+    def __str__(self):
+        return 'infra-context-adding-filter'
 
 class _LevelLoggerClass(Logger):
     _log_call_matcher = re.compile(r'''^(?P<base>[a-zA-Z]\w*?)_(?P<post_num>\d)$''')
@@ -68,10 +72,19 @@ class _LevelLoggerClass(Logger):
         the base level for levelname plus or minus the value of the _n part
         of the attribute. An example is easier to understand:
         A Logger instance has a .debug() method, which uses the int value
-        of DEBUG to check/emit. DEBUG happens to be equal to the int 10.
-        debug_0 ends up mapping to the int value 10 (DEBUG - 0)
-        debug_5 ends up mapping to the int value 5  (DEBUG - 5)
-        debug_9 ends up mapping to the int value 1  (DEBUG - 9)
+        of DEBUG to check/emit. DEBUG happens to be equal to the int 10. The following
+        list shows the name and numeric value of each debug_n (or DEBUG_n)
+        name           int-value    'on'-by-default     note
+        debug_0        12           yes
+        debug_1        11           yes
+        debug_2        10           yes                 DEBUG synonym
+        debug_3         9           yes
+        debug_4         8           yes
+        debug_5         7           yes                 most detailed 'always on'
+        debug_6         6            no
+        debug_7         5            no
+        debug_8         4            no
+        debug_9         3            no
 
         Since the logging system treats higher int values as "more important"
         (e.g. CRITICAL is 50), this means debug_9 would be used to represent
@@ -91,10 +104,10 @@ class _LevelLoggerClass(Logger):
 
         base_name = attr_match.group("base").upper()
         val_adj = int(attr_match.group("post_num"))
-        actual_value = _levelNames[base_name] - val_adj
+        actual_value = _levelNames[base_name] + (2 - val_adj)
 
         def wrapper(msg, *args, **kw):
-            return self._log(actual_value, msg, args, kw)
+            return self.log(actual_value, msg, *args, **kw)
 
         # We return a wrapper function, since we are being asked to resolve
         # the method, not call it. The above wrapper allows us to return
@@ -186,9 +199,9 @@ class _LoggerSetup(object):
             for lvl_key, lvl_value in lvl_copy.items():
                 if isinstance(lvl_key, str) and lvl_key != 'NOTSET':
                     new_name = "{0}_{1}".format(lvl_key, adj)
-                    new_val = lvl_value - adj
-                    # Note: we can't insert our overlap (DEBUG_0 == DEBUG)
-                    # here without changing what _appears_ in the log to be the _0
+                    new_val = lvl_value + (2 - adj)
+                    # Note: we can't insert our overlap (DEBUG_2 == DEBUG)
+                    # here without changing what _appears_ in the log to be the _2
                     # version. We let __getattr__ mapping handle this case.
                     if new_val != lvl_value:
                         addLevelName(new_val, new_name)
@@ -207,13 +220,13 @@ class _LoggerSetup(object):
             'handlers': {
                 'console': {
                     # catch all. May not need to exist?
-                    'level': 'INFO',
+                    'level': 'INFO_5',
                     'class': 'logging.StreamHandler',
                     'filters': ['ctx_add_filter'],
                     'formatter': 'simple'
                 },
                 'console-capture': {
-                    'level': 'INFO',
+                    'level': 'INFO_5',
                     'class': 'logging.handlers.RotatingFileHandler',
                     'filename': self.__console_capture_lgn,
                     'filters': ['ctx_add_filter'],
@@ -222,7 +235,7 @@ class _LoggerSetup(object):
                 'infra-run': {
                     # the test infrastructure code (not the tests themselves)
                     # I.E., like logging about logging :)
-                    'level': 'DEBUG',
+                    'level': 'NOTSET',
                     'class': 'logging.handlers.RotatingFileHandler',
                     'filename': self.__infra_run_lgn,
                     'filters': ['ctx_add_filter'],
@@ -230,7 +243,7 @@ class _LoggerSetup(object):
                 },
                 'infra-data': {
                     # test infra data. for example, storing of expect stuff
-                    'level': 'DEBUG',
+                    'level': 'NOTSET',
                     'class': 'logging.handlers.RotatingFileHandler',
                     'filename': self.__infra_data_lgn,
                     'filters': ['ctx_add_filter'],
@@ -238,7 +251,7 @@ class _LoggerSetup(object):
                 },
                 'test-run': {
                     # test-run code. I.E., where tests can say "I'm doing X"
-                    'level': 'DEBUG',
+                    'level': 'NOTSET',
                     'class': 'logging.handlers.RotatingFileHandler',
                     'filename': self.__test_run_lgn,
                     'filters': ['ctx_add_filter'],
@@ -246,7 +259,7 @@ class _LoggerSetup(object):
                 },
                 'test-data': {
                     # raw data from actual tests. Like the infra-data
-                    'level': 'DEBUG',
+                    'level': 'NOTSET',
                     'class': 'logging.handlers.RotatingFileHandler',
                     'filename': self.__test_data_lgn,
                     'filters': ['ctx_add_filter'],
@@ -254,7 +267,7 @@ class _LoggerSetup(object):
                 },
                 'combined-all-all': {
                     # put the works into a single file
-                    'level': 'DEBUG',
+                    'level': 'NOTSET',
                     'class': 'logging.handlers.RotatingFileHandler',
                     'filename': self.__combined_all_all_lgn,
                     'filters': ['ctx_add_filter'],
@@ -265,28 +278,28 @@ class _LoggerSetup(object):
                 '': {
                     'handlers': ['console', 'console-capture'],
                     'propagate': True,
-                    'level': 'INFO',
+                    'level': 'INFO_5',
                     'stream': 'ext://sys.stdout'
                 },
                 'infra.run': {
                     'handlers': ['infra-run', 'combined-all-all'],
                     'propagate': True,
-                    'level': 'DEBUG',
+                    'level': 'DEBUG_5',
                 },
                 'infra.data': {
                     'handlers': ['infra-data', 'combined-all-all'],
                     'propagate': True,
-                    'level': 'DEBUG',
+                    'level': 'DEBUG_5',
                 },
                 'test.run': {
                     'handlers': ['test-run', 'combined-all-all'],
                     'propagate': True,
-                    'level': 'DEBUG',
+                    'level': 'DEBUG_5',
                 },
                 'test.data': {
                     'handlers': ['test-data', 'combined-all-all'],
                     'propagate': True,
-                    'level': 'DEBUG',
+                    'level': 'DEBUG_5',
                 }
             },
             'formatters': {
@@ -307,6 +320,14 @@ class _LoggerSetup(object):
         logging.getLogger("urllib3").setLevel(logging.WARNING)
         logging.getLogger("requests").setLevel(logging.WARNING)
 
+    def reset_configuration(self):
+        """
+        Basically for use during plugin self-test, which runs multiple complete
+        test life-cycles for the plugins, but this watcher needs to survive
+        between them. The config of levels, etc, however, does NOT!
+        """
+        self.__do_config()
+
     def set_level(self, new_level):
         pass
 
@@ -324,7 +345,6 @@ def getLogger(name=None):
         rl = logging.getLogger()
     else:
         rl = logging.getLogger(name)
-    #rl = _GeventInfoAdapter(rl, {})
     return rl
 
 def _getLoggerBase(names, name):
@@ -344,8 +364,10 @@ def getTestRunLogger(name=None):
 def getTestDataLogger(name=None):
     return _getLoggerBase(['test', 'data'], name)
 
-
 _logger_setup_instance = _LoggerSetup()
+
+def logger_reset_configuration():
+    _logger_setup_instance.reset_configuration()
 
 def logger_config_api(verbosity):
     _logger_setup_instance.set_level(verbosity)

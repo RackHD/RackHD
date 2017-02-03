@@ -4,7 +4,7 @@ Copyright 2016, EMC, Inc.
 This file contains (very very crude, at the moment!) self
 tests of the logging infrastructure.
 """
-import flogging
+from flogging.infra_logging import logger_get_logging_dir
 import os
 from unittest import TestCase
 
@@ -14,7 +14,7 @@ class TestInfraLogging(TestCase):
         pass
 
     def setUp(self):
-        self.__lg_full_path = flogging.logger_get_logging_dir()
+        self.__lg_full_path = logger_get_logging_dir()
         self.__lg_container_path = os.path.dirname(self.__lg_full_path)
         self.__lg_sym_path = os.path.join(self.__lg_container_path, 'run_last.d')
 

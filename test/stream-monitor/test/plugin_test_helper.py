@@ -8,8 +8,10 @@ class _BaseStreamMonitorPluginTester(PluginTester, unittest.TestCase):
     activate = '--with-stream-monitor'
     _smp = StreamMonitorPlugin()
     _smp._self_test_print_step_enable()
-    _expect_nose_success = True
     plugins = [_smp]
+
+class _BaseStreamMonitorPluginTesterVerify(_BaseStreamMonitorPluginTester):
+    _expect_nose_success = True
     def runTest(self):
         # This is called once for each class derived from it. We don't really
         # have access to much other than success/failure and the raw string output
@@ -92,6 +94,9 @@ class _BaseStreamMonitorPluginTester(PluginTester, unittest.TestCase):
 
 
 def resolve_helper_class():
+    return _BaseStreamMonitorPluginTesterVerify
+
+def resolve_no_verify_helper_class():
     return _BaseStreamMonitorPluginTester
 
 def resolve_suitepath(*args):
