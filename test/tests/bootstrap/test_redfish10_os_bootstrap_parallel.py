@@ -1,10 +1,15 @@
-# Copyright 2017, EMC, Inc.
-
 '''
-This script tests base case of the RackHD Redfish BootImage API and OS bootstrap workflows
-The test will select a single eligible node to run all currently supported bootstrap workflows
+Copyright 2017, EMC, Inc.
 
-Bootstrap tests require special RackHD configuration and mirror repositories for the OS images
+Author(s):
+George Paulos
+
+This script tests base case of the RackHD Redfish BootImage API and OS bootstrap workflows.
+This routine runs OS bootstrap jobs simultaneously on multiple nodes.
+For 8 tests to run, 8 nodes are required in the stack. If there are less than that, tests will be skipped.
+This test takes 15-20 minutes to run.
+
+OS bootstrap tests require special RackHD configuration and mirror repositories for the OS images.
 OS images are loaded via RackHD "httpProxies" settings in config.json.
 
 Example:
@@ -36,7 +41,7 @@ Example:
           }
       ],
 
-For each OS type, the "localpath" string must conform to the schema above.
+For each OS type, the "localpath" string must conform to the convention above.
 The "server' URL points to the location of the OS executables in an image repository.
 
 '''
@@ -44,13 +49,12 @@ The "server' URL points to the location of the OS executables in an image reposi
 import os
 import sys
 import subprocess
-import random
 
 # set path to common libraries
 sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test/common")
 import fit_common
 
-# This node catalog section will be replaced with fit_common.node_select() when it is checked in
+# This gets the list of nodes
 NODECATALOG = fit_common.node_select()
 
 # download RackHD config from host
@@ -140,8 +144,6 @@ def node_taskid(osname, version):
     return ""
 
 launch_bootstraps()
-print "\n"
-print fit_common.json.dumps(status)
 
 # ------------------------ Tests -------------------------------------
 from nose.plugins.attrib import attr
