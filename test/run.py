@@ -21,6 +21,7 @@ def run_tests(group=['smoke-tests']):
     TestProgram(groups=group).run_and_exit()
 
 # Will this work?
+# How about this?
 def some_func_with_no_colon()
     pass
 
