@@ -89,7 +89,7 @@ def proxySelect(tag):
 
 # ------------------------ Tests -------------------------------------
 from nose.plugins.attrib import attr
-@attr(all=True, regression=True)
+@attr(all=True)
 class os_bootstrap_base(fit_common.unittest.TestCase):
     def setUp(self):
         #delete active workflows for specified node
