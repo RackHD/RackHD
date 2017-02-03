@@ -54,6 +54,9 @@ import subprocess
 sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test/common")
 import fit_common
 
+import flogging
+log = flogging.get_loggers()
+
 # This gets the list of nodes
 NODECATALOG = fit_common.node_select()
 
@@ -70,6 +73,7 @@ def wait_for_task_complete(taskid, retries=60):
     for dummy in range(0, retries):
         result = fit_common.rackhdapi(taskid)
         if result['status'] != 200:
+            log.tdl.error(" " + result['text'])
             return False
         if result['json']['TaskState'] == 'Running' or result['json']['TaskState'] == 'Pending':
             if fit_common.VERBOSITY >= 2:
@@ -78,10 +82,12 @@ def wait_for_task_complete(taskid, retries=60):
         elif result['json']['TaskState'] == 'Completed':
             if fit_common.VERBOSITY >= 2:
                 print "OS Install workflow state: {}".format(result['json']['TaskState'])
+            log.tdl.info_5(" " + result['text'])
             return True
         else:
-            break
-    print "Task failed with the following state: " + result['json']['TaskState']
+            log.tdl.error(" " + result['text'])
+            return False
+    log.tdl.error(" Workflow Timeout: " + result['text'])
     return False
 
 # helper routine for selecting OS image path by matching proxy path
@@ -90,6 +96,13 @@ def proxySelect(tag):
         if tag in entry['localPath']:
             return entry['localPath']
     return ''
+
+# helper routine to return the task ID associated with the running bootstrap workflow
+def node_taskid(osname, version):
+    for entry in status:
+        if status[entry]['os'] == osname and status[entry]['version'] == version:
+            return status[entry]['id']
+    return ""
 
 # run individual bootstrap with parameters
 def run_bootstrap_instance(node, osname, version, path):
@@ -114,8 +127,12 @@ def run_bootstrap_instance(node, osname, version, path):
                                         action='post', payload=payload_data)
     if result['status'] == 202:
         status[node] = {"os":osname, "version":version, "id":result['json']['@odata.id']}
+        log.tdl.info_5(" TaskID: " + result['text'])
+        log.tdl.info_5(" Payload: " + fit_common.json.dumps(payload_data))
     else:
         status[node] = {"os":osname, "version":version, 'id':"/redfish/v1/taskservice/tasks/failed"}
+        log.tdl.error(" TaskID: " + result['text'])
+        log.tdl.error(" Payload: " + fit_common.json.dumps(payload_data))
 
 # run all bootstraps on available nodes
 def launch_bootstraps():
@@ -136,50 +153,44 @@ def launch_bootstraps():
             run_bootstrap_instance(NODECATALOG[nodeindex],item['os'],item['version'],item['path'])
             nodeindex += 1
 
-# return the task ID associated with the running bootstrap workflow
-def node_taskid(osname, version):
-    for entry in status:
-        if status[entry]['os'] == osname and status[entry]['version'] == version:
-            return status[entry]['id']
-    return ""
-
+# run bootstraps
 launch_bootstraps()
 
 # ------------------------ Tests -------------------------------------
 from nose.plugins.attrib import attr
 @attr(all=True, regression=True)
-class os_bootstrap_base(fit_common.unittest.TestCase):
+class redfish_bootstrap_base(fit_common.unittest.TestCase):
 
-    @fit_common.unittest.skipUnless(node_taskid("ESXi", "5.5") != '', "Skipping ESXi5.5")
-    def test_bootstrap_esxi55(self):
+    @fit_common.unittest.skipUnless(node_taskid("ESXi", "5.5") != '', "Skipping ESXi5.5, repo not configured or node unavailable")
+    def test_redfish_bootstrap_esxi55(self):
         self.assertTrue(wait_for_task_complete(node_taskid("ESXi", "5.5")), "ESXi5.5 failed.")
 
-    @fit_common.unittest.skipUnless(node_taskid("ESXi", "6.0")  != '', "Skipping ESXi6.0")
-    def test_bootstrap_esxi60(self):
+    @fit_common.unittest.skipUnless(node_taskid("ESXi", "6.0")  != '', "Skipping ESXi6.0, repo not configured or node unavailable")
+    def test_redfish_bootstrap_esxi60(self):
         self.assertTrue(wait_for_task_complete(node_taskid("ESXi", "6.0")), "ESXi6.0 failed.")
 
-    @fit_common.unittest.skipUnless(node_taskid("CentOS", "6.5")  != '', "Skipping Centos 6.5")
-    def test_bootstrap_centos65(self):
+    @fit_common.unittest.skipUnless(node_taskid("CentOS", "6.5")  != '', "Skipping Centos 6.5, repo not configured or node unavailable")
+    def test_redfish_bootstrap_centos65(self):
         self.assertTrue(wait_for_task_complete(node_taskid("CentOS", "6.5")), "Centos 6.5 failed.")
 
-    @fit_common.unittest.skipUnless(node_taskid("CentOS+KVM", "6.5") != '', "Skipping Centos 6.5 KVM")
-    def test_bootstrap_centos65_kvm(self):
+    @fit_common.unittest.skipUnless(node_taskid("CentOS+KVM", "6.5") != '', "Skipping Centos 6.5 KVM, repo not configured or node unavailable")
+    def test_redfish_bootstrap_centos65_kvm(self):
         self.assertTrue(wait_for_task_complete(node_taskid("CentOS+KVM", "6.5")), "Centos 6.5 KVM failed.")
 
-    @fit_common.unittest.skipUnless(node_taskid("CentOS", "7") != '', "Skipping Centos 7.0")
-    def test_bootstrap_centos70(self):
+    @fit_common.unittest.skipUnless(node_taskid("CentOS", "7") != '', "Skipping Centos 7.0, repo not configured or node unavailable")
+    def test_redfish_bootstrap_centos70(self):
         self.assertTrue(wait_for_task_complete(node_taskid("CentOS", "7")), "Centos 7.0 failed.")
 
-    @fit_common.unittest.skipUnless(node_taskid("CentOS+KVM", "7") != '', "Skipping Centos 7.0 KVM")
-    def test_bootstrap_centos70_kvm(self):
+    @fit_common.unittest.skipUnless(node_taskid("CentOS+KVM", "7") != '', "Skipping Centos 7.0 KVM, repo not configured or node unavailable")
+    def test_redfish_bootstrap_centos70_kvm(self):
         self.assertTrue(wait_for_task_complete(node_taskid("CentOS+KVM", "7")), "Centos 7.0 KVM failed.")
 
-    @fit_common.unittest.skipUnless(node_taskid("RHEL", "7") != '', "Skipping Redhat 7.0")
-    def test_bootstrap_rhel70(self):
+    @fit_common.unittest.skipUnless(node_taskid("RHEL", "7") != '', "Skipping Redhat 7.0, repo not configured or node unavailable")
+    def test_redfish_bootstrap_rhel70(self):
         self.assertTrue(wait_for_task_complete(node_taskid("RHEL", "7")), "RHEL 7.0 failed.")
 
-    @fit_common.unittest.skipUnless(node_taskid("RHEL+KVM", "7") != '', "Skipping Redhat 7.0 KVM")
-    def test_bootstrap_rhel70_kvm(self):
+    @fit_common.unittest.skipUnless(node_taskid("RHEL+KVM", "7") != '', "Skipping Redhat 7.0 KVM, repo not configured or node unavailable")
+    def test_redfish_bootstrap_rhel70_kvm(self):
         self.assertTrue(wait_for_task_complete(node_taskid("RHEL+KVM", "7")), "RHEL 7.0 KVM failed.")
 
 if __name__ == '__main__':
