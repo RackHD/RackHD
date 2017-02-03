@@ -20,11 +20,10 @@ def run_tests(group=['smoke-tests']):
 
     TestProgram(groups=group).run_and_exit()
 
-# Will this work?
-# How about this?
-# And now?
-def some_func_with_no_colon()
-    pass
+def some_func_with_no_colon():
+    # Mismatch indentation
+    x=10
+      y=3
 
 if __name__ == '__main__':
     # avoid eating valid proboscis args
