@@ -91,6 +91,10 @@ class LoggerArgParseHelper(object):
             'setting log options',
             "note: both 'logger-name's and 'handler-name's can contain wild-card characters to match multiple items.")
         set_group.add_argument(
+            '--sm-no-logify-console', dest='sm_no_logify_console',
+            action='store_true', default=False,
+            help='set to not capture raw stderr traffic to console as logging messages.')
+        set_group.add_argument(
             '--sm-set-logger-level', nargs=2, default=[],
             dest='set_logger_level_list', action='append',
             metavar=('logger-name', 'level-name-or-value'),
@@ -110,7 +114,7 @@ class LoggerArgParseHelper(object):
         set_group.add_argument(
             '--sm-set-file-level', nargs=3, dest='set_file_level',
             metavar=('file-pattern', '[handler-name[:logger-name] [level-name-or-value]]'),
-            help="Same as --sm-set-combo-level, but restricts the change in output to only the files that match the file-pattern")
+            help="Same as --sm-set-combo-level, but restricts the change in output to only the files that match the file-pattern.")
 
 
     def __display_filter(self, indent, filter, detail):
