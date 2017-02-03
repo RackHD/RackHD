@@ -95,7 +95,7 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
         #delete active workflows for specified node
         fit_common.cancel_active_workflows(NODE)
 
-    @fit_common.unittest.skipUnless(proxySelect('ESXi/5.5') != '', "Skipping ESXi5.5")
+    @fit_common.unittest.skipUnless(proxySelect('ESXi/5.5') != '', "Skipping ESXi5.5, repo not configured")
     def test_bootstrap_esxi55(self):
         if fit_common.VERBOSITY >= 2:
             print 'Running ESXI 5.5 bootstrap.'
@@ -124,7 +124,7 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
                          'TaskID ' + result['json']['@odata.id'] + ' not successfully completed.')
 
 
-    @fit_common.unittest.skipUnless(proxySelect('ESXi/6.0') != '', "Skipping ESXi6.0")
+    @fit_common.unittest.skipUnless(proxySelect('ESXi/6.0') != '', "Skipping ESXi6.0, repo not configured")
     def test_bootstrap_esxi60(self):
         if fit_common.VERBOSITY >= 2:
             print 'Running ESXI 6.0 bootstrap.'
@@ -152,7 +152,7 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
                          'TaskID ' + result['json']['@odata.id'] + ' not successfully completed.')
 
 
-    @fit_common.unittest.skipUnless(proxySelect('CentOS/6.5') != '', "Skipping Centos 6.5")
+    @fit_common.unittest.skipUnless(proxySelect('CentOS/6.5') != '', "Skipping Centos 6.5, repo not configured")
     def test_bootstrap_centos65(self):
         if fit_common.VERBOSITY >= 2:
             print 'Running CentOS 6.5 bootstrap.'
@@ -180,7 +180,7 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
                          'TaskID ' + result['json']['@odata.id'] + ' not successfully completed.')
 
 
-    @fit_common.unittest.skipUnless(proxySelect('CentOS/7.0') != '', "Skipping Centos 7.0")
+    @fit_common.unittest.skipUnless(proxySelect('CentOS/7.0') != '', "Skipping Centos 7.0, repo not configured")
     def test_bootstrap_centos70(self):
         if fit_common.VERBOSITY >= 2:
             print 'Running CentOS 7 bootstrap...'
@@ -209,7 +209,7 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
                          'TaskID ' + result['json']['@odata.id'] + ' not successfully completed.')
 
 
-    @fit_common.unittest.skipUnless(proxySelect('CentOS/6.5') != '', "Skipping Centos 6.5 KVM")
+    @fit_common.unittest.skipUnless(proxySelect('CentOS/6.5') != '', "Skipping Centos 6.5 KVM, repo not configured")
     def test_bootstrap_centos65_kvm(self):
         if fit_common.VERBOSITY >= 2:
             print 'Running CentOS 6.5 KVM bootstrap.'
@@ -237,7 +237,7 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
                          'TaskID ' + result['json']['@odata.id'] + ' not successfully completed.')
 
 
-    @fit_common.unittest.skipUnless(proxySelect('RHEL/7.0') != '', "Skipping Redhat 7.0")
+    @fit_common.unittest.skipUnless(proxySelect('RHEL/7.0') != '', "Skipping Redhat 7.0, repo not configured")
     def test_bootstrap_rhel70_kvm(self):
         if fit_common.VERBOSITY >= 2:
             print 'Running RHEL 7 KVM bootstrap.'
