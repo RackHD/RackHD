@@ -84,11 +84,15 @@ All FIT tests can be run from the wrapper 'run_tests.py':
           -https              forces the tests to utilize the https API protocol
           -port PORT          API port number override, default from
                               install_config.json
-          -v V                Verbosity level of console output, default=1, Built Ins:
-                              0: No debug, 2: Display infra.run and test.run DEBUG, 4:
-                              Display test.data (rest calls and status) DEBUG, 6:
-                              infra.data DEBUG (ipmi, ssh), 9: infra.* and test.* at
-                              DEBUG_9 (max output)
+          -v V                Verbosity level of console and log output (see -nose-
+                              help for more options), Built Ins: 0: Minimal logging,
+                              1: Display ERROR and CRITICAL to console and to files,
+                              3: Display INFO to console and to files, 4: (default)
+                              Display INFO to console, and DEBUG to files, 5: Display
+                              infra.run and test.run DEBUG to both, 6: Add display of
+                              test.data (rest calls and status) DEBUG to both, 7: Add
+                              display of infra.data (ipmi, ssh) DEBUG to both, 9:
+                              Display infra.* and test.* at DEBUG_9 (max output)
           -nose-help          display help from underlying nosetests command,
                               including additional log options
 
