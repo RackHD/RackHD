@@ -22,6 +22,7 @@ def run_tests(group=['smoke-tests']):
 
 # Will this work?
 # How about this?
+# And now?
 def some_func_with_no_colon()
     pass
 
