@@ -20,6 +20,11 @@ def run_tests(group=['smoke-tests']):
 
     TestProgram(groups=group).run_and_exit()
 
+def some_func_with_no_colon():
+    # Mismatch indentation
+    x=10
+      y=3
+
 if __name__ == '__main__':
     # avoid eating valid proboscis args
     if len(sys.argv) > 1:
