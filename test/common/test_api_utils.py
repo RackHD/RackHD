@@ -11,7 +11,7 @@
 
 import sys
 import subprocess
-sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/common")
+import fit_path
 import fit_common
 
 import unicodedata

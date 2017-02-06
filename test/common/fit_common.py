@@ -24,9 +24,8 @@ import inspect
 
 import nose
 import argparse
+import fit_path
 from mkcfg import mkcfg
-
-sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test")
 
 VERBOSITY = 1
 TEST_PATH = None
@@ -1131,7 +1130,8 @@ def run_nose(nosepath=None):
         env = {
             'FIT_CONFIG': mkcfg().get_path(),
             'HOME':  os.environ['HOME'],
-            'PATH':  os.environ['PATH']
+            'PATH':  os.environ['PATH'],
+            'PYTHONPATH': ':'.join(sys.path)
         }
         argv = ['nosetests']
         argv.extend(noseopts)
