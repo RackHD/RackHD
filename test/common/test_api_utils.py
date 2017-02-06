@@ -9,9 +9,9 @@
  This utility library contain helper functions for parsing response data from the RackHD APIs.
 """
 
+import fit_path  # NOQA: unused import
 import sys
 import subprocess
-sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/common")
 import fit_common
 
 import unicodedata

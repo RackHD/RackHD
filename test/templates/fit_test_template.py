@@ -12,8 +12,7 @@ It also shows an example of using the unittest class method.
 It also shows examples of using dependencies between tests with nosedep.
 '''
 
-import sys
-import subprocess
+import fit_path  # NOQA: unused import
 import unittest
 from json import dumps
 
@@ -26,8 +25,6 @@ from nosedep import depends
 # Import the logging feature
 import flogging
 
-# set path to common libraries
-sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test")
 from common import fit_common
 
 # set up the logging

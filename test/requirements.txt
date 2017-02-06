@@ -23,6 +23,7 @@ urllib3==1.19.1
 # WARNING: do not just replace this file with "pip freeze > requirements.txt".
 # You need to keep the following line as is! (freeze will turn it into
 # a https/git reference)
+-e fit_path
 -e stream-monitor
 
 # WARNING: there is an ubuntu bug that causes a bad package to get listed when doing a freeze.

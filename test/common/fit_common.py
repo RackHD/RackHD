@@ -9,6 +9,7 @@ This is the main common function library for OnRack/RackHD FIT tests.
 '''
 
 # Standard imports
+import fit_path  # NOQA: unused import
 import os
 import sys
 import json
@@ -26,8 +27,6 @@ import inspect
 import nose
 import argparse
 from mkcfg import mkcfg
-
-sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test")
 
 VERBOSITY = 1
 TEST_PATH = None
@@ -239,7 +238,7 @@ def add_globals():
             API_PORT = '8080'
 
     # add globals section to base configuration
-    TEST_PATH = subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test/"
+    TEST_PATH = fit_path.fit_path_root + '/'
     CONFIG_PATH = TEST_PATH + fitargs()['config'] + "/"
     mkcfg().add_from_dict({
         'globals': {
@@ -1157,7 +1156,8 @@ def run_nose(nosepath=None):
         env = {
             'FIT_CONFIG': mkcfg().get_path(),
             'HOME': os.environ['HOME'],
-            'PATH': os.environ['PATH']
+            'PATH': os.environ['PATH'],
+            'PYTHONPATH': ':'.join(sys.path)
         }
         argv = ['nosetests']
         argv.extend(noseopts)
