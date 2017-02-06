@@ -60,33 +60,32 @@ All FIT tests can be run from the wrapper 'run_tests.py':
     Command Help
 
     optional arguments:
-      -h, --help          show this help message and exit
-      -test TEST          test to execute, default: tests/
-      -config CONFIG      config file location, default: config
-      -group GROUP        test group to execute: 'smoke', 'regression',
-                          'extended', default: 'all'
-      -stack STACK        stack label (test bed), overrides -ora
-      -ora ORA            OnRack/RackHD appliance IP address or hostname, default:
-                          localhost
-      -version VERSION    OnRack package install version, example:onrack-
-                          release-0.3.0, default: onrack-devel
-      -template TEMPLATE  path or URL link to OVA template or OnRack OVA
-      -xunit              generates xUnit XML report files
-      -numvms NUMVMS      number of virtual machines for deployment on specified
-                          stack
-      -list               generates test list only
-      -sku SKU            node SKU name, example: Quanta-T41, default=all
-      -obmmac OBMMAC      node OBM MAC address, example:00:1e:67:b1:d5:64
-      -nodeid NODEID      node identifier string of a discovered node, example:
-                          56ddcf9a8eff16614e79ec74
-      -http               forces the tests to utilize the http API protocol
-      -https              forces the tests to utilize the https API protocol
-      -port PORT          API port number override, default from
-                          install_config.json
-      -v V                Verbosity level of console output, default=1, Built Ins:
-                          0: No debug, 2: User script output, 4: rest calls and
-                          status info, 6: other common calls (ipmi, ssh), 9: all
-                          the rest
+  -h, --help            show this help message and exit
+  -test TEST            test to execute, default: tests/
+  -config CONFIG        config file location, default: config
+  -group GROUP          test group to execute: 'smoke', 'regression',
+                        'extended', default: 'all'
+  -stack STACK          stack label (test bed), overrides -rackhd_host
+  -rackhd_host RACKHD_HOST
+                        RackHD appliance IP address or hostname, default:
+                        localhost
+  -template TEMPLATE    path or URL link to OVA template or RackHD OVA
+  -xunit                generates xUnit XML report files
+  -numvms NUMVMS        number of virtual machines for deployment on specified
+                        stack
+  -list                 generates test list only
+  -sku SKU              node SKU name, example: Quanta-T41, default=all
+  -obmmac OBMMAC        node OBM MAC address, example:00:1e:67:b1:d5:64
+  -nodeid NODEID        node identifier string of a discovered node, example:
+                        56ddcf9a8eff16614e79ec74
+  -http                 forces the tests to utilize the http API protocol
+  -https                forces the tests to utilize the https API protocol
+  -port PORT            API port number override, default from
+                        install_config.json
+  -v V                  Verbosity level of console output, default=1, Built
+                        Ins: 0: No debug, 2: User script output, 4: rest calls
+                        and status info, 6: other common calls (ipmi, ssh), 9:
+                        all the rest
 
 When run_tests.py executes, a generated configuration will be created in the
 config/generated directory.  The name will appear in the run_test.py output.

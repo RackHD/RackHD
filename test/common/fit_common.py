@@ -278,8 +278,6 @@ def mkargs(in_args=None):
                             help="stack label (test bed), overrides -rackhd_host")
     arg_parser.add_argument("-rackhd_host", default="localhost",
                             help="RackHD appliance IP address or hostname, default: localhost")
-    arg_parser.add_argument("-version", default="None",
-                            help="RackHD install version, not yet implemented")
     arg_parser.add_argument("-template", default="None",
                             help="path or URL link to OVA template or RackHD OVA")
     arg_parser.add_argument("-xunit", default="False", action="store_true",
