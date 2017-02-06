@@ -7,8 +7,7 @@ import sys
 import subprocess
 import json
 
-# set path to common libraries
-sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test")
+import fit_path
 
 import unittest
 from common import fit_common

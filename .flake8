@@ -6,3 +6,5 @@ include = .
 exclude = .venv
 
 ignore =
+    # F401 imported but unused
+    F401

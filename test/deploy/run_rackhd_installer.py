@@ -10,8 +10,7 @@ This wrapper script installs RackHD into the selected stack and runs the stack i
 import os
 import sys
 import subprocess
-# set path to common libraries
-sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test/common")
+import fit_path
 import fit_common
 
 class rackhd_installer(fit_common.unittest.TestCase):

@@ -11,7 +11,7 @@ George Paulos
 import sys
 import subprocess
 
-sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test/common")
+import fit_path
 import fit_common
 
 # validate command line args
