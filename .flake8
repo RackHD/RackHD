@@ -6,3 +6,5 @@ include = .
 exclude = .venv
 
 ignore =
+    # E402 module level import not at top of file
+    E402
