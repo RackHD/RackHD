@@ -55,7 +55,9 @@ class EventServiceTests(object):
     def test_create_event_subscription(self):
         """ Testing POST /EventService/Subscription  """
         global subscription 
-        payload = { 
+        payload = {
+            'Id': '12345',
+            'Name': 'Alert 1',
             'Destination': 'http://localhost:{0}'.format(self.__httpd_port), 
             'EventTypes': ['Alert'], 
             'Context': 'Client Alerting', 
