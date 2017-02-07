@@ -185,10 +185,10 @@ def apply_stack_config():
     stack = fitargs()['stack']
     if stack is not None:
         mkcfg().add_from_file('stack_config.json', stack)
-        if 'ora' in fitcfg():
-            fitargs()['ora'] = fitcfg()['ora']
+        if 'rackhd_host' in fitcfg():
+            fitargs()['rackhd_host'] = fitcfg()['rackhd_host']
         else:
-            fitargs()['ora'] = 'localhost'
+            fitargs()['rackhd_host'] = 'localhost'
         if 'bmc' in fitcfg():
             fitargs()['bmc'] = fitcfg()['bmc']
         if 'hyper' in fitcfg():
@@ -219,7 +219,7 @@ def add_globals():
         if API_PORT == "None":
             API_PORT = fitports()['https']
 
-    if fitargs()["ora"] == "localhost":
+    if fitargs()['rackhd_host'] == "localhost":
         if API_PROTOCOL == "None":
             API_PROTOCOL = 'http'
         if API_PORT == "None":
@@ -277,13 +277,11 @@ def mkargs(in_args=None):
     arg_parser.add_argument("-group", default="all",
                             help="test group to execute: 'smoke', 'regression', 'extended', default: 'all'")
     arg_parser.add_argument("-stack", default="vagrant",
-                            help="stack label (test bed), overrides -ora")
-    arg_parser.add_argument("-ora", default="localhost",
-                            help="OnRack/RackHD appliance IP address or hostname, default: localhost")
-    arg_parser.add_argument("-version", default="onrack-devel",
-                            help="OnRack package install version, example:onrack-release-0.3.0, default: onrack-devel")
+                            help="stack label (test bed), overrides -rackhd_host")
+    arg_parser.add_argument("-rackhd_host", default="localhost",
+                            help="RackHD appliance IP address or hostname, default: localhost")
     arg_parser.add_argument("-template", default="None",
-                            help="path or URL link to OVA template or OnRack OVA")
+                            help="path or URL link to OVA template or RackHD OVA")
     arg_parser.add_argument("-xunit", default="False", action="store_true",
                             help="generates xUnit XML report files")
     arg_parser.add_argument("-numvms", default=1, type=int,
@@ -395,7 +393,7 @@ def countdown(sleep_time, sleep_interval=1):
 def remote_shell(shell_cmd, expect_receive="", expect_send="", timeout=300,
                  address=None, user=None, password=None):
     '''
-    Run ssh based shell command on a remote machine at fitargs()["ora"]
+    Run ssh based shell command on a remote machine at fitargs()['rackhd_host']
 
     :param shell_cmd: string based command
     :param expect_receive:
@@ -404,14 +402,14 @@ def remote_shell(shell_cmd, expect_receive="", expect_send="", timeout=300,
     :param address: IP or hostname of remote host
     :param user: username of remote host
     :param password: password of remote host
-    :return: dict = {'stdout': str:ouput, 'exitcode': return code}
+    :return: dict = {'stdout': str:output, 'exitcode': return code}
     '''
     if not address:
-        address = fitargs()['ora']
+        address = fitargs()['rackhd_host']
     if not user:
-        user = fitcreds()['ora'][0]['username']
+        user = fitcreds()['rackhd_host'][0]['username']
     if not password:
-        password = fitcreds()['ora'][0]['password']
+        password = fitcreds()['rackhd_host'][0]['password']
 
     logfile_redirect = None
     if VERBOSITY >= 4:
@@ -423,7 +421,7 @@ def remote_shell(shell_cmd, expect_receive="", expect_send="", timeout=300,
         logfile_redirect = sys.stdout
 
     # if localhost just run the command local
-    if fitargs()['ora'] == 'localhost':
+    if fitargs()['rackhd_host'] == 'localhost':
         (command_output, exitstatus) = \
             pexpect.run("sudo bash -c \"" + shell_cmd + "\"",
                         withexitstatus=1,
@@ -456,11 +454,13 @@ def remote_shell(shell_cmd, expect_receive="", expect_send="", timeout=300,
 
     return {'stdout':command_output, 'exitcode':exitstatus}
 
-
 def scp_file_to_ora(src_file_name):
+    # backward compatibility for deprecated method name
+    return scp_file_to_host(src_file_name)
+
+def scp_file_to_host(src_file_name):
     '''
-    scp the given file over to the ORA and place it in onrack's
-    home directory.
+    scp the given file over to the rackhd_host and place it in home directory.
 
     :param src_file_name: name of file to copy over. May include path
     :type src_file_name: basestring
@@ -470,24 +470,24 @@ def scp_file_to_ora(src_file_name):
     logfile_redirect = file('/dev/null', 'w')
     just_fname = os.path.basename(src_file_name)
     # if localhost just copy to home dir
-    if fitargs()['ora'] == 'localhost':
+    if fitargs()['rackhd_host'] == 'localhost':
         remote_shell('cp ' + src_file_name + ' ~/' + src_file_name)
         return src_file_name
 
-    scp_target = fitcreds()['ora'][0]['username'] + '@{0}:'.format(fitargs()["ora"])
+    scp_target = fitcreds()['rackhd_host'][0]['username'] + '@{0}:'.format(fitargs()['rackhd_host'])
     cmd = 'scp -o StrictHostKeyChecking=no {0} {1}'.format(src_file_name, scp_target)
     if VERBOSITY >= 4:
-        print "scp_file_to_ora: '{0}'".format(cmd)
+        print "scp_file_to_host: '{0}'".format(cmd)
 
     if VERBOSITY >= 9:
         logfile_redirect = sys.stdout
 
     (command_output, ecode) = pexpect.run(
         cmd, withexitstatus=1,
-        events={'(?i)assword: ':fitcreds()['ora'][0]['password'] + '\n'},
+        events={'(?i)assword: ':fitcreds()['rackhd_host'][0]['password'] + '\n'},
         logfile=logfile_redirect)
     if VERBOSITY >= 4:
-        print "scp_file_to_ora: Exit Code = {0}".format(ecode)
+        print "scp_file_to_host: Exit Code = {0}".format(ecode)
 
     assert ecode == 0, \
         'failed "{0}" because {1}. Output={2}'.format(cmd, ecode, command_output)
@@ -500,17 +500,17 @@ def get_auth_token():
     api_login = {"username": fitcreds()["api"][0]["admin_user"], "password": fitcreds()["api"][0]["admin_pass"]}
     redfish_login = {"UserName": fitcreds()["api"][0]["admin_user"], "Password": fitcreds()["api"][0]["admin_pass"]}
     try:
-        restful("https://" + fitargs()['ora'] + ":" + str(API_PORT) +
+        restful("https://" + fitargs()['rackhd_host'] + ":" + str(API_PORT) +
                        "/login", rest_action="post", rest_payload=api_login, rest_timeout=2)
     except:
         AUTH_TOKEN = "Unavailable"
         return False
     else:
-        api_data = restful("https://" + fitargs()['ora'] + ":" + str(API_PORT) +
+        api_data = restful("https://" + fitargs()['rackhd_host'] + ":" + str(API_PORT) +
                            "/login", rest_action="post", rest_payload=api_login, rest_timeout=2)
         if api_data['status'] == 200:
             AUTH_TOKEN = str(api_data['json']['token'])
-            redfish_data = restful("https://" + fitargs()['ora'] + ":" + str(API_PORT) +
+            redfish_data = restful("https://" + fitargs()['rackhd_host'] + ":" + str(API_PORT) +
                                    "/redfish/v1/SessionService/Sessions",
                                    rest_action="post", rest_payload=redfish_login, rest_timeout=2)
             if 'x-auth-token' in redfish_data['headers']:
@@ -547,7 +547,7 @@ def rackhdapi(url_cmd, action='get', payload=[], timeout=None, headers={}):
     if API_PROTOCOL == "None":
         if API_PORT == "None":
             API_PORT = str(fitports()['http'])
-        if restful("http://" + fitargs()['ora'] + ":" + str(API_PORT) + "/", rest_timeout=2)['status'] == 0:
+        if restful("http://" + fitargs()['rackhd_host'] + ":" + str(API_PORT) + "/", rest_timeout=2)['status'] == 0:
             API_PROTOCOL = 'https'
             API_PORT = str(fitports()['https'])
         else:
@@ -558,7 +558,7 @@ def rackhdapi(url_cmd, action='get', payload=[], timeout=None, headers={}):
     if AUTH_TOKEN == "None":
         get_auth_token()
 
-    return restful(API_PROTOCOL + "://" + fitargs()['ora'] + ":" + str(API_PORT) + url_cmd,
+    return restful(API_PROTOCOL + "://" + fitargs()['rackhd_host'] + ":" + str(API_PORT) + url_cmd,
                        rest_action=action, rest_payload=payload, rest_timeout=timeout, rest_headers=headers)
 
 def restful(url_command, rest_action='get', rest_payload=[], rest_timeout=None, sslverify=False, rest_headers={}):
