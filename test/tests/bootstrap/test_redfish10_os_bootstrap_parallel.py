@@ -1,5 +1,5 @@
 '''
-Copyright 2017, EMC, Inc.
+Copyright 2017, Dell EMC
 
 Author(s):
 George Paulos
@@ -60,13 +60,13 @@ log = flogging.get_loggers()
 # This gets the list of nodes
 NODECATALOG = fit_common.node_select()
 
+# dict containing bootstrap workflow IDs and states
+NODE_STATUS = {}
+
 # download RackHD config from host
 rackhdconfig = fit_common.rackhdapi('/api/2.0/config')['json']
-httpProxies = rackhdconfig['httpProxies']
 rackhdhost = "http://" + str(rackhdconfig['apiServerAddress']) + ":" + str(rackhdconfig['apiServerPort'])
 
-# dict containing bootstrap workflow IDs and states
-status = {}
 
 # this routine polls a task ID for completion
 def wait_for_task_complete(taskid, retries=60):
@@ -92,50 +92,20 @@ def wait_for_task_complete(taskid, retries=60):
 
 # helper routine for selecting OS image path by matching proxy path
 def proxySelect(tag):
-    for entry in httpProxies:
+    for entry in rackhdconfig['httpProxies']:
         if tag in entry['localPath']:
             return entry['localPath']
     return ''
 
 # helper routine to return the task ID associated with the running bootstrap workflow
 def node_taskid(osname, version):
-    for entry in status:
-        if status[entry]['os'] == osname and status[entry]['version'] == version:
-            return status[entry]['id']
+    for entry in NODE_STATUS:
+        if NODE_STATUS[entry]['os'] == osname and NODE_STATUS[entry]['version'] == version:
+            return NODE_STATUS[entry]['id']
     return ""
 
-# run individual bootstrap with parameters
-def run_bootstrap_instance(node, osname, version, path):
-    #delete active workflows for specified node
-    fit_common.cancel_active_workflows(node)
-    payload_data = {
-                    "osName": osname,
-                    "version": version,
-                    "repo": rackhdhost + path,
-                    "rootPassword": "1234567",
-                    "hostname": "rackhdnode",
-                    "dnsServers": [rackhdconfig['apiServerAddress']],
-                    "users": [{
-                                "name": "rackhd",
-                                "password": "R@ckHD1!",
-                                "uid": 1010,
-                            }]
-                   }
-    result = fit_common.rackhdapi('/redfish/v1/Systems/'
-                                        + node
-                                        + '/Actions/RackHD.BootImage',
-                                        action='post', payload=payload_data)
-    if result['status'] == 202:
-        status[node] = {"os":osname, "version":version, "id":result['json']['@odata.id']}
-        log.info_5(" TaskID: " + result['text'])
-        log.info_5(" Payload: " + fit_common.json.dumps(payload_data))
-    else:
-        status[node] = {"os":osname, "version":version, 'id':"/redfish/v1/taskservice/tasks/failed"}
-        log.error(" TaskID: " + result['text'])
-        log.error(" Payload: " + fit_common.json.dumps(payload_data))
-
-# run all bootstraps on available nodes
-def launch_bootstraps():
+# run all bootstraps if regression group is specified or no group is specified
+if "regression" in sys.argv or "-a" not in sys.argv:
     oslist = [
         {"os":"ESXi", "version":"5.5", "path":"/ESXi/5.5"},
         {"os":"ESXi", "version":"6.0", "path":"/ESXi/6.0"},
@@ -148,17 +118,46 @@ def launch_bootstraps():
     ]
     nodeindex = 0
     for item in oslist:
-        # if OS proxy entry exists, run bootstrap against selected node
+        # if OS proxy entry exists in RackHD config, run bootstrap against selected node
         if proxySelect(item['path']) and nodeindex < len(NODECATALOG):
-            run_bootstrap_instance(NODECATALOG[nodeindex],item['os'],item['version'],item['path'])
+            #delete active workflows for specified node
+            fit_common.cancel_active_workflows(NODECATALOG[nodeindex])
+            payload_data = {
+                            "osName": item['os'],
+                            "version": item['version'],
+                            "repo": rackhdhost + proxySelect(item['path']),
+                            "rootPassword": "1234567",
+                            "hostname": "rackhdnode",
+                            "dnsServers": [rackhdconfig['apiServerAddress']],
+                            "users": [{
+                                        "name": "rackhd",
+                                        "password": "R@ckHD1!",
+                                        "uid": 1010,
+                                    }]
+                           }
+            result = fit_common.rackhdapi('/redfish/v1/Systems/'
+                                                + NODECATALOG[nodeindex]
+                                                + '/Actions/RackHD.BootImage',
+                                                action='post', payload=payload_data)
+            if result['status'] == 202:
+                # this branch saves the task and node IDs
+                NODE_STATUS[NODECATALOG[nodeindex]] = {"os":item['os'], "version":item['version'], "id":result['json']['@odata.id']}
+                log.info_5(" TaskID: " + result['text'])
+                log.info_5(" Payload: " + fit_common.json.dumps(payload_data))
+            else:
+                # this is the failure case where there is no task ID
+                NODE_STATUS[NODECATALOG[nodeindex]] = {"os":item['os'], "version":item['version'], 'id':"/redfish/v1/taskservice/tasks/failed"}
+                log.error(" TaskID: " + result['text'])
+                log.error(" Payload: " + fit_common.json.dumps(payload_data))
+            # increment node index to run next bootstrap
             nodeindex += 1
 
-# run bootstraps
-launch_bootstraps()
 
 # ------------------------ Tests -------------------------------------
 from nose.plugins.attrib import attr
 @attr(all=True, regression=True)
+
+
 class redfish_bootstrap_base(fit_common.unittest.TestCase):
 
     @fit_common.unittest.skipUnless(node_taskid("ESXi", "5.5") != '', "Skipping ESXi5.5, repo not configured or node unavailable")
