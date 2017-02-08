@@ -13,7 +13,8 @@ import os
 import sys
 import json
 import subprocess
-import time, datetime
+import time
+import datetime
 import unittest
 import signal
 import re
@@ -37,12 +38,14 @@ AUTH_TOKEN = "None"
 REDFISH_TOKEN = "None"
 BMC_LIST = []
 
+
 def fitcfg():
     """
     returns the configuration dictionary
     :return: dictionary
     """
     return mkcfg().get()
+
 
 def fitrackhd():
     """
@@ -51,6 +54,7 @@ def fitrackhd():
     """
     return fitcfg().get('rackhd-config', None)
 
+
 def fitargs():
     """
     returns the ['cmd-args-list'] dictionary
@@ -58,12 +62,14 @@ def fitargs():
     """
     return fitcfg().get('cmd-args-list', None)
 
+
 def fitcreds():
     """
     returns the ['credentials'] dictionary
     :return: dictionary or None
     """
     return fitcfg().get('credentials', None)
+
 
 def fitinstall():
     """
@@ -74,6 +80,7 @@ def fitinstall():
         return None
     return fitcfg()['install-config'].get('install', None)
 
+
 def fitports():
     """
     returns the ['install-config']['ports'] dictionary
@@ -83,6 +90,7 @@ def fitports():
         return None
     return fitcfg()['install-config'].get('ports', None)
 
+
 def fitcit():
     """
     returns the ['cit-config'] dictionary
@@ -90,12 +98,14 @@ def fitcit():
     """
     return fitcfg().get('cit-config', None)
 
+
 def fitglobals():
     """
     returns the ['install-config']['global'] dictionary
     :return: dictionary or None
     """
     return fitcfg().get('globals', None)
+
 
 def fitproxy():
     """
@@ -106,10 +116,12 @@ def fitproxy():
         return None
     return fitcfg()['install-config'].get('proxy', None)
 
+
 def fitskupack():
     if 'install-config' not in fitcfg():
         return None
     return fitcfg()['install-config'].get('skupack', None)
+
 
 def compose_config(use_sysargs=False):
     """
@@ -163,11 +175,10 @@ def compose_config(use_sysargs=False):
             apply_stack_config()
 
             # add significant environment variables
-            args = fitargs()
             cfg_obj.add_from_dict({
                 'env': {
-                    'HOME':  os.environ['HOME'],
-                    'PATH':  os.environ['PATH']
+                    'HOME': os.environ['HOME'],
+                    'PATH': os.environ['PATH']
                 }
             })
 
@@ -176,6 +187,7 @@ def compose_config(use_sysargs=False):
             # generate the configuration file
             cfg_obj.generate()
             print "*** Using config file: {0}".format(cfg_obj.get_path())
+
 
 def apply_stack_config():
     """
@@ -193,6 +205,7 @@ def apply_stack_config():
             fitargs()['bmc'] = fitcfg()['bmc']
         if 'hyper' in fitcfg():
             fitargs()['hyper'] = fitcfg()['hyper']
+
 
 def add_globals():
     """
@@ -234,7 +247,7 @@ def add_globals():
             'API_PROTOCOL': API_PROTOCOL,
             'TEST_PATH': TEST_PATH,
             'CONFIG_PATH': CONFIG_PATH,
-            'VERBOSITY' : fitargs()['v']
+            'VERBOSITY': fitargs()['v']
         }
     })
 
@@ -255,6 +268,7 @@ def update_globals():
     TEST_PATH = fitglobals()['TEST_PATH']
     CONFIG_PATH = fitglobals()['CONFIG_PATH']
     VERBOSITY = fitglobals()['VERBOSITY']
+
 
 def mkargs(in_args=None):
     """
@@ -377,13 +391,14 @@ def mkargs(in_args=None):
     cmd_args = vars(parse_results)
     return cmd_args
 
-def timestamp(): # return formatted current timestamp
+
+def timestamp():  # return formatted current timestamp
     return time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime())
+
 
 # This routine executes a sleep with countdown
 def countdown(sleep_time, sleep_interval=1):
-    sys.stdout.write("Sleeping for " + str(sleep_time * sleep_interval)
-                     + " seconds.")
+    sys.stdout.write("Sleeping for " + str(sleep_time * sleep_interval) + " seconds.")
     sys.stdout.flush()
     for _ in range(0, sleep_time):
         time.sleep(sleep_interval)
@@ -391,6 +406,7 @@ def countdown(sleep_time, sleep_interval=1):
         sys.stdout.flush()
     print "Waking!"
     return
+
 
 def remote_shell(shell_cmd, expect_receive="", expect_send="", timeout=300,
                  address=None, user=None, password=None):
@@ -429,24 +445,24 @@ def remote_shell(shell_cmd, expect_receive="", expect_send="", timeout=300,
                         withexitstatus=1,
                         events={"assword": password + "\n"},
                         timeout=timeout, logfile=logfile_redirect)
-        return {'stdout':command_output, 'exitcode':exitstatus}
+        return {'stdout': command_output, 'exitcode': exitstatus}
 
     # this clears the ssh key from ~/.ssh/known_hosts
-    subprocess.call(["touch ~/.ssh/known_hosts;ssh-keygen -R "
-                     + address  + " -f ~/.ssh/known_hosts >/dev/null 2>&1"], shell=True)
+    subprocess.call(["touch ~/.ssh/known_hosts;ssh-keygen -R " +
+                    address + " -f ~/.ssh/known_hosts >/dev/null 2>&1"], shell=True)
 
     shell_cmd.replace("'", "\\\'")
     if expect_receive == "" or expect_send == "":
         (command_output, exitstatus) = \
-            pexpect.run("ssh -q -o StrictHostKeyChecking=no -t " + user + "@"
-                        + address + " sudo bash -c \\\"" + shell_cmd + "\\\"",
+            pexpect.run("ssh -q -o StrictHostKeyChecking=no -t " + user + "@" +
+                        address + " sudo bash -c \\\"" + shell_cmd + "\\\"",
                         withexitstatus=1,
                         events={"assword": password + "\n"},
                         timeout=timeout, logfile=logfile_redirect)
     else:
         (command_output, exitstatus) = \
-            pexpect.run("ssh -q -o StrictHostKeyChecking=no -t " + user + "@"
-                        + address + " sudo bash -c \\\"" + shell_cmd + "\\\"",
+            pexpect.run("ssh -q -o StrictHostKeyChecking=no -t " + user + "@" +
+                        address + " sudo bash -c \\\"" + shell_cmd + "\\\"",
                         withexitstatus=1,
                         events={"assword": password + "\n",
                                 expect_receive: expect_send + "\n"},
@@ -454,7 +470,7 @@ def remote_shell(shell_cmd, expect_receive="", expect_send="", timeout=300,
     if VERBOSITY >= 4:
         print shell_cmd, "\nremote_shell: Exit Code =", exitstatus
 
-    return {'stdout':command_output, 'exitcode':exitstatus}
+    return {'stdout': command_output, 'exitcode': exitstatus}
 
 
 def scp_file_to_ora(src_file_name):
@@ -484,7 +500,7 @@ def scp_file_to_ora(src_file_name):
 
     (command_output, ecode) = pexpect.run(
         cmd, withexitstatus=1,
-        events={'(?i)assword: ':fitcreds()['ora'][0]['password'] + '\n'},
+        events={'(?i)assword: ': fitcreds()['ora'][0]['password'] + '\n'},
         logfile=logfile_redirect)
     if VERBOSITY >= 4:
         print "scp_file_to_ora: Exit Code = {0}".format(ecode)
@@ -492,6 +508,7 @@ def scp_file_to_ora(src_file_name):
     assert ecode == 0, \
         'failed "{0}" because {1}. Output={2}'.format(cmd, ecode, command_output)
     return just_fname
+
 
 def get_auth_token():
     # This is run once to get an auth token which is set to global AUTH_TOKEN and used for rest of session
@@ -501,7 +518,7 @@ def get_auth_token():
     redfish_login = {"UserName": fitcreds()["api"][0]["admin_user"], "Password": fitcreds()["api"][0]["admin_pass"]}
     try:
         restful("https://" + fitargs()['ora'] + ":" + str(API_PORT) +
-                       "/login", rest_action="post", rest_payload=api_login, rest_timeout=2)
+                "/login", rest_action="post", rest_payload=api_login, rest_timeout=2)
     except:
         AUTH_TOKEN = "Unavailable"
         return False
@@ -521,6 +538,7 @@ def get_auth_token():
         else:
             AUTH_TOKEN = "Unavailable"
             return False
+
 
 def rackhdapi(url_cmd, action='get', payload=[], timeout=None, headers={}):
     '''
@@ -559,7 +577,8 @@ def rackhdapi(url_cmd, action='get', payload=[], timeout=None, headers={}):
         get_auth_token()
 
     return restful(API_PROTOCOL + "://" + fitargs()['ora'] + ":" + str(API_PORT) + url_cmd,
-                       rest_action=action, rest_payload=payload, rest_timeout=timeout, rest_headers=headers)
+                   rest_action=action, rest_payload=payload, rest_timeout=timeout, rest_headers=headers)
+
 
 def restful(url_command, rest_action='get', rest_payload=[], rest_timeout=None, sslverify=False, rest_headers={}):
     '''
@@ -670,10 +689,10 @@ def restful(url_command, rest_action='get', rest_payload=[], rest_timeout=None, 
                                          verify=sslverify
                                          )
     except requests.exceptions.Timeout:
-        return {'json':{}, 'text':'',
-                'status':0,
-                'headers':'',
-                'timeout':True}
+        return {'json': {}, 'text': '',
+                'status': 0,
+                'headers': '',
+                'timeout': True}
 
     try:
         result_data.json()
@@ -686,9 +705,9 @@ def restful(url_command, rest_action='get', rest_payload=[], rest_timeout=None, 
             print "restful: Response Headers =", result_data.headers, "\n"
         if VERBOSITY >= 4:
             print "restful: Status code =", result_data.status_code, "\n"
-        return {'json':{}, 'text':result_data.text, 'status':result_data.status_code,
-                'headers':result_data.headers,
-                'timeout':False}
+        return {'json': {}, 'text': result_data.text, 'status': result_data.status_code,
+                'headers': result_data.headers,
+                'timeout': False}
     else:
 
         if VERBOSITY >= 9:
@@ -698,15 +717,15 @@ def restful(url_command, rest_action='get', rest_payload=[], rest_timeout=None, 
             print "restful: Response Headers =", result_data.headers, "\n"
         if VERBOSITY >= 4:
             print "restful: Status code =", result_data.status_code, "\n"
-        return {'json':result_data.json(), 'text':result_data.text,
-                'status':result_data.status_code,
-                'headers':result_data.headers,
-                'timeout':False}
+        return {'json': result_data.json(), 'text': result_data.text,
+                'status': result_data.status_code,
+                'headers': result_data.headers,
+                'timeout': False}
 
 
 # Get the list of BMC IP addresses that we can find
 def get_bmc_ips():
-    idlist = [] # list of unique dcmi node IDs
+    idlist = []  # list of unique dcmi node IDs
     # If we have already done this, use that list
     if len(BMC_LIST) == 0:
         ipscan = remote_shell('arp')['stdout'].split()
@@ -715,12 +734,12 @@ def get_bmc_ips():
                 # iterate through all known IPMI users
                 for item in fitcreds()['bmc']:
                     # check BMC credentials
-                    ipmicheck = remote_shell('ipmitool -I lanplus -H ' + ipaddr + ' -U ' + item['username'] \
-                                               + ' -P ' + item['password'] + ' -R 1 -N 3 chassis power status')
+                    ipmicheck = remote_shell('ipmitool -I lanplus -H ' + ipaddr + ' -U ' + item['username'] +
+                                             ' -P ' + item['password'] + ' -R 1 -N 3 chassis power status')
                     if ipmicheck['exitcode'] == 0:
                         # retrieve the ID string
-                        return_code = remote_shell('ipmitool -I lanplus -H ' + ipaddr + ' -U ' + item['username'] \
-                                                   + ' -P ' + item['password'] + ' -R 1 -N 3 dcmi get_mc_id_string')
+                        return_code = remote_shell('ipmitool -I lanplus -H ' + ipaddr + ' -U ' + item['username'] +
+                                                   ' -P ' + item['password'] + ' -R 1 -N 3 dcmi get_mc_id_string')
                         bmc_info = {"ip": ipaddr, "user": item['username'], "pw": item['password']}
                         if return_code['exitcode'] == 0 and return_code['stdout'] not in idlist:
                             # add to list if unique
@@ -737,6 +756,7 @@ def get_bmc_ips():
 
     return len(BMC_LIST)
 
+
 # power on/off all compute nodes in the stack via the BMC
 def power_control_all_nodes(state):
     if state != "on" and state != "off":
@@ -748,13 +768,14 @@ def power_control_all_nodes(state):
 
     # Send power on/off to all of them
     for bmc in BMC_LIST:
-        return_code = remote_shell('ipmitool -I lanplus -H ' + bmc['ip'] \
-                                   + ' -U ' + bmc['user'] + ' -P ' \
-                                   + bmc['pw'] + ' -R 4 -N 3 chassis power ' + state)
+        return_code = remote_shell('ipmitool -I lanplus -H ' + bmc['ip'] +
+                                   ' -U ' + bmc['user'] + ' -P ' +
+                                   bmc['pw'] + ' -R 4 -N 3 chassis power ' + state)
         if return_code['exitcode'] != 0:
             print "Error powering " + state + " node: " + bmc['ip']
 
     return node_count
+
 
 def mongo_reset():
     # clears the Mongo database on ORA to default, returns 0 if successful
@@ -768,11 +789,13 @@ def mongo_reset():
         return 1
     return 0
 
+
 def appliance_reset():
 
-    return_code = subprocess.call("ipmitool -I lanplus -H " + fitargs()["bmc"] \
-                                  + " -U root -P 1234567 chassis power reset", shell=True)
+    return_code = subprocess.call("ipmitool -I lanplus -H " + fitargs()["bmc"] +
+                                  " -U root -P 1234567 chassis power reset", shell=True)
     return return_code
+
 
 def node_select():
 
@@ -825,6 +848,7 @@ def node_select():
         print '**** Empty node list.\n'
     return nodelist
 
+
 def list_skus():
     # return list of installed SKU names
     skunames = []
@@ -832,6 +856,7 @@ def list_skus():
     for item in api_data:
         skunames.append(item['name'])
     return skunames
+
 
 def get_node_sku(nodeid):
     # return name field of node SKU if available
@@ -855,6 +880,7 @@ def get_node_sku(nodeid):
             return "unknown"
     return nodetype
 
+
 def check_active_workflows(nodeid):
     # Return True if active workflows are found on node
     workflows = rackhdapi('/api/2.0/nodes/' + nodeid + '/workflows')['json']
@@ -869,6 +895,7 @@ def check_active_workflows(nodeid):
             return False
     return False
 
+
 def cancel_active_workflows(nodeid):
     # cancel all active workflows on node
     exitstatus = True
@@ -878,17 +905,17 @@ def cancel_active_workflows(nodeid):
         exitstatus = False
     return exitstatus
 
+
 def apply_obm_settings(retry=30):
     # New routine to install OBM credentials via workflows in parallel
     count = 0
     for creds in fitcreds()['bmc']:
         # greate graph for setting OBM credentials
-        payload = \
-        {
+        payload = {
             "friendlyName": "IPMI" + str(count),
             "injectableName": 'Graph.Obm.Ipmi.CreateSettings' + str(count),
             "options": {
-                "obm-ipmi-task":{
+                "obm-ipmi-task": {
                     "user": creds["username"],
                     "password": creds["password"]
                 }
@@ -898,7 +925,7 @@ def apply_obm_settings(retry=30):
                     "label": "obm-ipmi-task",
                     "taskName": "Task.Obm.Ipmi.CreateSettings"
                 }
-        ]
+            ]
         }
         api_data = rackhdapi("/api/2.0/workflows/graphs", action="put", payload=payload)
         if api_data['status'] != 201:
@@ -909,12 +936,11 @@ def apply_obm_settings(retry=30):
     count = 0
     for creds in fitcreds()['bmc']:
         # greate graph for setting OBM credentials for RMM
-        payload = \
-        {
+        payload = {
             "friendlyName": "RMM.IPMI" + str(count),
             "injectableName": 'Graph.Obm.Ipmi.CreateSettings.RMM' + str(count),
             "options": {
-                "obm-ipmi-task":{
+                "obm-ipmi-task": {
                     "ipmichannel": "3",
                     "user": creds["username"],
                     "password": creds["password"]
@@ -925,7 +951,7 @@ def apply_obm_settings(retry=30):
                     "label": "obm-ipmi-task",
                     "taskName": "Task.Obm.Ipmi.CreateSettings"
                 }
-        ]
+            ]
         }
         api_data = rackhdapi("/api/2.0/workflows/graphs", action="put", payload=payload)
         if api_data['status'] != 201:
@@ -934,7 +960,7 @@ def apply_obm_settings(retry=30):
         count += 1
 
     # run each OBM credential workflow on each node in parallel until success
-    nodestatus = {} # dictionary with node IDs and status of each node
+    nodestatus = {}  # dictionary with node IDs and status of each node
     for dummy in range(0, retry):
         nodelist = node_select()
         for node in nodelist:
@@ -953,7 +979,7 @@ def apply_obm_settings(retry=30):
                             workflow = {"name": 'Graph.Obm.Ipmi.CreateSettings.RMM' + str(num)}
                         else:
                             workflow = {"name": 'Graph.Obm.Ipmi.CreateSettings' + str(num)}
-                        result = rackhdapi("/api/2.0/nodes/"  + node + "/workflows", action="post", payload=workflow)
+                        result = rackhdapi("/api/2.0/nodes/" + node + "/workflows", action="post", payload=workflow)
                         if result['status'] == 201:
                             nodestatus[node].update({"status": "running", "instanceId": result['json']["instanceId"]})
             for node in nodelist:
@@ -989,17 +1015,17 @@ def apply_obm_settings(retry=30):
     print "**** Node(s) OBM settings failed."
     return False
 
+
 def apply_obm_settings_seq():
     # legacy routine to install OBM credentials via workflows sequentially one-at-a-time
     count = 0
     for creds in fitcreds()['bmc']:
         # greate graph for setting OBM credentials
-        payload = \
-        {
+        payload = {
             "friendlyName": "IPMI" + str(count),
             "injectableName": 'Graph.Obm.Ipmi.CreateSettings' + str(count),
             "options": {
-                "obm-ipmi-task":{
+                "obm-ipmi-task": {
                     "user": creds["username"],
                     "password": creds["password"]
                 }
@@ -1009,7 +1035,7 @@ def apply_obm_settings_seq():
                     "label": "obm-ipmi-task",
                     "taskName": "Task.Obm.Ipmi.CreateSettings"
                 }
-        ]
+            ]
         }
         api_data = rackhdapi("/api/2.0/workflows/graphs", action="put", payload=payload)
         if api_data['status'] != 201:
@@ -1020,12 +1046,11 @@ def apply_obm_settings_seq():
     count = 0
     for creds in fitcreds()['bmc']:
         # greate graph for setting OBM credentials for RMM
-        payload = \
-        {
+        payload = {
             "friendlyName": "RMM.IPMI" + str(count),
             "injectableName": 'Graph.Obm.Ipmi.CreateSettings.RMM' + str(count),
             "options": {
-                "obm-ipmi-task":{
+                "obm-ipmi-task": {
                     "ipmichannel": "3",
                     "user": creds["username"],
                     "password": creds["password"]
@@ -1036,7 +1061,7 @@ def apply_obm_settings_seq():
                     "label": "obm-ipmi-task",
                     "taskName": "Task.Obm.Ipmi.CreateSettings"
                 }
-        ]
+            ]
         }
         api_data = rackhdapi("/api/2.0/workflows/graphs", action="put", payload=payload)
         if api_data['status'] != 201:
@@ -1068,7 +1093,7 @@ def apply_obm_settings_seq():
             # wait for existing workflow to complete
             for dummy in range(0, 60):
                 print "*** Using workflow: ", workflow
-                result = rackhdapi("/api/2.0/nodes/"  + node + "/workflows", action="post", payload=workflow)
+                result = rackhdapi("/api/2.0/nodes/" + node + "/workflows", action="post", payload=workflow)
                 if result['status'] != 201:
                     time.sleep(5)
                 elif dummy == 60:
@@ -1094,7 +1119,7 @@ def apply_obm_settings_seq():
                     print "*** Succeeded on workflow ", workflow
                     break
                 if counter == 60:
-                    #print "Timed out status", nodestatus
+                    # print "Timed out status", nodestatus
                     nodestatus = "failed"
                     print "*** Node failed OBM settings - timeout:", node
                     print "*** Failed on workflow ", workflow
@@ -1105,7 +1130,7 @@ def apply_obm_settings_seq():
 
     # cleanup failed nodes OBM settings on nodes, need to remove failed settings
     for node in failedlist:
-        result = rackhdapi("/api/2.0/nodes/"  + node)
+        result = rackhdapi("/api/2.0/nodes/" + node)
         if result['status'] == 200:
             if result['json']['obms']:
                 obms = result['json']['obms'][0]
@@ -1120,6 +1145,7 @@ def apply_obm_settings_seq():
         return False
     return True
 
+
 def run_nose(nosepath=None):
 
     if not nosepath:
@@ -1127,11 +1153,11 @@ def run_nose(nosepath=None):
 
     # this routine runs nosetests from wrapper using path spec 'nosepath'
     def _noserunner(pathspecs, noseopts):
-        xmlfile = str(time.time()) + ".xml" # XML report file name
+        xmlfile = str(time.time()) + ".xml"  # XML report file name
         env = {
             'FIT_CONFIG': mkcfg().get_path(),
-            'HOME':  os.environ['HOME'],
-            'PATH':  os.environ['PATH']
+            'HOME': os.environ['HOME'],
+            'PATH': os.environ['PATH']
         }
         argv = ['nosetests']
         argv.extend(noseopts)
@@ -1147,12 +1173,12 @@ def run_nose(nosepath=None):
     if fitargs()['group'] != 'all' and fitargs()['group'] != '':
         noseopts.append('-a')
         noseopts.append(str(fitargs()['group']))
-    if fitargs()['list'] == True or fitargs()['list'] == "True":
+    if fitargs()['list'] is True or fitargs()['list'] == "True":
         noseopts.append('--collect-only')
         fitargs()['v'] = 0
         print "\nTest Listing for:", fitargs()['test']
         print "----------------------------------------------------------------------"
-    if fitargs()['xunit'] == True or fitargs()['xunit'] == "True":
+    if fitargs()['xunit'] is True or fitargs()['xunit'] == "True":
         noseopts.append('--with-xunit')
     else:
         noseopts.append('-s')
@@ -1171,26 +1197,27 @@ def run_nose(nosepath=None):
         exitcode += _noserunner([nosepath], noseopts)
     return exitcode
 
+
 def _run_nose_help():
     # This is used ONLY to fire off 'nosetests --help' for use from mkargs() when
     # it is handling --help itself.
     argv = ['nosetests', '--help']
     return subprocess.call(argv)
 
+
 def run_from_module(file_name):
     # Use this method in 'name == "__main__"' style test invocations
     # within individual test files
     run_nose(file_name)
 
+
 # determine who imported us.
-importer=inspect.getframeinfo(inspect.getouterframes(inspect.currentframe())[1][0])[0]
+importer = inspect.getframeinfo(inspect.getouterframes(inspect.currentframe())[1][0])[0]
 if 'run_tests.py' in importer:
     # we are being imported through run_tests.py (the fit wrapper)
     # process sys.args as received by run_tests.py
     compose_config(True)
-
 else:
     # we are being imported directly through a unittest module
     # args will be nose-base args
     compose_config(False)
-
