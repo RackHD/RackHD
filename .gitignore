@@ -11,6 +11,10 @@ packer_cache
 .DS_Store
 test/benchmark/utils/ansible/group_vars/benchmark.json
 
+# test run output
+test/*.xml
+test/test_console.log
+
 # # python giblets
 # Byte-compiled / optimized / DLL files
 __pycache__/
