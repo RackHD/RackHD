@@ -10,23 +10,19 @@ Nodes or SKUs can be selected by using the '-sku' or '-nodeid' arguments at comm
 
 '''
 
-import os
 import sys
 import subprocess
-
-
 sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test/common")
 import fit_common
-
-
 from nose.plugins.attrib import attr
+
+
 @attr(all=True)
-
-
 class apply_obm_settings(fit_common.unittest.TestCase):
 
     def test_apply_obm_settings(self):
-       self.assertTrue(fit_common.apply_obm_settings(), "OBM settings failed.")
+        self.assertTrue(fit_common.apply_obm_settings(), "OBM settings failed.")
+
 
 if __name__ == '__main__':
     fit_common.unittest.main()
