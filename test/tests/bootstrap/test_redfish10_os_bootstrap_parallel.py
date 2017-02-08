@@ -112,9 +112,9 @@ if "regression" in sys.argv or "-a" not in sys.argv:
         {"os":"CentOS", "version":"6.5", "path":"/CentOS/6.5"},
         {"os":"CentOS+KVM", "version":"6.5", "path":"/CentOS/6.5"},
         {"os":"CentOS", "version":"7", "path":"/CentOS/7.0"},
-        {"os":"RHEL+KVM", "version":"7", "path":"/CentOS/7.0"},
+        {"os":"RHEL+KVM", "version":"7", "path":"/RHEL/7.0"},
         {"os":"RHEL", "version":"7", "path":"/RHEL/7.0"},
-        {"os":"CentOS+KVM", "version":"7", "path":"/RHEL/7.0"}
+        {"os":"CentOS+KVM", "version":"7", "path":"/CentOS/7.0"}
     ]
     nodeindex = 0
     for item in oslist:
