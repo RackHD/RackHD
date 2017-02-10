@@ -1,14 +1,28 @@
+"""
+Copyright 2016, EMC, Inc.
+"""
+
 from on_http_api2_0 import ApiApi as Api
+from on_http_api2_0.rest import ApiException
 from config.api2_0_config import config
 from json import loads
-import sys
-import os
+from common.fit_common import fitargs
+import flogging
+logs = flogging.get_loggers()
+
+HTTP_NOT_FOUND = 404
 
 
+def __fitargs_get(key):
+    arg = fitargs()[key]
+    if not isinstance(arg, str) or arg == 'all':
+        arg = None
+    return arg
 
-def api_node_select_argsList(node_type='compute', validate_obm=False):
+
+def api_node_select_from_config(node_type='compute', validate_obm=False):
     """
-    This routine produces a list of node Ids that satisfy the requested parameters. 
+    This routine produces a list of node Ids that satisfy the requested parameters.
     Nodes may be filtered by Node Id,  SKU name, OBM MAC address which are defined
     in the system environment.  The node type and OBM setting may be specified.
     :param  node_type: Node type (i.e. compute) (default= 'compute')
@@ -16,62 +30,55 @@ def api_node_select_argsList(node_type='compute', validate_obm=False):
     return: A list with node IDs that match node type, SKU, and possible valid OBM settings.
     """
     return api_node_select(config.api_client,
-                           node_id=os.getenv("node_id", "None"),
-                           sku_name=os.getenv("SKU", "all"),
-                           obm_mac=os.getenv("obm_mac", "all"),
+                           node_id=__fitargs_get("nodeid"),
+                           sku_name=__fitargs_get("sku"),
+                           obm_mac=__fitargs_get("obmmac"),
                            node_type=node_type,
-                           validate_obm=validate_obm,
-                           verbosity=os.getenv("VERBOSITY", "0")
+                           validate_obm=validate_obm
                            )
-
 
 
 def api_node_select(client,
                     node_id=None,
-                    sku_name='all',
-                    obm_mac='all',
+                    sku_name=None,
+                    obm_mac=None,
                     node_type='compute',
-                    validate_obm=False,
-                    verbosity=None
+                    validate_obm=False
                     ):
     """
-    This routine produces a list of node Ids that satisfy the requested parameters. 
-    Nodes may be filtered by Node Id,     SKU name, OBM MAC address, or node type. 
+    This routine produces a list of node Ids that satisfy the requested parameters.
+    Nodes may be filtered by Node Id,     SKU name, OBM MAC address, or node type.
     The OBM setting may also be validated (validate_obm).
     Note: Validation of obm setting is not provides if node id is specified.
     :param  client: reference to config.api2_0_config
     :param  node_id: ID of node object (default=None)
-    :param  sku_name: Name of sku (default='all')
-    :param  obm_mac: OBM mac address (default='all')
+    :param  sku_name: Name of sku (default='None')
+    :param  obm_mac: OBM mac address (default='None')
     :param  node_type: Node type (i.e. compute) (default= 'compute')
     :param  validate_obm: should the node have OBM settings (default=False)
     return: A list with node IDs that match node type, SKU, and possible valid OBM settings.
     """
-
-    node_id_list = []
-    sku_id = "None"
-
-    # set verbosity level
-    if not verbosity:
-        verbosity = os.getenv("VERBOSITY", "0")
-
+    node_id_list = list()
+    sku_id = None
+    sku_list = list()
     # if user specified single node id, don't bother getting sku information
     if not node_id:
         #
         # Get a list of the current SKU objects
         #
-        Api().skus_get()
-        sku_list_rsp = client.last_response
-        sku_list = loads(sku_list_rsp.data)
-
-        # Determine if the list was obtained without error
-        if sku_list_rsp.status != 200:
+        try:
+            Api().skus_get()
+            sku_list_rsp = client.last_response
+            sku_list = loads(sku_list_rsp.data)
+        except (TypeError, ValueError) as e:
+            assert e.message
+        except ApiException as e:
             # Can't get a sku so leave sku_id as None
-            print '**** Unable to retrieve SKU list via API. status ({})\n'.format(sku_list_rsp.status)
+            logs.irl.warning('Unable to retrieve SKU list via API. status (%s)', e.status)
 
         # Search the list of sku objects for the possible requested sku name. This is skipped if
-        # the requested sku name is 'all', which will then use the default value of sku_id ('None')
-        elif sku_name != 'all':
+        # the requested sku name is None.
+        if sku_list and sku_name:
             for sku_entry in sku_list:
                 if sku_name == sku_entry['name']:
                     sku_id = sku_entry['id']
@@ -80,15 +87,17 @@ def api_node_select(client,
     #
     # Collect a list of node objects that match node type and possible sku type
     #
-    Api().nodes_get_all()
+    try:
+        Api().nodes_get_all()
+    except (TypeError, ValueError) as e:
+        assert e.message
+    except ApiException as e:
+        # There is no chance of getting any nodes so return an empty list
+        logs.irl.error('Unable to retrieve node list via API. status (%s)', e.status)
+        return []
+
     node_list_rsp = client.last_response
     node_list = loads(node_list_rsp.data)
-
-    # Determine if the list was obtained without error
-    if node_list_rsp.status != 200:
-        # There is no chance of getting any nodes so return an empty list
-        print '**** Unable to retrieve node list via API. status ({})\n'.format(node_list_rsp.status)
-        return []
 
     # Select node by node type and SKU
     for node_entry in node_list:
@@ -97,30 +106,34 @@ def api_node_select(client,
             # user must know the node_id and any check for a valid node_id is skipped
             node_id_list = [node_id]
             break
-        elif obm_mac == 'all':
+        elif not obm_mac:
             # We are searching for all nodes with the requested sku
-            if sku_name == 'all':
+            if not sku_name:
                 # Select only managed compute nodes
-                if node_type == 'all' or node_entry['type'] == node_type:
+                if not node_type or node_entry['type'] == node_type:
                     if not validate_obm or validate_obm_settings(client, node_entry['id']):
                         node_id_list.append(node_entry['id'])
             else:
-                if node_entry.get('sku') and sku_id in node_entry['sku']:
+                if sku_id and node_entry.get('sku') and sku_id in node_entry['sku']:
                     if not validate_obm or validate_obm_settings(client, node_entry['id']):
                         node_id_list.append(node_entry['id'])
         else:
             # we are looking for a particular node with the requested OBM MAC
-            Api().nodes_get_obms_by_node_id(identifier=node_entry['id'])
+            try:
+                Api().nodes_get_obms_by_node_id(identifier=node_entry['id'])
+            except (TypeError, ValueError) as e:
+                assert e.message
+            except ApiException as e:
+                # There is no chance of getting the requested obm object using this node id, just
+                # try another node.
+                if e.status != HTTP_NOT_FOUND:
+                    logs.irl.warning('Unable to retrieve obm list via API for node: %s status: (%s).',
+                                     node_entry['id'],
+                                     e.status)
+                continue
+
             obm_list_rsp = client.last_response
             obm_list = loads(obm_list_rsp.data)
-
-            # Determine if the list was obtained without error
-            if obm_list_rsp.status != 200:
-                # There is no chance of getting the requested obm object using this node id, just 
-                # try another node.
-                print '**** Unable to retrieve obm list via API for node: {} status: ({}).\n'.format(node_entry['id'],
-                                                                                                     obm_list_rsp.status)
-                continue
 
             # does this node use the requested OBM MAC
             for obm_entry in obm_list:
@@ -135,49 +148,47 @@ def api_node_select(client,
                 break
 
     # we now have a node ID list
-    if verbosity >= 3:
-        print "Node ID List:"
-        if node_id_list:
-            print node_id_list, '\n'
-        else:
-            print '**** Empty node ID list.\n'
+    if not node_id_list:
+        logs.irl.debug('Empty node ID list.')
     return node_id_list
+
 
 def api_validate_node_pollers(client, node_id_list, all_pollers=False):
     """
     This function validates that the presented list of node contains active pollers. By default
     only the fist poller of the pollers associated with a node is validated. Setting the
-    "all_pollers" flag to True allows all poller associated with a node to be validated.
+    'all_pollers' flag to True allows all poller associated with a node to be validated.
     :param  client: reference to config.api2_0_config
-    :param  node_id_list - list of node id's
-    :param  type - type of node to be used (default: 'compute')     #TODO if no node_list, collect all nodes
+    :param  node_id_list - list of node ids
     :param  all_pollers - Test all poller assocaited with a node (default: False)
     return: True  - all nodes have active poller
             False - all nodes do not have active pollers
     """
-    pollers_list = []
-    good_pollers = True
-    # TODO: this will change in the near future
-    verbosity = int(os.getenv("VERBOSITY", "0"))
+    pollers_list = list()
 
     if not isinstance(node_id_list, (tuple, list, set)):
-        print '**** Provided node_list is not a [list]'
+        logs.irl.error('Provided node_list is not a [list]')
+
         # return no good pollers
         return False
 
     for node_id in node_id_list:
-        Api().nodes_get_pollers_by_id(node_id)
-        node_poller_rsp = client.last_response
-        node_poller_list = loads(node_poller_rsp.data)
-        if node_poller_rsp.status != 200:
-            print '**** Unable to retrieve node: {} pollers via API. status ({})\n'.format(node_id,
-                                                                                           node_poller_rsp.status)
+        try:
+            Api().nodes_get_pollers_by_id(node_id)
+        except (TypeError, ValueError) as e:
+            assert e.message
+        except ApiException as e:
+            if e.status != HTTP_NOT_FOUND:
+                logs.irl.error('Unable to retrieve node: %s pollers via API. status (%s)', node_id, e.status)
             # unable to get poller for this node, so return a False
             return False
 
+        rsp = client.last_response
+        node_poller_list = loads(rsp.data)
+
         # if the poller return None or an empty list, return a False
         if not node_poller_list:
-            print 'Node {} has no pollers.'.format(node_id)
+            logs.irl.debug('Node %s has no pollers.', node_id)
             # no poller on this node, so return a False
             return False
 
@@ -188,64 +199,73 @@ def api_validate_node_pollers(client, node_id_list, all_pollers=False):
                 break
 
     for poller in pollers_list:
-        Api().pollers_data_get(poller['id'])
+        try:
+            Api().pollers_data_get(poller['id'])
+        except (TypeError, ValueError) as e:
+            assert e.message
+        except ApiException as e:
+            if e.status != HTTP_NOT_FOUND:
+                logs.irl.error('pollers_data_get() failed (%s) node: %s poller: %s command: %s',
+                               e.status,
+                               poller['node'],
+                               poller['id'],
+                               poller['config']['command'])
+            return False
+
         poller_rsp = client.last_response
         poller_data = loads(poller_rsp.data)
 
-        if poller_rsp.status != 200 and poller_rsp.status != 204:
-            print "Failure to retrieve poller data for node: {} poller: {} command: {}".format(poller['node'],
-                                                                                               poller['id'],
-                                                                                               poller['config']['command'])
-            good_pollers = False
-            break
-
-        if verbosity >= 6:
-            print "**** node: {} poller: {} command: {}".format(poller['node'],
-                                                                poller['id'],
-                                                                poller['config']['command'])
+        logs.irl.debug('node: %s poller: %s command: %s',
+                       poller['node'],
+                       poller['id'],
+                       poller['config']['command'])
 
         if poller_rsp.status == 200:
             # This will process a status of 200
             if not poller_data:
-                print "No poller data for node: {} poller: {} command: {}".format(poller['node'],
-                                                                                  poller['id'],
-                                                                                  poller['config']['command'])
-                good_pollers = False
-                break
+                logs.irl.warning('No poller data for node: %s poller: %s command: %s',
+                                 poller['node'],
+                                 poller['id'],
+                                 poller['config']['command'])
+                return False
         else:
             # This assumes a status of 204
-            if  poller_data:
-                print "Non zero poller data (exspected zero) for node {} poller {} command {}".format(poller['node'],
-                                                                                                      poller['id'],
-                                                                                                      poller['config']['command'])
-                good_pollers = False
-                break
+            if poller_data:
+                logs.irl.warning('Unexpected poller data for node %s poller %s command %s',
+                                 poller['node'],
+                                 poller['id'],
+                                 poller['config']['command'])
+                return False
 
-    return good_pollers
+    return True
+
 
 def validate_obm_settings(client, identifier):
     """
-    The OBM objectis are obtained for the requested node. They are then searched to 
+    The OBM objects are obtained for the requested node. They are then searched to
     determine if at least one has OBM settings.
     :param  client: reference to config.api2_0_config
     :param  identifier: ID of node object
     return: True  - node have OBM setting
             False - node does not have OBM settings
     """
+    try:
+        Api().nodes_get_obms_by_node_id(identifier=identifier)
+    except (TypeError, ValueError) as e:
+        assert e.message
+    except ApiException as e:
+        # There is no chance of getting the requested obm object using this node id, just
+        # return False to indicate no OBM settings
+        if e.status != HTTP_NOT_FOUND:
+            logs.irl.warning('Unable to retrieve obm list via API for node:: %s status: (%s).',
+                             identifier,
+                             e.status)
+        return False
 
-    Api().nodes_get_obms_by_node_id(identifier=identifier)
     obm_list_rsp = client.last_response
     obm_list = loads(obm_list_rsp.data)
 
-    # Determine if the list was obtained without error
-    if obm_list_rsp.status != 200:
-        # There is no chance of getting the requested obm object using this node id, just 
-        # return False to indicate no OBM settings
-        print '**** Unable to retrieve obm list via API for node:: {} status: ({}).\n'.format(identifier,
-                                                                                              obm_list_rsp.status)
-        return False
-
-    # determine if this node possible credentials 
+    # determine if this node possible credentials
     # TODO: additional tests may be required
     for obm_entry in obm_list:
         if get_by_string(obm_entry, 'config.user'):
@@ -254,8 +274,9 @@ def validate_obm_settings(client, identifier):
             return True
     return False
 
+
 def get_by_string(source_dict, search_string, default_if_not_found=None):
-    '''
+    """
     Search a dictionary using keys provided by the search string.
     The search string is made up of keywords separated by a '.'
     Example: 'fee.fie.foe.fum'
@@ -263,7 +284,7 @@ def get_by_string(source_dict, search_string, default_if_not_found=None):
     :param search_string: search string with keyword separated by '.'
     :param default_if_not_found: Return value if search is un-successful
     :return value, dictionary or default_if_not_found
-    ''' 
+    """
     if not source_dict or not search_string:
         return default_if_not_found
 
@@ -275,4 +296,3 @@ def get_by_string(source_dict, search_string, default_if_not_found=None):
         except StopIteration:
             return default_if_not_found
     return dict_obj
-
