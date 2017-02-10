@@ -1,5 +1,9 @@
+"""
+Copyright (c) 2016-2017 Dell Inc. or its subsidiaries. All Rights Reserved.
+"""
 import unittest
 from logging import getLogger
+
 
 class TestTwoLoggerTest(unittest.TestCase):
     def setUp(self):

@@ -1,11 +1,12 @@
 """
-Copyright 2017, EMC, Inc.
+Copyright (c) 2017 Dell Inc. or its subsidiaries. All Rights Reserved.
 """
 import logging
 import re
 import argparse
 import optparse
 import sys
+
 
 class _LoggingConfigFilter(logging.Filter):
     """
@@ -48,6 +49,7 @@ class _LoggingConfigFilter(logging.Filter):
             self.__levelno, self.__which_loggers, self.__unmatched_levelno)
         return rs
 
+
 class _ArgparseToOptparseWrapper(object):
     def __init__(self, parser):
         """
@@ -69,6 +71,7 @@ class _ArgparseToOptparseWrapper(object):
     def error(self, message):
         print >>sys.stderr, message
         sys.exit(2)
+
 
 class LoggerArgParseHelper(object):
     def __init__(self, parser):
@@ -110,8 +113,7 @@ class LoggerArgParseHelper(object):
         set_group.add_argument(
             '--sm-set-file-level', nargs=3, dest='set_file_level',
             metavar=('file-pattern', '[handler-name[:logger-name] [level-name-or-value]]'),
-            help="Same as --sm-set-combo-level, but restricts the change in output to only the files that match the file-pattern")
-
+            help="Same as --sm-set-combo-level, but restricts the change in output to the files that match the file-pattern")
 
     def __display_filter(self, indent, filter, detail):
         """
@@ -133,7 +135,7 @@ class LoggerArgParseHelper(object):
             indent_txt, handler.get_name(), handler.__class__.__name__,
             handler.level, extra_info)
         for filter in handler.filters:
-            self.__display_filter(indent+1, filter, detail)
+            self.__display_filter(indent + 1, filter, detail)
 
     def __recurse_list(self, indent, logger, detail):
         """
@@ -143,12 +145,12 @@ class LoggerArgParseHelper(object):
         indent_txt = ' ' * indent
         print >>sys.stderr, 'L{0}{1}: level={2}'.format(indent_txt, logger.name, logger.level)
         for handler in logger.handlers:
-            self.__display_handler(indent+1, handler, detail)
+            self.__display_handler(indent + 1, handler, detail)
         for lg_name, lg_obj in logging.Logger.manager.loggerDict.items():
             if isinstance(lg_obj, logging.PlaceHolder):
                 continue
             if lg_obj.parent == logger:
-                self.__recurse_list(indent+3, lg_obj, detail)
+                self.__recurse_list(indent + 3, lg_obj, detail)
 
     def __do_list(self, detail):
         """
@@ -170,7 +172,8 @@ class LoggerArgParseHelper(object):
             else:
                 valid_names.append(lv_key)
 
-        self.__parser.error("Invalid level '{0}'. Valid numbers: {1}, names: {2}".format(
+        self.__parser.error(
+            "Invalid level '{0}'. Valid numbers: {1}, names: {2}".format(
                 level_arg, valid_nums, valid_names))
 
     def __parse_level(self, level):
@@ -218,7 +221,8 @@ class LoggerArgParseHelper(object):
                 logger_list.append(lg_obj)
 
         if len(logger_list) == 0:
-            self.__parser.error("Could not locate any loggers matching '{0}'".format(
+            self.__parser.error(
+                "Could not locate any loggers matching '{0}'".format(
                     search_lg_name))
         return logger_list
 
@@ -276,7 +280,7 @@ class LoggerArgParseHelper(object):
         orig_level = handler.level
         name = 'Filter({0}@{1})'.format(for_names, levelno)
         filter = _LoggingConfigFilter(for_names, levelno, orig_level, name,
-                                      file_pat = file_pat)
+                                      file_pat=file_pat)
         handler.addFilter(filter)
         handler.setLevel(logging.NOTSET)
 

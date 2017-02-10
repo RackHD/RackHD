@@ -1,9 +1,10 @@
 """
-Copyright 2017, EMC, Inc.
+Copyright (c) 2017 Dell Inc. or its subsidiaries. All Rights Reserved.
 """
 import os
 import re
 import logging
+
 
 class _TempLogfileObserver(object):
     """
@@ -63,7 +64,8 @@ class TempLogfileChecker(object):
     Crude logfile checker that holds the "business logic" to check for backtraces and
     capture stdout or stderr contents (or lack thereof!)
     """
-    def __init__(self, file_name, stringio_override = None):
+
+    def __init__(self, file_name, stringio_override=None):
         self.__lf_observer = _TempLogfileObserver(file_name, stringio_override)
         self.__file_name = file_name
 
@@ -129,11 +131,9 @@ class TempLogfileChecker(object):
                       '''
         if start_at_levelno is None:
             test_levelno = 1  # lowest legal value
-            info_base = 'not-matches-expected, lg_name={0}'.format(lg_name)
             exp_count = 0
         else:
             test_levelno = start_at_levelno
-            info_base = 'start_at_levelno={0}, lg_name={1}'.format(start_at_levelno, lg_name)
             # "CRITICAL_0" is our max log-value injected in makeSuite in test_logopts.pyh
             #  That -seems- backwards at first glance, but this is the -threshold- value we are
             #  working with normally. In this case, CRITICAL_0 will hold the highest possible int
@@ -144,8 +144,6 @@ class TempLogfileChecker(object):
         for match in self.__lf_observer.iter_on_re(line_re):
             count += 1
             test_level_name = levelno_to_name(test_levelno)
-            pass_info = '({0}, test_level_name={1}, test_levelno={2})'.format(
-                info_base, test_level_name, test_levelno)
             found_log_level_name = match.group("level")
             found_msg_logger_name = match.group("logger_name")
             found_msg_levelno = int(match.group("levelno"))
@@ -174,15 +172,15 @@ def levelno_to_name(levelno):
     for non-predefined levels.
 
     Each base name (DEBUG, INFO, etc) covers a range from base + 2 for base_0 to base - 7 for base_9.
-    Or more accuratlly: base + (2 - X) (where 'X' is the number from base_#. 
+    Or more accuratlly: base + (2 - X) (where 'X' is the number from base_#.
     For example debug_0 is 12 and debug_9 is 3.
     So first we want to isolate the tens digit for the range we are in to get the base...
     """
     # Add 7 to the levelno to shift into right ten's place (3->10 and 12->19)
-    adjusted_tens =    (7 + levelno) / 10
-    adjusted_base =    (adjusted_tens * 10)
+    adjusted_tens = (7 + levelno) / 10
+    adjusted_base = (adjusted_tens * 10)
     name = logging.getLevelName(adjusted_base)
-    # Now get the part to hang out after the '_'. 
+    # Now get the part to hang out after the '_'.
     remainder = (7 + levelno) % 10
     # and reverse because remainder is currently reversed vs range.
     remainder = 9 - remainder
