@@ -1,5 +1,5 @@
 '''
-Copyright 2017, Dell EMC
+Copyright 2017 Dell Inc. or its subsidiaries. All Rights Reserved.
 
 Author(s):
 George Paulos
@@ -76,12 +76,10 @@ def wait_for_task_complete(taskid, retries=60):
             log.error(" " + result['text'])
             return False
         if result['json']['TaskState'] == 'Running' or result['json']['TaskState'] == 'Pending':
-            if fit_common.VERBOSITY >= 2:
-                print "OS Install workflow state: {}".format(result['json']['TaskState'])
+            log.info_5("OS Install workflow state: {}".format(result['json']['TaskState']))
             fit_common.time.sleep(30)
         elif result['json']['TaskState'] == 'Completed':
-            if fit_common.VERBOSITY >= 2:
-                print "OS Install workflow state: {}".format(result['json']['TaskState'])
+            log.info_5("OS Install workflow state: {}".format(result['json']['TaskState']))
             log.info_5(" " + result['text'])
             return True
         else:
@@ -91,7 +89,7 @@ def wait_for_task_complete(taskid, retries=60):
     return False
 
 # helper routine for selecting OS image path by matching proxy path
-def proxySelect(tag):
+def proxy_select(tag):
     for entry in rackhdconfig['httpProxies']:
         if tag in entry['localPath']:
             return entry['localPath']
@@ -107,25 +105,26 @@ def node_taskid(osname, version):
 # run all bootstraps if regression group is specified or no group is specified
 if "regression" in sys.argv or "-a" not in sys.argv:
     oslist = [
-        {"os":"ESXi", "version":"5.5", "path":"/ESXi/5.5"},
-        {"os":"ESXi", "version":"6.0", "path":"/ESXi/6.0"},
-        {"os":"CentOS", "version":"6.5", "path":"/CentOS/6.5"},
-        {"os":"CentOS+KVM", "version":"6.5", "path":"/CentOS/6.5"},
-        {"os":"CentOS", "version":"7", "path":"/CentOS/7.0"},
-        {"os":"RHEL+KVM", "version":"7", "path":"/RHEL/7.0"},
-        {"os":"RHEL", "version":"7", "path":"/RHEL/7.0"},
-        {"os":"CentOS+KVM", "version":"7", "path":"/CentOS/7.0"}
+        {"os":"ESXi", "version":"5.5", "path":"/ESXi/5.5", "kvm":False},
+        {"os":"ESXi", "version":"6.0", "path":"/ESXi/6.0", "kvm":False},
+        {"os":"CentOS", "version":"6.5", "path":"/CentOS/6.5", "kvm":False},
+        {"os":"CentOS+KVM", "version":"6.5", "path":"/CentOS/6.5", "kvm":True},
+        {"os":"CentOS", "version":"7", "path":"/CentOS/7.0", "kvm":False},
+        {"os":"RHEL+KVM", "version":"7", "path":"/RHEL/7.0", "kvm":True},
+        {"os":"RHEL", "version":"7", "path":"/RHEL/7.0", "kvm":False},
+        {"os":"CentOS+KVM", "version":"7", "path":"/CentOS/7.0", "kvm":True}
     ]
     nodeindex = 0
     for item in oslist:
         # if OS proxy entry exists in RackHD config, run bootstrap against selected node
-        if proxySelect(item['path']) and nodeindex < len(NODECATALOG):
+        if proxy_select(item['path']) and nodeindex < len(NODECATALOG):
             #delete active workflows for specified node
             fit_common.cancel_active_workflows(NODECATALOG[nodeindex])
             payload_data = {
                             "osName": item['os'],
                             "version": item['version'],
-                            "repo": rackhdhost + proxySelect(item['path']),
+                            "kvm": item['kvm'],
+                            "repo": rackhdhost + proxy_select(item['path']),
                             "rootPassword": "1234567",
                             "hostname": "rackhdnode",
                             "dnsServers": [rackhdconfig['apiServerAddress']],
