@@ -1,8 +1,8 @@
 """
-Copyright 2017, EMC, Inc.
+Copyright (c) 2016-2017 Dell Inc. or its subsidiaries. All Rights Reserved.
 """
 
-# todo: document API (especially for common aka test-writer actor)
+
 class _LoggerSet(object):
     def __init__(self, name=None):
         from .infra_logging import getInfraRunLogger, getInfraDataLogger, getTestRunLogger, getTestDataLogger
@@ -29,4 +29,3 @@ class _LoggerSet(object):
 def get_loggers(name=None):
     # todo: auto-push test-file name into the name of the logger
     return _LoggerSet(name=name)
-

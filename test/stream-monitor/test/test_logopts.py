@@ -1,11 +1,9 @@
 """
-Copyright 2017, EMC, Inc.
+Copyright (c) 2017 Dell Inc. or its subsidiaries. All Rights Reserved.
 """
 import plugin_test_helper
-import os
-import re
 import sys
-from log_stream_helper import TempLogfileChecker, levelname_to_number
+from log_stream_helper import TempLogfileChecker
 import unittest
 import logging
 from StringIO import StringIO
@@ -16,7 +14,6 @@ class _Expector(object):
         """
         Simple class to automate some of the compare setups.
         """
-        at_levelno = levelname_to_number(at_level)
         self.at_level = at_level
         self.logger_name = use_logger
         self.expect_for_infra_run = None
@@ -95,7 +92,7 @@ class _OutputScannerBase(plugin_test_helper.resolve_no_verify_helper_class()):
             emit_levelno = logging.getLevelName(emit_level)
             expect_level = max(exp_levelno, emit_levelno)
         self.__lgfile_watchers[log_file].check_level_output(
-                self, expect_level, logger_name)
+            self, expect_level, logger_name)
 
     def test_infra_run_expected(self):
         self.__common_test_expected(
@@ -139,6 +136,7 @@ class _OutputScannerBase(plugin_test_helper.resolve_no_verify_helper_class()):
         We also 'publish' this class's expector, so the runTest method can see it.
         """
         expector = self._expector
+
         class TC(unittest.TestCase):
             def runTest(self):
                 """
@@ -164,28 +162,29 @@ set a different batch of command line args to nosetest, and define an
 "expector" to tell the inherited methods in _OutputScannerBase what to do and look for.
 """
 
+
 class OutputScannerBaseInfraRun(_OutputScannerBase):
-    args=[]
+    args = []
     _expector = _Expector('infra.run', 'DEBUG_5')
 
 
 class LevelsForAnOutputInfraRun(_OutputScannerBase):
-    args=['--sm-set-logger-level', 'infra.run', 'DEBUG_7']
+    args = ['--sm-set-logger-level', 'infra.run', 'DEBUG_7']
     _expector = _Expector('infra.run', 'DEBUG_7')
 
 
 class LevelsForAnOutputInfraData(_OutputScannerBase):
-    args=['--sm-set-logger-level', 'infra.data', 'DEBUG_9']
+    args = ['--sm-set-logger-level', 'infra.data', 'DEBUG_9']
     _expector = _Expector('infra.data', 'DEBUG_9')
 
 
 class LevelsForAnOutputTestRun(_OutputScannerBase):
-    args=['--sm-set-logger-level', 'test.run', 'WARNING_5']
+    args = ['--sm-set-logger-level', 'test.run', 'WARNING_5']
     _expector = _Expector('test.run', 'WARNING_5')
 
 
 class LevelsForAnOutputTestData(_OutputScannerBase):
-    args=['--sm-set-logger-level', 'test.data', 'INFO_9']
+    args = ['--sm-set-logger-level', 'test.data', 'INFO_9']
     _expector = _Expector('test.data', 'INFO_9')
 
 
@@ -194,8 +193,8 @@ class HandlerRemapForALogger(_OutputScannerBase):
     Note: this is paired with _OutputScannerBaseInfraRun, since that "proves" that
     by default, no debug is making it into log-capture. THIS lets the debugs out.
     """
-    args=['--sm-set-logger-level', 'infra.run', 'DEBUG_7',
-          '--sm-set-handler-level', 'console-capture', 'DEBUG_5']
+    args = ['--sm-set-logger-level', 'infra.run', 'DEBUG_7',
+            '--sm-set-handler-level', 'console-capture', 'DEBUG_5']
     _expector = _Expector('infra.run', 'DEBUG_7', concap_at='DEBUG_5')
 
 
@@ -206,19 +205,20 @@ class ComboRemapForALoggerSingleHandler(_OutputScannerBase):
     is basically the equiv of the combo of logger and handler levels set in
     HandlerRemapForALogger.
     """
-    args=['--sm-set-combo-level', 'console-capture', 'DEBUG_6']
+    args = ['--sm-set-combo-level', 'console-capture', 'DEBUG_6']
     _expector = _Expector('infra.run', 'DEBUG_6', concap_at='DEBUG_6')
+
 
 class ComboRemapForALoggerGlobHandlers(_OutputScannerBase):
     """
     Same as ComboRemapForALoggerSingleHandler, but we grab both console and
     console-capture handlers via wildcard.
     """
-    args=['--sm-set-combo-level', 'console*', 'DEBUG_8']
+    args = ['--sm-set-combo-level', 'console*', 'DEBUG_8']
     _expector = _Expector('infra.run', 'DEBUG_8', concap_at='DEBUG_8', real_at='DEBUG_8')
 
 
 class SetFileLevelTestAtD7(_OutputScannerBase):
-    args=['--sm-set-file-level', 'test_logopts.py', '*', 'DEBUG_7']
+    args = ['--sm-set-file-level', 'test_logopts.py', '*', 'DEBUG_7']
     _expector = _Expector('infra.run', 'DEBUG_7', concap_at='DEBUG_7', real_at='DEBUG_7')
     # note: todo/missing test -> also inject into a 2nd logger and only see data from IT at info
