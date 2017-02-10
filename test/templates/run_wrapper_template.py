@@ -6,12 +6,8 @@ Author(s):
 FIT test wrapper script template
 '''
 
-import sys
-import subprocess
+import fit_path  # NOQA: unused import
 import unittest
-
-# set path to common libraries
-sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test")
 
 from common import fit_common
 
