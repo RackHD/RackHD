@@ -10,6 +10,7 @@ from StringIO import StringIO
 from logging import ERROR, WARNING
 from flogging import LoggerArgParseHelper
 
+
 class StreamMonitorPlugin(Plugin):
     _singleton = None
     name = "stream-monitor"
@@ -27,6 +28,7 @@ class StreamMonitorPlugin(Plugin):
         self.__capture_stack = []
         self.__current_stdout = None
         self.__current_stderr = None
+        self.__do_stream_logify = True
         super(StreamMonitorPlugin, self).__init__(*args, **kwargs)
 
     @classmethod
@@ -54,26 +56,33 @@ class StreamMonitorPlugin(Plugin):
         self.__take_step('options', parser=parser, env=env)
         self.__log = logging.getLogger('nose.plugins.streammonitor')
         self.__flogger_opts_helper = LoggerArgParseHelper(parser)
+        self.__do_stream_logify = self.__flogger_opts_helper
         super(StreamMonitorPlugin, self).options(parser, env=env)
 
     def configure(self, options, conf):
         self.__take_step('configure', options=options, conf=conf)
         super(StreamMonitorPlugin, self).configure(options,conf)
-        if not self.enabled:
-            return
         if getattr(conf.options, 'collect_only', False):
             # we don't want to be spitting stuff out during -list!
             self.enabled = False
+        if not self.enabled:
+            return
 
     def finalize(self, result):
         self.__take_step('finalize', result=result)
         self.__log.info('Stream Monitor Report Complete')
+        lm = self.__stream_plugins.get('logging', None)
+        if lm is not None:
+            lm.get_nose_stream_logger().real_flush()
 
     def begin(self):
         self.__take_step('begin')
         # tood: check class "enabled_for_nose()"
+        set_stream = None
         if len(self.__stream_plugins) == 0:
-            self.__stream_plugins['logging'] = LoggingMarker()
+            lm = LoggingMarker()
+            self.__stream_plugins['logging'] = lm
+            set_stream = lm.get_nose_stream_logger()
         else:
             # This is basically for self-testing the plugin, since the
             # logging monitor stays around between test-classes. If we don't do
@@ -81,6 +90,8 @@ class StreamMonitorPlugin(Plugin):
             self.__stream_plugins['logging'].reset_configuration()
 
         self.__flogger_opts_helper.process_parsed(self.conf.options)
+        if set_stream is not None and not self.conf.options.sm_no_logify_console:
+            self.conf.stream = set_stream
 
         for pg in self.__stream_plugins.values():
             pg.handle_begin()

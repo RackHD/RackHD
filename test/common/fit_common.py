@@ -377,7 +377,7 @@ def mkargs(in_args=None):
         vargs = ['--sm-set-combo-level', '*', 'ERROR_5']
     else:
         # 0 and 1 currently try to squish ALL logging output.
-        vargs = ['--sm-set-combo-level', '*', 'CRITICAL_0']
+        vargs = ['--sm-set-combo-level', '*', 'CRITICAL_0', '--sm-no-logify-console']
 
     other_args.extend(vargs)
 

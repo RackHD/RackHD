@@ -152,6 +152,9 @@ The following nose options are available to control and examine the loggers:
         note: both 'logger-name's and 'handler-name's can contain wild-card
         characters to match multiple items.
 
+        --sm-no-logify-console
+                            set to not capture raw stderr traffic to console as
+                            logging messages.
         --sm-set-logger-level=('logger-name', 'level-name-or-value')
                             Set a logger's capture threshold. Loggers are
                             evaluated before handlers.
@@ -163,7 +166,7 @@ The following nose options are available to control and examine the loggers:
         --sm-set-file-level=('file-pattern', '[handler-name[:logger-name] [level-name-or-value]]')
                             Same as --sm-set-combo-level, but restricts the change
                             in output to only the files that match the file-
-                            pattern
+                            pattern.
 
 ## The 'set' options:
 The following goes through each option and explains what it does:

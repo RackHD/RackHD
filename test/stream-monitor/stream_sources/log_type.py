@@ -6,6 +6,34 @@ import sys
 from itertools import count
 
 
+class _StreamToLogger(object):
+    def __init__(self, logger):
+        """
+        This is a fake stream-ish device to allow us to turn raw
+        stream data into logger calls to the passed in logger.
+
+        Buffers output to new-line boundaries (to allow catching:
+        "running test foo ... ok" as one entry.
+        """
+        self.__use_logger = logger
+        self.__buffer = ''
+
+    def write(self, data):
+        self.__buffer += data
+        while '\n' in self.__buffer:
+            line, rest = self.__buffer.split('\n', 1)
+            self.__use_logger.info('%s', line)
+            self.__buffer = rest
+
+    def flush(self):
+        pass
+
+    def real_flush(self):
+        if len(self.__buffer) > 0:
+            self.__use_logger('%s', line)
+            self.__buffer = ''
+
+
 class LoggingMarker(StreamMonitorABC):
     _all_blocks = 0
 
@@ -21,6 +49,7 @@ class LoggingMarker(StreamMonitorABC):
         # todo: use nose plugin debug options
         self.__loggers = self.__find_loggers()
         self.__test_cnt = 1
+        self.__nose_status_logger = _StreamToLogger(flogging.get_loggers().irl)
 
     @classmethod
     def enabled_for_nose(self):
@@ -35,6 +64,9 @@ class LoggingMarker(StreamMonitorABC):
         Note: __config_reset_method is pulled from the flogging module in __init__.
         """
         self.__config_reset_method()
+
+    def get_nose_stream_logger(self):
+        return self.__nose_status_logger
 
     def handle_begin(self):
         self.__loggers = self.__find_loggers()

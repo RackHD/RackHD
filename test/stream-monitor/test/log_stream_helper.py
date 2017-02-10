@@ -74,7 +74,7 @@ class TempLogfileChecker(object):
         full_file = os.path.join(suitepath, test_file)
         tb_line = '{0}\s+traceback: Traceback \(most recent call last\):'.format(ltype)
         self.__check_line(test, tb_line, exp_count)
-        file_line = 'File "{0}", line \d+, in {1}'.format(full_file, test_method)
+        file_line = '^\s+File "{0}", line \d+, in {1}'.format(full_file, test_method)
         self.__check_line(test, file_line, exp_count)
 
     def check_capture(self, test, cap_type, cap_level, test_class, test_method, exp_count):
