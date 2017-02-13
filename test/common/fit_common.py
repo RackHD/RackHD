@@ -474,6 +474,7 @@ def scp_file_to_ora(src_file_name):
     # legacy call
     scp_file_to_host(src_file_name)
 
+
 def scp_file_to_host(src_file_name):
     '''
     scp the given file over to the RackHD host and place it in the home directory.
