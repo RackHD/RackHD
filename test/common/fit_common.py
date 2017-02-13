@@ -196,10 +196,11 @@ def apply_stack_config():
     stack = fitargs()['stack']
     if stack is not None:
         mkcfg().add_from_file('stack_config.json', stack)
-        if 'ora' in fitcfg():
-            fitargs()['ora'] = fitcfg()['ora']
-        else:
-            fitargs()['ora'] = 'localhost'
+        if fitargs()['ora'] =='localhost':    
+            if 'ora' in fitcfg():
+               fitargs()['ora'] = fitcfg()['ora']
+            else:
+               fitargs()['ora'] = 'localhost'
         if 'bmc' in fitcfg():
             fitargs()['bmc'] = fitcfg()['bmc']
         if 'hyper' in fitcfg():
