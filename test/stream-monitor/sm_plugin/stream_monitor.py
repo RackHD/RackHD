@@ -4,7 +4,7 @@ Copyright (c) 2016-2017 Dell Inc. or its subsidiaries. All Rights Reserved.
 import logging
 import os
 from nose.plugins import Plugin
-from stream_sources import LoggingMarker
+from stream_sources import LoggingMarker, SelfTestStreamMonitor
 import sys
 from nose.pyversion import format_exception
 from nose.plugins.xunit import Tee
@@ -79,6 +79,7 @@ class StreamMonitorPlugin(Plugin):
         # tood: check class "enabled_for_nose()"
         if len(self.__stream_plugins) == 0:
             self.__stream_plugins['logging'] = LoggingMarker()
+            self.__stream_plugins['self-test'] = SelfTestStreamMonitor()
         else:
             # This is basically for self-testing the plugin, since the
             # logging monitor stays around between test-classes. If we don't do
@@ -190,6 +191,9 @@ class StreamMonitorPlugin(Plugin):
             if hasattr(pg, 'handle_capture'):
                 pg.handle_capture(log_level, cap_type, test, sout, serr, tb)
 
+    def get_stream_monitor_by_name(self, name):
+        return self.__stream_plugins[name]
+
 
 def smp_get_stream_monitor_plugin():
     """
@@ -198,3 +202,8 @@ def smp_get_stream_monitor_plugin():
     """
     smp = StreamMonitorPlugin.get_singleton_instance()
     return smp
+
+
+def smp_get_stream_monitor(monitor_name):
+    smp = StreamMonitorPlugin.get_singleton_instance()
+    return smp.get_stream_monitor_by_name(monitor_name)

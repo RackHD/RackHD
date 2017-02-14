@@ -11,11 +11,23 @@ class _BaseStreamMonitorPluginTester(PluginTester, unittest.TestCase):
     activate = '--with-stream-monitor'
     _smp = StreamMonitorPlugin()
     _smp._self_test_print_step_enable()
+    _purge_step_sequence = True
     plugins = [_smp]
+
+    def tearDown(self):
+        """
+        Check the _purse_step_sequence and clear out the self-test-sequence
+        record if set. This base-class doesn't do verification of the results, nor
+        does it check the sequence. _BaseStreamMonitorPluginTesterVerify does both,
+        and will thus set the purge-var to valse.
+        """
+        if self._purge_step_sequence:
+            self._smp._self_test_sequence_seen()
 
 
 class _BaseStreamMonitorPluginTesterVerify(_BaseStreamMonitorPluginTester):
     _expect_nose_success = True
+    _purge_step_sequence = False
 
     def runTest(self):
         # This is called once for each class derived from it. We don't really
