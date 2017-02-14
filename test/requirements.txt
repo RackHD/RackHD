@@ -7,6 +7,7 @@ greenlet==0.4.10
 jsonmerge==1.2.1
 jsonschema==2.4.0
 kombu==3.0.30
+pika=0.10.0
 nose==1.3.7
 nosedep>=0.6
 on-http_api1_1>=1.0.0
@@ -23,7 +24,6 @@ urllib3==1.19.1
 # WARNING: do not just replace this file with "pip freeze > requirements.txt".
 # You need to keep the following line as is! (freeze will turn it into
 # a https/git reference)
--e fit_path
 -e stream-monitor
 
 # WARNING: there is an ubuntu bug that causes a bad package to get listed when doing a freeze.
