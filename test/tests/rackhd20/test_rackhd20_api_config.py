@@ -43,7 +43,7 @@ class rackhd20_api_config(fit_common.unittest.TestCase):
 
     def test_api_20_config_patch(self):
         api_data_save = fit_common.rackhdapi('/api/2.0/config')['json']
-        if ("logColorEnable" in api_data_save and api_data_save['logColorEnable'] == True):
+        if ("logColorEnable" in api_data_save and api_data_save['logColorEnable'] is True):
             data_payload = {"logColorEnable": False}
         else:
             data_payload = {"logColorEnable": True}
@@ -52,7 +52,7 @@ class rackhd20_api_config(fit_common.unittest.TestCase):
         for item in api_data['json']:
             self.assertNotEqual(item, '', 'Empty JSON Field:' + item)
         self.assertEqual(api_data['status'], 200, "Was expecting code 200. Got " + str(api_data['status']))
-        if ("logColorEnable" in api_data_save and api_data_save['logColorEnable'] == True):
+        if ("logColorEnable" in api_data_save and api_data_save['logColorEnable'] is True):
             self.assertEqual(api_data['json']['logColorEnable'], False, "Incorrect patched value for 'logColorEnable'")
         else:
             self.assertEqual(api_data['json']['logColorEnable'], True, "Incorrect patched value for 'logColorEnable'")
