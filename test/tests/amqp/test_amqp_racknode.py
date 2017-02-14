@@ -21,15 +21,15 @@ import fit_common
 import test_api_utils
 import fit_amqp
 
-amqp_message_received= False
-routingkey=""
-amqpbody=""
+amqp_message_received = False
+routingkey = ""
+amqpbody = ""
 
 
 def get_node_list_by_type(type):
     mon_url = '/api/2.0/nodes'
     response = fit_common.rackhdapi(mon_url)
-    nodefound=[]
+    nodefound = []
     if response['status'] in range(200, 205):
         for nodes in response['json']:
             if nodes["type"] == type:
@@ -92,20 +92,24 @@ class amqp_rack_node(fit_common.unittest.TestCase):
             amqp_message_received = False
             if fit_common.VERBOSITY >= 2:
                 print 'launch AMQP thread'
-            td = fit_amqp.AMQP_worker(exchange_name="on.events", routing_key="node.added.#",
-                                      externalcallback=amqpcallback, timeout=10)
+            td = fit_amqp.AMQP_worker(
+                exchange_name="on.events", routing_key="node.added.#",
+                externalcallback=amqpcallback, timeout=10)
             td.setDaemon(True)
             td.start()
             mon_data_post = fit_common.rackhdapi(mon_url, action='post', payload=newrack)
-            self.assertIn(mon_data_post['status'], range(200, 205),
+            self.assertIn(
+                mon_data_post['status'], range(200, 205),
                 "Incorrect HTTP return code: {}".format(mon_data_post['status']))
             rackid = mon_data_post['json']['id']
             mon_url = '/api/2.0/nodes/{}'.format(rackid)
             mon_data = fit_common.rackhdapi(mon_url)
-            self.assertIn(mon_data['status'], range(200, 205),
+            self.assertIn(
+                mon_data['status'], range(200, 205),
                 "Incorrect HTTP return code: {}".format(mon_data['status']))
             json_node_data = mon_data['json']
-            self.assertTrue(json_node_data['name'] == newrack['name'] and json_node_data['type'] == "rack",
+            self.assertTrue(
+                json_node_data['name'] == newrack['name'] and json_node_data['type'] == "rack",
                 "rack node field error")
             timecount = 0
             while amqp_message_received is False and timecount < 10:
@@ -132,22 +136,29 @@ class amqp_rack_node(fit_common.unittest.TestCase):
             global amqp_message_received
             amqp_message_received = False
             # start amqp thread
-            td = fit_amqp.AMQP_worker(exchange_name="on.events", routing_key="node.removed.#",
-                                      externalcallback=amqpcallback, timeout=10)
+            td = fit_amqp.AMQP_worker(
+                exchange_name="on.events", routing_key="node.removed.#",
+                externalcallback=amqpcallback, timeout=10)
             td.setDaemon(True)
             td.start()
             mon_url = '/api/2.0/nodes/{}'.format(rack)
             mon_data = fit_common.rackhdapi(mon_url, action='delete')
-            self.assertIn(mon_data['status'], range(200, 205), "Incorrect HTTP return code: {}".format(mon_data['status']))
+            self.assertIn(
+                mon_data['status'], range(200, 205),
+                "Incorrect HTTP return code: {}".format(mon_data['status']))
             timecount = 0
             while amqp_message_received is False and timecount < 10:
                 sleep(1)
                 timecount = timecount + 1
             self.assertNotEquals(timecount, 10, "No AMQP message received")
             expectedkey = "node.removed.information." + rack + '.' + rack
-            expectedpayload = {"type": "node", "action": "removed", "typeId": rack,
-                             "nodeId": rack, "severity": "information", "version": "1.0",
-                             "createdAt": mon_data['headers']['Date']}
+            expectedpayload = {"type": "node",
+                               "action": "removed",
+                               "typeId": rack,
+                               "nodeId": rack,
+                               "severity": "information",
+                               "version": "1.0",
+                               "createdAt": mon_data['headers']['Date']}
             self.assertEquals(self.compare_message(expectedkey, expectedpayload), True, "AMQP Message Check Error!")
 
 

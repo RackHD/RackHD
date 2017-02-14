@@ -38,10 +38,10 @@ class AMQP_worker(threading.Thread):
         self.channel = self.connection.channel()
         result = self.channel.queue_declare(exclusive = True)
         queue_name = result.method.queue
-        self.channel.queue_bind(exchange = exchange_name,
-                           queue = queue_name,
-                           routing_key = routing_key)
-
+        self.channel.queue_bind(
+            exchange=exchange_name,
+            queue=queue_name,
+            routing_key=routing_key)
         self.channel.basic_consume(externalcallback, queue = queue_name)
         self.connection.add_timeout(timeout, self.panic)
 
