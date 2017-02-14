@@ -58,11 +58,11 @@ class amqp_rack_node(fit_common.unittest.TestCase):
     def tear_down(self):
         self.test_api_delete_rack()
 
-    def compare_message(self,expectedkey, expectedpayload):
+    def compare_message(self, expectedkey, expectedpayload):
         global routingkey, amqpbody
         self.assertEquals(routingkey, expectedkey, "No AMQP message received")
         try:
-            amqp_body_json=fit_common.json.loads(amqpbody)
+            amqp_body_json = fit_common.json.loads(amqpbody)
         except:
             print "FAILURE - The message body is not json format! "
             return False
@@ -78,18 +78,17 @@ class amqp_rack_node(fit_common.unittest.TestCase):
             return False
         return True
 
-
     def test_api_create_and_check_racks(self):
-        for operator in range(0,10):
+        for operator in range(0, 10):
             rackname = "myRack" + "_" + datetime.now().__str__()
-            newrack = {"name" :rackname,"type":"rack"}
+            newrack = {"name": rackname, "type": "rack"}
             if fit_common.VERBOSITY >= 2:
                 print "create new tag: ", newrack
             mon_url = '/api/2.0/nodes'
             #start amqp thread
             global amqp_message_received
             amqp_message_received = False
-            if fit_common.VERBOSITY >= 2 :
+            if fit_common.VERBOSITY >= 2:
                 print 'launch AMQP thread'
             td = fit_amqp.AMQP_worker(exchange_name="on.events", routing_key="node.added.#",
                                       externalcallback=amqpcallback, timeout=10)
@@ -107,18 +106,22 @@ class amqp_rack_node(fit_common.unittest.TestCase):
             self.assertTrue(json_node_data['name'] == newrack['name'] and json_node_data['type'] == "rack",
                             "rack node field error")
             timecount = 0
-            while amqp_message_received is False and timecount < 10 :
+            while amqp_message_received is False and timecount < 10:
                 sleep(1)
                 timecount = timecount + 1
             self.assertNotEquals(timecount, 10, "No AMQP message received")
             expectedkey = "node.added.information." + rackid + '.' + rackid
-            expectedpayload = {"type": "node", "action": "added", "typeId": rackid,
-                             "nodeId": rackid, "severity": "information", "version": "1.0",
-                             "createdAt": mon_data_post['json']['createdAt']}
+            expectedpayload = {"type": "node",
+                               "action": "added",
+                               "typeId": rackid,
+                               "nodeId": rackid,
+                               "severity": "information",
+                               "version": "1.0",
+                               "createdAt": mon_data_post['json']['createdAt']}
             self.assertEquals(self.compare_message(expectedkey, expectedpayload), True, "AMQP Message Check Error!")
-            if fit_common.VERBOSITY >= 2 :
+            if fit_common.VERBOSITY >= 2:
                 print "query rack: " + rackname + "successfully!"
-        if fit_common.VERBOSITY >= 2 :
+        if fit_common.VERBOSITY >= 2:
             print "test: rack creation and query succeed!"
 
     def test_api_delete_rack(self):
@@ -133,14 +136,14 @@ class amqp_rack_node(fit_common.unittest.TestCase):
             td.start()
             mon_url = '/api/2.0/nodes/{}'.format(rack)
             mon_data = fit_common.rackhdapi(mon_url, action='delete')
-            self.assertIn(mon_data['status'], range(200,205), "Incorrect HTTP return code: {}".format(mon_data['status']))
+            self.assertIn(mon_data['status'], range(200, 205), "Incorrect HTTP return code: {}".format(mon_data['status']))
             timecount = 0
             while amqp_message_received is False and timecount < 10:
                 sleep(1)
                 timecount = timecount + 1
             self.assertNotEquals(timecount, 10, "No AMQP message received")
-            expectedkey="node.removed.information." + rack + '.' + rack
-            expectedpayload={"type": "node", "action": "removed", "typeId": rack,
+            expectedkey = "node.removed.information." + rack + '.' + rack
+            expectedpayload = {"type": "node", "action": "removed", "typeId": rack,
                              "nodeId": rack, "severity": "information", "version": "1.0",
                              "createdAt": mon_data['headers']['Date']}
             self.assertEquals(self.compare_message(expectedkey, expectedpayload), True, "AMQP Message Check Error!")
