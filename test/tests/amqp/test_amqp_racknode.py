@@ -30,31 +30,33 @@ def get_node_list_by_type(type):
     mon_url = '/api/2.0/nodes'
     response = fit_common.rackhdapi(mon_url)
     nodefound=[]
-    if response['status'] in range(200,205):
+    if response['status'] in range(200, 205):
         for nodes in response['json']:
-            if nodes["type"]==type:
+            if nodes["type"] == type:
                 nodefound.append(nodes["id"])
     if fit_common.VERBOSITY >= 2:
-        print type," list=",nodefound
+        print type," list=", nodefound
     return nodefound
+
 
 def amqpcallback(ch, method, properties, body):
     if fit_common.VERBOSITY >= 2:
         print(" Routing Key %r:" % (method.routing_key))
-        print body #json.dumps(body, sort_keys=True, indent=4)
+        print body
     global amqp_message_received
-    global routingkey,amqpbody
-    amqp_message_received=True
-    amqpbody=body
-    routingkey=method.routing_key
+    global routingkey, amqpbody
+    amqp_message_received = True
+    amqpbody = body
+    routingkey = method.routing_key
 
 
 # Select nose.plugins.attrib import attr
 from nose.plugins.attrib import attr
-@attr(all=True, regression=True, smoke=True)
 
+
+@attr(all=True, regression=True, smoke=True)
 class amqp_rack_node(fit_common.unittest.TestCase):
-    #clear the test environment
+    # clear the test environment
     def tear_down(self):
         self.test_api_delete_rack()
 
@@ -85,7 +87,7 @@ class amqp_rack_node(fit_common.unittest.TestCase):
             if fit_common.VERBOSITY >= 2:
                 print "create new tag: ", newrack
             mon_url = '/api/2.0/nodes'
-            #start amqp thread
+            # start amqp thread
             global amqp_message_received
             amqp_message_received = False
             if fit_common.VERBOSITY >= 2:
@@ -94,17 +96,17 @@ class amqp_rack_node(fit_common.unittest.TestCase):
                                       externalcallback=amqpcallback, timeout=10)
             td.setDaemon(True)
             td.start()
-            mon_data_post = fit_common.rackhdapi(mon_url,action='post', payload=newrack)
+            mon_data_post = fit_common.rackhdapi(mon_url, action='post', payload=newrack)
             self.assertIn(mon_data_post['status'], range(200, 205),
-                          "Incorrect HTTP return code: {}".format(mon_data_post['status']))
+                "Incorrect HTTP return code: {}".format(mon_data_post['status']))
             rackid = mon_data_post['json']['id']
             mon_url = '/api/2.0/nodes/{}'.format(rackid)
             mon_data = fit_common.rackhdapi(mon_url)
             self.assertIn(mon_data['status'], range(200, 205),
-                          "Incorrect HTTP return code: {}".format(mon_data['status']))
+                "Incorrect HTTP return code: {}".format(mon_data['status']))
             json_node_data = mon_data['json']
             self.assertTrue(json_node_data['name'] == newrack['name'] and json_node_data['type'] == "rack",
-                            "rack node field error")
+                "rack node field error")
             timecount = 0
             while amqp_message_received is False and timecount < 10:
                 sleep(1)
