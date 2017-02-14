@@ -4,9 +4,9 @@ Author(s):
 Norton Luo
 
 '''
-#import json
-import threading, pika,logging
+import threading, pika, logging
 import fit_common
+
 
 class AMQP_worker(threading.Thread):
     '''
@@ -24,7 +24,7 @@ class AMQP_worker(threading.Thread):
     td.start()
     '''
 
-    def __init__(self,exchange_name,routing_key,externalcallback,timeout=10):
+    def __init__(self, exchange_name, routing_key, externalcallback, timeout=10):
         threading.Thread.__init__(self)
         pika_logger = logging.getLogger('pika')
         if fit_common.VERBOSITY >= 8:
@@ -33,16 +33,16 @@ class AMQP_worker(threading.Thread):
             pika_logger.setLevel(logging.WARNING)
         else:
             pika_logger.setLevel(logging.ERROR)
-        self.connection = pika.BlockingConnection(pika.ConnectionParameters(
-        host = fit_common.fitargs()["ora"], port = fit_common.fitports()['amqp']))
+        self.connection = pika.BlockingConnection(
+            pika.ConnectionParameters(host=fit_common.fitargs()["ora"], port=fit_common.fitports()['amqp']))
         self.channel = self.connection.channel()
-        result = self.channel.queue_declare(exclusive = True)
+        result = self.channel.queue_declare(exclusive=True)
         queue_name = result.method.queue
         self.channel.queue_bind(
             exchange=exchange_name,
             queue=queue_name,
             routing_key=routing_key)
-        self.channel.basic_consume(externalcallback, queue = queue_name)
+        self.channel.basic_consume(externalcallback, queue=queue_name)
         self.connection.add_timeout(timeout, self.panic)
 
     def panic(self):
@@ -56,4 +56,3 @@ class AMQP_worker(threading.Thread):
         if fit_common.VERBOSITY >= 4:
             print 'start consuming'
         self.channel.start_consuming()
-
