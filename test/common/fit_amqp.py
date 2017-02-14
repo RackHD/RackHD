@@ -4,7 +4,9 @@ Author(s):
 Norton Luo
 
 '''
-import threading, pika, logging
+import threading
+import pika
+import logging
 import fit_common
 
 
