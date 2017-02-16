@@ -66,14 +66,12 @@ class AmqpWorker(threading.Thread):
 
     def panic(self):
         self.channel.stop_consuming()
-        if fit_common.VERBOSITY >= 4:
-            print 'Pika connection timeout'
+        logs.debug_7('Pika connection timeout')
         self.connection.close()
         exit(0)
 
     def run(self):
-        if fit_common.VERBOSITY >= 4:
-            print 'start consuming'
+        logs.debug_7('start consuming')
         self.channel.start_consuming()
 
 
