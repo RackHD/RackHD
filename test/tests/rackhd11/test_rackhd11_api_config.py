@@ -11,9 +11,8 @@ import os
 import sys
 import subprocess
 import fit_common
-
-# Select test group here using @attr
 from nose.plugins.attrib import attr
+
 @attr(all=True, regression=True, smoke=True)
 class rackhd11_api_config(fit_common.unittest.TestCase):
     def test_api_11_config(self):
@@ -43,7 +42,9 @@ class rackhd11_api_config(fit_common.unittest.TestCase):
 
     def test_api_11_config_patch(self):
         api_data_save = fit_common.rackhdapi('/api/1.1/config')['json']
-        if ("logColorEnable" in api_data_save and api_data_save['logColorEnable'] is True):
+        if ("logColorEnable" not in api_data_save):
+            api_data_save['logColorEnable'] = False
+        if (api_data_save['logColorEnable'] is True):
             data_payload = {"logColorEnable": False}
         else:
             data_payload = {"logColorEnable": True}
@@ -59,7 +60,7 @@ class rackhd11_api_config(fit_common.unittest.TestCase):
         api_data = fit_common.rackhdapi("/api/1.1/config", action="patch", payload=api_data_save)
         self.assertEqual(api_data['status'], 200, "Was expecting code 200. Got " + str(api_data['status']))
         api_data = fit_common.rackhdapi('/api/1.1/config')
-        self.assertEqual(api_data['json'], api_data_save)
+        self.assertEqual(api_data['json'], api_data_save, "Patch failure, config not returned to default.")
 
 if __name__ == '__main__':
     fit_common.unittest.main()
