@@ -35,7 +35,7 @@ class AmqpWorker(threading.Thread):
     eg:
     def callback(self, ch, method, properties, body):
         logs.debug(" [x] %r:%r" % (method.routing_key, body))
-        print(" [x] %r:%r" % (method.routing_key, body))
+        logs.debug(" [x] %r:%r" % (method.routing_key, body))
 
     td = fit_amqp.AMQP_worker("node.added.#", callback)
     td.setDaemon(True)
@@ -170,8 +170,7 @@ class amqp_rack_node(fit_common.unittest.TestCase):
                 "createdAt": mon_data_post['json']['createdAt']}
             self.assertEquals(self._compare_message(expected_key, expected_payload), True, "AMQP Message Check Error!")
             logs.debug_3("query rack: %r successfully!" % rackname)
-        if fit_common.VERBOSITY >= 2:
-            print "test: rack creation and query succeed!"
+        logs.debug_2("test: rack creation and query succeed!")
 
     def test_api_delete_rack(self):
         rack_node_list = test_api_utils.get_node_list_by_type("rack")
