@@ -49,6 +49,7 @@ The "server' URL points to the location of the OS executables in an image reposi
 import os
 import sys
 import subprocess
+from nose.plugins.attrib import attr
 
 # set path to common libraries
 sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test/common")
@@ -88,10 +89,10 @@ def wait_for_task_complete(taskid, retries=60):
     log.error(" Workflow Timeout: " + result['text'])
     return False
 
-# helper routine for selecting OS image path by matching proxy path
+# helper routine for selecting OS image path by matching proxy 'localPath'
 def proxy_select(tag):
     for entry in rackhdconfig['httpProxies']:
-        if tag in entry['localPath']:
+        if tag == entry['localPath']:
             return entry['localPath']
     return ''
 
@@ -153,7 +154,7 @@ if "regression" in sys.argv or "-a" not in sys.argv:
 
 
 # ------------------------ Tests -------------------------------------
-from nose.plugins.attrib import attr
+
 @attr(all=True, regression=True)
 
 
