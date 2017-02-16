@@ -5,16 +5,12 @@ Author(s):
 Norton Luo
 
 '''
-import json
 from time import sleep
-import json
-import string
 from datetime import *
 import threading
 import pika
 import logging
 import flogging
-import fit_path
 import fit_common
 import test_api_utils
 from nose.plugins.attrib import attr
