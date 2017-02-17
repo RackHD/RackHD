@@ -112,7 +112,8 @@ OSLIST = [
 # Match up tests to node IDs to feed skip decorators
 index = 0 # node index
 for item in OSLIST:
-    NODE_STATUS[NODECATALOG[index]] = {"os":item['os'], "version":item['version'], "id":"Pending"}
+    if proxy_select(item['path']) and index < len(NODECATALOG):
+        NODE_STATUS[NODECATALOG[index]] = {"os":item['os'], "version":item['version'], "id":"Pending"}
     index += 1
 
 # ------------------------ Tests -------------------------------------
