@@ -46,15 +46,9 @@ The "server' URL points to the location of the OS executables in an image reposi
 
 '''
 
-import os
-import sys
-import subprocess
+import fit_path  # NOQA: unused import
 from nose.plugins.attrib import attr
-
-# set path to common libraries
-sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test/common")
 import fit_common
-
 import flogging
 log = flogging.get_loggers()
 
@@ -103,55 +97,23 @@ def node_taskid(osname, version):
             return NODE_STATUS[entry]['id']
     return ""
 
-# run all bootstraps if regression group is specified or no group is specified
-if "regression" in sys.argv or "-a" not in sys.argv:
-    oslist = [
-        {"os":"ESXi", "version":"5.5", "path":"/ESXi/5.5", "kvm":False},
-        {"os":"ESXi", "version":"6.0", "path":"/ESXi/6.0", "kvm":False},
-        {"os":"CentOS", "version":"6.5", "path":"/CentOS/6.5", "kvm":False},
-        {"os":"CentOS+KVM", "version":"6.5", "path":"/CentOS/6.5", "kvm":True},
-        {"os":"CentOS", "version":"7", "path":"/CentOS/7.0", "kvm":False},
-        {"os":"RHEL+KVM", "version":"7", "path":"/RHEL/7.0", "kvm":True},
-        {"os":"RHEL", "version":"7", "path":"/RHEL/7.0", "kvm":False},
-        {"os":"CentOS+KVM", "version":"7", "path":"/CentOS/7.0", "kvm":True}
-    ]
-    nodeindex = 0
-    for item in oslist:
-        # if OS proxy entry exists in RackHD config, run bootstrap against selected node
-        if proxy_select(item['path']) and nodeindex < len(NODECATALOG):
-            #delete active workflows for specified node
-            fit_common.cancel_active_workflows(NODECATALOG[nodeindex])
-            payload_data = {
-                            "osName": item['os'],
-                            "version": item['version'],
-                            "kvm": item['kvm'],
-                            "repo": rackhdhost + proxy_select(item['path']),
-                            "rootPassword": "1234567",
-                            "hostname": "rackhdnode",
-                            "dnsServers": [rackhdconfig['apiServerAddress']],
-                            "users": [{
-                                        "name": "rackhd",
-                                        "password": "R@ckHD1!",
-                                        "uid": 1010,
-                                    }]
-                           }
-            result = fit_common.rackhdapi('/redfish/v1/Systems/'
-                                                + NODECATALOG[nodeindex]
-                                                + '/Actions/RackHD.BootImage',
-                                                action='post', payload=payload_data)
-            if result['status'] == 202:
-                # this branch saves the task and node IDs
-                NODE_STATUS[NODECATALOG[nodeindex]] = {"os":item['os'], "version":item['version'], "id":result['json']['@odata.id']}
-                log.info_5(" TaskID: " + result['text'])
-                log.info_5(" Payload: " + fit_common.json.dumps(payload_data))
-            else:
-                # this is the failure case where there is no task ID
-                NODE_STATUS[NODECATALOG[nodeindex]] = {"os":item['os'], "version":item['version'], 'id':"/redfish/v1/taskservice/tasks/failed"}
-                log.error(" TaskID: " + result['text'])
-                log.error(" Payload: " + fit_common.json.dumps(payload_data))
-            # increment node index to run next bootstrap
-            nodeindex += 1
 
+OSLIST = [
+    {"os":"ESXi", "version":"5.5", "path":"/ESXi/5.5", "kvm":False},
+    {"os":"ESXi", "version":"6.0", "path":"/ESXi/6.0", "kvm":False},
+    {"os":"CentOS", "version":"6.5", "path":"/CentOS/6.5", "kvm":False},
+    {"os":"CentOS+KVM", "version":"6.5", "path":"/CentOS/6.5", "kvm":True},
+    {"os":"CentOS", "version":"7", "path":"/CentOS/7.0", "kvm":False},
+    {"os":"RHEL+KVM", "version":"7", "path":"/RHEL/7.0", "kvm":True},
+    {"os":"RHEL", "version":"7", "path":"/RHEL/7.0", "kvm":False},
+    {"os":"CentOS+KVM", "version":"7", "path":"/CentOS/7.0", "kvm":True}
+]
+
+# Match up tests to node IDs to feed skip decorators
+index = 0 # node index
+for item in OSLIST:
+    NODE_STATUS[NODECATALOG[index]] = {"os":item['os'], "version":item['version'], "id":"Pending"}
+    index += 1
 
 # ------------------------ Tests -------------------------------------
 
@@ -159,6 +121,46 @@ if "regression" in sys.argv or "-a" not in sys.argv:
 
 
 class redfish_bootstrap_base(fit_common.unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        # run all OS install workflows first
+        nodeindex = 0
+        for item in OSLIST:
+            # if OS proxy entry exists in RackHD config, run bootstrap against selected node
+            if proxy_select(item['path']) and nodeindex < len(NODECATALOG):
+                #delete active workflows for specified node
+                fit_common.cancel_active_workflows(NODECATALOG[nodeindex])
+                payload_data = {
+                                "osName": item['os'],
+                                "version": item['version'],
+                                "kvm": item['kvm'],
+                                "repo": rackhdhost + proxy_select(item['path']),
+                                "rootPassword": "1234567",
+                                "hostname": "rackhdnode",
+                                "dnsServers": [rackhdconfig['apiServerAddress']],
+                                "users": [{
+                                            "name": "rackhd",
+                                            "password": "R@ckHD1!",
+                                            "uid": 1010,
+                                        }]
+                               }
+                result = fit_common.rackhdapi('/redfish/v1/Systems/'
+                                                    + NODECATALOG[nodeindex]
+                                                    + '/Actions/RackHD.BootImage',
+                                                    action='post', payload=payload_data)
+                if result['status'] == 202:
+                    # this branch saves the task and node IDs
+                    NODE_STATUS[NODECATALOG[nodeindex]] = {"os":item['os'], "version":item['version'], "id":result['json']['@odata.id']}
+                    log.info_5(" TaskID: " + result['text'])
+                    log.info_5(" Payload: " + fit_common.json.dumps(payload_data))
+                else:
+                    # this is the failure case where there is no task ID
+                    NODE_STATUS[NODECATALOG[nodeindex]] = {"os":item['os'], "version":item['version'], 'id':"/redfish/v1/taskservice/tasks/failed"}
+                    log.error(" TaskID: " + result['text'])
+                    log.error(" Payload: " + fit_common.json.dumps(payload_data))
+                # increment node index to run next bootstrap
+                nodeindex += 1
 
     @fit_common.unittest.skipUnless(node_taskid("ESXi", "5.5") != '', "Skipping ESXi5.5, repo not configured or node unavailable")
     def test_redfish_bootstrap_esxi55(self):
