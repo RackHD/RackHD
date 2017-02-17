@@ -54,7 +54,7 @@ class rackhd_ha_install(unittest.TestCase):
                               'netmask 255.255.252.0\n')
             control_cfg.close()
             # copy file to ORA
-            fit_common.scp_file_to_ora('control.cfg', vmnum)
+            fit_common.scp_file_to_host('control.cfg', vmnum)
             os.remove('control.cfg')
             self.assertEqual(fit_common.remote_shell('cp control.cfg /etc/network/interfaces.d/', vmnum=vmnum)['exitcode'],
                              0, "Control network config failure.")
@@ -67,9 +67,9 @@ class rackhd_ha_install(unittest.TestCase):
     def reboot_node(self, vmnum):
         address = ""
         if (vmnum == 1):
-            address = fit_common.fitargs()["ora"]
+            address = fit_common.fitargs()['rackhd_host']
         else:
-            address = fit_common.fitargs()["ora"].replace("ora", "ora-" + str(vmnum - 1))
+            address = fit_common.fitargs()['rackhd_host'].replace("ora", "ora-" + str(vmnum - 1))
 
         fit_common.remote_shell('shutdown -r now', vmnum=vmnum)
         time.sleep(3)
@@ -105,7 +105,7 @@ class rackhd_ha_install(unittest.TestCase):
                             '}\n')
             dhcp_conf.close()
             # copy file to ORA
-            fit_common.scp_file_to_ora('dhcpd.conf', vmnum)
+            fit_common.scp_file_to_host('dhcpd.conf', vmnum)
             os.remove('dhcpd.conf')
             self.assertEqual(fit_common.remote_shell('cp dhcpd.conf /etc/dhcp/', vmnum=vmnum)['exitcode'],
                              0, "DHCP Config failure.")
@@ -158,7 +158,7 @@ class rackhd_ha_install(unittest.TestCase):
         for vmnum in range(1, numvms + 1):
             self.create_hosts()
             # copy file to ORA
-            fit_common.scp_file_to_ora('hosts-conf', vmnum)
+            fit_common.scp_file_to_host('hosts-conf', vmnum)
             # Clean out the previous entries to be idempotent
             command = "grep -v {} /etc/hosts > hosts".format(sb_net)
             self.assertEqual(fit_common.remote_shell(command, vmnum=vmnum)['exitcode'],
@@ -188,7 +188,7 @@ class rackhd_ha_install(unittest.TestCase):
         corosync_conf.close()
         for vmnum in range(1, numvms + 1):
             # copy file to ORA
-            fit_common.scp_file_to_ora('corosync.conf', vmnum)
+            fit_common.scp_file_to_host('corosync.conf', vmnum)
             self.assertEqual(fit_common.remote_shell('cp corosync.conf /etc/corosync/', vmnum=vmnum)['exitcode'],
                              0, "Corosync Config failure.")
         os.remove('corosync.conf')
