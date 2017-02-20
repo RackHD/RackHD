@@ -145,7 +145,7 @@ class _OutputScannerBase(plugin_test_helper.resolve_no_verify_helper_class()):
                 lg = logging.getLogger(lg_name)
                 start_level = logging.getLevelName('DEBUG_9')
                 end_level = logging.getLevelName('CRITICAL_0')
-                for lvl in xrange(start_level, end_level):
+                for lvl in range(start_level, end_level):
                     lg.log(lvl, 'MATCH-START %s %d(%s) MATCH-END',
                            lg_name, lvl, logging.getLevelName(lvl))
 

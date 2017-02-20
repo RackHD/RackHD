@@ -4,6 +4,7 @@ Copyright (c) 2017 Dell Inc. or its subsidiaries. All Rights Reserved.
 Self-test of the matcher infrastructure. This is less about individual matchers,
 and more about if the various sequences and groups work (and fail!) as expected.
 """
+from __future__ import print_function
 import unittest
 import plugin_test_helper
 import inspect
@@ -24,7 +25,7 @@ class _InnerResults(object):
     def dump_exception(self):
         if self.__exception_str is not None:
             for line in self.__exception_str.split('\n'):
-                print line
+                print(line)
 
 
 class TestMatcherGroups(plugin_test_helper.resolve_no_verify_helper_class()):

@@ -136,7 +136,7 @@ class _LoggerSetup(object):
     def __makedirs_dash_p(self, *args, **kwargs):
         try:
             os.makedirs(*args, **kwargs)
-        except OSError, e:
+        except OSError as e:
             # be happy if someone already created the path
             if e.errno != errno.EEXIST:
                 raise
@@ -198,7 +198,7 @@ class _LoggerSetup(object):
 
     def __do_level_names(self):
         lvl_copy = dict(_levelNames)
-        for adj in xrange(0, 10):
+        for adj in range(0, 10):
             for lvl_key, lvl_value in lvl_copy.items():
                 if isinstance(lvl_key, str) and lvl_key != 'NOTSET':
                     new_name = "{0}_{1}".format(lvl_key, adj)

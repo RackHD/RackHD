@@ -1,6 +1,7 @@
 """
 Copyright (c) 2016-2017 Dell Inc. or its subsidiaries. All Rights Reserved.
 """
+from __future__ import print_function
 import unittest
 import os
 from nose.plugins import PluginTester
@@ -36,10 +37,10 @@ class _BaseStreamMonitorPluginTesterVerify(_BaseStreamMonitorPluginTester):
 
         # We print out the output from the run tests, trusting in the capture
         # code to hide it.
-        print '*' * 70
+        print('*' * 70)
         for what in self.output:
-            print ">", what.rstrip()
-        print '*' * 70
+            print(">", what.rstrip())
+        print('*' * 70)
 
         # Now check for success (_expect_nose_success can be set by a subclass
         # to mark that it expects an error to occur, and then let it handle its
