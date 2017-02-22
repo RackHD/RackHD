@@ -118,16 +118,16 @@ class rackhd_source_install(fit_common.unittest.TestCase):
         getifs = fit_common.remote_shell("ifconfig -s -a |tail -n +2 |grep -v -e Iface -e lo -e docker")
         # clean out login stuff
         splitifs = getifs['stdout'].split('\n')
-        ifssplit = [] # array of valid eth ports
+        ifslist = [] # array of valid eth ports
         for item in splitifs:
             if "assword" not in item and item.split(" ")[0]:
-                ifssplit.append(item.split(" ")[0])
+                ifslist.append(item.split(" ")[0])
 
         # install control network config
         control_cfg = open('control.cfg', 'w')
         control_cfg.write(
-                            'auto ' + ifssplit[1] + '\n'
-                            'iface ' + ifssplit[1] + ' inet static\n'
+                            'auto ' + ifslist[1] + '\n'
+                            'iface ' + ifslist[1] + ' inet static\n'
                             'address ' + fit_common.fitrackhd()['dhcpGateway'] + '\n'
                             'netmask ' + fit_common.fitrackhd()['dhcpSubnetMask'] + '\n'
                         )
@@ -137,13 +137,14 @@ class rackhd_source_install(fit_common.unittest.TestCase):
         self.assertEqual(fit_common.remote_shell('cp control.cfg /etc/network/interfaces.d/')['exitcode'], 0, "Control network config failure.")
         os.remove('control.cfg')
         # startup NIC
-        fit_common.remote_shell('ip addr add ' + fit_common.fitrackhd()['dhcpGateway'] + '/22 dev ' + ifssplit[1])
-        fit_common.remote_shell('ip link set ' + ifssplit[1] + ' up')
+        cidr = str(sum([bin(int(x)).count("1") for x in fit_common.fitrackhd()['dhcpSubnetMask'].split(".")])) # calculate CIDR
+        fit_common.remote_shell('ip addr add ' + fit_common.fitrackhd()['dhcpGateway'] + '/' + cidr + ' dev ' + ifslist[1])
+        fit_common.remote_shell('ip link set ' + ifslist[1] + ' up')
         self.assertEqual(fit_common.remote_shell('ping -c 1 -w 5 ' + fit_common.fitrackhd()['dhcpGateway'])['exitcode'], 0, 'Control NIC failure.')
 
         # If PDU network adapter is present, configure
         try:
-            ifssplit[2]
+            ifslist[2]
         except IndexError:
             log.info_5("**** No PDU interface available, PDU will not be configured")
         else:
@@ -155,8 +156,8 @@ class rackhd_source_install(fit_common.unittest.TestCase):
                 # build interface config file
                 pdudirect_cfg = open('pdudirect.cfg', 'w')
                 pdudirect_cfg.write(
-                                    'auto ' + ifssplit[2] + '\n'
-                                    'iface ' + ifssplit[2] + ' inet static\n'
+                                    'auto ' + ifslist[2] + '\n'
+                                    'iface ' + ifslist[2] + ' inet static\n'
                                     'address ' + pdu_prefix + '1\n'
                                     'netmask 255.255.255.0\n'
                                     )
@@ -166,14 +167,14 @@ class rackhd_source_install(fit_common.unittest.TestCase):
                 self.assertEqual(fit_common.remote_shell('cp pdudirect.cfg /etc/network/interfaces.d/')['exitcode'], 0, "DHCP Config failure.")
                 os.remove('pdudirect.cfg')
                 # startup NIC
-                fit_common.remote_shell('ip addr add ' + pdu_prefix + '1/24 dev ' + ifssplit[2])
-                fit_common.remote_shell('ip link set ' + ifssplit[2] + ' up')
+                fit_common.remote_shell('ip addr add ' + pdu_prefix + '1/24 dev ' + ifslist[2])
+                fit_common.remote_shell('ip link set ' + ifslist[2] + ' up')
                 self.assertEqual(fit_common.remote_shell('ping -c 1 -w 5 ' + pdu_prefix + '1')['exitcode'], 0, 'PDU NIC failure.')
             else:
                 log.info_5("**** No PDU specified for this stack")
 
         # create DHCP config
-        fit_common.remote_shell('echo INTERFACES=' + ifssplit[1] + ' > /etc/default/isc-dhcp-server')
+        fit_common.remote_shell('echo INTERFACES=' + ifslist[1] + ' > /etc/default/isc-dhcp-server')
         # calculate control LAN IP configuration
         ipsplit = fit_common.fitrackhd()['dhcpGateway'].split(".")
         ip_prefix = ipsplit[0] + '.' + ipsplit[1] + '.' + ipsplit[2] + '.'
