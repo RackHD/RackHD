@@ -2,11 +2,8 @@
 Copyright (c) 2017 Dell Inc. or its subsidiaries. All Rights Reserved.
 """
 import plugin_test_helper
-import sys
-from log_stream_helper import TempLogfileChecker
 import unittest
 import logging
-from StringIO import StringIO
 
 
 class _Expector(object):
@@ -49,45 +46,16 @@ class _Expector(object):
             self.expect_for_real = real_at
 
 
-class _OutputScannerBase(plugin_test_helper.resolve_no_verify_helper_class()):
+class _OutputScannerBase(plugin_test_helper.resolve_logoutput_scanner_helper_class()):
     """
     Plugin tester instance used for each real test block.
     """
-    def setUp(self, *args, **kwargs):
-        """
-        This is called before all the test in the block, but in the context of the
-        plugin-under-test. We do the following:
-        * replace stderr with a StringIO stream.
-        * start a dict of log-file to our cheesy log-file-checkers on the stderr streamio.
-        * add to the dict of log-files with a cheesy log-file-checkers for each physical log file.
-        * init our super (to finish any wiring IT has to do)
-        """
-        checker_dict = {}
-        self.__save_stderr = sys.stderr
-        self.__stream_stderr = StringIO()
-        sys.stderr = self.__stream_stderr
-        checker_dict['stderr'] = TempLogfileChecker('stderr', self.__stream_stderr)
-
-        lg_names = ['all_all.log', 'console_capture.log', 'infra_data.log',
-                    'infra_run.log', 'test_data.log', 'test_run.log']
-        for lg_name in lg_names:
-            checker_dict[lg_name] = TempLogfileChecker(lg_name)
-        self.__lgfile_watchers = checker_dict
-        super(_OutputScannerBase, self).setUp(*args, **kwargs)
-
-    def tearDown(self, *args, **kwargs):
-        """
-        The mirror of setUp. We restore stderr, and call our super.
-        """
-        sys.stderr = self.__save_stderr
-        super(_OutputScannerBase, self).tearDown(*args, **kwargs)
-
     def __common_test_expected(self, expect_level, emit_level, logger_name, log_file):
         if expect_level is not None:
             exp_levelno = logging.getLevelName(expect_level)
             emit_levelno = logging.getLevelName(emit_level)
             expect_level = max(exp_levelno, emit_levelno)
-        self.__lgfile_watchers[log_file].check_level_output(
+        self._lgfile_watchers[log_file].check_level_output(
             self, expect_level, logger_name)
 
     def test_infra_run_expected(self):
