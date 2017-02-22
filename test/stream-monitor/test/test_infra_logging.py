@@ -1,12 +1,13 @@
 """
-Copyright 2016, EMC, Inc.
+Copyright (c) 2016-2017 Dell Inc. or its subsidiaries. All Rights Reserved.
 
 This file contains (very very crude, at the moment!) self
 tests of the logging infrastructure.
 """
-import flogging
+from flogging.infra_logging import logger_get_logging_dir
 import os
 from unittest import TestCase
+
 
 class TestInfraLogging(TestCase):
     def test_canary(self):
@@ -14,7 +15,7 @@ class TestInfraLogging(TestCase):
         pass
 
     def setUp(self):
-        self.__lg_full_path = flogging.logger_get_logging_dir()
+        self.__lg_full_path = logger_get_logging_dir()
         self.__lg_container_path = os.path.dirname(self.__lg_full_path)
         self.__lg_sym_path = os.path.join(self.__lg_container_path, 'run_last.d')
 
@@ -30,7 +31,6 @@ class TestInfraLogging(TestCase):
         # broken links.
         self.assertTrue(os.path.exists(self.__lg_sym_path),
                         "'{0}' is a link that exists, but what it points to does not exist".format(self.__lg_sym_path))
-
 
     def test_symlink_is_relative(self):
         """test run_last.d symlink is relative and not absolute"""

@@ -1,4 +1,8 @@
+"""
+Copyright (c) 2016-2017 Dell Inc. or its subsidiaries. All Rights Reserved.
+"""
 import unittest
+
 
 class TestLoggerStderrNoError(unittest.TestCase):
     # should not see anything from this class.
@@ -8,4 +12,3 @@ class TestLoggerStderrNoError(unittest.TestCase):
 
     def test_stderr_from_testcase(self):
         print "STDERR-MATCH-DATA: {0} test_stderr_from_testcase".format(self.__class__.__name__)
-

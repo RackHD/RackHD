@@ -1,7 +1,8 @@
 """
-Copyright 2016, EMC, Inc.
+Copyright (c) 2016-2017 Dell Inc. or its subsidiaries. All Rights Reserved.
 """
 import plugin_test_helper
+
 
 class TestSMPSingleOkSequence(plugin_test_helper.resolve_helper_class()):
     suitepath = plugin_test_helper.resolve_suitepath('stream-base', 'one_pass')
@@ -10,6 +11,7 @@ class TestSMPSingleOkSequence(plugin_test_helper.resolve_helper_class()):
         self._check_sequence_pre_test()
         self._check_sequence_test('test_one_pass.test_one')
         self._check_sequence_post_test()
+
 
 class TestSMPDoubleOkSequence(plugin_test_helper.resolve_helper_class()):
     suitepath = plugin_test_helper.resolve_suitepath('stream-base', 'two_pass')

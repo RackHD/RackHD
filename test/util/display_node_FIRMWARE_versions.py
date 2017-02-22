@@ -5,14 +5,13 @@
 This is a utility to  display variuos node firmware and manufacturer info.
 '''
 
+import fit_path  # NOQA: unused import
 import os
 import sys
 import subprocess
 import json
 import pprint
 
-# set path to common libraries
-sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test/common")
 import fit_common
 import test_api_utils
 

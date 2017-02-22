@@ -35,31 +35,19 @@ class NodesTests(object):
                 'identifiers': ["FF:FF:FF:01"],
                 'autoDiscover': 'false',
                 'name': 'test_switch_node',
-                'type': 'switch',
-                'snmpSettings': {
-                    'host': '1.1.1.1',
-                    'community': 'rackhd'
-                }
+                'type': 'switch'
             },
             {
                 'identifiers': ["FF:FF:FF:02"],
                 'autoDiscover': 'false',
                 'name': 'test_mgmt_node',
-                'type': 'mgmt',
-                'snmpSettings': {
-                    'host': '1.1.1.1',
-                    'community': 'rackhd'
-                }
+                'type': 'mgmt'
             },
             {
                 'identifiers': ["FF:FF:FF:03"],
                 'autoDiscover': 'false',
                 'name': 'test_pdu_node',
-                'type': 'pdu',
-                'snmpSettings': {
-                    'host': '1.1.1.2',
-                    'community': 'rackhd'
-                }
+                'type': 'pdu'
             },
             {
                 'identifiers': ["FF:FF:FF:04"],
@@ -295,10 +283,6 @@ class NodesTests(object):
                 resps.append(self.__get_data())
         for resp in resps:
             assert_not_equal(0, len(resp), message='No Workflows found for Node')
-
-    	Api().nodes_get_workflow_by_id('fooey')
-        resps_fooey = self.__get_data()
-    	assert_equal(len(resps_fooey), 0, message='Should be empty')
 
     @test(groups=['node_post_workflows-api2'], depends_on_groups=['node_workflows-api2'])
     def test_node_workflows_post(self):

@@ -1,9 +1,11 @@
-from logging import Logger, DEBUG, INFO, getLoggerClass
+"""
+Copyright (c) 2016-2017 Dell Inc. or its subsidiaries. All Rights Reserved.
+"""
+from logging import Logger, DEBUG, INFO
 from logging import getLogger as real_getLogger
 from logging import _srcfile  # yes, this is evil. No, we don't have a choice.
 from .monitor_abc import StreamMonitorABC
 import sys
-from itertools import count
 
 
 class LoggingMarker(StreamMonitorABC):
@@ -11,8 +13,10 @@ class LoggingMarker(StreamMonitorABC):
 
     def __init__(self):
         # import HERE to prevent taking over logfiles for things
-        # like 'nosetests --help'.
-        import flogging
+        # like 'nosetests --help'. Note that a generic "import flogging" won't trigger this.
+        # We need to explicity pull the infra_logging module.
+        import flogging.infra_logging
+        self.__config_reset_method = flogging.infra_logging.logger_reset_configuration
         self.__print_to = None
         # Uncomment next line to view steps to console live
         # self.__print_to = sys.stderr
@@ -24,6 +28,16 @@ class LoggingMarker(StreamMonitorABC):
     def enabled_for_nose(self):
         return True
 
+    def reset_configuration(self):
+        """
+        Basically for use during plugin self-test, which runs multiple complete
+        test life-cycles for the plugins, but this watcher needs to survive
+        between them. The config of levels, etc, however, does NOT!
+
+        Note: __config_reset_method is pulled from the flogging module in __init__.
+        """
+        self.__config_reset_method()
+
     def handle_begin(self):
         self.__loggers = self.__find_loggers()
         self._all_blocks += 1
@@ -31,13 +45,13 @@ class LoggingMarker(StreamMonitorABC):
         self.__mark_all_loggers('', ' Start Of Test Block: {}'.format(self._all_blocks))
 
     def handle_start_test(self, test):
-        self.__mark_all_loggers('', 
-                                '+{0}.{1:02d} - STARTING TEST: %s'.format(self._all_blocks, self.__test_cnt), 
+        self.__mark_all_loggers('',
+                                '+{0}.{1:02d} - STARTING TEST: %s'.format(self._all_blocks, self.__test_cnt),
                                 str(test))
 
     def handle_stop_test(self, test):
-        self.__mark_all_loggers('', 
-                                '-{0}.{1:02d} - ENDING TEST: %s'.format(self._all_blocks, self.__test_cnt), 
+        self.__mark_all_loggers('',
+                                '-{0}.{1:02d} - ENDING TEST: %s'.format(self._all_blocks, self.__test_cnt),
                                 str(test))
         self.__test_cnt += 1
 
@@ -47,9 +61,9 @@ class LoggingMarker(StreamMonitorABC):
         if len(handlers) == 0:
             return  # Nothing to do!
         if _srcfile:
-            #IronPython doesn't track Python frames, so findCaller raises an
-            #exception on some versions of IronPython. We trap it here so that
-            #IronPython can use logging.
+            # IronPython doesn't track Python frames, so findCaller raises an
+            # exception on some versions of IronPython. We trap it here so that
+            # IronPython can use logging.
             try:
                 fn, lno, func = logger.findCaller()
             except ValueError:
@@ -107,7 +121,7 @@ class LoggingMarker(StreamMonitorABC):
         if bracket:
             # rep_cnt is used to fill in about X (20) chars with the repeated
             # text.
-            rep_cnt = int(20/len(bracket))
+            rep_cnt = int(20 / len(bracket))
             self.__mark_all_in_logger(level, logger, bracket * rep_cnt, [])
             self.__mark_all_in_logger(level, logger, fmat, args, **kwargs)
             self.__mark_all_in_logger(level, logger, bracket * rep_cnt, [])
@@ -147,4 +161,3 @@ class LoggingMarker(StreamMonitorABC):
                 observed_loggers[lg_name] = logger
 
         return observed_loggers
-

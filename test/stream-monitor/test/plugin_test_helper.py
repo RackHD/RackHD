@@ -1,5 +1,8 @@
-import unittest, os
-import sys
+"""
+Copyright (c) 2016-2017 Dell Inc. or its subsidiaries. All Rights Reserved.
+"""
+import unittest
+import os
 from nose.plugins import PluginTester
 from sm_plugin import StreamMonitorPlugin
 
@@ -8,15 +11,19 @@ class _BaseStreamMonitorPluginTester(PluginTester, unittest.TestCase):
     activate = '--with-stream-monitor'
     _smp = StreamMonitorPlugin()
     _smp._self_test_print_step_enable()
-    _expect_nose_success = True
     plugins = [_smp]
+
+
+class _BaseStreamMonitorPluginTesterVerify(_BaseStreamMonitorPluginTester):
+    _expect_nose_success = True
+
     def runTest(self):
         # This is called once for each class derived from it. We don't really
         # have access to much other than success/failure and the raw string output
         # for -all- the tests that were run in the derived class.
 
         # We print out the output from the run tests, trusting in the capture
-        # code to hide it. 
+        # code to hide it.
         print '*' * 70
         for what in self.output:
             print ">", what.rstrip()
@@ -26,9 +33,8 @@ class _BaseStreamMonitorPluginTester(PluginTester, unittest.TestCase):
         # to mark that it expects an error to occur, and then let it handle its
         # own checking inside its verify)
         if self._expect_nose_success:
-            self.assertTrue(self.nose.success, 
+            self.assertTrue(self.nose.success,
                             '----a contained test or tests failed----')
-            
 
         self.__call_sequence = self._smp._self_test_sequence_seen()
         self.verify()
@@ -55,13 +61,15 @@ class _BaseStreamMonitorPluginTester(PluginTester, unittest.TestCase):
         self.__check_next('afterTest', ['test'], {'test': test_name})
 
     def _check_sequence_post_test(self):
-        log_dict = self.__check_next('finalize', ['result'])
+        # disable flake8 for log_dict not being used. The act of
+        # getting it makes sure it got filled in.
+        log_dict = self.__check_next('finalize', ['result'])  # noqa: F841
         # todo: poke into log_dict for run/errors/failures.
         # (it's like {'result': <nose.result.TextTestResult run=1 errors=0 failures=0>})
 
     def __check_next(self, step_name, required_keys, match_dict=None):
         if len(self.__call_sequence) == 0:
-            next_thing = ( 'no-more-steps-found', {} )
+            next_thing = ('no-more-steps-found', {})
         else:
             next_thing = self.__call_sequence[0]
             self.__call_sequence = self.__call_sequence[1:]
@@ -92,7 +100,12 @@ class _BaseStreamMonitorPluginTester(PluginTester, unittest.TestCase):
 
 
 def resolve_helper_class():
+    return _BaseStreamMonitorPluginTesterVerify
+
+
+def resolve_no_verify_helper_class():
     return _BaseStreamMonitorPluginTester
+
 
 def resolve_suitepath(*args):
     support = os.path.join(os.path.dirname(__file__), 'support')

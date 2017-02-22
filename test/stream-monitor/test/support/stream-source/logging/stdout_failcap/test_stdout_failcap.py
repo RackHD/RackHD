@@ -1,4 +1,8 @@
+"""
+Copyright (c) 2016-2017 Dell Inc. or its subsidiaries. All Rights Reserved.
+"""
 import unittest
+
 
 class TestLoggerStdoutFail(unittest.TestCase):
     def setUp(self):
@@ -11,4 +15,3 @@ class TestLoggerStdoutFail(unittest.TestCase):
 
     def test_no_stdout_from_testcase(self):
         print "STDOUT-MUST-NOT-SEE: {0} test_no_stdout_from_testcase".format(self.__class__.__name__)
-

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright 2017, EMC, Inc.
+# Copyright (c) 2016-2017 Dell Inc. or its subsidiaries. All Rights Reserved.
 
 # Run code checks (pylint, flake8, etc)
 #

@@ -5,6 +5,7 @@ Copyright 2016, EMC, Inc.
            and verify the task status is correct and the power command occurs
 
 '''
+import fit_path  # NOQA: unused import
 import os
 import sys
 import subprocess
@@ -12,7 +13,6 @@ import time
 import string
 import json
 
-sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test/common")
 import fit_common
 import test_api_utils
 
