@@ -73,9 +73,9 @@ class rackhd_source_install(fit_common.unittest.TestCase):
         self.assertEqual(fit_common.remote_shell("git config --global http.sslverify false")
                          ['exitcode'], 0, "Git config failure.")
         if fit_common.fitproxy()['host'] != '':
-            self.assertEqual(fit_common.remote_shell("git config --global http.proxy http://"
-                             + fit_common.fitproxy()['host'] + ':'
-                             + fit_common.fitproxy()['port'])
+            self.assertEqual(fit_common.remote_shell("git config --global http.proxy http://" +
+                             fit_common.fitproxy()['host'] + ':' +
+                             fit_common.fitproxy()['port'])
                              ['exitcode'], 0, "Git proxy config failure.")
         # install Ansible
         self.assertEqual(fit_common.remote_shell(PROXYVARS + "apt-get -y update")
@@ -91,26 +91,23 @@ class rackhd_source_install(fit_common.unittest.TestCase):
     def test02_clone_rackhd_source(self):
         # clone base repo
         fit_common.remote_shell('rm -rf ~/rackhd')
-        self.assertEqual(fit_common.remote_shell(PROXYVARS + "git clone "
-                         + fit_common.fitinstall()['rackhd']['repo']
-                         + " ~/rackhd")
+        self.assertEqual(fit_common.remote_shell(PROXYVARS + "git clone " +
+                         fit_common.fitinstall()['rackhd']['repo'] + " ~/rackhd")
                          ['exitcode'], 0, "RackHD git clone failure.")
-        self.assertEqual(fit_common.remote_shell("cd ~/rackhd/" + ";git checkout "
-                                                 + fit_common.fitinstall()['rackhd']['branch']
+        self.assertEqual(fit_common.remote_shell("cd ~/rackhd/" + ";git checkout " +
+                                                 fit_common.fitinstall()['rackhd']['branch']
                                                  )['exitcode'], 0, "Branch not found on RackHD repo.")
         '''
         # this section is for future use
         # clone modules
         for repo in fit_common.fitinstall().keys():
-            self.assertEqual(fit_common.remote_shell(PROXYVARS
-                                                    + "rm -rf ~/rackhd/" + repo + ";"
-                                                    + "git clone "
-                                                    + fit_common.fitinstall()[repo]['repo']
-                                                    + " ~/rackhd/" + repo
-                                                     )['exitcode'], 0, "RackHD git clone module failure:" + repo)
-            self.assertEqual(fit_common.remote_shell("cd ~/rackhd/" + repo + ";git checkout "
-                                                     + fit_common.fitinstall()[repo]['branch']
-                                                     )['exitcode'], 0, "Branch not found on module:" + repo)
+            self.assertEqual(fit_common.remote_shell(PROXYVARS +
+                             "rm -rf ~/rackhd/" + repo + ";" + "git clone " +
+                             fit_common.fitinstall()[repo]['repo'] + " ~/rackhd/" + repo)
+                             ['exitcode'], 0, "RackHD git clone module failure:" + repo)
+            self.assertEqual(fit_common.remote_shell("cd ~/rackhd/" + repo + ";git checkout " +
+                             fit_common.fitinstall()[repo]['branch'])
+                             ['exitcode'], 0, "Branch not found on module:" + repo)
         '''
 
     def test03_run_ansible_installer(self):
@@ -140,15 +137,14 @@ class rackhd_source_install(fit_common.unittest.TestCase):
         # copy file to Host
         fit_common.scp_file_to_host('control.cfg')
         self.assertEqual(fit_common.remote_shell('cp control.cfg /etc/network/interfaces.d/')
-                         ['exitcode'], 0, "Control network failure.")
+                         ['exitcode'], 0, "Control network config failure.")
         os.remove('control.cfg')
         # startup NIC
         cidr = str(sum([bin(int(x)).count("1") for x in fit_common.fitrackhd()['dhcpSubnetMask'].split(".")]))  # calculate CIDR
         fit_common.remote_shell('ip addr add ' + fit_common.fitrackhd()['dhcpGateway'] + '/' + cidr + ' dev ' + ifslist[1])
         fit_common.remote_shell('ip link set ' + ifslist[1] + ' up')
-        self.assertEqual(fit_common.remote_shell('ping -c 1 -w 5 '
-                         + fit_common.fitrackhd()['dhcpGateway'])
-                         ['exitcode'], 0, 'Control NIC failure.')
+        self.assertEqual(fit_common.remote_shell('ping -c 1 -w 5 ' + fit_common.fitrackhd()['dhcpGateway'])
+                         ['exitcode'], 0, 'Control NIC config failure.')
 
         # If PDU network adapter is present, configure
         try:
@@ -171,7 +167,7 @@ class rackhd_source_install(fit_common.unittest.TestCase):
                 # copy file to Host
                 fit_common.scp_file_to_host('pdudirect.cfg')
                 self.assertEqual(fit_common.remote_shell('cp pdudirect.cfg /etc/network/interfaces.d/')
-                                 ['exitcode'], 0, "DHCP failure.")
+                                 ['exitcode'], 0, "DHCP config failure.")
                 os.remove('pdudirect.cfg')
                 # startup NIC
                 fit_common.remote_shell('ip addr add ' + pdu_prefix + '1/24 dev ' + ifslist[2])
@@ -187,12 +183,12 @@ class rackhd_source_install(fit_common.unittest.TestCase):
         ipsplit = fit_common.fitrackhd()['dhcpGateway'].split(".")
         ip_prefix = ipsplit[0] + '.' + ipsplit[1] + '.' + ipsplit[2] + '.'
         masksplit = fit_common.fitrackhd()['dhcpSubnetMask'].split(".")
-        dhcp_high = str(int(ipsplit[0]) + (255 - int(masksplit[0]))) + '.' \
-                  + str(int(ipsplit[1]) + (255 - int(masksplit[1]))) + '.' \
-                  + str(int(ipsplit[2]) + (255 - int(masksplit[2]))) + '.' \
-                  + '254'
+        dhcp_high = \
+            str(int(ipsplit[0]) + (255 - int(masksplit[0]))) + '.' + \
+            str(int(ipsplit[1]) + (255 - int(masksplit[1]))) + '.' + \
+            str(int(ipsplit[2]) + (255 - int(masksplit[2]))) + '.' + '254'
         dhcp_low = ip_prefix + str(int(ipsplit[3]) + 1)
-        # build interface config file
+        # build DHCP config file
         dhcp_conf = open('dhcpd.conf', 'w')
         dhcp_conf.write('ddns-update-style none;\n'
                         'option domain-name "example.org";\n'
@@ -236,7 +232,7 @@ class rackhd_source_install(fit_common.unittest.TestCase):
 
     def test06_startup(self):
         self.assertEqual(fit_common.remote_shell("/etc/init.d/isc-dhcp-server restart")
-                         ['exitcode'], 0, "dhcp startup failure.")
+                         ['exitcode'], 0, "DHCP startup failure.")
         self.assertEqual(fit_common.remote_shell("cd ~/;pm2 start rackhd-pm2-config.yml > /dev/null 2>&1")
                          ['exitcode'], 0, "RackHD startup failure.")
         log.info_5("**** Checking installation.")
