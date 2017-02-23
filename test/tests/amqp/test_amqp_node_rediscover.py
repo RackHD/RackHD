@@ -6,7 +6,6 @@ Norton Luo
 
 '''
 
-import string
 from time import sleep
 import Queue
 import random
@@ -407,6 +406,7 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
             "node",
             amqp_message_discover)
         discover_worker.dispose()
+
 
 if __name__ == '__main__':
     unittest.main()
