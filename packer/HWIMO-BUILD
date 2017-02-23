@@ -233,7 +233,7 @@ fi
 
 if [ "${CUSTOMIZED_PROPERTY_OVA}" == "true" ];
 then
-    add_IP_property_to_ova.sh ${BASENAME} 
+    add_IP_property_to_ova.sh ${OVA} 
 fi # End of [ "${CUSTOMIZED_PROPERTY_OVA}" == "true" ]
 
 

@@ -12,6 +12,8 @@ set -e
 #
 #  Reference: http://www.v-front.de/2014/01/building-self-configuring-nested-esxi.html
 #
+#Parameter:
+#   the OVA file name to be converted.
 ###################################################################
 if  [ ! -n "$1" ];  then
     echo "[Error] wrong usage of add_IP_property_to_ova.sh. the original ova file name should be given"
@@ -21,8 +23,15 @@ OVA=$1
 BASENAME=${OVA%.*}
 OVF=$"${BASENAME}.ovf"
 
-rm -f $"${BASENAME}.mf" # remove checksum file, otherwise, existing mf file will prevent ovftool coverting
-echo "covert ${OVA} to OVF file, named ${OVF}"
+### validate the OVA
+FILE_TYPE=`file ${OVA} | awk -F": " '{print $2}'`
+if "${FILE_TYPE}" != "POSIX tar archive"; then
+    echo "[Error]:  ${OVA} is not a valid OVA file"
+    exit -1
+fi
+
+rm -f $"${BASENAME}.mf" # remove checksum file, otherwise, existing mf file will prevent ovftool converting
+echo "convert ${OVA} to OVF file, named ${OVF}"
 ovftool $OVA  $OVF
 echo "modify the OVF adding property."
 
@@ -70,7 +79,7 @@ sed -i 's/<VirtualHardwareSection>/<VirtualHardwareSection ovf:transport="com.vm
 
 
 
-echo "recovert back to OVA"
+echo "reconvert back to OVA"
 ###############
 #[ OVF Template Injection Step #3 ]
 # update checksum
