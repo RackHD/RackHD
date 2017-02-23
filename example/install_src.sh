@@ -19,9 +19,9 @@ BRANCH=${2:-master} # can be a tag like 1.0.0
 
 
 
-RACKHD_CORE_REPOS=("on-core" "on-tasks" "di.js" )
-RACKHD_DEP_REPOS=("on-http" "on-taskgraph" "on-dhcp-proxy" "on-tftp" "on-syslog" )
-RACKHD_NODE_REPOS=("${RACKHD_CORE_REPOS[@]}" "${RACKHD_DEP_REPOS[@]}")
+RACKHD_DEP_REPOS=("on-core" "on-tasks" "di.js" )
+RACKHD_MAIN_REPOS=("on-http" "on-taskgraph" "on-dhcp-proxy" "on-tftp" "on-syslog" )
+RACKHD_NODE_REPOS=("${RACKHD_DEP_REPOS[@]}" "${RACKHD_MAIN_REPOS[@]}")
 RACKHD_OTHER_REPOS=( "on-wss" "on-tools" "on-imagebuilder" "RackHD")
 REPOS=( "${RACKHD_NODE_REPOS[@]}"  "${RACKHD_OTHER_REPOS[@]}" )
 
@@ -82,10 +82,10 @@ done
 
 
 echo "[Info] Move the on-core/on-tasks into each dependent repo's node_modueles..."
-for r in ${RACKHD_DEP_REPOS[@]}; do
+for r in ${RACKHD_MAIN_REPOS[@]}; do
     pushd ${r}/node_modules/
     #remove the on-core/on-tasks, and replace by a link to local folder
-    for dep in ${RACKHD_CORE_REPOS[@]}; do
+    for dep in ${RACKHD_DEP_REPOS[@]}; do
        rm ${dep} -rf
        ln -s ../../${dep}     ${dep}
     done
