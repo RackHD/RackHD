@@ -153,13 +153,13 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
             amqp_body_json = fit_common.json.loads(amqp_body)
         except ValueError:
             self.fail("FAILURE - The message body is not json format!")
-        self.assertIn("nodeId", amqp_body["data"], "nodeId is not contained in the discover message")
+        self.assertIn("nodeId", amqp_body_json["data"], "nodeId is not contained in the discover message")
         self.assertNotEquals(
-            amqp_body["data"]["nodeId"], "", "nodeId generated in discovery doesn't include valid data ")
+            amqp_body_json["data"]["nodeId"], "", "nodeId generated in discovery doesn't include valid data ")
         self.assertIn(
-            "ipMacAddresses", amqp_body["data"], "ipMacAddresses is not contained in the discover message")
+            "ipMacAddresses", amqp_body_json["data"], "ipMacAddresses is not contained in the discover message")
         self.assertNotEquals(
-            amqp_body["data"]["ipMacAddresses"], "",
+            amqp_body_json["data"]["ipMacAddresses"], "",
             "ipMacAddresses generated during node discovery doesn't include valid data ")
 
     def _wait_for_uuid(self, node_uuid):
