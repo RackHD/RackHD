@@ -23,6 +23,7 @@ $ docker-compose up           # Run RackHD and ELK.
 **Prerequisites:**
   * docker v1.10 or higher
   * docker-compose v1.6 or higher [Install Docker Compose](https://docs.docker.com/compose/install/)
+  * Please make sure vm.max_map_count >= 262144 ```sudo sysctl -w vm.max_map_count=262144```
 
 ```
 $ cd RackHD/docker                            # TAG can be a release version, if not set default: latest
