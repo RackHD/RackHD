@@ -115,8 +115,8 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
         return False
 
     def _apply_obmsetting_to_node(self, nodeid):
-        usr = ''
-        pwd = ''
+        # usr = ''
+        # pwd = ''
         response = fit_common.rackhdapi(
             '/api/2.0/nodes/' + nodeid + '/catalogs/bmc')
         bmcip = response['json']['data']['IP Address']
@@ -147,6 +147,20 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
             if api_data['status'] == 201:
                 return True
         return False
+
+    def _node_registration_validate(self, amqp_body):
+        try:
+            amqp_body_json = fit_common.json.loads(amqp_body)
+        except ValueError:
+            self.fail("FAILURE - The message body is not json format!")
+        self.assertIn("nodeId", amqp_body["data"], "nodeId is not contained in the discover message")
+        self.assertNotEquals(
+            amqp_body["data"]["nodeId"], "", "nodeId generated in discovery doesn't include valid data ")
+        self.assertIn(
+            "ipMacAddresses", amqp_body["data"], "ipMacAddresses is not contained in the discover message")
+        self.assertNotEquals(
+            amqp_body["data"]["ipMacAddresses"], "",
+            "ipMacAddresses generated during node discovery doesn't include valid data ")
 
     def _wait_for_uuid(self, node_uuid):
         for dummy in range(0, 20):
@@ -205,8 +219,7 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
             "typeId": typeid,
             "nodeId": nodeid,
             "severity": "information",
-            "version": "1.0",
-            "createdAt": {}}
+            "version": "1.0"}
         self._compare_message(
             amqp_message_body,
             expected_key,
@@ -224,8 +237,7 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
         try:
             amqp_body_json = fit_common.json.loads(amqp_body)
         except ValueError:
-            logs.error("FAILURE - The message body is not json format!")
-            return
+            self.fail("FAILURE - The message body is not json format!")
         try:
             self.assertEquals(
                 amqp_body_json['version'],
@@ -249,7 +261,7 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
                     amqp_body_json['severity']))
             self.assertNotEquals(
                 amqp_body_json['createdAt'],
-                {},
+                "",
                 "createdAt field is empty!")
             self.assertNotEquals(
                 amqp_body_json['data'],
@@ -261,6 +273,7 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
 
     def test_rediscover(self):
         node_collection = test_api_utils.get_node_list_by_type("compute")
+        self.assertNotEquals(node_collection, [], "No compute node found!")
         nodeid = ""
         skupack_intalled = self.check_skupack()
         for dummy in node_collection:
@@ -271,6 +284,7 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
                 '/api/2.0/nodes/' +
                     nodeid)['json']['name'] != "Management Server":
                 break
+
         logs.debug_2('Checking OBM setting...')
         node_obm = fit_common.rackhdapi(
             '/api/2.0/nodes/' + nodeid)['json']['obms']
@@ -283,6 +297,7 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
             '/redfish/v1/Systems/' + nodeid)['json']['UUID']
         logs.debug_3('UUID of selected Node is:{}'.format(node_uuid))
         logs.debug_3('Running rediscover, resetting system node...')
+
         # Reboot the node to begin rediscover.
         logs.debug('launch AMQP thread')
         reset_worker = AmqpWorker(
@@ -326,6 +341,7 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
             10,
             "No AMQP workflow finished message received")
         reset_worker.dispose()
+
         # Start to delete original node.
         logs.debug('launch node delete AMQP thread')
         td = AmqpWorker(
@@ -344,9 +360,10 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
         self._wait_amqp_message(10)
         amqp_message = amqp_queue.get()
         self._process_message("removed", nodeid, nodeid, "node", amqp_message)
+        td.dispose()
+
         # start discovery
         logs.debug_2("Waiting node reboot and boot into microkernel........")
-        td.dispose()
         # clear the amqp message queue
         while amqp_queue.empty is False:
             amqp_queue.get()
@@ -373,6 +390,8 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
             nodefound_id,
             "node",
             amqp_message_discover)
+        self._node_registration_validate(amqp_message_discover[2])
+
         # skip sku.assigned message if no skupack is installed on the ora
         if skupack_intalled:
             logs.debug_2("wait for skupack assign!")
@@ -385,6 +404,7 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
                 "node",
                 amqp_message_discover)
         logs.debug_3("wait for obm assign!")
+
         # re-apply obm setting to the node to generate obm.assigned message
         self.assertTrue(self._apply_obmsetting_to_node(
             nodefound_id), "Fail to apply obm setting!")
