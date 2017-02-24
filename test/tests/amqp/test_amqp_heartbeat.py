@@ -174,5 +174,6 @@ class amqp_heartbeat(fit_common.unittest.TestCase):
             True,
             "AMQP Message Check Error!")
 
+
 if __name__ == '__main__':
     fit_common.unittest.main()
