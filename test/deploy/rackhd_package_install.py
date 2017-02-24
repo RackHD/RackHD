@@ -146,7 +146,7 @@ class rackhd_package_install(fit_common.unittest.TestCase):
             str(int(ipsplit[0]) + (255 - int(masksplit[0]))) + '.' + \
             str(int(ipsplit[1]) + (255 - int(masksplit[1]))) + '.' + \
             str(int(ipsplit[2]) + (255 - int(masksplit[2]))) + '.' + '254'
-        dhcp_low = ip_prefix + str(int(ipsplit[3]) + 1)
+        dhcp_low = ip_prefix + str(int(ipsplit[3]) + 2)
         # build interface config file
         dhcp_conf = open('dhcpd.conf', 'w')
         dhcp_conf.write('ddns-update-style none;\n'
