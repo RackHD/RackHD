@@ -18,9 +18,7 @@ import fit_common
 import test_api_utils
 from nose.plugins.attrib import attr
 logs = flogging.get_loggers()
-amqp_message_received = False
 amqp_queue = Queue.Queue(maxsize=0)
-node_uuid = ""
 nodefound_id = ""
 
 
@@ -95,24 +93,6 @@ class test_poller_alert_amqp_message(unittest.TestCase):
 
     def teardown(self):
         logs.debug_3('finished rediscover')
-
-    def _wait_for_discover(self, node_uuid):
-        # start amqp thread
-        timecount = 0
-        while timecount < 600:
-            if amqp_queue.empty() is False:
-                check_message = amqp_queue.get()
-                if check_message[0][0:10] == "node.added":
-                    if self._wait_for_uuid(node_uuid):
-                        self._process_message(
-                            "added", check_message[1], check_message[1], "node", check_message)
-                        global nodefound_id
-                        nodefound_id = check_message[1]
-                        return True
-            sleep(1)
-            timecount = timecount + 1
-        logs.debug_2("Wait to rediscover Timeout!")
-        return False
 
     def _apply_obmsetting_to_node(self, nodeid):
         usr = ''
@@ -212,7 +192,7 @@ class test_poller_alert_amqp_message(unittest.TestCase):
             severity,
             amqp_message_body):
         expected_key = messagetype + "." + action + \
-            "."+severity+"." + typeid + "." + nodeid
+            "." + severity + "." + typeid + "." + nodeid
         expected_payload = {
             "type": messagetype,
             "action": action,
@@ -295,11 +275,13 @@ class test_poller_alert_amqp_message(unittest.TestCase):
         # bmcip=self._apply_obmsetting_to_node(nodeid)
         test_api_utils.run_ipmi_command_to_node(nodeid, "sel clear")
         # Reboot the node to begin rediscover.
-        pollerid = self._get_ipmi_poller_by_node(nodeid,"selEntries")
+        pollerid = self._get_ipmi_poller_by_node(nodeid, "selEntries")
         logs.debug('launch AMQP thread for sel alert')
         sel_worker = AmqpWorker(
-            exchange_name="on.events", topic_routing_key="polleralert.sel.#." + nodeid,
-            external_callback=self.amqp_callback, timeout=200)
+            exchange_name="on.events",
+            topic_routing_key="polleralert.sel.#." + nodeid,
+            external_callback=self.amqp_callback,
+            timeout=200)
         sel_worker.setDaemon(True)
         sel_worker.start()
         # Send out sel iERR injection.
@@ -317,13 +299,13 @@ class test_poller_alert_amqp_message(unittest.TestCase):
                 workflow_amqp)
             sel_worker.dispose()
 
-    def test_sdr_alert(self):
+    def test_chassis_power_updated(self):
         node_collection = test_api_utils.get_node_list_by_type("compute")
         nodeid = ""
         skupack_intalled = self.check_skupack()
         nodeid = node_collection[
-                random.randint(
-                    0, len(node_collection) - 1)]
+            random.randint(
+                0, len(node_collection) - 1)]
         logs.debug_2('Checking OBM setting...')
         node_obm = fit_common.rackhdapi(
             '/api/2.0/nodes/' + nodeid)['json']['obms']
@@ -331,12 +313,14 @@ class test_poller_alert_amqp_message(unittest.TestCase):
             self.assertTrue(
                 self._apply_obmsetting_to_node(nodeid),
                 "Fail to apply obm setting!")
-        pollerid = self._get_ipmi_poller_by_node(nodeid, "sdr")
+        pollerid = self._get_ipmi_poller_by_node(nodeid, "chassis")
         # logs.debug('launch AMQP thread for sdr monitor')
         logs.debug('This is real 1 !')
         sdr_worker = AmqpWorker(
-            exchange_name="on.events", topic_routing_key="polleralert.sdr.#",
-            external_callback=self.amqp_callback, timeout=200)
+            exchange_name="on.events",
+            topic_routing_key="polleralert.chassispower.updated.#",
+            external_callback=self.amqp_callback,
+            timeout=200)
         logs.debug('This is real 2 !')
         sdr_worker.setDaemon(True)
         logs.debug('This is real 3!')
@@ -354,7 +338,30 @@ class test_poller_alert_amqp_message(unittest.TestCase):
             response['status'] < 209,
             'Incorrect HTTP return code, expected<209, got:' + str(
                 response['status']))
-        logs.debug('Wait sdr update')
+        logs.debug('Wait chassis power update')
+        if skupack_intalled:
+            self._wait_amqp_message(200)
+            workflow_amqp = amqp_queue.get()
+            self._process_message(
+                "sdr.updated",
+                pollerid,
+                nodeid,
+                "polleralert",
+                "information",
+                workflow_amqp)
+        # Power on node
+        response = fit_common.rackhdapi(
+            '/redfish/v1/Systems/' +
+            nodeid +
+            '/Actions/ComputerSystem.Reset',
+            action='post',
+            payload={
+                "reset_type": "ForceOn"})
+        self.assertTrue(
+            response['status'] < 209,
+            'Incorrect HTTP return code, expected<209, got:' + str(
+                response['status']))
+        logs.debug('Wait chassis power update')
         if skupack_intalled:
             self._wait_amqp_message(200)
             workflow_amqp = amqp_queue.get()
@@ -366,6 +373,7 @@ class test_poller_alert_amqp_message(unittest.TestCase):
                 "information",
                 workflow_amqp)
             sdr_worker.dispose()
+
 
 if __name__ == '__main__':
     unittest.main()
