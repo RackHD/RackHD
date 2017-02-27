@@ -13,20 +13,49 @@ services:
     network_mode: "host"
     privileged: true
 
+  rabbitmq: # 5672, 15672
+    image: rabbitmq:management
+    network_mode: "host"
+    privileged: true
+
+  dhcp: # 67/udp
+    image: rackhd/isc-dhcp-server
+    build: "./dhcp"
+    network_mode: "host"
+    privileged: true
+    volumes:
+      - "dhcp-leases:/var/lib/dhcp"
+      - "./dhcp/config:/etc/dhcp"
+      - "./dhcp/defaults:/etc/defaults"
+
   files:
-    image: rackhd/files
+    build: "../on-imagebuilder"
+    image: rackhd/files:${TAG}
     network_mode: "host"
     privileged: true
     volumes:
       - "./files/mount:/RackHD/files"
 
+  # test:
+  #   build: "../test"
+  #   image: "rackhd/test"
+  #   network_mode: "host"
+  #   privileged: true
+
   # RackHD services
+
+  #  core:
+  #    build: "../on-core"
+  #    image: rackhd/on-core:${TAG}
+  #    command: "/bin/echo \"exit\""
 
   dhcp-proxy: # 68/udp, 4011
     build: "../on-dhcp-proxy"
     depends_on:
+      - dhcp
       - mongo
-    image: rackhd/on-dhcp-proxy:latest
+      - rabbitmq
+    image: rackhd/on-dhcp-proxy:${TAG}
     network_mode: "host"
     privileged: true
     volumes:
@@ -38,18 +67,21 @@ services:
     depends_on:
       - files
       - mongo
-    image: rackhd/on-http:latest
+      - rabbitmq
+    image: rackhd/on-http:${TAG}
     network_mode: "host"
     privileged: true
     volumes:
       - "./files/mount/common:/RackHD/on-http/static/http/common"
       - "./monorail:/opt/monorail"
 
+
   syslog: # 514/udp
     build: "../on-syslog"
     depends_on:
       - mongo
-    image: rackhd/on-syslog:latest
+      - rabbitmq
+    image: rackhd/on-syslog:${TAG}
     network_mode: "host"
     privileged: true
     volumes:
@@ -58,9 +90,11 @@ services:
   taskgraph:
     build: "../on-taskgraph"
     depends_on:
+      - dhcp
       - mongo
+      - rabbitmq
       - syslog
-    image: rackhd/on-taskgraph:latest
+    image: rackhd/on-taskgraph:${TAG}
     network_mode: "host"
     privileged: true
     volumes:
@@ -71,11 +105,13 @@ services:
     depends_on:
       - files
       - mongo
+      - rabbitmq
       - syslog
-    image: rackhd/on-tftp:latest
+    image: rackhd/on-tftp:${TAG}
     network_mode: "host"
     privileged: true
     volumes:
       - "./files/mount:/RackHD/on-tftp/static/tftp"
       - "./monorail:/opt/monorail"
+
 
