@@ -314,65 +314,51 @@ class test_poller_alert_amqp_message(unittest.TestCase):
                 self._apply_obmsetting_to_node(nodeid),
                 "Fail to apply obm setting!")
         pollerid = self._get_ipmi_poller_by_node(nodeid, "chassis")
-        # logs.debug('launch AMQP thread for sdr monitor')
-        logs.debug('This is real 1 !')
-        sdr_worker = AmqpWorker(
+        logs.debug('launch AMQP thread for chassis state monitor')
+        chassis_worker = AmqpWorker(
             exchange_name="on.events",
             topic_routing_key="polleralert.chassispower.updated.#",
             external_callback=self.amqp_callback,
             timeout=200)
-        logs.debug('This is real 2 !')
-        sdr_worker.setDaemon(True)
-        logs.debug('This is real 3!')
-        sdr_worker.start()
-        logs.debug('Power off node to change sdr')
-        # Power off node.
-        response = fit_common.rackhdapi(
-            '/redfish/v1/Systems/' +
-            nodeid +
-            '/Actions/ComputerSystem.Reset',
-            action='post',
-            payload={
-                "reset_type": "ForceOff"})
-        self.assertTrue(
-            response['status'] < 209,
-            'Incorrect HTTP return code, expected<209, got:' + str(
-                response['status']))
+        chassis_worker.setDaemon(True)
+        chassis_worker.start()
+        ssh_output = test_api_utils.run_ipmi_command_to_node(nodeid, "chassis power status")
+        # If in initial state the chassis power is on, then the test will do power off->power on
+        # Otherwise it will do power on -> power off
+        if "Chassis Power is on" in ssh_output['stdout']:
+            command1 = "chassis power off"
+            command2 = "chassis power on"
+        else:
+            command1 = "chassis power on"
+            command2 = "chassis power off"
+        logs.debug('Power off/on node to change chassis power state')
+        test_api_utils.run_ipmi_command_to_node(nodeid, command1)
         logs.debug('Wait chassis power update')
         if skupack_intalled:
             self._wait_amqp_message(200)
             workflow_amqp = amqp_queue.get()
             self._process_message(
-                "sdr.updated",
+                "chassispower.updated",
                 pollerid,
                 nodeid,
                 "polleralert",
                 "information",
                 workflow_amqp)
         # Power on node
-        response = fit_common.rackhdapi(
-            '/redfish/v1/Systems/' +
-            nodeid +
-            '/Actions/ComputerSystem.Reset',
-            action='post',
-            payload={
-                "reset_type": "ForceOn"})
-        self.assertTrue(
-            response['status'] < 209,
-            'Incorrect HTTP return code, expected<209, got:' + str(
-                response['status']))
+        logs.debug('Wait chassis power update')
+        test_api_utils.run_ipmi_command_to_node(nodeid, command2)
         logs.debug('Wait chassis power update')
         if skupack_intalled:
             self._wait_amqp_message(200)
             workflow_amqp = amqp_queue.get()
             self._process_message(
-                "sdr.updated",
+                "chassispower.updated",
                 pollerid,
                 nodeid,
                 "polleralert",
                 "information",
                 workflow_amqp)
-            sdr_worker.dispose()
+            chassis_worker.dispose()
 
 
 if __name__ == '__main__':
