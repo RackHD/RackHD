@@ -15,15 +15,13 @@ usage:
     python run_tests.py -stack <stack ID> -test deploy/rackhd_ha_install.py -numvms <num>
 """
 from jinja2 import Environment, FileSystemLoader
+import fit_path  # NOQA: unused import
 import os
 import sys
 import subprocess
 import unittest
 import time
 from nosedep import depends
-
-# set path to common libraries
-sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test/common")
 import fit_common
 
 ifslist = []   # array of valid eth ports
