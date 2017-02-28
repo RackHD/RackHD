@@ -156,11 +156,10 @@ class test_poller_alert_amqp_message(unittest.TestCase):
             "AMQP message receive timeout")
 
     def _get_ipmi_poller_by_node(self, node_id, seltype):
-        monurl = "/api/1.1/nodes/" + str(node_id) + "/pollers"
+        monurl = "/api/2.0/nodes/" + str(node_id) + "/pollers"
         mondata = fit_common.rackhdapi(url_cmd=monurl)
         if mondata['status'] not in [200, 201, 202, 204]:
-            if fit_common.VERBOSITY >= 2:
-                print "Status: {},  Failed to get pollers for node: {}".format(mondata['status'], node_id)
+            self.fail("Get status: {},  Failed to get pollers for node: {}".format(mondata['status'], node_id))
         else:
             pollers = mondata['json']
             for poller in pollers:
