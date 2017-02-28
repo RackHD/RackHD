@@ -15,16 +15,12 @@ import sys
 import json
 import subprocess
 import time
-import datetime
-import unittest
-import signal
+import unittest   # NOQA: imported but unused
 import re
 import requests
 import pexpect
-import shutil
 import inspect
 
-import nose
 import argparse
 from mkcfg import mkcfg
 
@@ -267,6 +263,40 @@ def update_globals():
     VERBOSITY = fitglobals()['VERBOSITY']
 
 
+def _fix_check_unicode(value):
+    """
+    function to help with unicode characters in command line arguments.
+    * will subsitute a single '-' for a couple of different single-dash-like unicode chars
+    * will subsitute a double '--' for an em_dash unicode character
+
+    If there still unicode in the string once the substituion is complete that would
+    prevent converting to pure-ascii, None is returned. Otherwise the fixed string is.
+    """
+    # First turn from byte-string to utf-8
+    value = value.decode("utf-8")
+
+    # These are the various hyphen/dashes that
+    # look like single '-'s...
+    h_minus = u'\u002d'
+    hyphen = u'\u2010'
+    en_dash = u'\u2013'
+    single_dash_list = [h_minus, hyphen, en_dash]
+    # walk through and substitute single-dash-like unicode to plain minus
+    for convert_dash in single_dash_list:
+        value = value.replace(convert_dash, '-')
+
+    # now do the em_dash, which is the '--'
+    em_dash = u'\u2014'
+    value = value.replace(em_dash, '--')
+
+    # Now convert to ascii and complain if we can't
+    try:
+        final_value = value.decode('ascii')
+    except UnicodeEncodeError:
+        final_value = None
+    return final_value
+
+
 def mkargs(in_args=None):
     """
     processes the command line options as passed in by in_args.
@@ -315,7 +345,7 @@ def mkargs(in_args=None):
                             help="API port number override, default from install_config.json")
     arg_parser.add_argument("-v", default=4, type=int,
                             help="Verbosity level of console and log output (see -nose-help for more options), Built Ins: " +
-                                 "0: Minimal logging, "+
+                                 "0: Minimal logging, " +
                                  "1: Display ERROR and CRITICAL to console and to files, " +
                                  "3: Display INFO to console and to files, " +
                                  "4: (default) Display INFO to console, and DEBUG to files, " +
@@ -325,6 +355,17 @@ def mkargs(in_args=None):
                                  "9: Display infra.* and test.* at DEBUG_9 (max output) ")
     arg_parser.add_argument("-nose-help", default=False, action="store_true", dest="nose_help",
                             help="display help from underlying nosetests command, including additional log options")
+
+    fixed_args = []
+    for arg in in_args:
+        new_value = _fix_check_unicode(arg)
+        if new_value is None:
+            arg_parser.error(
+                "Argument '{0}' of {1} had unknown unicode characters in it, likely from a cut-and-paste.".format(
+                    arg, in_args))
+        fixed_args.append(new_value)
+    in_args = fixed_args
+
     # we want to grab the arguments we want, and pass the rest
     # into the nosetest invocation.
     parse_results, other_args = arg_parser.parse_known_args(in_args)
