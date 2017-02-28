@@ -83,12 +83,14 @@ def wait_for_task_complete(taskid, retries=60):
     log.error(" Workflow Timeout: " + result['text'])
     return False
 
+
 # helper routine for selecting OS image path by matching proxy 'localPath'
 def proxy_select(tag):
     for entry in rackhdconfig['httpProxies']:
         if tag == entry['localPath']:
             return entry['localPath']
     return ''
+
 
 # helper routine to return the task ID associated with the running bootstrap workflow
 def node_taskid(osname, version):
@@ -99,30 +101,28 @@ def node_taskid(osname, version):
 
 
 OSLIST = [
-    {"os":"ESXi", "version":"5.5", "path":"/ESXi/5.5", "kvm":False},
-    {"os":"ESXi", "version":"6.0", "path":"/ESXi/6.0", "kvm":False},
-    {"os":"CentOS", "version":"6.5", "path":"/CentOS/6.5", "kvm":False},
-    {"os":"CentOS+KVM", "version":"6.5", "path":"/CentOS/6.5", "kvm":True},
-    {"os":"CentOS", "version":"7", "path":"/CentOS/7.0", "kvm":False},
-    {"os":"RHEL+KVM", "version":"7", "path":"/RHEL/7.0", "kvm":True},
-    {"os":"RHEL", "version":"7", "path":"/RHEL/7.0", "kvm":False},
-    {"os":"CentOS+KVM", "version":"7", "path":"/CentOS/7.0", "kvm":True}
+    {"os": "ESXi", "version": "5.5", "path": "/ESXi/5.5", "kvm": False},
+    {"os": "ESXi", "version": "6.0", "path": "/ESXi/6.0", "kvm": False},
+    {"os": "CentOS", "version": "6.5", "path": "/CentOS/6.5", "kvm": False},
+    {"os": "CentOS+KVM", "version": "6.5", "path": "/CentOS/6.5", "kvm": True},
+    {"os": "CentOS", "version": "7", "path": "/CentOS/7.0", "kvm": False},
+    {"os": "RHEL+KVM", "version": "7", "path": "/RHEL/7.0", "kvm": True},
+    {"os": "RHEL", "version": "7", "path": "/RHEL/7.0", "kvm": False},
+    {"os": "CentOS+KVM", "version": "7", "path": "/CentOS/7.0", "kvm": True}
 ]
 
 # Match up tests to node IDs to feed skip decorators
-index = 0 # node index
+index = 0  # node index
 for item in OSLIST:
     if proxy_select(item['path']) and index < len(NODECATALOG):
-        NODE_STATUS[NODECATALOG[index]] = {"os":item['os'], "version":item['version'], "id":"Pending"}
+        NODE_STATUS[NODECATALOG[index]] = {"os": item['os'], "version": item['version'], "id": "Pending"}
     index += 1
 
 # ------------------------ Tests -------------------------------------
 
+
 @attr(all=True, regression=True)
-
-
 class redfish_bootstrap_base(fit_common.unittest.TestCase):
-
     @classmethod
     def setUpClass(cls):
         # run all OS install workflows first
@@ -130,70 +130,77 @@ class redfish_bootstrap_base(fit_common.unittest.TestCase):
         for item in OSLIST:
             # if OS proxy entry exists in RackHD config, run bootstrap against selected node
             if proxy_select(item['path']) and nodeindex < len(NODECATALOG):
-                #delete active workflows for specified node
+                # delete active workflows for specified node
                 fit_common.cancel_active_workflows(NODECATALOG[nodeindex])
-                payload_data = {
-                                "osName": item['os'],
+                payload_data = {"osName": item['os'],
                                 "version": item['version'],
                                 "kvm": item['kvm'],
                                 "repo": rackhdhost + proxy_select(item['path']),
                                 "rootPassword": "1234567",
                                 "hostname": "rackhdnode",
                                 "dnsServers": [rackhdconfig['apiServerAddress']],
-                                "users": [{
-                                            "name": "rackhd",
-                                            "password": "R@ckHD1!",
-                                            "uid": 1010,
-                                        }]
-                               }
-                result = fit_common.rackhdapi('/redfish/v1/Systems/'
-                                                    + NODECATALOG[nodeindex]
-                                                    + '/Actions/RackHD.BootImage',
-                                                    action='post', payload=payload_data)
+                                "users": [{"name": "rackhd",
+                                           "password": "R@ckHD1!",
+                                           "uid": 1010}]}
+                result = fit_common.rackhdapi('/redfish/v1/Systems/' +
+                                              NODECATALOG[nodeindex] +
+                                              '/Actions/RackHD.BootImage',
+                                              action='post', payload=payload_data)
                 if result['status'] == 202:
                     # this branch saves the task and node IDs
-                    NODE_STATUS[NODECATALOG[nodeindex]] = {"os":item['os'], "version":item['version'], "id":result['json']['@odata.id']}
+                    NODE_STATUS[NODECATALOG[nodeindex]] = \
+                        {"os": item['os'], "version": item['version'], "id": result['json']['@odata.id']}
                     log.info_5(" TaskID: " + result['text'])
                     log.info_5(" Payload: " + fit_common.json.dumps(payload_data))
                 else:
                     # this is the failure case where there is no task ID
-                    NODE_STATUS[NODECATALOG[nodeindex]] = {"os":item['os'], "version":item['version'], 'id':"/redfish/v1/taskservice/tasks/failed"}
+                    NODE_STATUS[NODECATALOG[nodeindex]] = \
+                        {"os": item['os'], "version": item['version'], 'id': "/redfish/v1/taskservice/tasks/failed"}
                     log.error(" TaskID: " + result['text'])
                     log.error(" Payload: " + fit_common.json.dumps(payload_data))
                 # increment node index to run next bootstrap
                 nodeindex += 1
 
-    @fit_common.unittest.skipUnless(node_taskid("ESXi", "5.5") != '', "Skipping ESXi5.5, repo not configured or node unavailable")
+    @fit_common.unittest.skipUnless(node_taskid("ESXi", "5.5") != '',
+                                    "Skipping ESXi5.5, repo not configured or node unavailable")
     def test_redfish_bootstrap_esxi55(self):
         self.assertTrue(wait_for_task_complete(node_taskid("ESXi", "5.5")), "ESXi5.5 failed.")
 
-    @fit_common.unittest.skipUnless(node_taskid("ESXi", "6.0")  != '', "Skipping ESXi6.0, repo not configured or node unavailable")
+    @fit_common.unittest.skipUnless(node_taskid("ESXi", "6.0") != '',
+                                    "Skipping ESXi6.0, repo not configured or node unavailable")
     def test_redfish_bootstrap_esxi60(self):
         self.assertTrue(wait_for_task_complete(node_taskid("ESXi", "6.0")), "ESXi6.0 failed.")
 
-    @fit_common.unittest.skipUnless(node_taskid("CentOS", "6.5")  != '', "Skipping Centos 6.5, repo not configured or node unavailable")
+    @fit_common.unittest.skipUnless(node_taskid("CentOS", "6.5") != '',
+                                    "Skipping Centos 6.5, repo not configured or node unavailable")
     def test_redfish_bootstrap_centos65(self):
         self.assertTrue(wait_for_task_complete(node_taskid("CentOS", "6.5")), "Centos 6.5 failed.")
 
-    @fit_common.unittest.skipUnless(node_taskid("CentOS+KVM", "6.5") != '', "Skipping Centos 6.5 KVM, repo not configured or node unavailable")
+    @fit_common.unittest.skipUnless(node_taskid("CentOS+KVM", "6.5") != '',
+                                    "Skipping Centos 6.5 KVM, repo not configured or node unavailable")
     def test_redfish_bootstrap_centos65_kvm(self):
         self.assertTrue(wait_for_task_complete(node_taskid("CentOS+KVM", "6.5")), "Centos 6.5 KVM failed.")
 
-    @fit_common.unittest.skipUnless(node_taskid("CentOS", "7") != '', "Skipping Centos 7.0, repo not configured or node unavailable")
+    @fit_common.unittest.skipUnless(node_taskid("CentOS", "7") != '',
+                                    "Skipping Centos 7.0, repo not configured or node unavailable")
     def test_redfish_bootstrap_centos70(self):
         self.assertTrue(wait_for_task_complete(node_taskid("CentOS", "7")), "Centos 7.0 failed.")
 
-    @fit_common.unittest.skipUnless(node_taskid("CentOS+KVM", "7") != '', "Skipping Centos 7.0 KVM, repo not configured or node unavailable")
+    @fit_common.unittest.skipUnless(node_taskid("CentOS+KVM", "7") != '',
+                                    "Skipping Centos 7.0 KVM, repo not configured or node unavailable")
     def test_redfish_bootstrap_centos70_kvm(self):
         self.assertTrue(wait_for_task_complete(node_taskid("CentOS+KVM", "7")), "Centos 7.0 KVM failed.")
 
-    @fit_common.unittest.skipUnless(node_taskid("RHEL", "7") != '', "Skipping Redhat 7.0, repo not configured or node unavailable")
+    @fit_common.unittest.skipUnless(node_taskid("RHEL", "7") != '',
+                                    "Skipping Redhat 7.0, repo not configured or node unavailable")
     def test_redfish_bootstrap_rhel70(self):
         self.assertTrue(wait_for_task_complete(node_taskid("RHEL", "7")), "RHEL 7.0 failed.")
 
-    @fit_common.unittest.skipUnless(node_taskid("RHEL+KVM", "7") != '', "Skipping Redhat 7.0 KVM, repo not configured or node unavailable")
+    @fit_common.unittest.skipUnless(node_taskid("RHEL+KVM", "7") != '',
+                                    "Skipping Redhat 7.0 KVM, repo not configured or node unavailable")
     def test_redfish_bootstrap_rhel70_kvm(self):
         self.assertTrue(wait_for_task_complete(node_taskid("RHEL+KVM", "7")), "RHEL 7.0 KVM failed.")
+
 
 if __name__ == '__main__':
     fit_common.unittest.main()
