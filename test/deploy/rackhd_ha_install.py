@@ -17,7 +17,6 @@ usage:
 from jinja2 import Environment, FileSystemLoader
 import fit_path  # NOQA: unused import
 import os
-import sys
 import subprocess
 import unittest
 import time
