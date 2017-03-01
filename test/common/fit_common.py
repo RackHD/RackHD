@@ -217,12 +217,12 @@ def add_globals():
     if fitargs()['port'] != "None":
         API_PORT = fitargs()['port']
 
-    if fitargs()['http'] == True:
+    if fitargs()['http'] is True:
         API_PROTOCOL = "http"
         if API_PORT == "None":
             API_PORT = fitports()['http']
 
-    if fitargs()['https'] == True:
+    if fitargs()['https'] is True:
         API_PROTOCOL = "https"
         if API_PORT == "None":
             API_PORT = fitports()['https']
