@@ -217,21 +217,15 @@ def add_globals():
     if fitargs()['port'] != "None":
         API_PORT = fitargs()['port']
 
-    if fitargs()['http'] == "True":
+    if fitargs()['http'] == True:
         API_PROTOCOL = "http"
         if API_PORT == "None":
             API_PORT = fitports()['http']
 
-    if fitargs()['https'] == "True":
+    if fitargs()['https'] == True:
         API_PROTOCOL = "https"
         if API_PORT == "None":
             API_PORT = fitports()['https']
-
-    if fitargs()['rackhd_host'] == "localhost":
-        if API_PROTOCOL == "None":
-            API_PROTOCOL = 'http'
-        if API_PORT == "None":
-            API_PORT = '8080'
 
     # add globals section to base configuration
     TEST_PATH = fit_path.fit_path_root + '/'
