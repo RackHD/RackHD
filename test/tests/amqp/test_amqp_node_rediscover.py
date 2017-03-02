@@ -9,11 +9,15 @@ Norton Luo
 from time import sleep
 import Queue
 import random
+import socket
 import flogging
 import logging
 import pika
 import unittest
+import json
 import threading
+from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
+from optparse import OptionParser
 import fit_common
 import test_api_utils
 from nose.plugins.attrib import attr
@@ -22,6 +26,8 @@ amqp_message_received = False
 amqp_queue = Queue.Queue(maxsize=0)
 node_uuid = ""
 nodefound_id = ""
+ebhook_received = False
+webhook_body = ""
 
 
 class AmqpWorker(threading.Thread):
@@ -85,6 +91,33 @@ class AmqpWorker(threading.Thread):
         self.channel.start_consuming()
 
 
+class RequestHandler(BaseHTTPRequestHandler):
+    def do_POST(self):
+        request_headers = self.headers
+        content_length = request_headers.getheaders('content-length')
+        length = int(content_length[0]) if content_length else 0
+        global webhook_received, webhook_body
+        webhook_received = True
+        webhook_body = str(self.rfile.read(length))
+        logs.debug(webhook_body)
+        self.send_response(200)
+
+
+class HttpWorker(threading.Thread):
+    def __init__(self, port, timeout=10):
+        threading.Thread.__init__(self)
+        self.server = HTTPServer(('', port), RequestHandler)
+        self.server.timeout = timeout
+
+    def dispose(self):
+        logs.debug('http service shutdown')
+        self.thread_stop = True
+
+    def run(self):
+        self.server.handle_request()
+        self.dispose()
+
+
 # Check if the node is rediscovered. Retry in every 30 seconds and total
 # 600 seconds.
 @attr(all=True, regression=False, smoke=False)
@@ -113,6 +146,30 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
             timecount = timecount + 1
         logs.debug_2("Wait to rediscover Timeout!")
         return False
+
+    def _set_web_hook(self, ip, port):
+        mondata = fit_common.rackhdapi('/api/current/hooks')
+        self.assertTrue(
+            mondata['status'] < 209,
+            'Incorrect HTTP return code, could not check hooks. expected<209, got:' + str(
+                mondata['status']))
+        hookurl = "http://" + str(ip) + ":" + str(port)
+        for hooks in mondata['json']:
+            if hooks['url'] == hookurl:
+                logs.debug("hook URL alread exist the in RackHD")
+                return
+        response = fit_common.rackhdapi(
+            '/api/current/hooks',
+            action='post',
+            payload={
+                "name": "FITdiscovery",
+                "url": hookurl,
+                "filters": [{"type": "node",
+                            "action": "discovered"}]})
+        self.assertTrue(
+            response['status'] < 209,
+            'Incorrect HTTP return code, expected<209, got:' + str(
+                response['status']))
 
     def _apply_obmsetting_to_node(self, nodeid):
         # usr = ''
@@ -150,7 +207,7 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
 
     def _node_registration_validate(self, amqp_body):
         try:
-            amqp_body_json = fit_common.json.loads(amqp_body)
+            amqp_body_json = json.loads(amqp_body)
         except ValueError:
             self.fail("FAILURE - The message body is not json format!")
         self.assertIn("nodeId", amqp_body_json["data"], "nodeId is not contained in the discover message")
@@ -197,12 +254,50 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
             [method.routing_key, fit_common.json.loads(body)["nodeId"], body])
         nodefound_id = fit_common.json.loads(body)["nodeId"]
 
-    def check_skupack(self):
+    def _check_skupack(self):
         sku_installed = fit_common.rackhdapi('/api/2.0/skus')['json']
         if len(sku_installed) < 2:
             return False
         else:
             return True
+
+    def _get_tester_ip(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        ip = fit_common.fitargs()['ora']
+        logs.debug("pinging " + ip)
+        s.connect((ip, 0))
+        logs.debug('My IP address is: ' + s.getsockname()[0])
+        return str(s.getsockname()[0])
+
+    def _process_web_message(self, timeout):
+        global webhook_received, webhook_body
+        timecount = 0
+        while webhook_received is False and timecount < timeout:
+            sleep(1)
+            timecount = timecount + 1
+        self.assertNotEquals(
+            timecount,
+            timeout,
+            "Web hook message receive timeout")
+        try:
+            webhook_body_json = json.loads(webhook_body)
+        except ValueError:
+            self.fail("FAILURE - The message body is not json format!")
+
+        self.assertIn("action", webhook_body_json, "action field is not contained in the discover message")
+        self.assertEquals(
+            webhook_body_json['action'], "discovered",
+            "action field not correct!  expect {0}, get {1}"
+            .format("discovered", webhook_body_json['action']))
+        self.assertIn("data", webhook_body_json, "data field is not contained in the discover message")
+        self.assertIn("nodeId", webhook_body_json["data"], "nodeId is not contained in the discover message")
+        self.assertNotEquals(
+            webhook_body_json["data"]["nodeId"], "", "nodeId generated in discovery doesn't include valid data ")
+        self.assertIn(
+            "ipMacAddresses", webhook_body_json["data"], "ipMacAddresses is not contained in the discover message")
+        self.assertNotEquals(
+            webhook_body_json["data"]["ipMacAddresses"], "",
+            "ipMacAddresses generated during node discovery doesn't include valid data ")
 
     def _process_message(
             self,
@@ -275,7 +370,7 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
         node_collection = test_api_utils.get_node_list_by_type("compute")
         self.assertNotEquals(node_collection, [], "No compute node found!")
         nodeid = ""
-        skupack_intalled = self.check_skupack()
+        skupack_intalled = self._check_skupack()
         for dummy in node_collection:
             nodeid = node_collection[
                 random.randint(
@@ -319,7 +414,7 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
                 response['status']))
         graphid = response['json']["@odata.id"].split(
             '/redfish/v1/TaskService/Tasks/')[1]
-        self._wait_amqp_message(5)
+        self._wait_amqp_message(10)
         workflow_amqp = amqp_queue.get()
         self._process_message(
             "progress.updated",
@@ -329,7 +424,7 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
             workflow_amqp)
         retry_count = 0
         while retry_count < 10:
-            self._wait_amqp_message(30)
+            self._wait_amqp_message(60)
             workflow_amqp = amqp_queue.get()
             if workflow_amqp[0][0:14] == "graph.finished":
                 self._process_message(
@@ -364,6 +459,14 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
 
         # start discovery
         logs.debug_2("Waiting node reboot and boot into microkernel........")
+        myip = self._get_tester_ip()
+        self._set_web_hook(myip, 9889)
+        logs.debug('Listening on localhost:%s' % 9889)
+        global webhook_received
+        webhook_received = False
+        serverworker = HttpWorker(9889, 300)
+        serverworker.setDaemon(True)
+        serverworker.start()
         # clear the amqp message queue
         while amqp_queue.empty is False:
             amqp_queue.get()
@@ -380,7 +483,7 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
             self._wait_for_discover(node_uuid),
             "Fail to find the orignial node after reboot!")
         logs.debug_2(
-            "Found the orignial node. It is rediscovered succesfully!")
+            "Found the original node. It is rediscovered successfully!")
         logs.debug('Wait for node discovery')
         self._wait_amqp_message(60)
         amqp_message_discover = amqp_queue.get()
@@ -390,7 +493,10 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
             nodefound_id,
             "node",
             amqp_message_discover)
+        logs.debug('Validate node discovery registration AMQP Message')
         self._node_registration_validate(amqp_message_discover[2])
+        logs.debug('Validate node discovery registration web hook Message')
+        self._process_web_message(30)
 
         # skip sku.assigned message if no skupack is installed on the ora
         if skupack_intalled:
@@ -416,7 +522,7 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
             nodefound_id,
             "node",
             amqp_message_discover)
-        logs.debug_3("wait for accessbile!")
+        logs.debug_3("wait for accessible!")
         self._wait_amqp_message(100)
         amqp_message_discover = amqp_queue.get()
         self._process_message(
