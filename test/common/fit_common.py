@@ -214,18 +214,19 @@ def add_globals():
     global VERBOSITY
 
     # set api port and protocol from command line
-    if fitargs()['port'] != "None":
-        API_PORT = fitargs()['port']
 
     if fitargs()['http'] is True:
         API_PROTOCOL = "http"
-        if API_PORT == "None":
-            API_PORT = fitports()['http']
-
-    if fitargs()['https'] is True:
+        API_PORT = str(fitports()['http'])
+    elif fitargs()['https'] is True:
         API_PROTOCOL = "https"
-        if API_PORT == "None":
-            API_PORT = fitports()['https']
+        API_PORT = str(fitports()['https'])
+    else:  # default protocol is http
+        API_PROTOCOL = "http"
+        API_PORT = str(fitports()['http'])
+
+    if fitargs()['port'] != "None":  # port override via command line -port
+        API_PORT = fitargs()['port']
 
     # add globals section to base configuration
     TEST_PATH = fit_path.fit_path_root + '/'
@@ -240,7 +241,7 @@ def add_globals():
         }
     })
 
-    # set OVA template from command line
+    # set OVA template from command line -template
     if fitargs()["template"] == "None":
         fitargs()["template"] = fitcfg()['install-config']['template']
 
@@ -553,17 +554,17 @@ def get_auth_token():
     api_login = {"username": fitcreds()["api"][0]["admin_user"], "password": fitcreds()["api"][0]["admin_pass"]}
     redfish_login = {"UserName": fitcreds()["api"][0]["admin_user"], "Password": fitcreds()["api"][0]["admin_pass"]}
     try:
-        restful("https://" + fitargs()['rackhd_host'] + ":" + str(API_PORT) +
+        restful(API_PROTOCOL + "://" + fitargs()['rackhd_host'] + ":" + str(API_PORT) +
                 "/login", rest_action="post", rest_payload=api_login, rest_timeout=2)
     except:
         AUTH_TOKEN = "Unavailable"
         return False
     else:
-        api_data = restful("https://" + fitargs()['rackhd_host'] + ":" + str(API_PORT) +
+        api_data = restful(API_PROTOCOL + "://" + fitargs()['rackhd_host'] + ":" + str(API_PORT) +
                            "/login", rest_action="post", rest_payload=api_login, rest_timeout=2)
         if api_data['status'] == 200:
             AUTH_TOKEN = str(api_data['json']['token'])
-            redfish_data = restful("https://" + fitargs()['rackhd_host'] + ":" + str(API_PORT) +
+            redfish_data = restful(API_PROTOCOL + "://" + fitargs()['rackhd_host'] + ":" + str(API_PORT) +
                                    "/redfish/v1/SessionService/Sessions",
                                    rest_action="post", rest_payload=redfish_login, rest_timeout=2)
             if 'x-auth-token' in redfish_data['headers']:
@@ -593,20 +594,6 @@ def rackhdapi(url_cmd, action='get', payload=[], timeout=None, headers={}):
                 'headers':result_data.headers.get('content-type'),
                 'timeout':False}
     '''
-
-    # Automatic protocol selection: unless protocol is specified, test protocols, save settings globally
-    global API_PROTOCOL
-    global API_PORT
-
-    if API_PROTOCOL == "None":
-        if API_PORT == "None":
-            API_PORT = str(fitports()['http'])
-        if restful("http://" + fitargs()['rackhd_host'] + ":" + str(API_PORT) + "/", rest_timeout=2)['status'] == 0:
-            API_PROTOCOL = 'https'
-            API_PORT = str(fitports()['https'])
-        else:
-            API_PROTOCOL = 'http'
-            API_PORT = str(fitports()['http'])
 
     # Retrieve authentication token for the session
     if AUTH_TOKEN == "None":
