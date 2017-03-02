@@ -17,7 +17,6 @@ import unittest
 import json
 import threading
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
-from optparse import OptionParser
 import fit_common
 import test_api_utils
 from nose.plugins.attrib import attr
