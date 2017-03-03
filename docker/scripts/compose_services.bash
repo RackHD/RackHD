@@ -111,10 +111,10 @@ fi
 #    network_mode: "host"
 #    privileged: true
 #    volumes:
-#      - "./kibana/config:/opt/kibana/config"
+#      - "./kibana/config:/etc/kibana"
 #
 echo "    kibana..."
-docker run --privileged=true --net="host" --name docker_kibana_1 -d -v /RackHD/docker/kibana/config:/opt/kibana/config kibana:latest > /dev/null
+docker run --privileged=true --net="host" --name docker_kibana_1 -d -v /RackHD/docker/kibana/config:/etc/kibana kibana:latest > /dev/null
 if [ $? -ne 0 ]; then
 	echo "Failed"
 	exit

@@ -23,6 +23,7 @@ $ docker-compose up           # Run RackHD and ELK.
 **Prerequisites:**
   * docker v1.10 or higher
   * docker-compose v1.6 or higher [Install Docker Compose](https://docs.docker.com/compose/install/)
+  * Please make sure vm.max_map_count >= 262144 ```sudo sysctl -w vm.max_map_count=262144```
 
 ```
 $ cd RackHD/docker                            # TAG can be a release version, if not set default: latest
@@ -58,6 +59,18 @@ $ docker-compose rm -f              # Remove previous RackHD/ELK containers.
 $ docker-compose create             # Create new RackHD/ELK containers.
 $ docker-compose start              # Run RackHD and ELK.
 $ docker-compose logs               # Show docker logs.
+```
+
+(Advanced)The above rebuild steps won't rebuild static files image: ```rackhd/files``` and just pull latest, If you reset ```../on-imagebuilder``` to a specific commit or customize
+its code, you need to rebuild ```rackhd/files```.
+```
+......
+$ cd ../on-imagebuilder && sudo build_all.sh                       # Build static files.
+$ rm -rf common pxe && mkdir common && mkdir pxe                   # Prepare folders for stashing static files.
+$ cp $output_path/builds/* common/                                 # Copy http static files
+$ cp $output_path/syslinux/* pxe/ && cp $output_path/ipxe/* pxe/   # Copy tftp static files
+$ docker-compose -f docker-compose-dev.yml build                   # Use *-dev.yml to build images including rackhd/files
+......
 ```
 
 ## DHCP Server runs by default.
@@ -103,8 +116,8 @@ Now start `pxe-1` from VirtualBox. You should see it boot and auto automatically
 For who doesn't need ELK running along with RackHD, due to system performance restriction or docker-pull network bandwidth restriction: an alternative docker-compose file can be used by "-f" option:
 
 ```
-$ docker-compose -f docker-compose-mini.yml pull
-$ docker-compose -f docker-compose-mini.yml up
+$ TAG=${TAG} docker-compose -f docker-compose-mini.yml pull
+$ TAG=${TAG} docker-compose -f docker-compose-mini.yml up
 ```
 
 
