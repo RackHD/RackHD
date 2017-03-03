@@ -192,10 +192,8 @@ def apply_stack_config():
     stack = fitargs()['stack']
     if stack is not None:
         mkcfg().add_from_file('stack_config.json', stack)
-        if 'rackhd_host' in fitcfg():
+        if fitargs()['rackhd_host'] == 'localhost' and 'rackhd_host' in fitcfg():
             fitargs()['rackhd_host'] = fitcfg()['rackhd_host']
-        else:
-            fitargs()['rackhd_host'] = 'localhost'
         if 'bmc' in fitcfg():
             fitargs()['bmc'] = fitcfg()['bmc']
         if 'hyper' in fitcfg():
@@ -559,17 +557,17 @@ def get_auth_token():
     api_login = {"username": fitcreds()["api"][0]["admin_user"], "password": fitcreds()["api"][0]["admin_pass"]}
     redfish_login = {"UserName": fitcreds()["api"][0]["admin_user"], "Password": fitcreds()["api"][0]["admin_pass"]}
     try:
-        restful("https://" + fitargs()['rackhd_host'] + ":" + str(API_PORT) +
+        restful("https://" + fitargs()['rackhd_host'] + ":" + str(fitports()['https']) +
                 "/login", rest_action="post", rest_payload=api_login, rest_timeout=2)
     except:
         AUTH_TOKEN = "Unavailable"
         return False
     else:
-        api_data = restful("https://" + fitargs()['rackhd_host'] + ":" + str(API_PORT) +
+        api_data = restful("https://" + fitargs()['rackhd_host'] + ":" + str(fitports()['https']) +
                            "/login", rest_action="post", rest_payload=api_login, rest_timeout=2)
         if api_data['status'] == 200:
             AUTH_TOKEN = str(api_data['json']['token'])
-            redfish_data = restful("https://" + fitargs()['rackhd_host'] + ":" + str(API_PORT) +
+            redfish_data = restful("https://" + fitargs()['rackhd_host'] + ":" + str(fitports()['https']) +
                                    "/redfish/v1/SessionService/Sessions",
                                    rest_action="post", rest_payload=redfish_login, rest_timeout=2)
             if 'x-auth-token' in redfish_data['headers']:
