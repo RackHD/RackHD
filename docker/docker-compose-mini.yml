@@ -30,6 +30,7 @@ services:
 
   files:
     image: rackhd/files:${TAG}
+    build: "./files"
     network_mode: "host"
     privileged: true
     volumes:
