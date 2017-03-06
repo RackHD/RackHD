@@ -207,7 +207,7 @@ class rackhd_stack_init(unittest.TestCase):
         self.assertTrue(fit_common.apply_obm_settings(), "OBM settings failed.")
 
     @unittest.skipUnless("bmc" in fit_common.fitcfg(), "")
-    @unittest.skip("Skipping 'test10_add_management_server' code incomplete")
+    @unittest.skip("Skipping 'test10_add_management_server' bug RAC-4063")
     def test11_add_management_server(self):
         log.info_5("**** Creating management server.")
         usr = ""
