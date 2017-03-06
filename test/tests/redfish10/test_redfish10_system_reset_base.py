@@ -9,6 +9,7 @@ import fit_path  # NOQA: unused import
 import time
 import json
 import fit_common
+from nose.plugins.attrib import attr
 
 # get list of compute nodes once for this test suite
 NODELIST = fit_common.node_select()
@@ -169,7 +170,6 @@ def get_rackhd_nodetype(nodeid):
 
 
 # Test Cases
-from nose.plugins.attrib import attr
 
 
 @attr(all=True, regression=True, smoke=True)

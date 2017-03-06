@@ -248,7 +248,7 @@ class redfish10_api_task_suite(fit_common.unittest.TestCase):
                 for item in ["EndTime"]:
                     if fit_common.VERBOSITY >= 2:
                         print ("Task: {} Checking: {}".format(task, item))
-                        self.assertIn(item, on_data['json'], item + ' field not present')
+                    self.assertIn(item, on_data['json'], item + ' field not present')
 
             if fit_common.VERBOSITY >= 3:
                 print_taskid_data(task, on_data['json'])
