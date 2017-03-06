@@ -59,7 +59,7 @@ class AmqpWorker(threading.Thread):
             amqp_port = fit_common.fitports()['amqp']
         self.connection = pika.BlockingConnection(
             pika.ConnectionParameters(
-                host=fit_common.fitargs()["ora"],
+                host=fit_common.fitargs()["rackhd_host"],
                 port=amqp_port))
         self.channel = self.connection.channel()
         result = self.channel.queue_declare(exclusive=True)
