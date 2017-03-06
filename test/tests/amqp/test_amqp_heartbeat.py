@@ -52,7 +52,7 @@ class AmqpWorker(threading.Thread):
             pika_logger.setLevel(logging.ERROR)
         self.connection = pika.BlockingConnection(
             pika.ConnectionParameters(
-                host=fit_common.fitargs()["ora"],
+                host=fit_common.fitargs()["rackhd_host"],
                 port=fit_common.fitports()['amqp']))
         self.channel = self.connection.channel()
         self.channel.basic_qos(prefetch_count=1)
