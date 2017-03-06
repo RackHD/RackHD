@@ -25,7 +25,7 @@ OVF=$"${BASENAME}.ovf"
 
 ### validate the OVA
 FILE_TYPE=`file ${OVA} | awk -F": " '{print $2}'`
-if "${FILE_TYPE}" != "POSIX tar archive"; then
+if [ "${FILE_TYPE}" != "POSIX tar archive" ] ; then
     echo "[Error]:  ${OVA} is not a valid OVA file"
     exit -1
 fi
