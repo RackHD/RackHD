@@ -212,24 +212,18 @@ def add_globals():
     global VERBOSITY
 
     # set api port and protocol from command line
-    if fitargs()['port'] != "None":
-        API_PORT = fitargs()['port']
-
-    if fitargs()['http'] == "True":
+    if fitargs()['http'] is True:
         API_PROTOCOL = "http"
-        if API_PORT == "None":
-            API_PORT = fitports()['http']
-
-    if fitargs()['https'] == "True":
+        API_PORT = str(fitports()['http'])
+    elif fitargs()['https'] is True:
         API_PROTOCOL = "https"
-        if API_PORT == "None":
-            API_PORT = fitports()['https']
+        API_PORT = str(fitports()['https'])
+    else:  # default protocol is http
+        API_PROTOCOL = "http"
+        API_PORT = str(fitports()['http'])
 
-    if fitargs()['rackhd_host'] == "localhost":
-        if API_PROTOCOL == "None":
-            API_PROTOCOL = 'http'
-        if API_PORT == "None":
-            API_PORT = '8080'
+    if fitargs()['port'] != "None":  # port override via command line argument -port
+        API_PORT = fitargs()['port']
 
     # add globals section to base configuration
     TEST_PATH = fit_path.fit_path_root + '/'
@@ -244,7 +238,7 @@ def add_globals():
         }
     })
 
-    # set OVA template from command line
+    # set OVA template from command line argument -template
     if fitargs()["template"] == "None":
         fitargs()["template"] = fitcfg()['install-config']['template']
 
@@ -609,20 +603,6 @@ def rackhdapi(url_cmd, action='get', payload=[], timeout=None, headers={}):
                 'headers':result_data.headers.get('content-type'),
                 'timeout':False}
     '''
-
-    # Automatic protocol selection: unless protocol is specified, test protocols, save settings globally
-    global API_PROTOCOL
-    global API_PORT
-
-    if API_PROTOCOL == "None":
-        if API_PORT == "None":
-            API_PORT = str(fitports()['http'])
-        if restful("http://" + fitargs()['rackhd_host'] + ":" + str(API_PORT) + "/", rest_timeout=2)['status'] == 0:
-            API_PROTOCOL = 'https'
-            API_PORT = str(fitports()['https'])
-        else:
-            API_PROTOCOL = 'http'
-            API_PORT = str(fitports()['http'])
 
     # Retrieve authentication token for the session
     if AUTH_TOKEN == "None":
