@@ -76,7 +76,7 @@ class AmqpWorker(threading.Thread):
         self.channel.start_consuming()
 
 
-@attr(all=True, regression=True, smoke=True)
+@attr(all=True, regression=False, smoke=False)
 class amqp_heartbeat(fit_common.unittest.TestCase):
     # clear the test environment
 
