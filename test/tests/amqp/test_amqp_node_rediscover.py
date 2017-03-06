@@ -66,7 +66,7 @@ class AmqpWorker(threading.Thread):
             amqp_port = fit_common.fitports()['amqp']
         self.connection = pika.BlockingConnection(
             pika.ConnectionParameters(
-                host=fit_common.fitargs()["ora"],
+                host=fit_common.fitargs()["rackhd_host"],
                 port=amqp_port))
         self.channel = self.connection.channel()
         result = self.channel.queue_declare(exclusive=True)
@@ -155,7 +155,7 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
         hookurl = "http://" + str(ip) + ":" + str(port)
         for hooks in mondata['json']:
             if hooks['url'] == hookurl:
-                logs.debug("hook URL alread exist the in RackHD")
+                logs.debug("Hook URL already exist in RackHD")
                 return
         response = fit_common.rackhdapi(
             '/api/current/hooks',
@@ -262,7 +262,7 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
 
     def _get_tester_ip(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        ip = fit_common.fitargs()['ora']
+        ip = fit_common.fitargs()['rackhd_host']
         logs.debug("pinging " + ip)
         s.connect((ip, 0))
         logs.debug('My IP address is: ' + s.getsockname()[0])
@@ -497,7 +497,7 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
         logs.debug('Validate node discovery registration web hook Message')
         self._process_web_message(30)
 
-        # skip sku.assigned message if no skupack is installed on the ora
+        # skip sku.assigned message if no skupack is installed on RackHD
         if skupack_intalled:
             logs.debug_2("wait for skupack assign!")
             self._wait_amqp_message(50)
