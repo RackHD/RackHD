@@ -67,9 +67,9 @@ class rackhd_stack_init(unittest.TestCase):
         for subdir, dirs, files in os.walk('on-skupack/tarballs'):
             for skupacks in files:
                 log.info_5("**** Loading SKU Pack for " + skupacks)
-                fit_common.rackhdapi("/api/2.0/skus/pack", action="binary-post",
-                                     payload=file(fit_common.TEST_PATH +
-                                                  "on-skupack/tarballs/" + skupacks).read())
+                file = open(fit_common.TEST_PATH + "on-skupack/tarballs/" + skupacks)
+                fit_common.rackhdapi("/api/2.0/skus/pack", action="binary-post", payload=file.read())
+                file.close()
             break
         # check SKU directory against source files
         error_message = ""
