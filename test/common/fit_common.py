@@ -192,10 +192,8 @@ def apply_stack_config():
     stack = fitargs()['stack']
     if stack is not None:
         mkcfg().add_from_file('stack_config.json', stack)
-        if 'rackhd_host' in fitcfg():
+        if fitargs()['rackhd_host'] == 'localhost' and 'rackhd_host' in fitcfg():
             fitargs()['rackhd_host'] = fitcfg()['rackhd_host']
-        else:
-            fitargs()['rackhd_host'] = 'localhost'
         if 'bmc' in fitcfg():
             fitargs()['bmc'] = fitcfg()['bmc']
         if 'hyper' in fitcfg():
@@ -447,7 +445,7 @@ def countdown(sleep_time, sleep_interval=1):
 
 
 def remote_shell(shell_cmd, expect_receive="", expect_send="", timeout=300,
-                 address=None, user=None, password=None):
+                 address=None, user=None, password=None, vmnum=1):
     '''
     Run ssh based shell command on a remote machine at fitargs()['rackhd_host']
 
@@ -460,8 +458,13 @@ def remote_shell(shell_cmd, expect_receive="", expect_send="", timeout=300,
     :param password: password of remote host
     :return: dict = {'stdout': str:ouput, 'exitcode': return code}
     '''
+
     if not address:
-        address = fitargs()['rackhd_host']
+        if (vmnum == 1):
+            address = fitargs()['rackhd_host']
+        else:
+            address = fitargs()['rackhd_host'].replace("ora", "ora-" + str(vmnum - 1))
+
     if not user:
         user = fitcreds()['rackhd_host'][0]['username']
     if not password:
@@ -469,6 +472,7 @@ def remote_shell(shell_cmd, expect_receive="", expect_send="", timeout=300,
 
     logfile_redirect = None
     if VERBOSITY >= 4:
+        print "VM number: ", vmnum
         print "remote_shell: Host =", address
         print "remote_shell: Command =", shell_cmd
 
@@ -511,12 +515,12 @@ def remote_shell(shell_cmd, expect_receive="", expect_send="", timeout=300,
     return {'stdout': command_output, 'exitcode': exitstatus}
 
 
-def scp_file_to_ora(src_file_name):
+def scp_file_to_ora(src_file_name, vmnum=1):
     # legacy call
-    scp_file_to_host(src_file_name)
+    scp_file_to_host(src_file_name, vmnum)
 
 
-def scp_file_to_host(src_file_name):
+def scp_file_to_host(src_file_name, vmnum=1):
     '''
     scp the given file over to the RackHD host and place it in the home directory.
 
@@ -532,7 +536,13 @@ def scp_file_to_host(src_file_name):
         remote_shell('cp ' + src_file_name + ' ~/' + src_file_name)
         return src_file_name
 
-    scp_target = fitcreds()['rackhd_host'][0]['username'] + '@{0}:'.format(fitargs()['rackhd_host'])
+    if (vmnum == 1):
+        rackhd_hostname = fitargs()['rackhd_host']
+    else:
+        rackhd_hostname = fitargs()['rackhd_host'].replace("ora", "ora-" + str(vmnum - 1))
+
+    scp_target = fitcreds()['rackhd_host'][0]['username'] + '@{0}:'.format(rackhd_hostname)
+
     cmd = 'scp -o StrictHostKeyChecking=no {0} {1}'.format(src_file_name, scp_target)
     if VERBOSITY >= 4:
         print "scp_file_to_host: '{0}'".format(cmd)
@@ -559,17 +569,17 @@ def get_auth_token():
     api_login = {"username": fitcreds()["api"][0]["admin_user"], "password": fitcreds()["api"][0]["admin_pass"]}
     redfish_login = {"UserName": fitcreds()["api"][0]["admin_user"], "Password": fitcreds()["api"][0]["admin_pass"]}
     try:
-        restful("https://" + fitargs()['rackhd_host'] + ":" + str(API_PORT) +
+        restful("https://" + fitargs()['rackhd_host'] + ":" + str(fitports()['https']) +
                 "/login", rest_action="post", rest_payload=api_login, rest_timeout=2)
     except:
         AUTH_TOKEN = "Unavailable"
         return False
     else:
-        api_data = restful("https://" + fitargs()['rackhd_host'] + ":" + str(API_PORT) +
+        api_data = restful("https://" + fitargs()['rackhd_host'] + ":" + str(fitports()['https']) +
                            "/login", rest_action="post", rest_payload=api_login, rest_timeout=2)
         if api_data['status'] == 200:
             AUTH_TOKEN = str(api_data['json']['token'])
-            redfish_data = restful("https://" + fitargs()['rackhd_host'] + ":" + str(API_PORT) +
+            redfish_data = restful("https://" + fitargs()['rackhd_host'] + ":" + str(fitports()['https']) +
                                    "/redfish/v1/SessionService/Sessions",
                                    rest_action="post", rest_payload=redfish_login, rest_timeout=2)
             if 'x-auth-token' in redfish_data['headers']:
