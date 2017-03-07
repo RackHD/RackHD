@@ -132,7 +132,7 @@ class redfish10_api_task_suite(fit_common.unittest.TestCase):
         for member in members:
             tasklist.append(member['Id'])
         if fit_common.VERBOSITY >= 2:
-            print ("Task Service contains {0} tasks.".format(len(tasklist)))
+            print("Task Service contains {0} tasks.".format(len(tasklist)))
 
     def test_redfish_v1_taskservice_check_all_tasks(self):
         # The API TaskService/Tasks will display a list of all the tasks
@@ -238,7 +238,7 @@ class redfish10_api_task_suite(fit_common.unittest.TestCase):
             # check if required fields exist
             for item in ["@odata.id", "Name", "@odata.type", "TaskState", "TaskStatus", "StartTime", "Id"]:
                 if fit_common.VERBOSITY >= 2:
-                    print ("Task: {} Checking: {}".format(task, item))
+                    print("Task: {} Checking: {}".format(task, item))
                 self.assertIn(item, on_data['json'], item + ' field not present')
 
             # check if task completed, endtime should be populated
@@ -247,7 +247,7 @@ class redfish10_api_task_suite(fit_common.unittest.TestCase):
             if taskstate in taskstates:
                 for item in ["EndTime"]:
                     if fit_common.VERBOSITY >= 2:
-                        print ("Task: {} Checking: {}".format(task, item))
+                        print("Task: {} Checking: {}".format(task, item))
                     self.assertIn(item, on_data['json'], item + ' field not present')
 
             if fit_common.VERBOSITY >= 3:
@@ -311,7 +311,7 @@ class redfish10_api_task_suite(fit_common.unittest.TestCase):
         status = task_code_check(tasklist)
 
         if status != []:
-            print ("Errors reported {} ".format(json.dumps(status, indent=4)))
+            print("Errors reported {} ".format(json.dumps(status, indent=4)))
             self.assertEqual(status, [], "Errors in Returned Task Status.")
 
     def test_redfish_v1_taskservice_check_library_test_list(self):
