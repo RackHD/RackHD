@@ -3,7 +3,12 @@ Copyright 2017 Dell Inc. or its subsidiaries.  All Rights Reserved.
 
 Author(s):
 Norton Luo
-
+This test validate the amqp message alert send out from RackHD by monitor SEL log poller and power state poller. The
+AMQP message should compel to the latest event notification spec.
+The SEL log poller test will inject a CPU IERR event in the node BMC by ipmitool. RackHD should detect this sel entry
+and generate an AMQP alert message.
+The power state poller test will use ipmitool to change the system chassis power state. And RackHD is expected to detect
+such event by chassis power poller and sent out AMQP event notification.
 '''
 
 from time import sleep
@@ -253,9 +258,11 @@ class test_poller_alert_amqp_message(unittest.TestCase):
                 "FAILURE - expected key is missing in the AMQP message!{0}".format(e))
 
     def test_sel_alert(self):
+        # The SEL log poller test will inject a CPU IERR event in the node BMC and moniter the AMQP message queue
         node_collection = test_api_utils.get_node_list_by_type("compute")
         nodeid = ""
-        skupack_intalled = self.check_skupack()
+        # Check is skupack is installed. If no skupack installed, we won't get any SEL alert
+        skupack_installed = self.check_skupack()
         for dummy in node_collection:
             nodeid = node_collection[
                 random.randint(
@@ -271,9 +278,9 @@ class test_poller_alert_amqp_message(unittest.TestCase):
             self.assertTrue(
                 self._apply_obmsetting_to_node(nodeid),
                 "Fail to apply obm setting!")
-        # bmcip=self._apply_obmsetting_to_node(nodeid)
+        # Clear sel to avoid the sel log full
         test_api_utils.run_ipmi_command_to_node(nodeid, "sel clear")
-        # Reboot the node to begin rediscover.
+        # Find the SEL poller id. This id will be used to validate AMQP message body.
         pollerid = self._get_ipmi_poller_by_node(nodeid, "selEntries")
         logs.debug('launch AMQP thread for sel alert')
         sel_worker = AmqpWorker(
@@ -286,7 +293,7 @@ class test_poller_alert_amqp_message(unittest.TestCase):
         # Send out sel iERR injection.
         command = "raw 0x0a 0x44 0x01 0x00 0x02 0xab 0xcd 0xef 0x00 0x01 0x00 0x04 0x07 0x02 0xef 0x00 0x00 0x00"
         test_api_utils.run_ipmi_command_to_node(nodeid, command)
-        if skupack_intalled:
+        if skupack_installed:
             self._wait_amqp_message(200)
             workflow_amqp = amqp_queue.get()
             self._process_message(
@@ -300,8 +307,6 @@ class test_poller_alert_amqp_message(unittest.TestCase):
 
     def test_chassis_power_updated(self):
         node_collection = test_api_utils.get_node_list_by_type("compute")
-        nodeid = ""
-        skupack_intalled = self.check_skupack()
         nodeid = node_collection[
             random.randint(
                 0, len(node_collection) - 1)]
@@ -333,31 +338,29 @@ class test_poller_alert_amqp_message(unittest.TestCase):
         logs.debug('Power off/on node to change chassis power state')
         test_api_utils.run_ipmi_command_to_node(nodeid, command1)
         logs.debug('Wait chassis power update')
-        if skupack_intalled:
-            self._wait_amqp_message(200)
-            workflow_amqp = amqp_queue.get()
-            self._process_message(
-                "chassispower.updated",
-                pollerid,
-                nodeid,
-                "polleralert",
-                "information",
-                workflow_amqp)
+        self._wait_amqp_message(200)
+        workflow_amqp = amqp_queue.get()
+        self._process_message(
+            "chassispower.updated",
+            pollerid,
+            nodeid,
+            "polleralert",
+            "information",
+            workflow_amqp)
         # Power on node
         logs.debug('Wait chassis power update')
         test_api_utils.run_ipmi_command_to_node(nodeid, command2)
         logs.debug('Wait chassis power update')
-        if skupack_intalled:
-            self._wait_amqp_message(200)
-            workflow_amqp = amqp_queue.get()
-            self._process_message(
-                "chassispower.updated",
-                pollerid,
-                nodeid,
-                "polleralert",
-                "information",
-                workflow_amqp)
-            chassis_worker.dispose()
+        self._wait_amqp_message(200)
+        workflow_amqp = amqp_queue.get()
+        self._process_message(
+            "chassispower.updated",
+            pollerid,
+            nodeid,
+            "polleralert",
+            "information",
+            workflow_amqp)
+        chassis_worker.dispose()
 
 
 if __name__ == '__main__':
