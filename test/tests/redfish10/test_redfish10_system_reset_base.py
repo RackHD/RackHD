@@ -1,27 +1,19 @@
 '''
 Copyright 2016, EMC, Inc.
 
-  Purpose: This test script performs the RedFish API ComputerSystem.Reset 
+  Purpose: This test script performs the RedFish API ComputerSystem.Reset
            and verify the task status is correct and the power command occurs
 
 '''
 import fit_path  # NOQA: unused import
-import os
-import sys
-import subprocess
 import time
-import string
 import json
-
 import fit_common
-import test_api_utils
+from nose.plugins.attrib import attr
 
 # get list of compute nodes once for this test suite
 NODELIST = fit_common.node_select()
-# remove management node
-for NODE in NODELIST:
-    if fit_common.rackhdapi('/api/2.0/nodes/' + NODE)['json']['name'] == "Management Server":
-        NODELIST.remove(NODE)
+
 
 def print_taskid_data(taskid, taskid_json):
     """
@@ -36,6 +28,7 @@ def print_taskid_data(taskid, taskid_json):
     print "\tEndTime: ", taskid_json.get('EndTime', "")
     print "\tName: ", taskid_json.get('Name', "")
 
+
 def get_taskid_data(taskid):
     """
     This utility returns the data associated with the taskid
@@ -46,7 +39,7 @@ def get_taskid_data(taskid):
         empty on failure or error
     """
     taskid_json = {}
-    on_url = "/redfish/v1/TaskService/Tasks/"+taskid
+    on_url = "/redfish/v1/TaskService/Tasks/" + taskid
     on_data = fit_common.rackhdapi(url_cmd=on_url)
     if on_data['status'] == 200:
         try:
@@ -86,7 +79,7 @@ def rackhd_compute_node_power_action(nodeid, action):
         if fit_common.VERBOSITY >= 2:
             print "ERROR: invalid action in function call - ", str(action)
     else:
-        on_url = "/redfish/v1/Systems/"+nodeid+"/Actions/ComputerSystem.Reset"
+        on_url = "/redfish/v1/Systems/" + nodeid + "/Actions/ComputerSystem.Reset"
         on_payload = {"reset_type": action}
         on_data = fit_common.rackhdapi(on_url, action='post', payload=on_payload)
         if on_data['status'] == 202:
@@ -130,13 +123,13 @@ def workflow_tasklist_status_poller(tasklist, tasktype, timeout=180):
                 if taskid_json.get("Name") != tasktype:
                     task_errorlist.append("Error: TaskName incorrect, expected {}".format(tasktype))
                 taskstate = taskid_json.get("TaskState")
-                if taskstate in ['Exception','Killed']: 
+                if taskstate in ['Exception', 'Killed']:
                     node = taskid_json["Oem"]["RackHD"].get('SystemId')
-                    nodetype = test_api_utils.get_rackhd_nodetype(node)
+                    nodetype = get_rackhd_nodetype(node)
                     task_errorlist.append("Error: Node {} {} Task Failure: {}".format(node, nodetype, taskid_json))
                     tasklist.remove(task)
-                elif taskstate in ['Completed']: 
-                   # quit polling the completed tasks, remove from list
+                elif taskstate in ['Completed']:
+                    # quit polling the completed tasks, remove from list
                     tasklist.remove(task)
         # break out of loop if all tasks have ended
         if not tasklist:
@@ -152,8 +145,33 @@ def workflow_tasklist_status_poller(tasklist, tasktype, timeout=180):
 
     return task_errorlist
 
+
+def get_rackhd_nodetype(nodeid):
+    nodetype = "unknown"
+    sku = ""
+    # get node info
+    mondata = fit_common.rackhdapi("/api/2.0/nodes/" + nodeid)
+    if mondata['status'] == 200:
+        # get the sku id contained in the node
+        sku = mondata['json'].get("sku")
+        if sku:
+            skudata = fit_common.rackhdapi("/api/2.0/skus/" + sku)
+            if skudata['status'] == 200:
+                nodetype = skudata['json'].get("name")
+            else:
+                if fit_common.VERBOSITY >= 2:
+                    errmsg = "Error: SKU API failed {}, return code {} ".format(sku, skudata['status'])
+                    print errmsg
+        else:
+            if fit_common.VERBOSITY >= 2:
+                errmsg = "Error: nodeid {} did not return a valid sku in get_rackhd_nodetype {}".format(nodeid, sku)
+                print errmsg
+    return nodetype
+
+
 # Test Cases
-from nose.plugins.attrib import attr
+
+
 @attr(all=True, regression=True, smoke=True)
 class redfish10_api_computer_system_reset_base_suite(fit_common.unittest.TestCase):
     # This test suite covers the basic reset options supported by most compute
@@ -178,7 +196,7 @@ class redfish10_api_computer_system_reset_base_suite(fit_common.unittest.TestCas
         tasklist = []
 
         for node in NODELIST:
-            nodetype = test_api_utils.get_rackhd_nodetype(node)
+            nodetype = get_rackhd_nodetype(node)
             if fit_common.VERBOSITY >= 2:
                 print("\nNode: {} {}".format(node, nodetype))
                 print("\nPower node via ComputerSystem.reset On")
@@ -199,7 +217,6 @@ class redfish10_api_computer_system_reset_base_suite(fit_common.unittest.TestCas
         # allow power action to work a little
         time.sleep(5)
 
-
     def test_2_redfish_v1_computer_reset_force_off(self):
         # This test will verify the compute node workflow power reset option ForceOff
         # and corresponding task status.
@@ -211,7 +228,7 @@ class redfish10_api_computer_system_reset_base_suite(fit_common.unittest.TestCas
         errorlist = []
         tasklist = []
         for node in NODELIST:
-            nodetype = test_api_utils.get_rackhd_nodetype(node)
+            nodetype = get_rackhd_nodetype(node)
             if fit_common.VERBOSITY >= 2:
                 print("\n===============================")
                 print("\nNode: {} {}".format(node, nodetype))
@@ -245,7 +262,7 @@ class redfish10_api_computer_system_reset_base_suite(fit_common.unittest.TestCas
         tasklist = []
 
         for node in NODELIST:
-            nodetype = test_api_utils.get_rackhd_nodetype(node)
+            nodetype = get_rackhd_nodetype(node)
             if fit_common.VERBOSITY >= 2:
                 print("\n===============================")
                 print("\nNode: {}".format(node))
@@ -268,7 +285,6 @@ class redfish10_api_computer_system_reset_base_suite(fit_common.unittest.TestCas
         # allow power action to work a little
         time.sleep(5)
 
-
     def test_4_redfish_v1_computer_reset_force_restart(self):
         # This test will verify the compute node workflow power reset option ForceRestart
         # and corresponding task status.
@@ -281,7 +297,7 @@ class redfish10_api_computer_system_reset_base_suite(fit_common.unittest.TestCas
         tasklist = []
 
         for node in NODELIST:
-            nodetype = test_api_utils.get_rackhd_nodetype(node)
+            nodetype = get_rackhd_nodetype(node)
             if fit_common.VERBOSITY >= 2:
                 print("\n===============================")
                 print("\nNode: {} {}".format(node, nodetype))
@@ -303,6 +319,6 @@ class redfish10_api_computer_system_reset_base_suite(fit_common.unittest.TestCas
         # allow power action to work a little
         time.sleep(20)
 
+
 if __name__ == '__main__':
     fit_common.unittest.main()
-
