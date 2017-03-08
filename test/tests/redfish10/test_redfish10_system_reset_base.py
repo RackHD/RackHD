@@ -147,7 +147,7 @@ def workflow_tasklist_status_poller(tasklist, tasktype, timeout=180):
 
 
 def get_rackhd_nodetype(nodeid):
-    nodetype = ""
+    nodetype = "unknown"
     sku = ""
     # get node info
     mondata = fit_common.rackhdapi("/api/2.0/nodes/" + nodeid)
@@ -164,7 +164,7 @@ def get_rackhd_nodetype(nodeid):
                     print errmsg
         else:
             if fit_common.VERBOSITY >= 2:
-                errmsg = "Error: nodeid {} did not return a valid sku in get_rackhd_nodetype{}".format(nodeid, sku)
+                errmsg = "Error: nodeid {} did not return a valid sku in get_rackhd_nodetype {}".format(nodeid, sku)
                 print errmsg
     return nodetype
 
