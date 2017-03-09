@@ -160,16 +160,28 @@ class SkusTests(object):
                     data = loads(self.__client.last_response.data)
                     sku_id = data['id']
                     LOG.info("ID of the posted sku is:   "+ sku_id)
-                    time.sleep(3)
                     assert_equal(201, result.status, message=result.reason)
                     LOG.info("node_id " + node_id)
 
-                    #Validate that the sku element in the node has been updated with the right sku ID
-                    Api().nodes_get_by_id(identifier=node_id)
-                    updated_node = loads(self.__client.last_response.data)
-                    LOG.info("updated_noded is : {0}".format(updated_node))
-                    arr =updated_node['sku'].split("/")
-                    assert_equal(sku_id, arr[4])
+                    # Give enough time to wait the sku discovery finishes
+                    time.sleep(3)
+                    retries = 10
+                    while retries > 0:
+                        Api().nodes_get_by_id(identifier=node_id)
+                        updated_node = loads(self.__client.last_response.data)
+                        if updated_node['sku'] is not None:
+                            # Ensure the sku element in the node has been updated with the right sku ID
+                            arr = updated_node['sku'].split("/")
+                            if sku_id == arr[4]:
+                                LOG.info("updated_node is : {0}".format(updated_node))
+                                break
+
+                        retries = retries - 1
+                        if retries == 0:
+                            raise Error("The node {0} never be assigned with the new sku {1}".format(node_id, sku_id))
+                        else:
+                            LOG.info("Wait more time to let new sku take effect, remaining {0} retries".format(retries))
+                            time.sleep(1)
 
                     #validate the /api/2.0/skus/:id/nodes works
                     Api().skus_id_get_nodes(sku_id)
@@ -242,14 +254,14 @@ class SkusTests(object):
                     Api().profiles_get_metadata_by_name('useless.json', scope=sku_id)
                     assert_equal(200, self.__client.last_response.status)
                     assert_equal(1, len(loads(self.__client.last_response.data)))
-                    
+
                     """Test DELETE:api/2.0/skus/:identifier/pack"""
                     Api().skus_get()
                     skus = loads(self.__client.last_response.data)
                     LOG.info("Printing Sku from get skus before a delete sku pack")
                     LOG.info(skus)
                     Api().skus_id_delete_pack(self.__packFolderId)
-                    # check to see if skuPack related key is None after the delete pack 
+                    # check to see if skuPack related key is None after the delete pack
                     Api().skus_get()
                     skus = loads(self.__client.last_response.data)
                     for n in skus:
@@ -264,8 +276,8 @@ class SkusTests(object):
                     LOG.info("List of Skus after delete sku pack")
                     LOG.info(skus)
                     assert_equal(0, len(skus))
-                    
-                     
+
+
     @test(groups=['api2_put_skupack'], depends_on_groups=['api2_post_skupack'])
     def put_skupack(self):
         """Test PUT:api/2.0/skus/pack"""
