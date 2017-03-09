@@ -18,8 +18,10 @@ if os.getenv('RACKHD_ENABLE_FORMAT_DRIVE', 'false') == 'true':
     ENABLE_FORMAT_DRIVE=True
 IS_EMC = defaults.get('RACKHD_REDFISH_EMC_OEM', False)
 
-@test(groups=['os-install.v2.0.tests'], depends_on_groups=['obm_api2.tests'])
+
+@test(groups=['os-install.v2.0.tests'], depends_on_groups=['set-ipmi-obm_api2'])
 class OSInstallTests(object):
+
 
     def __init__(self):
         self.__client = config.api_client
