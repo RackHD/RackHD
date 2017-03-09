@@ -4,7 +4,7 @@ Copyright 2017 Dell Inc. or its subsidiaries.  All Rights Reserved.
 Author(s):
 Norton Luo
 This test validate the amqp message alert send out from RackHD by monitor SEL log poller and power state poller. The
-AMQP message should compel to the latest event notification spec.
+AMQP message should comply to the latest event notification spec.
 The SEL log poller test will inject a CPU IERR event in the node BMC by ipmitool. RackHD should detect this sel entry
 and generate an AMQP alert message.
 The power state poller test will use ipmitool to change the system chassis power state. And RackHD is expected to detect
@@ -304,6 +304,8 @@ class test_poller_alert_amqp_message(unittest.TestCase):
                 "critical",
                 workflow_amqp)
             sel_worker.dispose()
+        else:
+            self.fail("No skupack is intalled in the RackHD. The SEL alert test will fail.")
 
     def test_chassis_power_updated(self):
         node_collection = test_api_utils.get_node_list_by_type("compute")
