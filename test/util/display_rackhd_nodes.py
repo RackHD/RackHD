@@ -21,7 +21,7 @@ import test_api_utils
 class display_rackhd_node_list(fit_common.unittest.TestCase):
     def test_display_node_list(self):
         # This test displays a list of the nodes, type and name
-        mondata = fit_common.rackhdapi("/api/1.1/nodes")
+        mondata = fit_common.rackhdapi("/api/2.0/nodes")
         nodes = mondata['json']
         result = mondata['status']
         if result == 200:
@@ -41,7 +41,7 @@ class display_rackhd_node_list(fit_common.unittest.TestCase):
     def test_display_node_list_discovery_data(self):
         # This test displays a list of the nodes along with 
         # the associated BMC, RMM, and OBM settings for the discovered compute nodes 
-        mondata = fit_common.rackhdapi("/api/1.1/nodes")
+        mondata = fit_common.rackhdapi("/api/2.0/nodes")
         nodes = mondata['json']
         result = mondata['status']
 
@@ -76,7 +76,7 @@ class display_rackhd_node_list(fit_common.unittest.TestCase):
                     else:
                         print "Not associated with a monorail enclosure"
                     # try to get the BMC info from the catalog
-                    monurl = "/api/1.1/nodes/"+nn+"/catalogs/bmc"
+                    monurl = "/api/2.0/nodes/"+nn+"/catalogs/bmc"
                     mondata = fit_common.rackhdapi(monurl, action="get")
                     catalog = mondata['json']
                     bmcresult = mondata['status']
@@ -95,7 +95,7 @@ class display_rackhd_node_list(fit_common.unittest.TestCase):
                         print "\t" + catalog["data"]["IP Address"],
                         print "\t" + catalog["data"]["IP Address Source"],
                     # Get RMM info from the catalog, if present
-                    rmmurl = "/api/1.1/nodes/"+nn+"/catalogs/rmm"
+                    rmmurl = "/api/2.0/nodes/"+nn+"/catalogs/rmm"
                     rmmdata = fit_common.rackhdapi(rmmurl, action="get")
                     rmmcatalog = rmmdata['json']
                     rmmresult = rmmdata['status']
@@ -106,7 +106,7 @@ class display_rackhd_node_list(fit_common.unittest.TestCase):
                         print "\t" + rmmcatalog["data"].get("IP Address", "-"),
                         print "\t" + rmmcatalog["data"].get("IP Address Source", "-") + "\t",
 
-                    nodeurl = "/api/1.1/nodes/"+nn
+                    nodeurl = "/api/2.0/nodes/"+nn
                     nodedata = fit_common.rackhdapi(nodeurl, action="get")
                     nodeinfo = nodedata['json']
                     result = nodedata['status']

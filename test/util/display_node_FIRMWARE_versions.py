@@ -29,7 +29,7 @@ def mon_get_ip_info( node ):
     This routine will grab the IP information from the compute node
     '''
     # Get RackHD node info
-    nodeurl = "/api/1.1/nodes/" + node
+    nodeurl = "/api/2.0/nodes/" + node
     nodedata = fit_common.rackhdapi(nodeurl, action="get")
     nodeinfo = nodedata['json']
     result = nodedata['status']
@@ -39,7 +39,7 @@ def mon_get_ip_info( node ):
         return
 
     # get RackHD BMC info
-    monurl = "/api/1.1/nodes/" + node + "/catalogs/bmc"
+    monurl = "/api/2.0/nodes/" + node + "/catalogs/bmc"
     mondata = fit_common.rackhdapi(monurl, action="get")
     catalog = mondata['json']
     result = mondata['status']
@@ -64,7 +64,7 @@ def mon_get_ip_info( node ):
                 print "ERROR: Invalid or empty OBM setting"
 
     # Get RackHD RMM info
-    monurl = "/api/1.1/nodes/" + node + "/catalogs/rmm"
+    monurl = "/api/2.0/nodes/" + node + "/catalogs/rmm"
     mondata = fit_common.rackhdapi(monurl, action="get")
     catalog = mondata['json']
     result = mondata['status']
@@ -132,7 +132,7 @@ class display_node_firmware(fit_common.unittest.TestCase):
 
             # Print the related system info from RackHD
             print "\nRackHD System Info from DMI:"
-            monurl = "/api/1.1/nodes/" + node + "/catalogs/dmi"
+            monurl = "/api/2.0/nodes/" + node + "/catalogs/dmi"
             mondata = fit_common.rackhdapi(monurl, action="get")
             catalog = mondata['json']
             result = mondata['status']
@@ -169,7 +169,7 @@ class display_node_firmware(fit_common.unittest.TestCase):
             print "\nNode " + str(inode) + ": "+node
             print "Type: ", nodetype
             if nodetype != "unknown" and nodetype != "Unmanaged":
-                nodeurl = "/api/1.1/nodes/" + node
+                nodeurl = "/api/2.0/nodes/" + node
                 nodedata = fit_common.rackhdapi(nodeurl, action="get")
                 nodeinfo = nodedata['json']
                 result = nodedata['status']
@@ -216,7 +216,7 @@ class display_node_firmware(fit_common.unittest.TestCase):
             print "\nNode " + str(inode) + ": " + node
             print "Type: ", nodetype
             if nodetype != "unknown" and nodetype != "Unmanaged":
-                monurl = "/api/1.1/nodes/" + node + "/catalogs"
+                monurl = "/api/2.0/nodes/" + node + "/catalogs"
                 mondata = fit_common.rackhdapi(monurl, action="get")
                 catalog = mondata['json']
                 result = mondata['status']
@@ -226,7 +226,7 @@ class display_node_firmware(fit_common.unittest.TestCase):
                     source_set = test_api_utils.get_node_source_id_list( node )
                     if 'megaraid-controllers' in source_set:
                         print "Source: megaraid-controllers\n"
-                        raidurl = "/api/1.1/nodes/"+node+"/catalogs/megaraid-controllers"
+                        raidurl = "/api/2.0/nodes/"+node+"/catalogs/megaraid-controllers"
                         raiddata = fit_common.rackhdapi(raidurl, action="get")
                         catalog = raiddata['json']
                         result = raiddata['status']

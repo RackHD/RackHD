@@ -20,14 +20,14 @@ class test_list_nodes(fit_common.unittest.TestCase):
         fit_common.VERBOSITY = 1
         print "\nNode List:"
         print "----------------------------------------------------------------------"
-        skulist = fit_common.rackhdapi("/api/1.1/skus")['json']
-        nodelist = fit_common.rackhdapi("/api/1.1/nodes")['json']
+        skulist = fit_common.rackhdapi("/api/2.0/skus")['json']
+        nodelist = fit_common.rackhdapi("/api/2.0/nodes")['json']
         for sku in skulist:
             nodecount = fit_common.json.dumps(nodelist).count(sku['id'])
             if nodecount > 0:
                 print sku['name'] + ": " + str(nodecount)
             for node in nodelist:
-                if 'sku' in node and  node['sku'] == sku['id']:
+                if 'sku' in node and str(sku['id']) in str(node['sku']):
                     print "    " + node['id'] + " - Type: " + node['type']
         print "Unknown:"
         for node in nodelist:
