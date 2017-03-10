@@ -40,31 +40,11 @@ def get_switches():
 
 NODELIST = get_switches()
 
-def get_rackhd_nodetype(nodeid):
-    nodetype = ""
-    # get the node info
-    mondata = fit_common.rackhdapi("/api/2.0/nodes/" + nodeid)
-    if mondata['status'] != 200:
-        print "Incorrect HTTP return code on nodeid, expected 200, received: {}".format(mondata['status'])
-    else:
-        # get the sku id contained in the node
-        sku = mondata['json'].get("sku", 0)
-        if sku != 0:
-            skudata = fit_common.rackhdapi("/api/2.0/skus/" + sku)
-            if skudata['status'] != 200:
-                print "Incorrect HTTP return code on sku, expected 200, received: {}".format(skudata['status'])
-            else:
-                nodetype = mondata['json'].get("name","")
-        else:
-            nodetype = mondata['json'].get("name","")
-            print ("Error: nodeid {} did not return a valid sku in get_rackhd_nodetype".format(nodeid))
-    return nodetype
-
 
 from nose.plugins.attrib import attr
 @attr(all=True, regression=True)
 @fit_common.unittest.skipIf(NODELIST == [],"No switches defined, skipping test.")
-class rackhd11_switch_telemetry(fit_common.unittest.TestCase):
+class rackhd20_switch_telemetry(fit_common.unittest.TestCase):
     def test_poller_snmp_state(self):
         if fit_common.VERBOSITY >= 2:
             msg = "Description: Display poller snmp-interface-state."

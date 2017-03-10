@@ -3,7 +3,7 @@ Copyright 2016, EMC, Inc.
 
 Author(s):
 
-This test checks pollers under API 1.1
+This test checks pollers under API 2.0
 '''
 
 
@@ -23,26 +23,6 @@ if NODELIST == []:
     sys.exit(255)
 
 
-def get_rackhd_nodetype(nodeid):
-    nodetype = ""
-    # get the node info
-    mondata = fit_common.rackhdapi("/api/2.0/nodes/" + nodeid)
-    if mondata['status'] != 200:
-        print "Incorrect HTTP return code on nodeid, expected 200, received: {}".format(mondata['status'])
-    else:
-        # get the sku id contained in the node
-        sku = mondata['json'].get("sku")
-        sku = sku.split("/")[-1]
-        if sku:
-            skudata = fit_common.rackhdapi("/api/2.0/skus/" + sku)
-            if skudata['status'] != 200:
-                print "Error: Incorrect HTTP return code on sku, expected 200, received: {}".format(skudata['status'])
-            else:
-                nodetype = skudata['json'].get("name")
-        else:
-            print "Error: nodeid {} did not return a valid sku in get_rackhd_nodetype{}".format(nodeid, sku)
-    return nodetype
-
 from nose.plugins.attrib import attr
 @attr(all=True, regression=True, smoke=True)
 class rackhd20_computenode_pollers(fit_common.unittest.TestCase):
@@ -57,7 +37,7 @@ class rackhd20_computenode_pollers(fit_common.unittest.TestCase):
             print "Expected Pollers for a Node: ".format(poller_list)
         for node in NODELIST:
             if fit_common.VERBOSITY >= 2:
-                nodetype = get_rackhd_nodetype(node)
+                nodetype = test_api_utils.get_rackhd_nodetype(node)
                 print "\nNode: {}  Type: {}".format(node, nodetype)
             mondata = fit_common.rackhdapi("/api/2.0/nodes/" + node + "/pollers")
             self.assertIn(mondata['status'], [200], "Incorrect HTTP return code, expecting 200, received {}".format(mondata['status']))
@@ -89,7 +69,7 @@ class rackhd20_computenode_pollers(fit_common.unittest.TestCase):
         poller_list = ['driveHealth', 'sel', 'chassis', 'selInformation', 'sdr']
         for node in NODELIST:
             if fit_common.VERBOSITY >= 2:
-                nodetype = get_rackhd_nodetype(node)
+                nodetype = test_api_utils.get_rackhd_nodetype(node)
                 print "Node: {}  Type: {}".format(node, nodetype)
             mondata = fit_common.rackhdapi("/api/2.0/nodes/" + node + "/pollers")
             self.assertIn(mondata['status'], [200], "Incorrect HTTP return code, expecting 200, received {}".format(mondata['status']))
@@ -127,7 +107,7 @@ class rackhd20_computenode_pollers(fit_common.unittest.TestCase):
             mondata = fit_common.rackhdapi("/api/2.0/nodes/" + node + "/pollers")
             self.assertIn(mondata['status'], [200], "Incorrect HTTP return code, expecting 200, received {}".format(mondata['status']))
             if fit_common.VERBOSITY >= 2:
-                nodetype = get_rackhd_nodetype(node)
+                nodetype = test_api_utils.get_rackhd_nodetype(node)
                 print "\nNode: {} Type: {}".format(node, nodetype)
 
             poller_dict = test_api_utils.get_supported_pollers(node)
@@ -153,11 +133,11 @@ class rackhd20_computenode_pollers(fit_common.unittest.TestCase):
 
         for node in NODELIST:
             if fit_common.VERBOSITY >= 2:
-                nodetype = get_rackhd_nodetype(node)
+                nodetype = test_api_utils.get_rackhd_nodetype(node)
                 print "Node: {}  Type: {}".format(node, nodetype)
         errorlist = []
         for node in NODELIST:
-            nodetype = get_rackhd_nodetype(node)
+            nodetype = test_api_utils.get_rackhd_nodetype(node)
             if fit_common.VERBOSITY >= 2:
                 print "\nNode: {} Type: {}".format(node, nodetype)
 
@@ -187,7 +167,7 @@ class rackhd20_computenode_pollers(fit_common.unittest.TestCase):
         errorlist = []
         for node in NODELIST:
             if fit_common.VERBOSITY >= 2:
-                nodetype = get_rackhd_nodetype(node)
+                nodetype = test_api_utils.get_rackhd_nodetype(node)
                 print "\nNode: {} Type: {}".format(node, nodetype)
             poller_dict = test_api_utils.get_supported_pollers(node)
             for poller in poller_dict:
@@ -214,7 +194,7 @@ class rackhd20_computenode_pollers(fit_common.unittest.TestCase):
 
         errorlist = []
         for node in NODELIST:
-            nodetype = get_rackhd_nodetype(node)
+            nodetype = test_api_utils.get_rackhd_nodetype(node)
             if fit_common.VERBOSITY >= 2:
                 print "\nNode: {} Type: {}".format(node, nodetype)
             poller_dict = test_api_utils.get_supported_pollers(node)
@@ -242,7 +222,7 @@ class rackhd20_computenode_pollers(fit_common.unittest.TestCase):
         errorlist = []
         for node in NODELIST:
             if fit_common.VERBOSITY >= 2:
-                nodetype = get_rackhd_nodetype(node)
+                nodetype = test_api_utils.get_rackhd_nodetype(node)
                 print "\nNode: {} Type: {}".format(node, nodetype)
             mondata = fit_common.rackhdapi("/api/2.0/nodes/" + node + "/pollers")
             self.assertIn(mondata['status'], [200], "Incorrect HTTP return code, expecting 200, received {}".format(mondata['status']))

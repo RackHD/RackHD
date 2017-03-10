@@ -14,7 +14,9 @@ import fit_common
 
 # Select test group here using @attr
 from nose.plugins.attrib import attr
-@attr(all=True, regression=True, smoke=True)
+
+
+@attr(api_1_1=True)
 class rackhd11_api_templates(fit_common.unittest.TestCase):
     def setUp(self):
         # this clears out any existing instance of 'testid' template

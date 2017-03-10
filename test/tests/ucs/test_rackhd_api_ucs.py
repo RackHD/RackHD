@@ -159,6 +159,7 @@ class rackhd_ucs_api(unittest.TestCase):
                   "&identifier=" + identifier
         return url
 
+    @unittest.skipUnless("ucs_ip" in fit_common.fitcfg(), "")
     def test_check_ucs_params(self):
         self.assertNotEqual(self.UCS_IP, None, "Expected value for UCS_IP other then None and found {0}"
                             .format(self.UCS_IP))

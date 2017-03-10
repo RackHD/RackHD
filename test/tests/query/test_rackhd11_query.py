@@ -14,7 +14,9 @@ import subprocess
 import fit_common
 
 from nose.plugins.attrib import attr
-@attr(all=True, regression=True, smoke=True)
+
+
+@attr(api_1_1=True)
 
 def query_check(url):
     # Run query for each key in first item, then check to see if number of entries match
