@@ -218,7 +218,7 @@ class rackhd_ucs_api(unittest.TestCase):
         """
         catalog_workflows = []
         for x in range(len(self.UCS_NODES)):
-            postUrl = '/api/1.1/nodes/' + str(self.UCS_NODES[x]["id"]) + "/workflows?name=Graph.Ucs.Catalog"
+            postUrl = '/api/2.0/nodes/' + str(self.UCS_NODES[x]["id"]) + "/workflows?name=Graph.Ucs.Catalog"
             header = {"Content-Type": "application/json"}
             api_data = fit_common.rackhdapi(postUrl, headers=header, action="post")
             self.assertEqual(api_data['status'], 201,
