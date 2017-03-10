@@ -84,7 +84,7 @@ class obmSettings(object):
             node_type = n.get('type')
             uid = n.get('id')
             if uuid is None or uuid == uid:
-                if node_type != 'enclosure':
+                if node_type not in ['enclosure', 'switch', 'pdu']:
                     obm_obj = []
                     Api().obms_get()
                     all_obms = loads(self.__client.last_response.data)

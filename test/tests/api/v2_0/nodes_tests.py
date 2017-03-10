@@ -1,4 +1,3 @@
-from config.api1_1_config import config as config_old   #TODO remove when 2.0 worklfow API is implemented
 from config.api2_0_config import config
 from config.amqp import *
 from modules.logger import Log
@@ -25,7 +24,6 @@ LOG = Log(__name__)
 class NodesTests(object):
 
     def __init__(self):
-        self.__client_old = config_old.api_client
         self.__client = config.api_client
         self.__worker = None
         self.__discovery_duration = None
@@ -283,6 +281,7 @@ class NodesTests(object):
                 resps.append(self.__get_data())
         for resp in resps:
             assert_not_equal(0, len(resp), message='No Workflows found for Node')
+        Api().nodes_get_workflow_by_id('fooey')
 
     @test(groups=['node_post_workflows-api2'], depends_on_groups=['node_workflows-api2'])
     def test_node_workflows_post(self):

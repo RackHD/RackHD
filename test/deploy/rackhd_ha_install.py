@@ -10,6 +10,7 @@ This script performs the following functions:
     - installs the DHCP configuration
     - sets the /etc/hosts config
     - sets the hostname
+    - sets the cluster properties
 
 usage:
     python run_tests.py -stack <stack ID> -test deploy/rackhd_ha_install.py -numvms <num>
@@ -231,6 +232,19 @@ class rackhd_ha_install(unittest.TestCase):
             # Check that there are no nodes with unclean status
             self.assertFalse(self.has_unclean_nodes(vmnum), "Unclean nodes found on node {}".format(vmnum))
 
+    def set_cluster_property(self, option):
+        command = "crm configure property {}".format(option)
+        rc = fit_common.remote_shell(command)['exitcode']
+        return rc == 0
+
+    @depends(after=test08_check_pacemaker_status)
+    def test09_set_cluster_option(self):
+        # set cluster to move service after single failure
+        self.assertTrue(self.set_cluster_property("migration-threshold=1"), "Failed to set migration-threshold option")
+        # set stonith fencing to disable
+        self.assertTrue(self.set_cluster_property("stonith-enabled=false"), "Failed to disable stonith")
+        # set no-quorum-policy to ignore
+        self.assertTrue(self.set_cluster_property("no-quorum-policy=ignore"), "Failed to set quorum policy")
 
 if __name__ == '__main__':
     unittest.main()
