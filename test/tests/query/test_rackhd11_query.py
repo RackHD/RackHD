@@ -14,6 +14,8 @@ import subprocess
 import fit_common
 
 from nose.plugins.attrib import attr
+
+
 @attr(api_1_1=True)
 
 def query_check(url):

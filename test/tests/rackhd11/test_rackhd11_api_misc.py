@@ -14,6 +14,8 @@ import fit_common
 
 # Select test group here using @attr
 from nose.plugins.attrib import attr
+
+
 @attr(api_1_1=True)
 class rackhd11_api_misc(fit_common.unittest.TestCase):
     def test_api_11_docs_page(self):

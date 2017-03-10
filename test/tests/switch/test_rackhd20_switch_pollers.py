@@ -18,6 +18,7 @@ import test_api_utils
 
 NODELIST = []
 
+
 def _get_switches():
     # returns a list with valid node IDs that match ARGS_LIST.sku in 'Name' or 'Model' field
     # and matches node BMC MAC address in ARGS_LIST.obmmac if specified
