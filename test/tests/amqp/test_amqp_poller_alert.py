@@ -96,8 +96,8 @@ class test_poller_alert_amqp_message(unittest.TestCase):
         # Try credential record in config file
         for creds in fit_common.fitcreds()['bmc']:
             if fit_common.remote_shell(
-                            'ipmitool -I lanplus -H ' + bmcip + ' -U ' +
-                            creds['username'] + ' -P ' + creds['password'] + ' fru')['exitcode'] == 0:
+                'ipmitool -I lanplus -H ' + bmcip + ' -U ' +
+                    creds['username'] + ' -P ' + creds['password'] + ' fru')['exitcode'] == 0:
                 usr = creds['username']
                 pwd = creds['password']
                 break
