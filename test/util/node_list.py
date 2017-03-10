@@ -1,17 +1,11 @@
 '''
-Copyright 2016, EMC, Inc
+Copyright 2017 Dell Inc. or its subsidiaries. All Rights Reserved.
 
-This utility lists the number and type of compute nodes in a stack.
-
-Author(s):
-George Paulos
+Purpose:
+  This utility lists the number and type of compute nodes in a stack.
 '''
 
 import fit_path  # NOQA: unused import
-import os
-import sys
-import subprocess
-import argparse
 import fit_common
 
 
@@ -35,6 +29,6 @@ class test_list_nodes(fit_common.unittest.TestCase):
                     print "    " + node['id'] + " - Type: " + node['type']
         print
 
+
 if __name__ == '__main__':
     fit_common.unittest.main()
-
