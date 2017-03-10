@@ -1,61 +1,60 @@
-# Copyright 2016, EMC, Inc.
+'''
+Copyright 2017 Dell Inc. or its subsidiaries. All Rights Reserved.
 
-"""
- RackHD 1.1 common test utlitiies
+RackHD common test utlitiies
 
- authors: ehohenstein, yuchi zhang
+Authors:
+Ericka Hohenstein
+yuchi zhang
+George Paulos
 
- Purpose/intent
- This utility library contain helper functions for parsing response data from the RackHD APIs.
-"""
+Purpose/intent
+This utility library contain helper functions for parsing response data from the RackHD APIs.
+'''
 
 import fit_path  # NOQA: unused import
-import sys
-import subprocess
 import fit_common
-
 import unicodedata
-import json
 
 ##########################################
 #  Node List Utils
 ##########################################
 
+
 def rackhd_get_node_list():
     """
     this function returns the list of node ids reported by
-    the Monrail API /api/1.1/nodes
+    the Monrail API /api/2.0/nodes
     :return:
         computer node list in that stack when success.
         otherwise on failure
     """
-    monurl = "/api/1.1/nodes"
+    monurl = "/api/2.0/nodes"
     mondata = fit_common.rackhdapi(url_cmd=monurl)
     nodes = mondata['json']
-    result = mondata['status']
 
     nodelist = []
     if len(nodes) == 0:
         if fit_common.VERBOSITY >= 2:
             print "No Nodes found on RackHD server "
     else:
-        inode=0
-        while inode<len(nodes):
+        inode = 0
+        while inode < len(nodes):
             nodelist.append(nodes[inode]["id"])
-            inode +=1
+            inode += 1
     return nodelist
 
 
 def get_rackhd_nodetype(nodeid):
-    nodetype = ""
+    nodetype = "unknown"
     sku = ""
     # get node info
-    mondata = fit_common.rackhdapi("/api/1.1/nodes/"+nodeid)
+    mondata = fit_common.rackhdapi("/api/2.0/nodes/" + nodeid)
     if mondata['status'] == 200:
         # get the sku id contained in the node
         sku = mondata['json'].get("sku")
         if sku:
-            skudata = fit_common.rackhdapi("/api/1.1/skus/"+sku)
+            skudata = fit_common.rackhdapi(sku)
             if skudata['status'] == 200:
                 nodetype = skudata['json'].get("name")
             else:
@@ -64,40 +63,38 @@ def get_rackhd_nodetype(nodeid):
                     print errmsg
         else:
             if fit_common.VERBOSITY >= 2:
-                errmsg = "Error: nodeid {} did not return a valid sku in get_rackhd_nodetype{}".format(nodeid,sku)
+                errmsg = "Error: nodeid {} did not return a valid sku in get_rackhd_nodetype {}".format(nodeid, sku)
                 print errmsg
     return nodetype
 
 
 def get_node_list_by_type(node_type):
-    '''
+    """
     Get node list according to type (like PDU, compute)
     :param type:
     :return: node id list for given type
-    '''
-    node_info = fit_common.rackhdapi(url_cmd="/api/1.1/nodes")
+    """
+    node_info = fit_common.rackhdapi(url_cmd="/api/2.0/nodes?type=" + node_type)
     node_list = []
     if node_info["status"] in [200, 201, 202, 204]:
         for node in node_info["json"]:
-            if node["type"] == node_type:
-                node_list.append(node["id"])
+            node_list.append(node["id"])
     return node_list
 
+
 def delete_nodes_by_type(node_type):
-    '''
+    """
     Delete all nodes for a given node_type
     :param node_type:
     :return:
-    '''
+    """
     node_list = []
     node_list = get_node_list_by_type(node_type)
     if node_list == []:
         return 0
     for node_id in node_list:
-        active_wf = get_active_workflow(node_id)
-        if active_wf != 0:
-            delete_active_workflow(node_id)
-        fit_common.rackhdapi(url_cmd="/api/1.1/nodes/" + node_id, action="delete")
+        fit_common.cancel_active_workflow(node_id)
+        fit_common.rackhdapi(url_cmd="/api/2.0/nodes/" + node_id, action="delete")
     node_list = get_node_list_by_type(node_type)
     if node_list == []:
         return 0
@@ -107,6 +104,7 @@ def delete_nodes_by_type(node_type):
 ##########################################
 #  Compute Node Utils
 ##########################################
+
 
 def get_obm_port_ip(node_id):
     """
@@ -118,38 +116,38 @@ def get_obm_port_ip(node_id):
             otherwise on other errors
     """
 
-    rest_res = {'json':"", 'text':"", 'status':"", 'headers':""}
+    rest_res = {'json': "", 'text': "", 'status': "", 'headers': ""}
 
-    str_uri = '/api/1.1/nodes/'+node_id
+    str_uri = '/api/2.0/nodes/' + node_id
     rest_res = fit_common.rackhdapi(url_cmd=str_uri)
     if rest_res['status'] != 200:
         if fit_common.VERBOSITY >= 2:
             print "Unable to get the " \
-                "MAC address of target Node.\nURL: \t"+ \
-                '/api/1.1/nodes/'+node_id
+                "MAC address of target Node.\nURL: \t" +\
+                '/api/2.0/nodes/' + node_id
         return 1
 
-    if 'obmSettings' in rest_res['json']:
-        mac_address = rest_res['json']['obmSettings'][0]['config']['host']
+    if 'obms' in rest_res['json'] and 'ref' in rest_res['json']['obms']['0']:
+        mac_address = fit_common.rackhdapi(rest_res['json']['obms']['0']['ref'])['json']['config']['host']
         if not mac_address:
             if fit_common.VERBOSITY >= 2:
                 print "Unable to find out the MAC address " \
-                    "associated with the node from http request.\n"
+                      "associated with the node from http request.\n"
                 print rest_res['json']
             return 2
     else:
         if fit_common.VERBOSITY >= 2:
             print "obmSettings is not found by the request:" \
-                "\n\t"+"URL:\t"+str_uri
+                  "\n\t" + "URL:\t" + str_uri
             print rest_res['json']
         return 2
 
-    str_uri = '/api/1.1/lookups?q='+mac_address
+    str_uri = '/api/2.0/lookups?q=' + mac_address
     rest_res = fit_common.rackhdapi(url_cmd=str_uri)
     if rest_res['status'] != 200:
         if fit_common.VERBOSITY >= 2:
-            print "Unable to get the IP address from the MAC address:\n\tURL:\t"+ \
-                '/api/1.1/lookups?q='+ mac_address
+            print "Unable to get the IP address from the MAC address:\n\tURL:\t" +\
+                  '/api/2.0/lookups?q=' + mac_address
         return 1
 
     try:
@@ -163,6 +161,7 @@ def get_obm_port_ip(node_id):
 
     return ret_ip_address
 
+
 def get_compute_bmc_ip(node_id):
     """
     Return the BMC IP address by given the ID of computing node.
@@ -173,34 +172,33 @@ def get_compute_bmc_ip(node_id):
             otherwise on other errors
     """
 
-    monorail_url = "/api/1.1/nodes/" + node_id + \
-                   "/catalogs/bmc"
-    rest_res = {'json':"", 'text':"", 'status':"", 'headers':""}
+    monorail_url = "/api/2.0/nodes/" + node_id + "/catalogs/bmc"
+    rest_res = {'json': "", 'text': "", 'status': "", 'headers': ""}
 
     rest_res = fit_common.rackhdapi(url_cmd=monorail_url)
     if rest_res['status'] != 200:
         if fit_common.VERBOSITY >= 2:
             print "Error in getting bmc web request"
         return 1
-    
+
     if rest_res['json']['data']['IP Address'] != "":
         ret_ip = rest_res['json']['data']['IP Address']
         return ret_ip
     else:
         return 2
 
+
 def get_compute_rmm_ip(node_id):
-    '''
+    """
     Return the RMM IP address by given the ID of computing node.
     :param node_id: The node ID used for identify the computing node.
     :return: String of RMM ip address on success,
             1 on network error,
             2 on parsing error,
             otherwise on other errors
-    '''
-    monorail_url = "/api/1.1/nodes/" + node_id + \
-                   "/catalogs/rmm"
-    rest_res = {'json':"", 'text':"", 'status':"", 'headers':""}
+    """
+    monorail_url = "/api/2.0/nodes/" + node_id + "/catalogs/rmm"
+    rest_res = {'json': "", 'text': "", 'status': "", 'headers': ""}
 
     rest_res = fit_common.rackhdapi(url_cmd=monorail_url)
     if rest_res['status'] != 200:
@@ -215,7 +213,7 @@ def get_compute_rmm_ip(node_id):
 
 
 def get_compute_node_username(node_id):
-    '''
+    """
     Get the username credential from node id
     :param node_id: The id given by OnRack
     :return:
@@ -224,11 +222,11 @@ def get_compute_node_username(node_id):
         2 on parsing error
         3 on unable to obtain password from username
         Otherwise
-    '''
-    monorail_url = "/api/1.1/nodes/"+node_id
-    rest_res = {'json':"", 'text':"", 'status':"", 'headers':""}
+    """
+    monorail_url = "/api/2.0/nodes/" + node_id
+    rest_res = {'json': "", 'text': "", 'status': "", 'headers': ""}
     rest_res = fit_common.rackhdapi(url_cmd=monorail_url)
-    
+
     if rest_res['status'] != 200:
         if fit_common.VERBOSITY >= 2:
             print "Error in getting response with url\n\t" + monorail_url
@@ -236,9 +234,7 @@ def get_compute_node_username(node_id):
 
     username = rest_res['json']['obmSettings'][0]['config'].get('user')
     if username:
-        user = unicodedata.normalize('NFKD', \
-                                     rest_res['json']['obmSettings'][0]['config']['user']). \
-            encode('ascii','ignore')
+        user = unicodedata.normalize('NFKD', rest_res['json']['obmSettings'][0]['config']['user']).encode('ascii', 'ignore')
     else:
         if fit_common.VERBOSITY >= 2:
             print "Unable to obtain the user name from node id given"
@@ -260,56 +256,28 @@ def get_compute_node_username(node_id):
     return ret_dict_cred
 
 
-def get_active_workflow(node_id):
-    '''
-    Check if there is active workflow for a given node, return workflow name
-    '''
-    monurl = "/api/1.1/nodes/"+str(node_id)+"/workflows/active"
-    mondata = fit_common.rackhdapi(url_cmd=monurl)
-    if mondata['status'] not in [200, 201, 202, 204]:
-        return -1
-    if mondata['json'] == {}:
-        return 0
-    elif mondata['json']['context']['target'] == str(node_id):
-        workflow_name = mondata['json']['definition']['injectableName']
-        return workflow_name
-    else:
-        return -1
-
-def delete_active_workflow(node_id):
-    '''
-    Delete active workflow for a given node id
-    :param node_id:
-    :return: 0 stands success
-    '''
-    workflow_url = "/api/1.1/nodes/" + node_id + "/workflows/active"
-    mon_data = fit_common.rackhdapi(url_cmd=workflow_url, action="delete")
-    if mon_data['status'] not in [200, 201, 202, 204]:
-        return -1
-    return 0
-
 def get_relations_for_node(node_id):
-    '''
+    """
     Get encl id for a given node id
     Or get node id list for a give enclosure id
     :param node_id: node id
     :return: enclosure id list for a given node or node id list for a given enclosure
-    '''
-    
-    mon_url = "/api/1.1/nodes/" + node_id
+    """
+
+    mon_url = "/api/2.0/nodes/" + node_id
     mon_data = fit_common.rackhdapi(url_cmd=mon_url)
     if mon_data['status'] not in [200, 201, 202, 204]:
         return None
-    node_relations = mon_data["json"].get("relations","")
+    node_relations = mon_data["json"].get("relations", "")
     for relation in node_relations:
         if "enclose" in relation["relationType"]:
             return relation["targets"]
     return None
 
-
 ##########################################
 #  IPMI Node Utils
 ##########################################
+
 
 def guess_the_password(str_username):
     """
@@ -317,20 +285,15 @@ def guess_the_password(str_username):
     :param str_username: string based username
     :return: string based password on success, 1 on unable to guess
     """
-    # the cheat sheet dictionary is a username-password based hash.
-    # Please Edit the dictionary for password settings
-    dict_cheat_sheet = {
-        'user1': 'password1',
-        'user2': 'password2',
-        'root': '1234567',
-        'user3': 'password3',
-        'admin': 'admin'
-    }
+    dict_cheat_sheet = {}
+    for entry in fit_common.fitcreds()['bmc']:
+        dict_cheat_sheet[entry['username']] = entry['password']
     if (str_username in dict_cheat_sheet) \
             and (dict_cheat_sheet[str_username] != ""):
         return dict_cheat_sheet[str_username]
     else:
         return 1
+
 
 def run_ipmi_command(node_ip, str_command, dict_credential):
     """
@@ -341,29 +304,30 @@ def run_ipmi_command(node_ip, str_command, dict_credential):
     :return: result of remote_shell
     """
     remote_ssh_res = {'stdout': "", 'exitcode': 0}
-    str_ipmi_cmd = "ipmitool -I lanplus -H " \
-                   + node_ip + " -U " \
-                   + dict_credential['user'] \
-                   + " -P " + dict_credential['password'] \
-                   + " " + str_command
+    str_ipmi_cmd = "ipmitool -I lanplus -H " +\
+                   node_ip + " -U " +\
+                   dict_credential['user'] +\
+                   " -P " + dict_credential['password'] +\
+                   " " + str_command
 
     remote_ssh_res = fit_common.remote_shell(shell_cmd=str_ipmi_cmd)
-    if remote_ssh_res ['exitcode'] != 0:
+    if remote_ssh_res['exitcode'] != 0:
         if fit_common.VERBOSITY >= 2:
             print "Error in execute # ipmitool on " + node_ip
 
     return remote_ssh_res
 
+
 def run_ipmi_command_to_node(node_id, str_ipmi_cmd):
-    '''
+    """
     Run a ipmi command to the node_id
     :param node_id: the node in that OnRack
     :param str_ipmi_cmd: the option that is attached to ipmitool
     :return: running result on success.
              Different return codes otherwise.
-    '''
+    """
     str_ip = get_compute_bmc_ip(node_id)
-    if (str_ip == 2 or str_ip == 1) or str_ip == '0.0.0.0' :
+    if (str_ip == 2 or str_ip == 1) or str_ip == '0.0.0.0':
         if fit_common.VERBOSITY >= 2:
             print "Unable to find the bmc ip at given node id"
         return 1
@@ -379,19 +343,21 @@ def run_ipmi_command_to_node(node_id, str_ipmi_cmd):
 #  Poller Utils
 ##########################################
 
+
 def get_poller_data_by_id(poller_id):
     """
-    To get the poller data by poller id 
+    To get the poller data by poller id
     """
     poller_data = []
-    monurl = "/api/1.1/pollers/"+str(poller_id)+"/data"
+    monurl = "/api/2.0/pollers/" + str(poller_id) + "/data"
     mondata = fit_common.rackhdapi(url_cmd=monurl)
-    if  mondata['status'] in [200,201,202,204]:
+    if mondata['status'] in [200, 201, 202, 204]:
         poller_data = mondata['json']
     else:
         if fit_common.VERBOSITY >= 2:
             print "Status {}, Failed to get data for poller id: {}".format(mondata['status'], str(poller_id))
     return poller_data
+
 
 def get_supported_pollers(node_id):
     """
@@ -399,32 +365,33 @@ def get_supported_pollers(node_id):
     """
     poller_dict = {}
 
-    monurl = "/api/1.1/nodes/"+str(node_id)+"/pollers"
+    monurl = "/api/2.0/nodes/" + str(node_id) + "/pollers"
     mondata = fit_common.rackhdapi(url_cmd=monurl)
 
-    if mondata['status'] not in [200,201,202,204]:
+    if mondata['status'] not in [200, 201, 202, 204]:
         if fit_common.VERBOSITY >= 2:
             print "Status: {},  Failed to get pollers for node: {}".format(mondata['status'], node_id)
     else:
         pollers = mondata['json']
         poller_dict = dict()
         for poller in pollers:
-            if poller["config"].has_key("metric"):
+            if "metric" in poller["config"]:
                 poller_name = poller["config"]["metric"]
             else:
                 poller_name = poller["config"]["command"]
                 poller_interval = poller["pollInterval"]
                 poller_id = poller["id"]
-                poller_dict[poller_name] = {'poller_id':poller_id, 'poller_interval':poller_interval}
+                poller_dict[poller_name] = {'poller_id': poller_id, 'poller_interval': poller_interval}
 
     return poller_dict
 
+
 def get_ora_poller_id_list():
-    '''
+    """
     Get all poller ids for an onrack system
     :return: poller id list
-    '''
-    mon_url = "/api/1.1/pollers"
+    """
+    mon_url = "/api/2.0/pollers"
     mon_data = fit_common.rackhdapi(url_cmd=mon_url)
     if mon_data['status'] not in [200, 201, 202, 204]:
         return -1
@@ -437,16 +404,17 @@ def get_ora_poller_id_list():
 #  RackHD Catalog Utils
 ##########################################
 
+
 def get_catalogue_from_source(node_id, source):
     """
     To get the catalogue data by the source name
 
     Check the basic fields where there should be values, and return the data for the source
     """
-    monurl = "/api/1.1/nodes/"+str(node_id)+"/catalogs/"+str(source)
+    monurl = "/api/2.0/nodes/" + str(node_id) + "/catalogs/" + str(source)
     mondata = fit_common.rackhdapi(url_cmd=monurl)
 
-    if mondata['status'] in [200,201,202,204]:
+    if mondata['status'] in [200, 201, 202, 204]:
         mon_json = mondata['json']
         if mon_json.get('node', None) != str(node_id) or mon_json.get('source', None) \
                 != str(source) or not mon_json.get('createdAt', None) or not mon_json.get('updatedAt', None):
@@ -456,16 +424,17 @@ def get_catalogue_from_source(node_id, source):
     else:
         return -1
 
+
 def get_catalogue_sources(node_id):
     """
     To get the list of sources names from catalogue
     returns empty list on error
     """
-    monurl = "/api/1.1/nodes/"+str(node_id)+"/catalogs"
+    monurl = "/api/2.0/nodes/" + str(node_id) + "/catalogs"
     mondata = fit_common.rackhdapi(url_cmd=monurl)
 
     sources_list = []
-    if mondata['status'] not in [200,201,202,204]:
+    if mondata['status'] not in [200, 201, 202, 204]:
         return sources_list
     try:
         mon_json = mondata['json']
@@ -478,44 +447,46 @@ def get_catalogue_sources(node_id):
 
     return sources_list
 
+
 def get_node_source_id_list(node_id):
-    '''
+    """
     Get all catalog source ids for a given node
     :param node_id:
     :return: source name and source id as a dictionary
              empty dict if not found
-    '''
+    """
     ora_source_list = dict()
-    mon_url = "/api/1.1/nodes/" + node_id + "/catalogs"
+    mon_url = "/api/2.0/nodes/" + node_id + "/catalogs"
     mon_data = fit_common.rackhdapi(url_cmd=mon_url)
     if mon_data['status'] in [200, 201, 202, 204]:
         for source in mon_data["json"]:
             ora_source_list[source["source"]] = source["id"]
     return ora_source_list
 
+
 def get_ora_source_id_list():
-    '''
+    """
     Get all catalog source ids for a onrack system
     :return: source id list
              empty list if not found
-    '''
+    """
     ora_source_list = []
-    mon_url = "/api/1.1/catalogs"
+    mon_url = "/api/2.0/catalogs"
     mon_data = fit_common.rackhdapi(url_cmd=mon_url)
     if mon_data['status'] in [200, 201, 202, 204]:
         for source in mon_data["json"]:
             ora_source_list.append(source["id"])
     return ora_source_list
 
+
 def get_catalog_by_source_id(source_id):
-    '''
+    """
     Get catalog data by source id
     :param source_id: catalog source id
     :return: catalog data with specified source id
-    '''
-    mon_url = "/api/1.1/catalogs/"+str(source_id)
+    """
+    mon_url = "/api/2.0/catalogs/" + str(source_id)
     mon_data = fit_common.rackhdapi(url_cmd=mon_url)
     if mon_data['status'] in [200, 201, 202, 204]:
         return mon_data['json']
     return None
-
