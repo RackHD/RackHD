@@ -18,7 +18,7 @@ MON_NODES = fit_common.node_select()
 
 # Select test group here using @attr
 from nose.plugins.attrib import attr
-@attr(all=True, regression=True, smoke=True)
+@attr(api_1_1=True)
 class rackhd11_api_workflows(fit_common.unittest.TestCase):
     def test_api_11_workflows(self):
         api_data = fit_common.rackhdapi("/api/1.1/workflows")

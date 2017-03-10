@@ -14,7 +14,7 @@ import fit_common
 
 # Select test group here using @attr
 from nose.plugins.attrib import attr
-@attr(all=True, regression=True, smoke=True)
+@attr(api_1_1=True)
 class rackhd11_api_profiles(fit_common.unittest.TestCase):
     def test_api_11_profiles_library(self):
         api_data = fit_common.rackhdapi("/api/1.1/profiles/library")
