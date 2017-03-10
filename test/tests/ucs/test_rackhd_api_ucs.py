@@ -21,7 +21,7 @@ from nose.plugins.attrib import attr
 logs = flogging.get_loggers()
 
 
-@attr(all=True, regression=True, smoke=True, ucs=True)
+@attr(all=True, regression=True, smoke=False, ucs=True)
 class rackhd_ucs_api(unittest.TestCase):
 
     UCS_IP = fit_common.fitcfg().get("ucs_ip")
