@@ -52,12 +52,7 @@ class AmqpWorker(threading.Thread):
     It will be obsolete and replaced by a common AMQP test module.
     '''
 
-    def __init__(
-            self,
-            exchange_name,
-            topic_routing_key,
-            external_callback,
-            timeout=10):
+    def __init__(self, exchange_name, topic_routing_key, external_callback, timeout=10):
         threading.Thread.__init__(self)
         pika_logger = logging.getLogger('pika')
         if fit_common.VERBOSITY >= 8:
@@ -71,9 +66,7 @@ class AmqpWorker(threading.Thread):
         else:
             amqp_port = fit_common.fitports()['amqp']
         self.connection = pika.BlockingConnection(
-            pika.ConnectionParameters(
-                host=fit_common.fitargs()["rackhd_host"],
-                port=amqp_port))
+            pika.ConnectionParameters(host=fit_common.fitargs()["rackhd_host"], port=amqp_port))
         self.channel = self.connection.channel()
         result = self.channel.queue_declare(exclusive=True)
         queue_name = result.method.queue
@@ -150,8 +143,7 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
         mondata = fit_common.rackhdapi('/api/current/hooks')
         self.assertTrue(
             mondata['status'] < 209,
-            'Incorrect HTTP return code, could not check hooks. expected<209, got:' + str(
-                mondata['status']))
+            'Incorrect HTTP return code, could not check hooks. expected<209, got:' + str(mondata['status']))
         hookurl = "http://" + str(ip) + ":" + str(port)
         for hooks in mondata['json']:
             if hooks['url'] == hookurl:
@@ -167,8 +159,7 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
                             "action": "discovered"}]})
         self.assertTrue(
             response['status'] < 209,
-            'Incorrect HTTP return code, expected<209, got:' + str(
-                response['status']))
+            'Incorrect HTTP return code, expected<209, got:' + str(response['status']))
 
     def _apply_obmsetting_to_node(self, nodeid):
         # usr = ''
@@ -179,13 +170,8 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
         # Try credential record in config file
         for creds in fit_common.fitcreds()['bmc']:
             if fit_common.remote_shell(
-                'ipmitool -I lanplus -H ' +
-                bmcip +
-                ' -U ' +
-                creds['username'] +
-                ' -P ' +
-                creds['password'] +
-                    ' fru')['exitcode'] == 0:
+                        'ipmitool -I lanplus -H ' + bmcip + ' -U ' + creds['username'] + ' -P ' +
+                        creds['password'] + ' fru')['exitcode'] == 0:
                 usr = creds['username']
                 pwd = creds['password']
                 break
@@ -294,15 +280,8 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
             webhook_body_json["data"]["ipMacAddresses"], "",
             "ipMacAddresses generated during node discovery doesn't include valid data ")
 
-    def _process_message(
-            self,
-            action,
-            typeid,
-            nodeid,
-            messagetype,
-            amqp_message_body):
-        expected_key = messagetype + "." + action + \
-            ".information." + typeid + "." + nodeid
+    def _process_message(self, action, typeid, nodeid, messagetype, amqp_message_body):
+        expected_key = messagetype + "." + action + ".information." + typeid + "." + nodeid
         expected_payload = {
             "type": messagetype,
             "action": action,
@@ -310,20 +289,14 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
             "nodeId": nodeid,
             "severity": "information",
             "version": "1.0"}
-        self._compare_message(
-            amqp_message_body,
-            expected_key,
-            expected_payload)
+        self._compare_message(amqp_message_body, expected_key, expected_payload)
 
     def _compare_message(self, amqpmessage, expected_key, expected_payload):
         routing_key = amqpmessage[0]
         amqp_body = amqpmessage[2]
         self.assertEquals(
-            routing_key,
-            expected_key,
-            "Routing key is not expected! expect {0}, get {1}" .format(
-                expected_key,
-                routing_key))
+            routing_key, expected_key, "Routing key is not expected! expect {0}, get {1}"
+            .format(expected_key, routing_key))
         try:
             amqp_body_json = fit_common.json.loads(amqp_body)
         except ValueError:
@@ -342,8 +315,7 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
                 "action field not correct!  expect {0}, get {1}"
                 .format(expected_payload['action'], amqp_body_json['action']))
             self.assertEquals(
-                amqp_body_json['severity'],
-                expected_payload['severity'],
+                amqp_body_json['severity'], expected_payload['severity'],
                 "serverity field not correct!" .format(expected_payload['severity'], amqp_body_json['severity']))
             self.assertNotEquals(amqp_body_json['createdAt'], "", "createdAt field is empty!")
             self.assertNotEquals(amqp_body_json['data'], {}, "data field is empty!")
@@ -371,10 +343,7 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
 
         # Reboot the node, wait reboot workflow start message.
         response = fit_common.rackhdapi(
-            '/redfish/v1/Systems/' +
-            nodeid +
-            '/Actions/ComputerSystem.Reset',
-            action='post',
+            '/redfish/v1/Systems/' + nodeid + '/Actions/ComputerSystem.Reset', action='post',
             payload={"reset_type": "ForceRestart"})
         self.assertTrue(
             response['status'] < 209, 'Incorrect HTTP return code, expected<209, got:' + str(response['status']))
@@ -383,12 +352,7 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
         # wait for progress update finish message.
         self._wait_amqp_message(10)
         workflow_amqp = amqp_queue.get()
-        self._process_message(
-            "progress.updated",
-            graphid,
-            nodeid,
-            "graph",
-            workflow_amqp)
+        self._process_message("progress.updated", graphid, nodeid, "graph", workflow_amqp)
         retry_count = 0
 
         # wait for progress finish message.
@@ -434,9 +398,7 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
 
         logs.debug('launch AMQP thread for discovery')
         discover_worker = AmqpWorker(
-            exchange_name="on.events",
-            topic_routing_key="node.#.information.#",
-            external_callback=self.amqp_callback,
+            exchange_name="on.events", topic_routing_key="node.#.information.#", external_callback=self.amqp_callback,
             timeout=600)
         discover_worker.setDaemon(True)
         discover_worker.start()
@@ -449,12 +411,7 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
         logs.debug('Wait for node discovery')
         self._wait_amqp_message(60)
         amqp_message_discover = amqp_queue.get()
-        self._process_message(
-            "discovered",
-            nodefound_id,
-            nodefound_id,
-            "node",
-            amqp_message_discover)
+        self._process_message("discovered", nodefound_id, nodefound_id, "node", amqp_message_discover)
 
         logs.debug('Validate node discovery registration AMQP Message')
         self._node_registration_validate(amqp_message_discover[2])
@@ -467,12 +424,7 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
             logs.debug_2("wait for skupack assign!")
             self._wait_amqp_message(50)
             amqp_message_discover = amqp_queue.get()
-            self._process_message(
-                "sku.assigned",
-                nodefound_id,
-                nodefound_id,
-                "node",
-                amqp_message_discover)
+            self._process_message("sku.assigned", nodefound_id, nodefound_id, "node", amqp_message_discover)
         else:
             logs.warning("skupack is not installed, skip sku assigned message check!")
         logs.debug_3("wait for obm assign!")
@@ -481,21 +433,11 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
         self.assertTrue(self._apply_obmsetting_to_node(nodefound_id), "Fail to apply obm setting!")
         self._wait_amqp_message(50)
         amqp_message_discover = amqp_queue.get()
-        self._process_message(
-            "obms.assigned",
-            nodefound_id,
-            nodefound_id,
-            "node",
-            amqp_message_discover)
+        self._process_message("obms.assigned", nodefound_id, nodefound_id, "node", amqp_message_discover)
         logs.debug_3("wait for accessible!")
         self._wait_amqp_message(100)
         amqp_message_discover = amqp_queue.get()
-        self._process_message(
-            "accessible",
-            nodefound_id,
-            nodefound_id,
-            "node",
-            amqp_message_discover)
+        self._process_message("accessible", nodefound_id, nodefound_id, "node", amqp_message_discover)
         discover_worker.dispose()
 
     def test_rediscover(self):
