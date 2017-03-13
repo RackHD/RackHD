@@ -8,7 +8,7 @@ Purpose:
 import fit_path  # NOQA: unused import
 import fit_common
 
-fit_common.VERBOSIY = 1
+fit_common.VERBOSIY = 1  # this is needed for suppressing debug messages to make reports readable
 
 
 class display_sysinfo(fit_common.unittest.TestCase):

@@ -11,7 +11,7 @@ import fit_common
 
 class test_list_nodes(fit_common.unittest.TestCase):
     def test_node_list(self):
-        fit_common.VERBOSITY = 1
+        fit_common.VERBOSITY = 1  # this is needed for suppressing debug messages to make reports readable
         print "\nNode List:"
         print "----------------------------------------------------------------------"
         skulist = fit_common.rackhdapi("/api/2.0/skus")['json']
