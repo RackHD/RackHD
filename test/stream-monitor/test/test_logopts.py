@@ -77,13 +77,9 @@ class _OutputScannerBase(plugin_test_helper.resolve_no_verify_helper_class()):
 
     def tearDown(self, *args, **kwargs):
         """
-        The mirror of setUp. We restore stderr and then do our one magic trick:
-        We clear out the call sequence of the stream-monitor plugin. WE don't use it, but
-        can't turn it off and if we don't clear it, OUR calls will end up in the
-        next test's sequence!
+        The mirror of setUp. We restore stderr, and call our super.
         """
         sys.stderr = self.__save_stderr
-        self._smp._self_test_sequence_seen()
         super(_OutputScannerBase, self).tearDown(*args, **kwargs)
 
     def __common_test_expected(self, expect_level, emit_level, logger_name, log_file):
@@ -149,7 +145,7 @@ class _OutputScannerBase(plugin_test_helper.resolve_no_verify_helper_class()):
                 lg = logging.getLogger(lg_name)
                 start_level = logging.getLevelName('DEBUG_9')
                 end_level = logging.getLevelName('CRITICAL_0')
-                for lvl in xrange(start_level, end_level):
+                for lvl in range(start_level, end_level):
                     lg.log(lvl, 'MATCH-START %s %d(%s) MATCH-END',
                            lg_name, lvl, logging.getLevelName(lvl))
 

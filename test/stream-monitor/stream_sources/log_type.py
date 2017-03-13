@@ -4,11 +4,11 @@ Copyright (c) 2016-2017 Dell Inc. or its subsidiaries. All Rights Reserved.
 from logging import Logger, DEBUG, INFO
 from logging import getLogger as real_getLogger
 from logging import _srcfile  # yes, this is evil. No, we don't have a choice.
-from .monitor_abc import StreamMonitorABC
+from .monitor_abc import StreamMonitorBaseClass
 import sys
 
 
-class LoggingMarker(StreamMonitorABC):
+class LoggingMarker(StreamMonitorBaseClass):
     _all_blocks = 0
 
     def __init__(self):
