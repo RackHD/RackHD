@@ -170,8 +170,8 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
         # Try credential record in config file
         for creds in fit_common.fitcreds()['bmc']:
             if fit_common.remote_shell(
-                        'ipmitool -I lanplus -H ' + bmcip + ' -U ' + creds['username'] + ' -P ' +
-                        creds['password'] + ' fru')['exitcode'] == 0:
+                'ipmitool -I lanplus -H ' + bmcip + ' -U ' + creds['username'] + ' -P ' +
+                    creds['password'] + ' fru')['exitcode'] == 0:
                 usr = creds['username']
                 pwd = creds['password']
                 break
@@ -349,13 +349,21 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
             response['status'] < 209, 'Incorrect HTTP return code, expected<209, got:' + str(response['status']))
         graphid = response['json']["@odata.id"].split('/redfish/v1/TaskService/Tasks/')[1]
 
+        # wait for workflow started message.
+        self._wait_amqp_message(10)
+        workflow_amqp = amqp_queue.get()
+        if workflow_amqp[0][0:14] == "started":
+            self._process_message("started", graphid, nodeid, "graph", workflow_amqp)
+        else:
+            self._process_message("progress.updated", graphid, nodeid, "graph", workflow_amqp)
+
         # wait for progress update finish message.
         self._wait_amqp_message(10)
         workflow_amqp = amqp_queue.get()
         self._process_message("progress.updated", graphid, nodeid, "graph", workflow_amqp)
-        retry_count = 0
 
         # wait for progress finish message.
+        retry_count = 0
         while retry_count < 10:
             self._wait_amqp_message(60)
             workflow_amqp = amqp_queue.get()
