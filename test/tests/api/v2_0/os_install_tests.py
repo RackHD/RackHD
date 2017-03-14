@@ -9,10 +9,14 @@ from proboscis import before_class
 from proboscis.asserts import fail
 from json import dumps, loads, load
 from collections import Mapping
+from on_http_api2_0 import ApiApi as Api
 import os
+import datetime as date
+import time
+from on_http_api2_0.rest import ApiException
 
 LOG = Log(__name__)
-DEFAULT_TIMEOUT_SEC = 5400
+DEFAULT_TIMEOUT_SEC = 2700
 ENABLE_FORMAT_DRIVE=False
 if os.getenv('RACKHD_ENABLE_FORMAT_DRIVE', 'false') == 'true':
     ENABLE_FORMAT_DRIVE=True
@@ -46,8 +50,79 @@ class OSInstallTests(object):
     def __get_data(self):
         return loads(self.__client.last_response.data)
 
+    def __get_compute_nodes(self):
+        Api().nodes_get_all()
+        nodes = self.__get_data()
+        compute_nodes = []
+        for n in nodes:
+            type = n.get('type')
+            if type == 'compute':
+                compute_nodes.append(n)
+        LOG.info('compute nodes count {0}'.format(len(compute_nodes)))
+        return sorted(compute_nodes, key=lamda k: k['id'], reverse=True)
+
+    def __wait_for_completion(self, node, graph_name, graph_instance):
+        id = node.get('id')
+        start_time = date.datetime.now()
+        current_time = date.datetime.now()
+        # Collect BMC info
+        Api().nodes_get_catalog_source_by_id(identifier=id, source='bmc')
+        bmc_ip = self.__get_data().get('IP Address')
+        LOG.info('running test on node : {0} with BMC IP: {1}'.format(id, bmc_ip))
+        while True:
+            if (current_time - start_time).total_seconds() > DEFAULT_TIMEOUT_SEC:
+                raise Exception('Timed out after {0} seconds'.format(DEFAULT_TIMEOUT_SEC))
+                break
+            Api().workflows_get()
+            workflows = self.__get_data()
+            for w in workflows:
+                # LOG.info('print w : {0}'.format(w))
+                if (w.get('node') == id and w.get('injectableName') == graph_name and
+                        w.get('instanceId') == graph_instance):
+                    status = w.get('status')
+                    # LOG.info('{0} - target: {1}, status: {2}'.format(w.get('injectableName'), id, status))
+                    if status == 'succeeded' or status == 'failed' or status == 'canceled':
+                        LOG.info('{0} - target: {1}, status: {2}'.format(w.get('injectableName'), id, status))
+                        if status == 'failed' or status == 'canceled':
+                            LOG.Warning(' workflow {0}: {1}'.format(status, w))
+                        assert_equal(status, 'succeeded',
+                            message='{0} - target: {1}, status: {2}'.format(w.get('injectableName'), id, status))
+                        return
+            time.sleep(10)
+            current_time = date.datetime.now()
+            # LOG.info('current time {0} vs start time {1}'.format(current_time, start_time))
+
     def __post_workflow(self, graph_name, nodes, body):
-        workflows().post_workflows(graph_name, timeout_sec=DEFAULT_TIMEOUT_SEC, nodes=nodes, data=body)
+        # check if NODE_INDEX is set
+        index = None
+        try:
+            index = int(os.environ['NODE_INDEX'])
+        except:
+            LOG.info('NODE_INDEX env is not set')
+            workflows().post_workflows(graph_name, timeout_sec=DEFAULT_TIMEOUT_SEC, nodes=nodes, data=body)
+            return
+
+        # check if index is in the array range
+        nodes = self.__get_compute_nodes()
+        if index >= len(nodes):
+            raise Exception('index is outside the array range index: {0} vs nodes len {1}'.format(index, len(nodes)))
+            return
+        LOG.info('node index is set to {0}'.format(index))
+        node = nodes[index]
+        id = node.get('id')
+        # delete active workflow on the selected node
+        try:
+            Api().nodes_workflow_action_by_id(id, {'command': 'cancel'})
+        except ApiException as e:
+            assert_equal(404, e.status, message='status should be 404')
+        Api().nodes_post_workflow_by_id(id, name=graph_name, body=body)
+        log_context = self.__get_data().get('logContext')
+        if log_context is None:
+            raise Exception('Could not find logContext in {0}'.format(self.__get_data()))
+            return
+        # load graph instance id
+        graph_instance = log_context.get('graphInstance')
+        return self.__wait_for_completion(node, graph_name, graph_instance)
 
     def __format_drives(self):
         # Clear disk MBR and partitions
@@ -195,20 +270,45 @@ class OSInstallTests(object):
         # run the workflow
         self.__post_workflow(graph_name, nodes, body)
 
-    def install_ubuntu(self, version, payloadFile, nodes = []):
+    def install_ubuntu(self, version, payloadFile, nodes=[]):
         graph_name = 'Graph.InstallUbuntu'
         os_repo = defaults.get('RACKHD_UBUNTU_REPO_PATH', \
             self.__base + '/repo/ubuntu')
         # load the payload from the specified file
         body = {}
         body = self.__get_os_install_payload(payloadFile)
+        kargs = {}
+        # Ubuntu installer requirs from the dhcp both options:
+        # - routers
+        # - domain-name-servers
+        # using static ip instead
+        try:
+            # if node index is set then we can use hard coded static IP
+            # this is temporary for now.
+            # We need to implement a CMDB to manage static IPs specially for
+            # full payload implementation
+            int(os.environ['NODE_INDEX'])
+            kargs = {
+                'live-installer/net-image': os_repo + '/install/filesystem.squashfs',
+                'netcfg/get_netmask': '255.255.255.0',
+                'netcfg/get_gateway': '172.31.128.1',
+                'netcfg/get_ipaddress': '172.31.128.240',
+                'netcfg/get_domain': 'my-domain',
+                'netcfg/get_nameservers': '172.31.128.1',
+                'netcfg/disable_dhcp': 'true',
+                'netcfg/confirm_static': 'true'
+            }
+        except:
+            LOG.info('NODE_INDEX env is not set, use DHCP')
+            kargs = {
+                'live-installer/net-image': os_repo + '/install/filesystem.squashfs'
+            }
+
         extra_options = {
             'options':{
                 'defaults':{
                     'repo': os_repo ,
-                    'kargs':{
-                        'live-installer/net-image': os_repo + '/install/filesystem.squashfs'
-                    }
+                    'kargs': kargs
                 },
                 'set-boot-pxe': self.__obm_options,
                 'reboot': self.__obm_options,
