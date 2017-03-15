@@ -1,9 +1,7 @@
 '''
 Copyright (c) 2017 Dell Inc. or its subsidiaries.  All Rights Reserved.
-
 Author(s):
 Norton Luo
-
 '''
 from time import sleep
 from datetime import datetime
@@ -33,7 +31,6 @@ class AmqpWorker(threading.Thread):
     def callback(self, ch, method, properties, body):
         logs.debug(" [x] %r:%r" % (method.routing_key, body))
         logs.debug(" [x] %r:%r" % (method.routing_key, body))
-
     td = AMQP_worker("node.added.#", callback)
     td.setDaemon(True)
     td.start()
