@@ -22,3 +22,7 @@
     exit [lindex $result 3]
   args:
     executable: /usr/bin/expect
+  register: install_rackhd
+
+- name: RackHD Installation Log
+  debug: msg="{{ install_rackhd.stdout }}"
