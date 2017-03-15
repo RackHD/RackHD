@@ -1,6 +1,5 @@
 '''
 Copyright 2017 Dell Inc. or its subsidiaries.  All Rights Reserved.
-
 Author(s):
 Norton Luo
 This test validate the AMQP message send out in the workflow, and node delete and discover.
@@ -42,11 +41,9 @@ class AmqpWorker(threading.Thread):
     def callback(self, ch, method, properties, body):
         logs.debug(" [x] %r:%r" % (method.routing_key, body))
         logs.debug(" [x] %r:%r" % (method.routing_key, body))
-
     td = fit_amqp.AMQP_worker("node.added.#", callback)
     td.setDaemon(True)
     td.start()
-
     TODO:
     The common AMQP related test module of FIT is being refactoring. This AMQP test class is only for temporary use.
     It will be obsolete and replaced by a common AMQP test module.
