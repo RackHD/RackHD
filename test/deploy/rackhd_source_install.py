@@ -14,7 +14,7 @@ This script performs the following functions:
     - startup and verify services
 
 NOTES:
-       If the host is rebooted, the RackHD must be restarted by typing 'sudo nf start' at console.
+       If the host is rebooted, the RackHD must be restarted by typing 'pm2 restart' at console.
 
 usage:
     python run_tests.py -stack <stack ID> -test deploy/rackhd_source_install.py
