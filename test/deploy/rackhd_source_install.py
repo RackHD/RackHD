@@ -1,5 +1,5 @@
 '''
-Copyright 2017 Dell Inc. or its subsidiaries. All Rights Reserved.
+Copyright 2016-2017 Dell Inc. or its subsidiaries. All Rights Reserved.
 
 Author(s):
 George Paulos
@@ -22,6 +22,7 @@ usage:
 
 import fit_path  # NOQA: unused import
 import os
+import sys
 import fit_common
 import network_lib
 import flogging
@@ -55,6 +56,14 @@ if fit_common.fitproxy()['host'] != '':
     fit_common.scp_file_to_host('settings.xml')
     fit_common.remote_shell('mkdir -p ~/.m2;cp settings.xml ~/.m2;mkdir -p /root/.m2;cp settings.xml /root/.m2')
     os.remove('settings.xml')
+
+# verify IP addresses and netmasks in config files are valid
+if not network_lib.verify_rackhd_network_config():
+    log.error("Invalid network configuration in rackhd_default.json.")
+    sys.exit(255)
+if 'pdu' in fit_common.fitcfg() and not network_lib.split_ipv4(fit_common.fitcfg()['pdu']):
+    log.error("Invalid PDU IP address in stack_config.json: " + fit_common.fitcfg()['pdu'])
+    sys.exit(255)
 
 
 class rackhd_source_install(fit_common.unittest.TestCase):
@@ -127,23 +136,28 @@ class rackhd_source_install(fit_common.unittest.TestCase):
         ifslist = network_lib.get_host_nics()
 
         # install control network config
-        control_cfg = open('control.cfg', 'w')
-        control_cfg.write(network_lib.nic_config_file(
-                          iface=ifslist[1],
-                          ipaddress=fit_common.fitrackhd()['dhcpGateway'],
-                          netmask=fit_common.fitrackhd()['dhcpSubnetMask']))
-        control_cfg.close()
-        # copy file to Host
-        fit_common.scp_file_to_host('control.cfg')
-        self.assertEqual(fit_common.remote_shell('cp control.cfg /etc/network/interfaces.d/')
-                         ['exitcode'], 0, "Control network config failure.")
-        os.remove('control.cfg')
-        # startup NIC
-        fit_common.remote_shell('ip addr add ' + fit_common.fitrackhd()['dhcpGateway'] +
-                                '/' + fit_common.fitrackhd()['dhcpSubnetMask'] + ' dev ' + ifslist[1])
-        fit_common.remote_shell('ip link set ' + ifslist[1] + ' up')
-        self.assertEqual(fit_common.remote_shell('ping -c 1 -w 5 ' + fit_common.fitrackhd()['dhcpGateway'])
-                         ['exitcode'], 0, 'Control NIC config failure.')
+        try:
+            ifslist[1]
+        except IndexError:
+            self.fail("****ERROR No Control interface available, Control LAN will not be configured")
+        else:
+            control_cfg = open('control.cfg', 'w')
+            control_cfg.write(network_lib.nic_config_file(
+                              iface=ifslist[1],
+                              ipaddress=fit_common.fitrackhd()['dhcpGateway'],
+                              netmask=fit_common.fitrackhd()['dhcpSubnetMask']))
+            control_cfg.close()
+            # copy file to host
+            fit_common.scp_file_to_host('control.cfg')
+            self.assertEqual(fit_common.remote_shell('cp control.cfg /etc/network/interfaces.d/')
+                             ['exitcode'], 0, "Control network config failure.")
+            os.remove('control.cfg')
+            # startup NIC
+            fit_common.remote_shell('ip addr add ' + fit_common.fitrackhd()['dhcpGateway'] +
+                                    '/' + fit_common.fitrackhd()['dhcpSubnetMask'] + ' dev ' + ifslist[1])
+            fit_common.remote_shell('ip link set ' + ifslist[1] + ' up')
+            self.assertEqual(fit_common.remote_shell('ping -c 1 -w 5 ' + fit_common.fitrackhd()['dhcpGateway'])
+                             ['exitcode'], 0, 'Control NIC failure.')
 
         # If PDU network adapter is present, configure
         try:

@@ -15,22 +15,44 @@ log = flogging.get_loggers()
 
 
 def get_host_nics(host=fit_common.fitargs()['rackhd_host']):
-    # this routine returns an array of valid network ports on the specified host, default rackhd_host
+    """
+    This routine returns an array of valid network ports on the specified host, default rackhd_host
+    """
     # collect nic names
-    getifs = fit_common.remote_shell("ifconfig -s -a |tail -n +2 |grep -v -e Iface -e lo -e docker", host)
+    getifs = fit_common.remote_shell("ip -o addr |grep -v -e lo -e docker", host)
     # split into array
     splitifs = getifs['stdout'].split('\n')
     niclist = []  # array of valid network ports
-    # clean out login artifacts
+    # clean out login artifacts and verify ports
     for item in splitifs:
-        if "assword" not in item and item.split(" ")[0]:
-            niclist.append(item.split(" ")[0])
+        if "assword" not in item and "inet" in item and item.split(" ")[1]:
+            if fit_common.remote_shell("ip -o addr show " + item.split(" ")[1])['exitcode'] == 0:
+                niclist.append(item.split(" ")[1])
     return niclist
+
+
+def split_ipv4(ipaddress=None):
+    """
+    This routine splits a valid IPv4 address or netmask into decimal octets
+    and verifies that the address is valid IPv4
+    then returns a 4-element array of octets
+    """
+    if not ipaddress:
+        return None
+    iparray = ipaddress.split(".")
+    if len(iparray) != 4:
+        log.error("Invalid IP address: " + ipaddress)
+        return None
+    for octet in iparray:
+        if int(octet) < 0 or int(octet) > 255:
+            log.error("Invalid IP address: " + ipaddress)
+            return None
+    return iparray
 
 
 def nic_config_file(iface=None, ipaddress=None, netmask="255.255.255.0", gateway=None):
     """
-    this routine creates a NIC config file string from the specified NIC port, IP address, netmask, etc.
+    This routine creates a NIC config file string from the specified NIC port, IP address, netmask, etc.
     """
     config_string = ""
     if iface:
@@ -51,9 +73,12 @@ def nic_config_file(iface=None, ipaddress=None, netmask="255.255.255.0", gateway
 
 
 def dhcp_config_file(ipaddress=None, netmask="255.255.255.0", default_lease_time=600, max_lease_time=7200):
-    # this routine returns a DHCP config file string from the DHCP server IP address and netmask
+    """
+    This routine creates a DHCP config file string that is composed
+    from the DHCP server IP address and netmask and other optional params
+    """
     if not ipaddress or not split_ipv4(ipaddress) or not split_ipv4(netmask):
-        return None  # return None if ipaddress is missing
+        return None  # return None if ipaddress is missing or invalid
     ipsplit = split_ipv4(ipaddress)
     ip_prefix = ipsplit[0] + '.' + ipsplit[1] + '.' + ipsplit[2] + '.'
     masksplit = split_ipv4(netmask)
@@ -77,14 +102,27 @@ def dhcp_config_file(ipaddress=None, netmask="255.255.255.0", default_lease_time
     return config_string
 
 
-def split_ipv4(ipaddress):
-    # this routine splits a valid IPv4 address or netmask into decimal octets and returns an array
-    iparray = ipaddress.split(".")
-    if len(iparray) != 4:
-        log.error("Invalid IP address: " + ipaddress)
-        return None
-    for octet in iparray:
-        if int(octet) < 0 or int(octet) > 255:
-            log.error("Invalid IP address: " + ipaddress)
-            return None
-    return iparray
+def verify_rackhd_network_config():
+    """
+    This routine verifies network configuration settings in rackhd_default.json file
+    Checks for required parameters and verifies that IP addresses are valid
+    Returns True for valid and False for invalid, details in error log
+    """
+    status = True
+    config_keys = ["dhcpGateway",
+                   "dhcpSubnetMask",
+                   "dhcpProxyBindAddress",
+                   "apiServerAddress",
+                   "gatewayaddr",
+                   "subnetmask",
+                   "broadcastaddr",
+                   "tftpBindAddress",
+                   "syslogBindAddress"]
+    for item in config_keys:
+        if item not in fit_common.fitrackhd():
+            log.error("Key missing in rackhd_default.json: " + item)
+            status = False
+        if item in fit_common.fitrackhd() and not split_ipv4(fit_common.fitrackhd()[item]):
+            log.error("Invalid " + item + " address in rackhd_default.json: " + fit_common.fitrackhd()[item])
+            status = False
+    return status
