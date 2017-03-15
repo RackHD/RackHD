@@ -19,15 +19,15 @@ def get_host_nics(host=fit_common.fitargs()['rackhd_host']):
     This routine returns an array of valid network ports on the specified host, default rackhd_host
     """
     # collect nic names
-    getifs = fit_common.remote_shell("ip -o addr |grep -v -e lo -e docker", host)
+    getifs = fit_common.remote_shell("ifconfig -s -a |tail -n +2 |grep -v -e Iface -e lo -e docker", host)
     # split into array
     splitifs = getifs['stdout'].split('\n')
     niclist = []  # array of valid network ports
     # clean out login artifacts and verify ports
     for item in splitifs:
-        if "assword" not in item and "inet" in item and item.split(" ")[1]:
-            if fit_common.remote_shell("ip -o addr show " + item.split(" ")[1])['exitcode'] == 0:
-                niclist.append(item.split(" ")[1])
+        if "assword" not in item and item.split(" ")[0]:
+            if fit_common.remote_shell("ifconfig -s " + item.split(" ")[0])['exitcode'] == 0:
+                niclist.append(item.split(" ")[0])
     return niclist
 
 
