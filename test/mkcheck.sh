@@ -23,7 +23,7 @@ if [ -f ${output_file} ]; then
 fi
 
 # make changes to flake8 parameters in .flake8 file
-flake8 --config=../.flake8 --statistics --tee --output-file=${output_file}
+flake8 --config=../.flake8 --statistics --tee --output-file=${output_file} $@
 if [ $? -ne 0 ]; then
     if [ "${format}" == "text" ]; then
         cat ${output_file}
