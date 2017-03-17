@@ -143,22 +143,6 @@ class rackhd_ucs_api(unittest.TestCase):
                          "Found {0} ucs obms remaining after restoring the obms, should be {1}. Remaining OBMs: {2}"
                          .format(len(temp), len(self.INITIAL_OBMS), temp))
 
-    def ucs_url_factory(self, api, identifier=None):
-        """
-        returns a fully qualified UCS API
-        :param api:UCS API
-        :param identifier: identify the ucs element in the catalog API
-        :return:
-        """
-        ucs_service = self.RACKHD_IP + ":" + self.UCS_PORT + "/"
-        ucs_manager = self.UCS_IP
-        if identifier is None:
-            url = "http://" + ucs_service + api + "?host=" + ucs_manager + " &user=ucspe&password=ucspe"
-        else:
-            url = "http://" + ucs_service + api + "?host=" + ucs_manager + " &user=ucspe&password=ucspe"\
-                  "&identifier=" + identifier
-        return url
-
     @unittest.skipUnless("ucs_ip" in fit_common.fitcfg(), "")
     def test_check_ucs_params(self):
         self.assertNotEqual(self.UCS_IP, None, "Expected value for UCS_IP other then None and found {0}"

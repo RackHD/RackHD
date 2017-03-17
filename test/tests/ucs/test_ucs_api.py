@@ -37,11 +37,13 @@ class ucs_api(unittest.TestCase):
         ucs_service = self.RACKHD_IP + ":" + self.UCS_PORT + "/"
         ucs_manager = self.UCS_IP
         if identifier is None:
-            url = "http://" + ucs_service + api + "?host=" + ucs_manager + " &user=ucspe&password=ucspe"
+            url = "https://" + ucs_service + api
         else:
-            url = "http://" + ucs_service + api + "?host=" + ucs_manager + " &user=ucspe&password=ucspe"\
-                  "&identifier=" + identifier
-        return url
+            url = "https://" + ucs_service + api + "?identifier=" + identifier
+        headers = {"ucs-user": "ucspe",
+                   "ucs-password": "ucspe",
+                   "ucs-host": ucs_manager}
+        return (url, headers)
 
     @unittest.skipUnless("ucs_ip" in fit_common.fitcfg(), "")
     def test_check_ucs_params(self):
@@ -56,8 +58,8 @@ class ucs_api(unittest.TestCase):
         Test the /logIn ucs API
         :return:
         """
-        url = self.ucs_url_factory("login")
-        api_data = fit_common.restful(url)
+        url, headers = self.ucs_url_factory("login")
+        api_data = fit_common.restful(url, rest_headers=headers)
         self.assertEqual(api_data['status'], 200,
                          'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
 
@@ -70,8 +72,8 @@ class ucs_api(unittest.TestCase):
         Test the /sys ucs API
         :return:
         """
-        url = self.ucs_url_factory("sys")
-        api_data = fit_common.restful(url)
+        url, headers = self.ucs_url_factory("sys")
+        api_data = fit_common.restful(url, rest_headers=headers)
         self.assertEqual(api_data['status'], 200,
                          'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
 
@@ -91,8 +93,8 @@ class ucs_api(unittest.TestCase):
         Test the /rackmount ucs API
         :return:
         """
-        url = self.ucs_url_factory("rackmount")
-        api_data = fit_common.restful(url)
+        url, headers = self.ucs_url_factory("rackmount")
+        api_data = fit_common.restful(url, rest_headers=headers)
         self.assertEqual(api_data['status'], 200,
                          'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
         self.assertGreaterEqual(len(api_data["json"]), 1, "Expected 1  or more Rackmounts but found {0}".
@@ -105,8 +107,8 @@ class ucs_api(unittest.TestCase):
             Test the /chassis ucs API
             :return:
             """
-        url = self.ucs_url_factory("chassis")
-        api_data = fit_common.restful(url)
+        url, headers = self.ucs_url_factory("chassis")
+        api_data = fit_common.restful(url, rest_headers=headers)
         self.assertEqual(api_data['status'], 200,
                          'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
         self.assertGreaterEqual(len(api_data["json"]), 4, "Expected 4 chassis or more but found {0}".
@@ -119,15 +121,15 @@ class ucs_api(unittest.TestCase):
         Test the /sys ucs API
         :return:
         """
-        url = self.ucs_url_factory("sys")
-        api_data = fit_common.restful(url)
+        url, headers = self.ucs_url_factory("sys")
+        api_data = fit_common.restful(url, rest_headers=headers)
         self.assertEqual(api_data['status'], 200,
                          'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
         total_elements = 0
         for elementTypes in api_data["json"]:
             for element in api_data["json"][str(elementTypes)]:
-                url = self.ucs_url_factory("catalog", identifier=element["relative_path"].split("/")[-1])
-                api_data_c = fit_common.restful(url)
+                url, headers = self.ucs_url_factory("catalog", identifier=element["relative_path"].split("/")[-1])
+                api_data_c = fit_common.restful(url, rest_headers=headers)
                 self.assertEqual(api_data['status'], 200,
                                  'Incorrect HTTP return code, expected 200, got:' + str(api_data_c['status']))
                 total_elements += 1
