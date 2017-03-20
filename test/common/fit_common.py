@@ -203,6 +203,7 @@ def apply_stack_config():
         if 'ucs_port' in fitcfg():
             fitargs()['ucs_port'] = fitcfg()['ucs_port']
 
+
 def add_globals():
     """
     create a handlful of global shortcuts
@@ -813,23 +814,29 @@ def power_control_all_nodes(state):
 
 
 def mongo_reset():
-    # clears the Mongo database on host to default, returns 0 if successful
-    remote_shell('service onrack-conductor stop')
-    remote_shell('/opt/onrack/bin/monorail stop')
-    remote_shell("mongo pxe --eval 'db.dropDatabase\\\(\\\)'")
-    remote_shell('rm -f /var/lib/dhcp/dhcpd.leases')
-    remote_shell('rm -f /var/log/onrack-conductor-event.log')
-    remote_shell('/opt/onrack/bin/monorail start')
-    if remote_shell('service onrack-conductor start')['exitcode'] > 0:
-        return 1
-    return 0
-
-
-def appliance_reset():
-
-    return_code = subprocess.call("ipmitool -I lanplus -H " + fitargs()["bmc"] +
-                                  " -U root -P 1234567 chassis power reset", shell=True)
-    return return_code
+    # clears the Mongo database on host to default, returns True if successful
+    exitcode = 0
+    if int(remote_shell('pm2 stop rackhd-pm2-config.yml')['exitcode']) == 0:  # for pm2-based source installations
+        exitcode = exitcode + int(remote_shell("mongo pxe --eval 'db.dropDatabase\\\(\\\)'")['exitcode'])
+        exitcode = exitcode + int(remote_shell('rm -f /var/lib/dhcp/dhcpd.leases')['exitcode'])
+        exitcode = exitcode + int(remote_shell('pm2 start rackhd-pm2-config.yml')['exitcode'])
+    else:  # for package-based installations
+        exitcode = exitcode + int(remote_shell('sudo service on-http stop')['exitcode'])
+        exitcode = exitcode + int(remote_shell('sudo service on-dhcp-proxy stop')['exitcode'])
+        exitcode = exitcode + int(remote_shell('sudo service on-syslog stop')['exitcode'])
+        exitcode = exitcode + int(remote_shell('sudo service on-taskgraph stop')['exitcode'])
+        exitcode = exitcode + int(remote_shell('sudo service on-tftp stop')['exitcode'])
+        exitcode = exitcode + int(remote_shell("mongo pxe --eval 'db.dropDatabase\\\(\\\)'")['exitcode'])
+        exitcode = exitcode + int(remote_shell('rm -f /var/lib/dhcp/dhcpd.leases')['exitcode'])
+        exitcode = exitcode + int(remote_shell('sudo service on-http start')['exitcode'])
+        exitcode = exitcode + int(remote_shell('sudo service on-dhcp-proxy start')['exitcode'])
+        exitcode = exitcode + int(remote_shell('sudo service on-syslog start')['exitcode'])
+        exitcode = exitcode + int(remote_shell('sudo service on-taskgraph start')['exitcode'])
+        exitcode = exitcode + int(remote_shell('sudo service on-tftp start')['exitcode'])
+    if exitcode == 0:
+        return True
+    else:
+        return False
 
 
 def node_select():
@@ -1049,136 +1056,6 @@ def apply_obm_settings(retry=30):
     # Failures occurred
     print "**** Node(s) OBM settings failed."
     return False
-
-
-def apply_obm_settings_seq():
-    # legacy routine to install OBM credentials via workflows sequentially one-at-a-time
-    count = 0
-    for creds in fitcreds()['bmc']:
-        # greate graph for setting OBM credentials
-        payload = {
-            "friendlyName": "IPMI" + str(count),
-            "injectableName": 'Graph.Obm.Ipmi.CreateSettings' + str(count),
-            "options": {
-                "obm-ipmi-task": {
-                    "user": creds["username"],
-                    "password": creds["password"]
-                }
-            },
-            "tasks": [
-                {
-                    "label": "obm-ipmi-task",
-                    "taskName": "Task.Obm.Ipmi.CreateSettings"
-                }
-            ]
-        }
-        api_data = rackhdapi("/api/2.0/workflows/graphs", action="put", payload=payload)
-        if api_data['status'] != 201:
-            print "**** OBM workflow failed to load!"
-            return False
-        count += 1
-    # Setup additional OBM settings for nodes that currently use RMM port (still same bmc username/password used)
-    count = 0
-    for creds in fitcreds()['bmc']:
-        # greate graph for setting OBM credentials for RMM
-        payload = {
-            "friendlyName": "RMM.IPMI" + str(count),
-            "injectableName": 'Graph.Obm.Ipmi.CreateSettings.RMM' + str(count),
-            "options": {
-                "obm-ipmi-task": {
-                    "ipmichannel": "3",
-                    "user": creds["username"],
-                    "password": creds["password"]
-                }
-            },
-            "tasks": [
-                {
-                    "label": "obm-ipmi-task",
-                    "taskName": "Task.Obm.Ipmi.CreateSettings"
-                }
-            ]
-        }
-        api_data = rackhdapi("/api/2.0/workflows/graphs", action="put", payload=payload)
-        if api_data['status'] != 201:
-            print "**** OBM workflow failed to load!"
-            return False
-        count += 1
-
-    # run each OBM workflow against each node until success
-    nodelist = node_select()
-    failedlist = []
-    for node in nodelist:
-        for num in range(0, count):
-            nodestatus = ""
-            wfstatus = ""
-            skuid = rackhdapi('/api/2.0/nodes/' + node)['json'].get("sku")
-            # Check is sku is empty
-            sku = skuid.rstrip("/api/2.0/skus/")
-            if sku:
-                skudata = rackhdapi(skuid)['text']
-                if "rmm.data.MAC" in skudata:
-                    workflow = {"name": 'Graph.Obm.Ipmi.CreateSettings.RMM' + str(num)}
-                else:
-                    workflow = {"name": 'Graph.Obm.Ipmi.CreateSettings' + str(num)}
-            else:
-                print "*** SKU not set for node ", node
-                nodestatus = "failed"
-                break
-
-            # wait for existing workflow to complete
-            for dummy in range(0, 60):
-                print "*** Using workflow: ", workflow
-                result = rackhdapi("/api/2.0/nodes/" + node + "/workflows", action="post", payload=workflow)
-                if result['status'] != 201:
-                    time.sleep(5)
-                elif dummy == 60:
-                    print "*** Workflow failed to start"
-                    wfstatus = "failed"
-                else:
-                    break
-
-            if wfstatus != "failed":
-                # wait for OBM workflow to complete
-                counter = 0
-                for counter in range(0, 60):
-                    time.sleep(10)
-                    state_data = rackhdapi("/api/2.0/workflows/" + result['json']["instanceId"])
-                    if state_data['status'] == 200:
-                        if "_status" in state_data['json']:
-                            nodestatus = state_data['json']['_status']
-                        else:
-                            nodestatus = state_data['json']['status']
-                        if nodestatus != "running" and nodestatus != "pending":
-                            break
-                if nodestatus == "succeeded":
-                    print "*** Succeeded on workflow ", workflow
-                    break
-                if counter == 60:
-                    # print "Timed out status", nodestatus
-                    nodestatus = "failed"
-                    print "*** Node failed OBM settings - timeout:", node
-                    print "*** Failed on workflow ", workflow
-
-        # check final loop status for node workflow
-        if wfstatus == "failed" or nodestatus == "failed":
-            failedlist.append(node)
-
-    # cleanup failed nodes OBM settings on nodes, need to remove failed settings
-    for node in failedlist:
-        result = rackhdapi("/api/2.0/nodes/" + node)
-        if result['status'] == 200:
-            if result['json']['obms']:
-                obms = result['json']['obms'][0]
-                obmref = obms.get('ref')
-                if obmref:
-                    result = rackhdapi(obmref, action="delete")
-                    if result['status'] != 204:
-                        print "*** Warning: failed to delete invalid OBM setting ", obmref
-
-    if len(failedlist) > 0:
-        print "**** Nodes failed OBM settings:", failedlist
-        return False
-    return True
 
 
 def run_nose(nosepath=None):
