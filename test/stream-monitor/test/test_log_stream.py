@@ -2,6 +2,7 @@
 Copyright (c) 2017 Dell Inc. or its subsidiaries. All Rights Reserved.
 """
 import plugin_test_helper
+import unittest
 from log_stream_helper import TempLogfileChecker
 
 
@@ -340,3 +341,30 @@ class TestSMPLoggingStderr_test_data_fail(_StderrFailCaptureBase):
 class TestSMPLoggingStderr_console_capture_fail(_StderrFailCaptureBase):
     _capture_finder_file = 'console_capture.log'
     _capture_finder_count = 1
+
+
+class _FullLineFormatChecker(plugin_test_helper.resolve_logoutput_scanner_helper_class()):
+    def makeSuite(self):
+        """
+        Required method that the nose-plugin-testing system calls to generate
+        the list of test cases to be run inside the plugin-context. It returns
+        a list with a single item in it that all the subclasses use.
+        """
+        class TC(unittest.TestCase):
+            def runTest(self):
+                import logging
+                lg_list = ['root', 'infra.run', 'infra.data', 'test.run', 'test.data']
+                for lg_name in lg_list:
+                    lg = logging.getLogger(lg_name)
+                    lg.info('MATCH-FMAT-START %s MATCH-END', lg_name)
+
+        return [TC()]
+
+    def __common_checker(self, logger_name, logger_file=None):
+        if logger_file is None:
+            logger_file = logger_name.replace('.', '_') + '.log'
+        file_watcher = self._lgfile_watchers[logger_file]
+        file_watcher.check_full_format(self, logger_name)
+
+    def test_infra_run_file(self):
+        self.__common_checker('infra.run')
