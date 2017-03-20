@@ -6,12 +6,11 @@ Author(s):
 This script load SKU packs from sources specified in install_default.json
 '''
 
+import fit_path  # NOQA: unused import
 import os
 import sys
 import subprocess
 
-# set path to common libraries
-sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test/common")
 import fit_common
 
 from nose.plugins.attrib import attr

@@ -6,11 +6,10 @@ George Paulos
 
 '''
 
+import fit_path  # NOQA: unused import
 import os
 import sys
 import subprocess
-# set path to common libraries
-sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test/common")
 import fit_common
 
 
@@ -133,7 +132,7 @@ class rackhd20_api_nodes(fit_common.unittest.TestCase):
     def test_api_20_nodes_ID_ssh(self):
         # iterate through nodes
         for nodeid in NODECATALOG:
-            payload = {"host": nodeid, "user": "user", "password": "1234567"}
+            payload = {"service": "ssh-ibm-service", "config": {"host": "1.1.1.1", "user": "user", "password": "1234567"}}
             api_data = fit_common.rackhdapi("/api/2.0/nodes/" + nodeid + "/ssh", action="post", payload=payload)
             self.assertEqual(api_data['status'], 201, 'Incorrect HTTP return code, expected 201, got:' + str(api_data['status']))
             api_data = fit_common.rackhdapi("/api/2.0/nodes/" + nodeid + "/ssh")

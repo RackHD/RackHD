@@ -1,8 +1,11 @@
 on-skupack
 myenv_*
+.vscode
 log_output
 startup.sh
 nohup.out
 *~
 auth.json
 testfile
+rackhd_test_check.txt
+fit_path/fit_test_pathing.egg-info/

@@ -29,7 +29,6 @@ services:
       - "./dhcp/defaults:/etc/defaults"
 
   files:
-    build: "../on-imagebuilder"
     image: rackhd/files:${TAG}
     network_mode: "host"
     privileged: true
@@ -189,4 +188,4 @@ services:
     network_mode: "host"
     privileged: true
     volumes:
-      - "./kibana/config:/opt/kibana/config"
+      - "./kibana/config:/etc/kibana"

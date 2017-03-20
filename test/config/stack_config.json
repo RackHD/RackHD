@@ -4,17 +4,19 @@
     "control": "control switch admin address",
     "data": "data switch admin address",
     "hyper": "hypervisor admin address",
-    "ora": "appliance OVA admin address",
-    "ovamac": "appliance OVA MAC address",
+    "rackhd_host": "appliance admin address",
+    "ovamac": "appliance OVA MAC address for ESXi deployments",
     "pdu": "PDU admin address",
     "type": "deployment type: esxi, docker, linux, or vagrant"
   },
   "vagrant":{
-    "ora": "localhost",
-    "type": "vagrant"
+    "rackhd_host": "localhost",
+    "type": "vagrant",
+    "ucs_ip" : "172.31.128.252",
+    "ucs_port" : "6080"
   },
   "vagrant_remote": {
-    "ora": "127.0.0.1",
+    "rackhd_host": "127.0.0.1",
     "type": "vagrant"
   }
 }

@@ -5,15 +5,13 @@ Copyright 2016, EMC, Inc.
 
 '''
 
-import os
-import sys
-import subprocess
+import fit_path  # NOQA: unused import
 import json
-sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test/common")
 import fit_common
+from nose.plugins.attrib import attr
 
 
-#Utiities for this script
+# Utiities for this script
 def print_taskid_data(taskid, taskid_json):
     """
     This utility displays the taskjson data for the user
@@ -59,7 +57,7 @@ def get_node_tasklist(nodeid):
         List of task ids on success
         Otherwise empty on failure or error
     """
-    on_url = "/redfish/v1/TaskService/Oem/Tasks/"+nodeid
+    on_url = "/redfish/v1/TaskService/Oem/Tasks/" + nodeid
     on_data = fit_common.rackhdapi(url_cmd=on_url)
 
     tasklist = []
@@ -69,7 +67,7 @@ def get_node_tasklist(nodeid):
             tasklist.append(member['Id'])
     else:
         if fit_common.VERBOSITY >= 2:
-            print "Error in API command. TaskService/Oem/Tasks/"+nodeid+" returned error."
+            print "Error in API command. TaskService/Oem/Tasks/" + nodeid + " returned error."
 
     return tasklist
 
@@ -85,7 +83,7 @@ def get_taskid_data(taskid):
     """
 
     taskid_json = {}
-    on_url = "/redfish/v1/TaskService/Tasks/"+taskid
+    on_url = "/redfish/v1/TaskService/Tasks/" + taskid
     on_data = fit_common.rackhdapi(url_cmd=on_url)
     if on_data['status'] == 200:
         try:
@@ -94,15 +92,13 @@ def get_taskid_data(taskid):
             print "No TaskID data returned"
     else:
         if fit_common.VERBOSITY >= 2:
-            print "Error in API command. TaskService/Oem/Tasks/"+taskid+" returned error."
+            print "Error in API command. TaskService/Oem/Tasks/" + taskid + " returned error."
 
     return taskid_json
 
-# Test Cases
-from nose.plugins.attrib import attr
+
 @attr(all=True, regression=True, smoke=True)
 class redfish10_api_task_suite(fit_common.unittest.TestCase):
-
     def test_redfish_v1_taskservice_tasklist(self):
         # The API /redfish/v1/TaskService will display the list of tasks in the system
 
@@ -136,8 +132,7 @@ class redfish10_api_task_suite(fit_common.unittest.TestCase):
         for member in members:
             tasklist.append(member['Id'])
         if fit_common.VERBOSITY >= 2:
-           print ("Task Service contains {0} tasks.".format(len(tasklist)))
-
+            print("Task Service contains {0} tasks.".format(len(tasklist)))
 
     def test_redfish_v1_taskservice_check_all_tasks(self):
         # The API TaskService/Tasks will display a list of all the tasks
@@ -169,14 +164,13 @@ class redfish10_api_task_suite(fit_common.unittest.TestCase):
                 print(taskid)
         self.assertNotEqual(tasklist, [], 'No Tasks listed in system.')
 
-        #Check reported Member count equals number of task ids in the list
+        # Check reported Member count equals number of task ids in the list
         membercount = int(on_data['json']['Members@odata.count'])
         listcount = len(tasklist)
         self.assertEqual(membercount, listcount,
                          "Reported member count of {0} not equal length of tasklist {1}".format(membercount, listcount))
         if fit_common.VERBOSITY >= 2:
             print "\tNumber of tasks in the system", membercount
-
 
     def test_redfish_v1_taskservice_tasks_per_node(self):
         # The API TaskService/Oem/Tasks/<systemid> will display a list of all tasks that
@@ -212,7 +206,7 @@ class redfish10_api_task_suite(fit_common.unittest.TestCase):
         self.assertNotEqual(nodelist, [], 'No Nodes reported for this stack.')
 
         for node in nodelist:
-            on_url = "/redfish/v1/TaskService/Oem/Tasks/"+node
+            on_url = "/redfish/v1/TaskService/Oem/Tasks/" + node
             on_data = fit_common.rackhdapi(url_cmd=on_url)
             tasklist = []
             if on_data['status'] == 200:
@@ -238,74 +232,74 @@ class redfish10_api_task_suite(fit_common.unittest.TestCase):
         self.assertNotEqual(tasklist, [], 'No Tasks found in the system')
 
         for task in tasklist:
-            on_data = fit_common.rackhdapi('/redfish/v1/TaskService/Tasks/'+task)
+            on_data = fit_common.rackhdapi('/redfish/v1/TaskService/Tasks/' + task)
             self.assertIn(on_data['status'], [200], "Incorrect HTTP return code")
 
             # check if required fields exist
             for item in ["@odata.id", "Name", "@odata.type", "TaskState", "TaskStatus", "StartTime", "Id"]:
                 if fit_common.VERBOSITY >= 2:
-                    print ("Task: {} Checking: {}".format(task,item))
+                    print("Task: {} Checking: {}".format(task, item))
                 self.assertIn(item, on_data['json'], item + ' field not present')
-                
+
             # check if task completed, endtime should be populated
             taskstates = ["Completed", "Exception", "Killed"]
             taskstate = on_data['json'].get('TaskState', "")
             if taskstate in taskstates:
                 for item in ["EndTime"]:
                     if fit_common.VERBOSITY >= 2:
-                        print ("Task: {} Checking: {}".format(task,item))
-                        self.assertIn(item, on_data['json'], item + ' field not present')
+                        print("Task: {} Checking: {}".format(task, item))
+                    self.assertIn(item, on_data['json'], item + ' field not present')
 
             if fit_common.VERBOSITY >= 3:
                 print_taskid_data(task, on_data['json'])
-                
 
     def test_redfish_v1_taskservice_check_task_return_status_validity(self):
-        # Check the return status in the tasks to be in the valid list
-        # Mapping of RackHD 1.1 to  Redfish v1 status is:
-        #    running   : Running
-        #    succeeded : Completed
-        #    finished  : Completed
-        #    failed    : Exception
-        #    timeout   : Exception
-        #    cancelled : Killed
-        #    pending   : Pending
-
-        status = []
-
+        '''
+        Check the return status in the tasks to be in the valid list
+        Mapping of RackHD 1.1 to  Redfish v1 status is:
+            running   : Running
+            succeeded : Completed
+            finished  : Completed
+            failed    : Exception
+            timeout   : Exception
+            cancelled : Killed
+            pending   : Pending
+        '''
         def task_code_check(tasklist):
             # Following is list as stated by OnRack developers
             validtaskstatus = ["Running", "Pending", "Completed", "Exception", "Killed"]
-            #validtaskstatus = ["Running", "Cancelled", "Aborted", "Completed", "Exception", "Killed", "Pending"]
-            # Following is list defined in Redfish specs
-            #validtaskstatus = ["New", "Starting", "Running", "Suspended", "Interrupted", "Pending",
-            #                   "Stopping", "Completed", "Killed", "Exception", "Service"]
+            '''
+            validtaskstatus = ["Running", "Cancelled", "Aborted", "Completed", "Exception", "Killed", "Pending"]
+            Following is list defined in Redfish specs
+            validtaskstatus = ["New", "Starting", "Running", "Suspended", "Interrupted", "Pending",
+                               "Stopping", "Completed", "Killed", "Exception", "Service"]
 
-            #Enumeration Description for TaskStates from Redfish 1.0.0 spec:
-            #New: A new task
-            #Starting: Task is starting
-            #Running: Task is running normally
-            #Suspended: Task has been suspended
-            #Interrupted: Task has been interrupted
-            #Pending: Task is pending and has not started
-            #Stopping: Task is in the process of stopping
-            #Completed: Task has completed
-            #Killed: Task was terminated
-            #Exception: Task has stopped due to an exception condition
-            #Service: Task is running as a service
-
+            Enumeration Description for TaskStates from Redfish 1.0.0 spec:
+            New: A new task
+            Starting: Task is starting
+            Running: Task is running normally
+            Suspended: Task has been suspended
+            Interrupted: Task has been interrupted
+            Pending: Task is pending and has not started
+            Stopping: Task is in the process of stopping
+            Completed: Task has completed
+            Killed: Task was terminated
+            Exception: Task has stopped due to an exception condition
+            Service: Task is running as a service
+            '''
             errorlist = []
             if fit_common.VERBOSITY >= 2:
                 print("\tValid Task States per Redfish 1.0 {0}".format(validtaskstatus))
 
             # Check the task id task state is in list of valid task status codes
             for task in tasklist:
-                on_data = fit_common.rackhdapi('/redfish/v1/TaskService/Tasks/'+task)
+                on_data = fit_common.rackhdapi('/redfish/v1/TaskService/Tasks/' + task)
                 if on_data['status'] != 200:
-                    errorlist.append("TaskId: {} Incorrect HTTP return code, expecting 200, received {}".format(task,on_data['status']))
+                    errorlist.append("TaskId: {} Incorrect HTTP return code, expecting 200, received {}"
+                                     .format(task, on_data['status']))
                 if on_data['json']['TaskState'] not in validtaskstatus:
                     print_taskid_data(task, on_data['json'])
-                    errorlist.append("TaskID: {} Invalid Task State of : {}".format(task,on_data['json']['TaskState']))
+                    errorlist.append("TaskID: {} Invalid Task State of : {}".format(task, on_data['json']['TaskState']))
             return errorlist
 
         if fit_common.VERBOSITY >= 2:
@@ -317,9 +311,8 @@ class redfish10_api_task_suite(fit_common.unittest.TestCase):
         status = task_code_check(tasklist)
 
         if status != []:
-            print ("Errors reported {} ".format(json.dumps(status,indent=4)))
+            print("Errors reported {} ".format(json.dumps(status, indent=4)))
             self.assertEqual(status, [], "Errors in Returned Task Status.")
-
 
     def test_redfish_v1_taskservice_check_library_test_list(self):
         # Return the task list libary from rackhd
@@ -329,20 +322,21 @@ class redfish10_api_task_suite(fit_common.unittest.TestCase):
             print("\n\t{0}".format(msg))
 
         supported_tasks = []
-        get_task_url = "/api/1.1/workflows/tasks/library"
+        get_task_url = "/api/2.0/workflows/tasks"
         mon_data = fit_common.rackhdapi(url_cmd=get_task_url)
         if mon_data['status'] != 200:
             print 'No data returned from monorail, status = {0}'.format(mon_data['status'])
         else:
             for task in mon_data['json']:
                 # handle key error if injectableName not in json
-                if task.get('injectableName') != None:
+                if task.get('injectableName') is not None:
                     supported_tasks.append(task['injectableName'])
 
         self.assertNotEqual(supported_tasks, [], 'No tasks listed in task library.')
         if fit_common.VERBOSITY >= 2:
             for key in supported_tasks:
                 print("Key: {}".format(key))
+
 
 if __name__ == '__main__':
     fit_common.unittest.main()

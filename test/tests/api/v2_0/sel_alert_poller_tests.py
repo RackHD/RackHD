@@ -149,6 +149,11 @@ class SELPollerAlertTests(object):
                 assert_equal(self.__amqp_alert["data"]["alert"]['reading']["Sensor Type Code"], "07")
                 self.__amqp_alert = {}
 
+                # Clean up SEL log when done.
+                # TO DO: injected SEL entries are causing issue with later tests, if we assert above, no cleanup occurs
+                self.run_ipmitool_command(n['node_ip'], "sel clear")
+                self.verify_empty_sel(n['node_ip'])
+
     @test(groups=['SEL_alert_poller_api2.tests', 'sel_overflow_simulation'], depends_on_groups=['inject_single_error'])
     def test_sel_overflow(self):
         """Test: SEL overflow simulation """
@@ -180,7 +185,12 @@ class SELPollerAlertTests(object):
 
             assert_equal(new_first_SEL_entry,initial_first_SEL_entry + 1)
 
-    @test(groups=['SEL_alert_poller_api2.tests', 'inject_full_sel'],depends_on_groups=['inject_single_error'])
+            # Clean up SEL log when done.
+            # TO DO: injected SEL entries are causing issue with later tests, if we assert above, no cleanup occurs
+            self.run_ipmitool_command(n['node_ip'], "sel clear")
+            self.verify_empty_sel(n['node_ip'])
+
+    @test(groups=['SEL_alert_poller_api2.tests', 'inject_full_sel'], depends_on_groups=['sel_overflow_simulation'])
     def test_full_sel(self):
         """Test: Full sel log"""
         #Validate the poller can digest data from a full sel log all at once
@@ -208,6 +218,13 @@ class SELPollerAlertTests(object):
             assert_false(self.__task.timeout, \
                     message='timeout waiting for task {0}'.format(self.__task.id))
             assert_equal(self.__event_count, n["available_sel_entries"])
+
+            # Clean up SEL log when done.
+            # TO DO: injected SEL entries are causing issue with later tests, if we assert above, no cleanup occurs
+            self.run_ipmitool_command(n['node_ip'], "sel clear")
+            self.verify_empty_sel(n['node_ip'])
+            # wait one poll cycle to allow the sel pollers on the node time to refresh for subsequent testing. fix me.
+            time.sleep(60)
 
     def run_ipmitool_command(self, ip ,command):
         ipmitool_command = "ipmitool -I lanplus -H " + ip +" -U " + self.__bmc_credentials[0] +" -P " + self.__bmc_credentials[1] + " " + command

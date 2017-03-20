@@ -13,11 +13,10 @@ usage:
     python run_tests.py -stack <stack ID> -test deploy/os_ova_install.py
 '''
 
+import fit_path  # NOQA: unused import
 import os
 import sys
 import subprocess
-# set path to common libraries
-sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test/common")
 import fit_common
 import pdu_lib
 
@@ -112,7 +111,7 @@ class os_ova_install(fit_common.unittest.TestCase):
         self.assertTrue(numvms < 100, "Number of vms should not be greater than 99")
 
         # Shutdown previous ORA
-        if fit_common.subprocess.call('ping -c 1 ' + fit_common.fitargs()['ora'], shell=True) == 0:
+        if fit_common.subprocess.call('ping -c 1 ' + fit_common.fitargs()['rackhd_host'], shell=True) == 0:
             fit_common.remote_shell('shutdown -h now')
             fit_common.time.sleep(5)
 

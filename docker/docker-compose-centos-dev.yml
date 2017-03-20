@@ -1,0 +1,82 @@
+# Copyright 2016, EMC, Inc.
+
+version: '2'
+
+volumes:
+  dhcp-leases:
+    external: false
+
+services:
+
+  mongo: # 27017
+    image: mongo:latest
+    network_mode: "host"
+    privileged: true
+
+  files:
+    build: "../on-imagebuilder"
+    image: rackhd/files:${TAG}
+    network_mode: "host"
+    privileged: true
+    volumes:
+      - "./files/mount:/RackHD/files"
+
+  # RackHD services
+
+  dhcp-proxy: # 68/udp, 4011
+    build: "../on-dhcp-proxy"
+    depends_on:
+      - mongo
+    image: rackhd/on-dhcp-proxy:${TAG}
+    network_mode: "host"
+    privileged: true
+    volumes:
+      - "dhcp-leases:/var/lib/dhcp"
+      - "./monorail:/opt/monorail"
+
+  http: # 9090, 9080
+    build: "../on-http"
+    depends_on:
+      - files
+      - mongo
+    image: rackhd/on-http:${TAG}
+    network_mode: "host"
+    privileged: true
+    volumes:
+      - "./files/mount/common:/RackHD/on-http/static/http/common"
+      - "./monorail:/opt/monorail"
+
+  syslog: # 514/udp
+    build: "../on-syslog"
+    depends_on:
+      - mongo
+    image: rackhd/on-syslog:${TAG}
+    network_mode: "host"
+    privileged: true
+    volumes:
+      - "./monorail:/opt/monorail"
+
+  taskgraph:
+    build: "../on-taskgraph"
+    depends_on:
+      - mongo
+      - syslog
+    image: rackhd/on-taskgraph:${TAG}
+    network_mode: "host"
+    privileged: true
+    volumes:
+      - "./monorail:/opt/monorail"
+
+  tftp: # 69/udp
+    build: "../on-tftp"
+    depends_on:
+      - files
+      - mongo
+      - syslog
+    image: rackhd/on-tftp:${TAG}
+    network_mode: "host"
+    privileged: true
+    volumes:
+      - "./files/mount:/RackHD/on-tftp/static/tftp"
+      - "./monorail:/opt/monorail"
+

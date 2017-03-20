@@ -15,13 +15,13 @@ from json import dumps, loads
 
 LOG = Log(__name__)
 
-@test(groups=['obm_api2.tests'])
+@test(groups=['obm_api2.tests'], depends_on_groups=['nodes.api2.discovery.test'])
 class OBMTests(object):
 
     def __init__(self):
         self.__client = config.api_client 
 
-    @test(groups=['obm_api2.tests', 'set-ipmi-obm_api2'], depends_on_groups=['nodes_api2.tests'])
+    @test(groups=['obm_api2.tests', 'set-ipmi-obm_api2'])
     def setup_ipmi_obm(self):
         """ Setup IPMI OBM settings with PATCH:/nodes """
         assert_equal(len(obmSettings().setup_nodes(service_type='ipmi-obm-service')), 0)
@@ -32,7 +32,7 @@ class OBMTests(object):
         assert_equal(len(obmSettings().check_nodes(service_type='ipmi-obm-service')), 0, 
                 message='there are missing IPMI OBM settings!')
     
-    @test(groups=['obm_api2.tests', 'set-snmp-obm_api2'], depends_on_groups=['nodes_api2.tests'])
+    @test(groups=['obm_api2.tests', 'set-snmp-obm_api2'])
     def setup_snmp_obm(self):
         """ Setup SNMP OBM settings with PATCH:/nodes """
         assert_equal(len(obmSettings().setup_nodes(service_type='snmp-obm-service')), 0)

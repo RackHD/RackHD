@@ -21,6 +21,14 @@
       },
       {
         "address": "172.31.128.1",
+        "port": 8443,
+        "httpsEnabled": true,
+        "proxiesEnabled": true,
+        "authEnabled": true,
+        "routers": "northbound-api-router"
+      },
+      {
+        "address": "172.31.128.1",
         "port": 9080,
         "httpsEnabled": false,
         "proxiesEnabled": true,
@@ -31,9 +39,6 @@
     "httpDocsRoot": "./build/apidoc",
     "httpFileServiceRoot": "./static/files",
     "httpFileServiceType": "FileSystem",
-    "fileServerAddress": "172.31.128.2",
-    "fileServerPort": 3000,
-    "fileServerPath": "/",
     "httpProxies": [
       {
         "localPath": "/coreos",
@@ -61,5 +66,3 @@
     "wssBindPort": 9100
   }
 }
-
-

@@ -1,0 +1,49 @@
+totem {
+        version: 2
+        cluster_name: pacemaker1
+        transport: udpu
+        secauth: off
+}
+ 
+logging {
+        # Log the source file and line where messages are being
+        # generated. When in doubt, leave off. Potentially useful for
+        # debugging.
+        fileline: off
+        # Log to standard error. When in doubt, set to no. Useful when
+        # running in the foreground (when invoking "corosync -f")
+        to_stderr: no
+        # Log to a log file. When set to "no", the "logfile" option
+        # must not be set.
+        to_logfile: yes
+        logfile: /var/log/corosync/corosync.log
+        # Log to the system log daemon. When in doubt, set to yes.
+        to_syslog: yes
+        # Log with syslog facility daemon.
+        syslog_facility: daemon
+        # Log debug messages (very verbose). When in doubt, leave off.
+        debug: off
+        # Log messages with time stamps. When in doubt, set to on
+        # (unless you are only logging to syslog, where double
+        # timestamps can be annoying).
+        timestamp: on
+        logger_subsys {
+                subsys: QUORUM
+                debug: off
+        }
+}
+ 
+nodelist {
+{{ node_list }}
+}
+ 
+quorum {
+        # Enable and configure quorum subsystem (default: off)
+        # see also corosync.conf.5 and votequorum.5
+        provider: corosync_votequorum
+        two_node: 0
+#        wait_for_all: 0
+#        last_man_standing: 1
+#       auto_tie_breaker: 0
+#       expected_votes: 2
+}

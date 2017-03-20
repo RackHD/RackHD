@@ -4,7 +4,11 @@
       "ports": {
         "_comment": "These are the northbound rest API port assignments",
         "http": 8080,
-        "https": 443
+        "https": 8443,
+        "httpd": 8010,
+        "amqp":5672,
+        "amqp-vagrant":9091,
+        "ssh": 2222
       },
       "install": {
         "rackhd":       {"repo":"https://github.com/rackhd/rackhd","branch":"master"},

@@ -27,7 +27,16 @@ class LookupsTests(object):
         self.id = ""
         self.patchedNode= {"node": "666" }
 
-    @test(groups=['lookups_api2.tests', 'api2_check-lookups-query'], depends_on_groups=['nodes_api2.tests'])
+    @test(groups=['lookups_api2.tests', 'api2_check-lookups'], depends_on_groups=['obm_api2.tests'])
+    def check_lookups(self):
+        """ Testing GET:/lookups """
+        Api().lookups_get()
+        rsp = self.__client.last_response
+        LOG.info("\nLookup list: {}\n".format(rsp.data, json=True))
+        assert_equal(200, rsp.status, message=rsp.reason)
+        assert_not_equal(0, len(rsp.data))
+
+    @test(groups=['api2_check-lookups-query'], depends_on_groups=['api2_check-lookups'])
     def check_lookups_query(self):
         """ Testing GET:/lookups?q=term """
         Api().nodes_get_all()
@@ -35,11 +44,14 @@ class LookupsTests(object):
         assert_not_equal(0, len(nodes), message='Node list was empty!')
         Api().obms_get()
         obms = loads(self.__client.last_response.data)
+        LOG.info("OBM get data: {}".format(obms, json=True))
         hosts = []
         for o in obms:
             hosts.append(o.get('config').get('host'))
         assert_not_equal(0, len(hosts), message='No OBM hosts were found!')
+        LOG.info("Hosts {}".format(hosts, json=True))
         for host in hosts:
+            LOG.info("Looking up host: {}".format(host))
             Api().lookups_get(q=host)
             rsp = self.__client.last_response
             assert_equal(200, rsp.status, message=rsp.reason)

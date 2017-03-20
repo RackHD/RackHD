@@ -14,3 +14,6 @@ apps:
    - script: index.js
      name: on-tftp
      cwd: ./src/on-tftp
+   - script: app.py
+     name: ucs-service
+     cwd: ./src/ucs-service

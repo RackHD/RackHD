@@ -1,7 +1,10 @@
+"""
+Copyright (c) 2016-2017 Dell Inc. or its subsidiaries. All Rights Reserved.
+"""
 import logging
 import os
 from nose.plugins import Plugin
-from stream_sources import LoggingMarker
+from stream_sources import LoggingMarker, SelfTestStreamMonitor
 import sys
 from nose.pyversion import format_exception
 from nose.plugins.xunit import Tee
@@ -10,10 +13,12 @@ from StringIO import StringIO
 from logging import ERROR, WARNING
 from flogging import LoggerArgParseHelper
 
+
 class StreamMonitorPlugin(Plugin):
     _singleton = None
     name = "stream-monitor"
     encoding = 'UTF-8'
+
     def __init__(self, *args, **kwargs):
         assert StreamMonitorPlugin._singleton is None, \
             "infrastructure fault: more than one StreamMonitorPlugin exists"
@@ -58,7 +63,7 @@ class StreamMonitorPlugin(Plugin):
 
     def configure(self, options, conf):
         self.__take_step('configure', options=options, conf=conf)
-        super(StreamMonitorPlugin, self).configure(options,conf)
+        super(StreamMonitorPlugin, self).configure(options, conf)
         if not self.enabled:
             return
         if getattr(conf.options, 'collect_only', False):
@@ -69,11 +74,18 @@ class StreamMonitorPlugin(Plugin):
         self.__take_step('finalize', result=result)
         self.__log.info('Stream Monitor Report Complete')
 
+    def __call_all_plugin_by_attr(self, attr_name, *args, **kwargs):
+        for pg in self.__stream_plugins.values():
+            method = getattr(pg, attr_name, None)
+            if method is not None:
+                method(*args, **kwargs)
+
     def begin(self):
         self.__take_step('begin')
         # tood: check class "enabled_for_nose()"
         if len(self.__stream_plugins) == 0:
             self.__stream_plugins['logging'] = LoggingMarker()
+            self.__stream_plugins['self-test'] = SelfTestStreamMonitor()
         else:
             # This is basically for self-testing the plugin, since the
             # logging monitor stays around between test-classes. If we don't do
@@ -82,29 +94,28 @@ class StreamMonitorPlugin(Plugin):
 
         self.__flogger_opts_helper.process_parsed(self.conf.options)
 
-        for pg in self.__stream_plugins.values():
-            pg.handle_begin()
+        self.__call_all_plugin_by_attr('handle_begin')
 
     def beforeTest(self, test):
         # order is beforeTest->startTest->stopTest->afterTest
         self.__take_step('beforeTest', test=test)
         self.__start_capture()
+        self.__call_all_plugin_by_attr('handle_before_test', test)
 
     def afterTest(self, test):
         self.__take_step('afterTest', test=test)
+        self.__call_all_plugin_by_attr('handle_after_test', test)
         self.__end_capture()
         self.__current_stdout = None
         self.__current_stderr = None
 
     def startTest(self, test):
         self.__take_step('startTest', test=test)
-        for pg in self.__stream_plugins.values():
-            pg.handle_start_test(test)
+        self.__call_all_plugin_by_attr('handle_start_test', test)
 
     def stopTest(self, test):
         self.__take_step('stopTest', test=test)
-        for pg in self.__stream_plugins.values():
-            pg.handle_stop_test(test)
+        self.__call_all_plugin_by_attr('handle_stop_test', test)
 
     def __start_capture(self):
         """
@@ -117,7 +128,7 @@ class StreamMonitorPlugin(Plugin):
         in the context of looking at a single test, it's really annoying. So, this logic
         is stolen from the xunit plugin (which does capture better than capture!). We are
         basically tucking away stdout/stderrs while letting the data flow to prior levels
-        using the Tee. 
+        using the Tee.
         """
         self.__capture_stack.append((sys.stdout, sys.stderr))
         self.__current_stdout = StringIO()
@@ -181,15 +192,21 @@ class StreamMonitorPlugin(Plugin):
         tb = format_exception(err, self.encoding)
         sout = self.__get_captured_stdout()
         serr = self.__get_captured_stderr()
-        for pg in self.__stream_plugins.values():
-            if hasattr(pg, 'handle_capture'):
-                pg.handle_capture(log_level, cap_type, test, sout, serr, tb)
+        self.__call_all_plugin_by_attr('handle_capture', log_level, cap_type, test, sout, serr, tb)
+
+    def get_stream_monitor_by_name(self, name):
+        return self.__stream_plugins[name]
 
 
 def smp_get_stream_monitor_plugin():
     """
-    Get the plugin that nose will have created. ONLY nose should 
+    Get the plugin that nose will have created. ONLY nose should
     create the main instance!
     """
     smp = StreamMonitorPlugin.get_singleton_instance()
     return smp
+
+
+def smp_get_stream_monitor(monitor_name):
+    smp = StreamMonitorPlugin.get_singleton_instance()
+    return smp.get_stream_monitor_by_name(monitor_name)

@@ -6,11 +6,10 @@ George Paulos
 
 '''
 
+import fit_path  # NOQA: unused import
 import os
 import sys
 import subprocess
-# set path to common libraries
-sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test/common")
 import fit_common
 
 
@@ -19,7 +18,9 @@ NODECATALOG = fit_common.node_select()
 
 # Select test group here using @attr
 from nose.plugins.attrib import attr
-@attr(all=True, regression=True, smoke=True)
+
+
+@attr(api_1_1=True)
 class rackhd11_api_nodes(fit_common.unittest.TestCase):
     def test_api_11_nodes(self):
         nodelist = []

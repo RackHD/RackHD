@@ -1,33 +1,28 @@
 '''
-Copyright 2016, EMC, Inc.
+Copyright 2017 Dell Inc. or its subsidiaries. All Rights Reserved.
 
 Author(s):
 George Paulos
 
-OnRack/RackHD Functional Integration Test (FIT) library
-This is the main common function library for OnRack/RackHD FIT tests.
+RackHD Functional Integration Test (FIT) library
+This is the main common function library for RackHD FIT tests.
 '''
 
 # Standard imports
+import fit_path  # NOQA: unused import
 import os
 import sys
 import json
 import subprocess
 import time
-import datetime
-import unittest
-import signal
+import unittest   # NOQA: imported but unused
 import re
 import requests
 import pexpect
-import shutil
 import inspect
 
-import nose
 import argparse
 from mkcfg import mkcfg
-
-sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test")
 
 VERBOSITY = 1
 TEST_PATH = None
@@ -197,15 +192,16 @@ def apply_stack_config():
     stack = fitargs()['stack']
     if stack is not None:
         mkcfg().add_from_file('stack_config.json', stack)
-        if 'ora' in fitcfg():
-            fitargs()['ora'] = fitcfg()['ora']
-        else:
-            fitargs()['ora'] = 'localhost'
+        if fitargs()['rackhd_host'] == 'localhost' and 'rackhd_host' in fitcfg():
+            fitargs()['rackhd_host'] = fitcfg()['rackhd_host']
         if 'bmc' in fitcfg():
             fitargs()['bmc'] = fitcfg()['bmc']
         if 'hyper' in fitcfg():
             fitargs()['hyper'] = fitcfg()['hyper']
-
+        if 'ucs_ip' in fitcfg():
+            fitargs()['ucs_ip'] = fitcfg()['ucs_ip']
+        if 'ucs_port' in fitcfg():
+            fitargs()['ucs_port'] = fitcfg()['ucs_port']
 
 def add_globals():
     """
@@ -219,27 +215,21 @@ def add_globals():
     global VERBOSITY
 
     # set api port and protocol from command line
-    if fitargs()['port'] != "None":
+    if fitargs()['http'] is True:
+        API_PROTOCOL = "http"
+        API_PORT = str(fitports()['http'])
+    elif fitargs()['https'] is True:
+        API_PROTOCOL = "https"
+        API_PORT = str(fitports()['https'])
+    else:  # default protocol is http
+        API_PROTOCOL = "http"
+        API_PORT = str(fitports()['http'])
+
+    if fitargs()['port'] != "None":  # port override via command line argument -port
         API_PORT = fitargs()['port']
 
-    if fitargs()['http'] == "True":
-        API_PROTOCOL = "http"
-        if API_PORT == "None":
-            API_PORT = fitports()['http']
-
-    if fitargs()['https'] == "True":
-        API_PROTOCOL = "https"
-        if API_PORT == "None":
-            API_PORT = fitports()['https']
-
-    if fitargs()["ora"] == "localhost":
-        if API_PROTOCOL == "None":
-            API_PROTOCOL = 'http'
-        if API_PORT == "None":
-            API_PORT = '8080'
-
     # add globals section to base configuration
-    TEST_PATH = subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test/"
+    TEST_PATH = fit_path.fit_path_root + '/'
     CONFIG_PATH = TEST_PATH + fitargs()['config'] + "/"
     mkcfg().add_from_dict({
         'globals': {
@@ -251,7 +241,7 @@ def add_globals():
         }
     })
 
-    # set OVA template from command line
+    # set OVA template from command line argument -template
     if fitargs()["template"] == "None":
         fitargs()["template"] = fitcfg()['install-config']['template']
 
@@ -268,6 +258,40 @@ def update_globals():
     TEST_PATH = fitglobals()['TEST_PATH']
     CONFIG_PATH = fitglobals()['CONFIG_PATH']
     VERBOSITY = fitglobals()['VERBOSITY']
+
+
+def _fix_check_unicode(value):
+    """
+    function to help with unicode characters in command line arguments.
+    * will subsitute a single '-' for a couple of different single-dash-like unicode chars
+    * will subsitute a double '--' for an em_dash unicode character
+
+    If there still unicode in the string once the substituion is complete that would
+    prevent converting to pure-ascii, None is returned. Otherwise the fixed string is.
+    """
+    # First turn from byte-string to utf-8
+    value = value.decode("utf-8")
+
+    # These are the various hyphen/dashes that
+    # look like single '-'s...
+    h_minus = u'\u002d'
+    hyphen = u'\u2010'
+    en_dash = u'\u2013'
+    single_dash_list = [h_minus, hyphen, en_dash]
+    # walk through and substitute single-dash-like unicode to plain minus
+    for convert_dash in single_dash_list:
+        value = value.replace(convert_dash, '-')
+
+    # now do the em_dash, which is the '--'
+    em_dash = u'\u2014'
+    value = value.replace(em_dash, '--')
+
+    # Now convert to ascii and complain if we can't
+    try:
+        final_value = value.decode('ascii')
+    except UnicodeEncodeError:
+        final_value = None
+    return final_value
 
 
 def mkargs(in_args=None):
@@ -291,13 +315,11 @@ def mkargs(in_args=None):
     arg_parser.add_argument("-group", default="all",
                             help="test group to execute: 'smoke', 'regression', 'extended', default: 'all'")
     arg_parser.add_argument("-stack", default="vagrant",
-                            help="stack label (test bed), overrides -ora")
-    arg_parser.add_argument("-ora", default="localhost",
-                            help="OnRack/RackHD appliance IP address or hostname, default: localhost")
-    arg_parser.add_argument("-version", default="onrack-devel",
-                            help="OnRack package install version, example:onrack-release-0.3.0, default: onrack-devel")
+                            help="stack label (test bed)")
+    arg_parser.add_argument("-rackhd_host", default="localhost",
+                            help="RackHD appliance IP address or hostname, default: localhost")
     arg_parser.add_argument("-template", default="None",
-                            help="path or URL link to OVA template or OnRack OVA")
+                            help="path or URL link to OVA template or RackHD OVA")
     arg_parser.add_argument("-xunit", default="False", action="store_true",
                             help="generates xUnit XML report files")
     arg_parser.add_argument("-numvms", default=1, type=int,
@@ -320,7 +342,7 @@ def mkargs(in_args=None):
                             help="API port number override, default from install_config.json")
     arg_parser.add_argument("-v", default=4, type=int,
                             help="Verbosity level of console and log output (see -nose-help for more options), Built Ins: " +
-                                 "0: Minimal logging, "+
+                                 "0: Minimal logging, " +
                                  "1: Display ERROR and CRITICAL to console and to files, " +
                                  "3: Display INFO to console and to files, " +
                                  "4: (default) Display INFO to console, and DEBUG to files, " +
@@ -330,6 +352,17 @@ def mkargs(in_args=None):
                                  "9: Display infra.* and test.* at DEBUG_9 (max output) ")
     arg_parser.add_argument("-nose-help", default=False, action="store_true", dest="nose_help",
                             help="display help from underlying nosetests command, including additional log options")
+
+    fixed_args = []
+    for arg in in_args:
+        new_value = _fix_check_unicode(arg)
+        if new_value is None:
+            arg_parser.error(
+                "Argument '{0}' of {1} had unknown unicode characters in it, likely from a cut-and-paste.".format(
+                    arg, in_args))
+        fixed_args.append(new_value)
+    in_args = fixed_args
+
     # we want to grab the arguments we want, and pass the rest
     # into the nosetest invocation.
     parse_results, other_args = arg_parser.parse_known_args(in_args)
@@ -409,9 +442,9 @@ def countdown(sleep_time, sleep_interval=1):
 
 
 def remote_shell(shell_cmd, expect_receive="", expect_send="", timeout=300,
-                 address=None, user=None, password=None):
+                 address=None, user=None, password=None, vmnum=1):
     '''
-    Run ssh based shell command on a remote machine at fitargs()["ora"]
+    Run ssh based shell command on a remote machine at fitargs()['rackhd_host']
 
     :param shell_cmd: string based command
     :param expect_receive:
@@ -422,15 +455,21 @@ def remote_shell(shell_cmd, expect_receive="", expect_send="", timeout=300,
     :param password: password of remote host
     :return: dict = {'stdout': str:ouput, 'exitcode': return code}
     '''
+
     if not address:
-        address = fitargs()['ora']
+        if (vmnum == 1):
+            address = fitargs()['rackhd_host']
+        else:
+            address = fitargs()['rackhd_host'].replace("ora", "ora-" + str(vmnum - 1))
+
     if not user:
-        user = fitcreds()['ora'][0]['username']
+        user = fitcreds()['rackhd_host'][0]['username']
     if not password:
-        password = fitcreds()['ora'][0]['password']
+        password = fitcreds()['rackhd_host'][0]['password']
 
     logfile_redirect = None
     if VERBOSITY >= 4:
+        print "VM number: ", vmnum
         print "remote_shell: Host =", address
         print "remote_shell: Command =", shell_cmd
 
@@ -439,7 +478,7 @@ def remote_shell(shell_cmd, expect_receive="", expect_send="", timeout=300,
         logfile_redirect = sys.stdout
 
     # if localhost just run the command local
-    if fitargs()['ora'] == 'localhost':
+    if fitargs()['rackhd_host'] == 'localhost':
         (command_output, exitstatus) = \
             pexpect.run("sudo bash -c \"" + shell_cmd + "\"",
                         withexitstatus=1,
@@ -473,10 +512,14 @@ def remote_shell(shell_cmd, expect_receive="", expect_send="", timeout=300,
     return {'stdout': command_output, 'exitcode': exitstatus}
 
 
-def scp_file_to_ora(src_file_name):
+def scp_file_to_ora(src_file_name, vmnum=1):
+    # legacy call
+    scp_file_to_host(src_file_name, vmnum)
+
+
+def scp_file_to_host(src_file_name, vmnum=1):
     '''
-    scp the given file over to the ORA and place it in onrack's
-    home directory.
+    scp the given file over to the RackHD host and place it in the home directory.
 
     :param src_file_name: name of file to copy over. May include path
     :type src_file_name: basestring
@@ -486,24 +529,30 @@ def scp_file_to_ora(src_file_name):
     logfile_redirect = file('/dev/null', 'w')
     just_fname = os.path.basename(src_file_name)
     # if localhost just copy to home dir
-    if fitargs()['ora'] == 'localhost':
+    if fitargs()['rackhd_host'] == 'localhost':
         remote_shell('cp ' + src_file_name + ' ~/' + src_file_name)
         return src_file_name
 
-    scp_target = fitcreds()['ora'][0]['username'] + '@{0}:'.format(fitargs()["ora"])
+    if (vmnum == 1):
+        rackhd_hostname = fitargs()['rackhd_host']
+    else:
+        rackhd_hostname = fitargs()['rackhd_host'].replace("ora", "ora-" + str(vmnum - 1))
+
+    scp_target = fitcreds()['rackhd_host'][0]['username'] + '@{0}:'.format(rackhd_hostname)
+
     cmd = 'scp -o StrictHostKeyChecking=no {0} {1}'.format(src_file_name, scp_target)
     if VERBOSITY >= 4:
-        print "scp_file_to_ora: '{0}'".format(cmd)
+        print "scp_file_to_host: '{0}'".format(cmd)
 
     if VERBOSITY >= 9:
         logfile_redirect = sys.stdout
 
     (command_output, ecode) = pexpect.run(
         cmd, withexitstatus=1,
-        events={'(?i)assword: ': fitcreds()['ora'][0]['password'] + '\n'},
+        events={'(?i)assword: ': fitcreds()['rackhd_host'][0]['password'] + '\n'},
         logfile=logfile_redirect)
     if VERBOSITY >= 4:
-        print "scp_file_to_ora: Exit Code = {0}".format(ecode)
+        print "scp_file_to_host: Exit Code = {0}".format(ecode)
 
     assert ecode == 0, \
         'failed "{0}" because {1}. Output={2}'.format(cmd, ecode, command_output)
@@ -517,17 +566,17 @@ def get_auth_token():
     api_login = {"username": fitcreds()["api"][0]["admin_user"], "password": fitcreds()["api"][0]["admin_pass"]}
     redfish_login = {"UserName": fitcreds()["api"][0]["admin_user"], "Password": fitcreds()["api"][0]["admin_pass"]}
     try:
-        restful("https://" + fitargs()['ora'] + ":" + str(API_PORT) +
+        restful("https://" + fitargs()['rackhd_host'] + ":" + str(fitports()['https']) +
                 "/login", rest_action="post", rest_payload=api_login, rest_timeout=2)
     except:
         AUTH_TOKEN = "Unavailable"
         return False
     else:
-        api_data = restful("https://" + fitargs()['ora'] + ":" + str(API_PORT) +
+        api_data = restful("https://" + fitargs()['rackhd_host'] + ":" + str(fitports()['https']) +
                            "/login", rest_action="post", rest_payload=api_login, rest_timeout=2)
         if api_data['status'] == 200:
             AUTH_TOKEN = str(api_data['json']['token'])
-            redfish_data = restful("https://" + fitargs()['ora'] + ":" + str(API_PORT) +
+            redfish_data = restful("https://" + fitargs()['rackhd_host'] + ":" + str(fitports()['https']) +
                                    "/redfish/v1/SessionService/Sessions",
                                    rest_action="post", rest_payload=redfish_login, rest_timeout=2)
             if 'x-auth-token' in redfish_data['headers']:
@@ -558,25 +607,11 @@ def rackhdapi(url_cmd, action='get', payload=[], timeout=None, headers={}):
                 'timeout':False}
     '''
 
-    # Automatic protocol selection: unless protocol is specified, test protocols, save settings globally
-    global API_PROTOCOL
-    global API_PORT
-
-    if API_PROTOCOL == "None":
-        if API_PORT == "None":
-            API_PORT = str(fitports()['http'])
-        if restful("http://" + fitargs()['ora'] + ":" + str(API_PORT) + "/", rest_timeout=2)['status'] == 0:
-            API_PROTOCOL = 'https'
-            API_PORT = str(fitports()['https'])
-        else:
-            API_PROTOCOL = 'http'
-            API_PORT = str(fitports()['http'])
-
     # Retrieve authentication token for the session
     if AUTH_TOKEN == "None":
         get_auth_token()
 
-    return restful(API_PROTOCOL + "://" + fitargs()['ora'] + ":" + str(API_PORT) + url_cmd,
+    return restful(API_PROTOCOL + "://" + fitargs()['rackhd_host'] + ":" + str(API_PORT) + url_cmd,
                    rest_action=action, rest_payload=payload, rest_timeout=timeout, rest_headers=headers)
 
 
@@ -778,7 +813,7 @@ def power_control_all_nodes(state):
 
 
 def mongo_reset():
-    # clears the Mongo database on ORA to default, returns 0 if successful
+    # clears the Mongo database on host to default, returns 0 if successful
     remote_shell('service onrack-conductor stop')
     remote_shell('/opt/onrack/bin/monorail stop')
     remote_shell("mongo pxe --eval 'db.dropDatabase\\\(\\\)'")
@@ -1157,7 +1192,8 @@ def run_nose(nosepath=None):
         env = {
             'FIT_CONFIG': mkcfg().get_path(),
             'HOME': os.environ['HOME'],
-            'PATH': os.environ['PATH']
+            'PATH': os.environ['PATH'],
+            'PYTHONPATH': ':'.join(sys.path)
         }
         argv = ['nosetests']
         argv.extend(noseopts)

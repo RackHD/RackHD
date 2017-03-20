@@ -1,11 +1,11 @@
 # FIT-based Test Overview
 
-The FIT test suite is an open-source testing harness for RackHD and OnRack software.
+The FIT test suite is an open-source testing harness for RackHD software.
 RackHD (https://github.com/RackHD) is the open-sourced Hardware Management and Orchestration
 software developed by EMC for datacenter administration.
 
 FIT stands for Functional Integration Tests and is intended for Continuous Integration testing
-as well as standalone testing. It was originally developed by the EMC OnRack test group to provide
+as well as standalone testing. It was originally developed by the EMC RackHD test group to provide
 the RackHD community a flexible test and deployment toolset that will work in a variety of
 valid configurations and environments.
 
@@ -53,7 +53,7 @@ All FIT tests can be run from the wrapper 'run_tests.py':
 
 ### --help output
         usage: run_tests.py [-h] [-test TEST] [-config CONFIG] [-group GROUP]
-                            [-stack STACK] [-ora ORA] [-version VERSION]
+                            [-stack STACK] [-rackhd_host RACKHD_HOST]
                             [-template TEMPLATE] [-xunit] [-numvms NUMVMS] [-list]
                             [-sku SKU] [-obmmac OBMMAC | -nodeid NODEID]
                             [-http | -https] [-port PORT] [-v V] [-nose-help]
@@ -61,40 +61,40 @@ All FIT tests can be run from the wrapper 'run_tests.py':
         Command Help
 
         optional arguments:
-          -h, --help          show this help message and exit
-          -test TEST          test to execute, default: tests/
-          -config CONFIG      config file location, default: config
-          -group GROUP        test group to execute: 'smoke', 'regression',
-                              'extended', default: 'all'
-          -stack STACK        stack label (test bed), overrides -ora
-          -ora ORA            OnRack/RackHD appliance IP address or hostname, default:
-                              localhost
-          -version VERSION    OnRack package install version, example:onrack-
-                              release-0.3.0, default: onrack-devel
-          -template TEMPLATE  path or URL link to OVA template or OnRack OVA
-          -xunit              generates xUnit XML report files
-          -numvms NUMVMS      number of virtual machines for deployment on specified
-                              stack
-          -list               generates test list only
-          -sku SKU            node SKU name, example: Quanta-T41, default=all
-          -obmmac OBMMAC      node OBM MAC address, example:00:1e:67:b1:d5:64
-          -nodeid NODEID      node identifier string of a discovered node, example:
-                              56ddcf9a8eff16614e79ec74
-          -http               forces the tests to utilize the http API protocol
-          -https              forces the tests to utilize the https API protocol
-          -port PORT          API port number override, default from
-                              install_config.json
-          -v V                Verbosity level of console and log output (see -nose-
-                              help for more options), Built Ins: 0: Minimal logging,
-                              1: Display ERROR and CRITICAL to console and to files,
-                              3: Display INFO to console and to files, 4: (default)
-                              Display INFO to console, and DEBUG to files, 5: Display
-                              infra.run and test.run DEBUG to both, 6: Add display of
-                              test.data (rest calls and status) DEBUG to both, 7: Add
-                              display of infra.data (ipmi, ssh) DEBUG to both, 9:
-                              Display infra.* and test.* at DEBUG_9 (max output)
-          -nose-help          display help from underlying nosetests command,
-                              including additional log options
+          -h, --help            show this help message and exit
+          -test TEST            test to execute, default: tests/
+          -config CONFIG        config file location, default: config
+          -group GROUP          test group to execute: 'smoke', 'regression',
+                                'extended', default: 'all'
+          -stack STACK          stack label (test bed)
+          -rackhd_host RACKHD_HOST
+                                RackHD appliance IP address or hostname, default:
+                                localhost
+          -template TEMPLATE    path or URL link to OVA template or RackHD OVA
+          -xunit                generates xUnit XML report files
+          -numvms NUMVMS        number of virtual machines for deployment on specified
+                                stack
+          -list                 generates test list only
+          -sku SKU              node SKU name, example: Quanta-T41, default=all
+          -obmmac OBMMAC        node OBM MAC address, example:00:1e:67:b1:d5:64
+          -nodeid NODEID        node identifier string of a discovered node, example:
+                                56ddcf9a8eff16614e79ec74
+          -http                 forces the tests to utilize the http API protocol
+          -https                forces the tests to utilize the https API protocol
+          -port PORT            API port number override, default from
+                                install_config.json
+          -v V                  Verbosity level of console and log output (see -nose-
+                                help for more options), Built Ins: 0: Minimal logging,
+                                1: Display ERROR and CRITICAL to console and to files,
+                                3: Display INFO to console and to files, 4: (default)
+                                Display INFO to console, and DEBUG to files, 5:
+                                Display infra.run and test.run DEBUG to both, 6: Add
+                                display of test.data (rest calls and status) DEBUG to
+                                both, 7: Add display of infra.data (ipmi, ssh) DEBUG
+                                to both, 9: Display infra.* and test.* at DEBUG_9 (max
+                                output)
+          -nose-help            display help from underlying nosetests command,
+                                including additional log options
 
 
 ### Example that will run the RackHD installer onto stack 1 via the wrapper script:
@@ -105,16 +105,7 @@ All FIT tests can be run from the wrapper 'run_tests.py':
 
     python run_tests.py -test tests -group smoke
 
-The -stack or -ora argument can be omitted when running on the server or appliance. The test defaults to localhost:8080 for API calls.
-
-
-### Example using nosetests
-Alternatively tests can be run directly from nose. Runtime parameters such as ORA address must be set in the environment.
-
-The following example will run all the entire test harness from a third party machine to ORA at 192.168.1.1:
-
-    export ORA=192.168.1.1
-    nosetests -s tests
+The -stack or -rackhd_host argument can be omitted when running on the server or appliance. The test defaults to localhost:8080 for API calls.
 
 
 ### Running individual tests
@@ -126,7 +117,7 @@ Individual test scripts or tests may be executed using the following 'Nose' addr
 
 For example, to run the test 'test_rackhd11_api_catalogs' in script 'tests/rackhd11/test_rackhd11_api_catalogs.py' on stack 1:
 
-    python run_tests.py -stack 11 -test tests/rackhd11/test_rackhd11_api_catalogs.py:rackhd11_api_catalogs.test_api_11_catalogs
+    python run_tests.py -stack 1 -test tests/rackhd11/test_rackhd11_api_catalogs.py:rackhd11_api_catalogs.test_api_11_catalogs
 
 ### Example of rerunning a test based on a previous run's configuration:
 

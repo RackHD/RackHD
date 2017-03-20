@@ -6,12 +6,11 @@ Author(s):
 FIT test script template
 '''
 
+import fit_path  # NOQA: unused import
 import sys
 import subprocess
 import pprint
 
-# set path to common libraries
-sys.path.append(subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip("\n") + "/test/common")
 import fit_common
 import test_api_utils
 
@@ -19,7 +18,8 @@ import test_api_utils
 
 NODELIST = []
 
-def get_switches():
+
+def _get_switches():
     # returns a list with valid node IDs that match ARGS_LIST.sku in 'Name' or 'Model' field
     # and matches node BMC MAC address in ARGS_LIST.obmmac if specified
     # Otherwise returns list of all IDs that are not 'Unknown' or 'Unmanaged'
@@ -38,32 +38,13 @@ def get_switches():
     return nodelist
 
 
-NODELIST = get_switches()
+NODELIST = _get_switches()
 
-def get_rackhd_nodetype(nodeid):
-    nodetype = ""
-    # get the node info
-    mondata = fit_common.rackhdapi("/api/2.0/nodes/" + nodeid)
-    if mondata['status'] != 200:
-        print "Incorrect HTTP return code on nodeid, expected 200, received: {}".format(mondata['status'])
-    else:
-        # get the sku id contained in the node
-        sku = mondata['json'].get("sku")
-        if sku:
-            skudata = fit_common.rackhdapi(sku)
-            if skudata['status'] != 200:
-                print "Incorrect HTTP return code on sku, expected 200, received: {}".format(skudata['status'])
-            else:
-                nodetype = mondata['json'].get("name")
-        else:
-            nodetype = mondata['json'].get("name")
-            print "nodeid {} did not return a valid sku in get_rackhd_nodetype".format(nodeid)
-    return nodetype
 
 from nose.plugins.attrib import attr
 @attr(all=True, regression=True, smoke=True)
 @fit_common.unittest.skipIf(NODELIST == [],"No switches defined, skipping test.")
-class rackhd11_switch_pollers(fit_common.unittest.TestCase):
+class rackhd20_switch_pollers(fit_common.unittest.TestCase):
 
     def test_get_id_pollers(self):
         if fit_common.VERBOSITY >= 2:
@@ -96,7 +77,7 @@ class rackhd11_switch_pollers(fit_common.unittest.TestCase):
         for node in NODELIST:
             mon_data = fit_common.rackhdapi("/api/2.0/nodes/" + node + "/pollers")
             self.assertIn(mon_data['status'], [200], "Incorrect HTTP return code")
-            nodetype = get_rackhd_nodetype(node)
+            nodetype = test_api_utils.get_rackhd_nodetype(node)
             if fit_common.VERBOSITY >= 2:
                 print "\nNode: {} Type: {}".format(node, nodetype)
             # Run test against managed nodes only
@@ -118,7 +99,7 @@ class rackhd11_switch_pollers(fit_common.unittest.TestCase):
         for node in NODELIST:
             if fit_common.VERBOSITY >= 2:
                 print "\nNode: ", node
-            nodetype = get_rackhd_nodetype(node)
+            nodetype = test_api_utils.get_rackhd_nodetype(node)
             # Run test against managed nodes only
             if nodetype != "unknown" and nodetype != "Unmanaged":
                 poller_dict = test_api_utils.get_supported_pollers(node)
@@ -139,7 +120,7 @@ class rackhd11_switch_pollers(fit_common.unittest.TestCase):
         for node in NODELIST:
             if fit_common.VERBOSITY >= 2:
                 print "\nNode: ", node
-            nodetype = get_rackhd_nodetype(node)
+            nodetype = test_api_utils.get_rackhd_nodetype(node)
             # Run test against managed nodes only
             if nodetype != "unknown" and nodetype != "Unmanaged":
                 poller_dict = test_api_utils.get_supported_pollers(node)
@@ -160,7 +141,7 @@ class rackhd11_switch_pollers(fit_common.unittest.TestCase):
         for node in NODELIST:
             if fit_common.VERBOSITY >= 2:
                 print "\nNode: ", node
-            nodetype = get_rackhd_nodetype(node)
+            nodetype = test_api_utils.get_rackhd_nodetype(node)
             # Run test against managed nodes only
             if nodetype != "unknown" and nodetype != "Unmanaged":
                 poller_dict = test_api_utils.get_supported_pollers(node)
