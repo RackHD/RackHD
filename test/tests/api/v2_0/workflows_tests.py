@@ -188,9 +188,9 @@ class WorkflowsTests(object):
                        tasks=[], callback=None, run_now=True):
         self.__graph_name = graph_name
         self.__graph_status = []
-
-        Api().nodes_get_all()
-        nodes = loads(self.__client.last_response.data)
+        if len(nodes) == 0:
+            Api().nodes_get_all()
+            nodes = loads(self.__client.last_response.data)
 
         if callback == None:
             callback = self.handle_graph_finish
