@@ -17,7 +17,7 @@ NODELIST = fit_common.node_select()
 if NODELIST == []:
     print "No nodes found on stack"
     exit
-fit_common.VERBOSITY = 1
+fit_common.VERBOSITY = 1  # this is needed for suppressing debug messages to make reports readable
 
 
 def mon_get_ip_info(node):

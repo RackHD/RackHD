@@ -12,7 +12,7 @@ from nosedep import depends
 import fit_common
 import test_api_utils
 
-fit_common.VERBOSITY = 1
+fit_common.VERBOSITY = 1  # this is needed for suppressing debug messages to make reports readable
 
 
 class display_rackhd_node_list(fit_common.unittest.TestCase):
