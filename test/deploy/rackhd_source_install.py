@@ -209,7 +209,10 @@ class rackhd_source_install(fit_common.unittest.TestCase):
         self.assertEqual(fit_common.remote_shell('cp rabbitmq.config /etc/rabbitmq/')['exitcode'], 0, "AMQP Config file failure.")
         os.remove('config.json')
         os.remove('rabbitmq.config')
-        fit_common.remote_shell('mkdir -p ~/src/on-http/static/swagger-ui')
+        self.assertEqual(fit_common.remote_shell(PROXYVARS + "cd ~/src/on-http && ./install-web-ui.sh")['exitcode'],
+                         0, "web-ui install failure.")
+        self.assertEqual(fit_common.remote_shell(PROXYVARS + "cd ~/src/on-http && ./install-swagger-ui.sh")['exitcode'],
+                         0, "swagger-ui install failure.")
 
     def test06_startup(self):
         print "**** Start services."
@@ -219,6 +222,7 @@ class rackhd_source_install(fit_common.unittest.TestCase):
         fit_common.time.sleep(10)
         for dummy in range(0, 10):
             try:
+                fit_common.rackhdapi("/swagger-ui")
                 fit_common.rackhdapi("/api/2.0/config")
             except:
                 fit_common.time.sleep(10)

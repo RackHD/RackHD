@@ -30,3 +30,13 @@
     package: rackhd={{ rackhd_version }}
   sudo: yes
   when: (rackhd_version is not undefined) and rackhd_version
+
+- name: Check Installed RackHD version
+  shell: |
+    installed_version=`apt-cache policy rackhd | grep Installed | awk '{print $2}'`
+    echo "[Debug] installed_version=$installed_version"
+    if [ "$installed_version" != "{{ rackhd_version }}" ]; then
+      echo "Installed wrong rackhd version $installed_version"
+      exit 1
+    fi
+  when: (rackhd_version is not undefined) and rackhd_version
