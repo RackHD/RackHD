@@ -52,6 +52,7 @@ class TestAMQPOnDemand(plugin_test_helper.resolve_no_verify_helper_class()):
     the sequencing.
     """
     test_suite_results = {}
+    args = ['--sm-amqp-url', 'on-demand']
     longMessage = True   # this turns on printing of arguments for unittest.assert*s
 
     def __get_inner_results(self):
@@ -74,8 +75,10 @@ class TestAMQPOnDemand(plugin_test_helper.resolve_no_verify_helper_class()):
         # if it was an assertion, throw it again (allow self.Raises and such)
         if iresult.is_exception:
             # dump the traceback to stdout. If the exception is caught by the
-            # specific test, then it will show up nicely in capture.
-            iresult.dump_exception()
+            # specific test, then it will show up nicely in capture. Unless it's
+            # a unitest.SkipTest, in which case we don't want to dump the backtrace!
+            if not isinstance(iresult.results, unittest.SkipTest):
+                iresult.dump_exception()
             raise iresult.results
         return iresult.results
 
@@ -123,14 +126,22 @@ class TestAMQPOnDemand(plugin_test_helper.resolve_no_verify_helper_class()):
 
             def setUp(self):
                 """
+                Note: exceptions throw in setup are caught by
+                TestCase, and seem to bypass our return flow.
                 """
                 self.__asm = smp_get_stream_monitor('amqp')
 
+            def __skip_no_amqp(self):
+                if not self.__asm.has_amqp_server:
+                    raise unittest.SkipTest('Skipping AMQP test because no AMQP server defined')
+
             def test_connected_to_ondemand_server(self):
+                self.__skip_no_amqp()
                 results = self.__asm.test_helper_is_amqp_running()
                 return results
 
             def test_send_receive_sync_message(self):
+                self.__skip_no_amqp()
                 payload = {'test_uuid': str(uuid.uuid4())}
                 queue = self.__asm.test_helper_sync_send_msg(
                     'on.events', 'on.events', 'on.events.test', payload)
@@ -139,6 +150,7 @@ class TestAMQPOnDemand(plugin_test_helper.resolve_no_verify_helper_class()):
                         'got': data_back}
 
             def test_send_receive_async_message(self):
+                self.__skip_no_amqp()
                 on_tasks = self.__asm.get_queue_monitor('on.events', 'on.events.tests')
                 sent_info = on_tasks.inject_test()
                 msg, body = on_tasks.wait_for_one_message()

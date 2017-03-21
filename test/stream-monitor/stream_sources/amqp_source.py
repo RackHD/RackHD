@@ -166,11 +166,25 @@ class AMQPStreamMonitor(StreamMonitorBaseClass):
         self.__monitors = []
         sm_amqp_url = getattr(self.__options, 'sm_amqp_url', None)
         if sm_amqp_url is None:
+            sm_amqp_url = None
+        elif sm_amqp_url == 'on-demand':
             self.__amqp_on_demand = RackHDAMQPOnDemand()
             sm_amqp_url = self.__amqp_on_demand.get_url()
         else:
             self.__amqp_on_demand = None
-        self.__amqp_server = _AMQPServerWrapper(sm_amqp_url)
+
+        if sm_amqp_url is None:
+            self.__amqp_server = None
+        else:
+            self.__amqp_server = _AMQPServerWrapper(sm_amqp_url)
+
+    @property
+    def has_amqp_server(self):
+        """
+        method to indicate if an AMQP server was defined or not.
+        This allows callers to Skip() tests if not.
+        """
+        return self.__amqp_server is not None
 
     def test_helper_is_amqp_running(self):
         return self.__amqp_server.connected
