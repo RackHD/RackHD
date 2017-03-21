@@ -103,7 +103,7 @@ class rackhd_ha_resource_install(unittest.TestCase):
         mongo_rep.close()
         # copy file to ora
         fit_common.scp_file_to_host('mongo_replica_init.bash', vmnum)
-        os.remove('mongo_replica_init.py')
+        os.remove('mongo_replica_init.bash')
         fit_common.remote_shell("chmod 777 mongo_replica_init.bash", vmnum=vmnum)['exitcode']
         # run script to initiate replica set
         self.assertEqual(fit_common.remote_shell("./mongo_replica_init.bash", vmnum=vmnum)['exitcode'],
