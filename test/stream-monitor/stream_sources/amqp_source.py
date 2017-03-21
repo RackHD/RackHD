@@ -67,7 +67,7 @@ class _AMQPServerWrapper(object):
             mon = {
                 "event_cb": event_cb,
                 "exchange": ex
-                }
+            }
             self.__monitors[mname] = mon
         return mon['exchange']
 

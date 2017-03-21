@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import os.path
 import re
@@ -5,7 +6,7 @@ from docker import Client
 
 
 class _VCheckedClient(Client):
-    _REQUIRED_DOCKER_VERSION='1.12'
+    _REQUIRED_DOCKER_VERSION = '1.12'
 
     def __init__(self, *args, **kwargs):
         super(_VCheckedClient, self).__init__(*args, **kwargs)
@@ -46,7 +47,7 @@ class AMQPOnDemand(object):
                 elif state == 'exited':
                     response = self.__main_client.start(container=existing.get('Id'))
                     # todo: log
-                    print response
+                    print(response)
                 else:
                     raise Exception("state = {0}".format(state))
         return existing
@@ -91,7 +92,8 @@ class AMQPOnDemand(object):
 
         # todo: see if we need 'command="--insecure-registry=mubmle' as param to above.
 
-        response = self.__main_client.start(container=dockproc.get('Id'))
+        # response = self.__main_client.start(container=dockproc.get('Id'))
+        self.__main_client.start(container=dockproc.get('Id'))
         # todo: log
         # print response
         return dockproc
