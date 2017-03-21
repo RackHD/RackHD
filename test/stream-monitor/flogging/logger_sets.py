@@ -22,7 +22,7 @@ class _LoggerSet(object):
         if hasattr(self.trl, key):
             return getattr(self.trl, key)
 
-        m = "'{0}' object has no attribute '{1}'".format(self.__name__, key)
+        m = "'{0}' object has no attribute '{1}'".format(self.__class__, key)
         raise AttributeError(m)
 
 
