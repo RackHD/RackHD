@@ -5,7 +5,7 @@ This test validate the function of RackHD image service. There are 3 parts of te
 This test OS image operation related APIs of image-service.
 ###2. Test microkernel service
 This test microkernel management related APIs of image-service
-###3. Test 
+###3. Test bootstraping and rediscovery
 This test RackHD+ image service working together to do OS bootstrapping and node rediscovery.
 
 ##Config file
