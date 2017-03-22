@@ -102,7 +102,7 @@ class test_os_image_service(fit_common.unittest.TestCase):
     def _download_file(self, url):
         logs.debug_3("downloading url= %s" % url)
         file_name = url.split('/')[-1]
-        if os.path.exists(file_name) == False:
+        if os.path.exists(file_name) is False:
             u = urllib2.urlopen(url)
             f = open(file_name, 'wb')
             meta = u.info()
@@ -294,7 +294,6 @@ class test_os_image_service(fit_common.unittest.TestCase):
             "ssh -q -o StrictHostKeyChecking=no -t " + FILE_CONFIG['usr'] + "@" + serverip +
             " sudo bash -c \\\"" + cmd + "\\\"", withexitstatus=1,
             events={"assword": FILE_CONFIG['pwd'] + "\n"}, timeout=300)
-        print command_output
         uud = command_output.split("\t")
         myip = uud[1].split("\r\n")[0]
         logs.debug('My IP address is: ' + myip)

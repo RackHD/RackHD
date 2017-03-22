@@ -33,13 +33,6 @@ except BaseException:
 
 @attr(all=True, regression=False, smoke=False)
 class test_image_service_system(fit_common.unittest.TestCase):
-    def setUp(self):
-        print "start"
-
-    def tearDown(self):
-        print "finished"
-        # self.test_delete_all_images()
-
     def _get_serverip(self):
         args = fit_common.fitargs()['unhandled_arguments']
         for arg in args:
@@ -159,7 +152,6 @@ class test_image_service_system(fit_common.unittest.TestCase):
             "ssh -q -o StrictHostKeyChecking=no -t " + FILE_CONFIG['usr'] + "@" + serverip +
             " sudo bash -c \\\"" + cmd + "\\\"", withexitstatus=1,
             events={"assword": FILE_CONFIG['pwd'] + "\n"}, timeout=300)
-        print command_output
         uud = command_output.split("\t")
         myip = uud[1].split("\r\n")[0]
         logs.debug('My IP address is: ' + myip)
