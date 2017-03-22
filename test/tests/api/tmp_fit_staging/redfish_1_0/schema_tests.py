@@ -1,97 +1,103 @@
-from config.redfish1_0_config import *
-from modules.logger import Log
+"""
+Copyright (c) 2016-2017 Dell Inc. or its subsidiaries. All Rights Reserved.
+
+"""
+import fit_path  # NOQA: unused import                                                                                          
+import unittest
+import flogging
+
+from config.redfish1_0_config import config
 from on_http_redfish_1_0 import RedfishvApi as redfish
 from on_http_redfish_1_0 import rest
-from datetime import datetime
-from proboscis.asserts import assert_equal
-from proboscis.asserts import assert_false
-from proboscis.asserts import assert_raises
-from proboscis.asserts import assert_not_equal
-from proboscis.asserts import assert_true
-from proboscis.asserts import fail
-from proboscis import SkipTest
-from proboscis import test
-from json import loads,dumps
+from json import loads, dumps
+from nosedep import depends
+from nose.plugins.attrib import attr
 
-LOG = Log(__name__)
+logs = flogging.get_loggers()
 
-@test(groups=['redfish.schema.tests'], depends_on_groups=['obm.tests'])
-class SchemaTests(object):
 
-    def __init__(self):
-        self.__client = config.api_client
-        self.__schemaList = None
-        self.__membersList = None
-        self.__locationUri = []
+# @test(groups=['redfish.schema.tests'], depends_on_groups=['obm.tests'])
+@attr(regression=True, smoke=True, schema_rf1_tests=True)
+class SchemaTests(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.__client = config.api_client
+        cls.__schemaList = None
+        cls.__membersList = None
+        cls.__locationUri = []
 
     def __get_data(self):
         return loads(self.__client.last_response.data)
 
-    @test(groups=['redfish.list_schemas'])
+    # @test(groups=['redfish.list_schemas'])
     def test_list_schemas(self):
-        """ Testing GET /Schemas """
+        # """ Testing GET /Schemas """
         redfish().list_schemas()
         schemas = self.__get_data()
-        LOG.debug(schemas,json=True)
-        assert_not_equal(0, len(schemas), message='Schema list was empty!')
-        self.__schemaList = schemas
+        logs.debug(dumps(schemas, indent=4))
+        self.assertNotEqual(0, len(schemas), msg='Schema list was empty!')
+        self.__class__.__schemaList = schemas
 
-    @test(groups=['redfish.get_schema'], depends_on_groups=['redfish.list_schemas'])
+    # @test(groups=['redfish.get_schema'], depends_on_groups=['redfish.list_schemas'])
+    @depends(after='test_list_schemas')
     def test_get_schema(self):
-        """ Testing GET /Schemas/{identifier} """
-        self.__membersList = self.__schemaList.get('Members')
-        assert_not_equal(None, self.__membersList)
-        for member in self.__membersList:
+        # """ Testing GET /Schemas/{identifier} """
+        self.__class__.__membersList = self.__class__.__schemaList.get('Members')
+        self.assertNotEqual(None, self.__class__.__membersList)
+        for member in self.__class__.__membersList:
             dataId = member.get('@odata.id')
-            assert_not_equal(None,dataId)
+            self.assertNotEqual(None, dataId)
             dataId = dataId.split('/redfish/v1/Schemas/')[1]
             redfish().get_schema(dataId)
             schema_ref = self.__get_data()
-            LOG.debug(schema_ref,json=True)
+            logs.debug(dumps(schema_ref, indent=4))
             id = schema_ref.get('Id')
-            assert_equal(dataId, id, message='unexpected id {0}, expected {1}'.format(id,dataId))
-            assert_equal(type(schema_ref.get('Location')), list, message='expected list not found')
+            self.assertEqual(dataId, id, msg='unexpected id {0}, expected {1}'.format(id, dataId))
+            self.assertEqual(type(schema_ref.get('Location')), list, msg='expected list not found')
             location = schema_ref.get('Location')[0]
-            assert_equal(type(location.get('Uri')), unicode, message='expected uri string not found')
-            self.__locationUri.append(location.get('Uri'))
+            self.assertEqual(type(location.get('Uri')), unicode, msg='expected uri string not found')
+            self.__class__.__locationUri.append(location.get('Uri'))
 
-    @test(groups=['redfish.get_schema_invalid'], depends_on_groups=['redfish.list_schemas'])
+    # @test(groups=['redfish.get_schema_invalid'], depends_on_groups=['redfish.list_schemas'])
+    @depends(after='test_list_schemas')
     def test_get_schema_invalid(self):
-        """ Testing GET /Schemas/{identifier} 404s properly """
-        self.__membersList = self.__schemaList.get('Members')
-        assert_not_equal(None, self.__membersList)
-        for member in self.__membersList:
+        # """ Testing GET /Schemas/{identifier} 404s properly """
+        self.__class__.__membersList = self.__class__.__schemaList.get('Members')
+        self.assertNotEqual(None, self.__class__.__membersList)
+        for member in self.__class__.__membersList:
             dataId = member.get('@odata.id')
-            assert_not_equal(None,dataId)
+            self.assertNotEqual(None, dataId)
             dataId = dataId.split('/redfish/v1/Schemas/')[1]
             try:
                 redfish().get_schema(dataId + '-invalid')
-                fail(message='did not raise exception')
+                self.fail(msg='did not raise exception')
             except rest.ApiException as e:
-                assert_equal(404, e.status, message='unexpected response {0}, expected 404'.format(e.status))
+                self.assertEqual(404, e.status, msg='unexpected response {0}, expected 404'.format(e.status))
             break
 
-    @test(groups=['redfish.get_schema_content'], depends_on_groups=['redfish.get_schema'])
+    # @test(groups=['redfish.get_schema_content'], depends_on_groups=['redfish.get_schema'])
+    @depends(after='test_get_schema')
     def test_get_schema_content(self):
-        """ Testing GET /SchemaStore/en/{identifier} """
-        assert_not_equal([], self.__locationUri)
-        for member in self.__locationUri:
-            assert_not_equal(None,member)
+        # """ Testing GET /SchemaStore/en/{identifier} """
+        self.assertNotEqual([], self.__class__.__locationUri)
+        for member in self.__class__.__locationUri:
+            self.assertNotEqual(None, member)
             dataId = member.split('/redfish/v1/SchemaStore/en/')[1]
             redfish().get_schema_content(dataId)
-            schema_file_contents = self.__get_data()
+            # todo: I assume someone wants to do something with this value
 
-    @test(groups=['redfish.get_schema_content_invalid'], depends_on_groups=['redfish.get_schema'])
+    # @test(groups=['redfish.get_schema_content_invalid'], depends_on_groups=['redfish.get_schema'])
+    @depends(after='test_get_schema')
     def test_get_schema_content_invalid(self):
-        """ Testing GET /Schemas/en/{identifier} 404s properly """
-        assert_not_equal([], self.__locationUri)
-        for member in self.__locationUri:
-            assert_not_equal(None,member)
+        # """ Testing GET /Schemas/en/{identifier} 404s properly """
+        self.assertNotEqual([], self.__class__.__locationUri)
+        for member in self.__class__.__locationUri:
+            self.assertNotEqual(None, member)
             dataId = member.split('/redfish/v1/SchemaStore/en/')[1]
             try:
                 redfish().get_schema_content(dataId + '-invalid')
-                fail(message='did not raise exception')
+                self.fail(msg='did not raise exception')
             except rest.ApiException as e:
-                assert_equal(404, e.status, message='unexpected response {0}, expected 404'.format(e.status))
+                self.assertEqual(404, e.status, msg='unexpected response {0}, expected 404'.format(e.status))
             break
-
