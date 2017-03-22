@@ -56,7 +56,12 @@ class SchemaTests(unittest.TestCase):
             self.assertEqual(dataId, id, msg='unexpected id {0}, expected {1}'.format(id, dataId))
             self.assertEqual(type(schema_ref.get('Location')), list, msg='expected list not found')
             location = schema_ref.get('Location')[0]
-            self.assertEqual(type(location.get('Uri')), unicode, msg='expected uri string not found')
+            location_uri = location.get('Uri')
+            # avoid python3 hound error by not using the word unicode
+            self.assertEqual(type(location_uri),
+                             type(u'unicode_string_type'),
+                             msg='expected type for Uri not string-like, received {}'.format(location_uri))
+            self.assertIn(dataId, location_uri, msg='expected dataId {} not in Uri {}'.format(dataId, location_uri))
             self.__class__.__locationUri.append(location.get('Uri'))
 
     # @test(groups=['redfish.get_schema_invalid'], depends_on_groups=['redfish.list_schemas'])
