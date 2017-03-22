@@ -1,88 +1,91 @@
-from config.redfish1_0_config import *
-from modules.logger import Log
+"""
+Copyright (c) 2016-2017 Dell Inc. or its subsidiaries. All Rights Reserved.
+"""
+import fit_path  # NOQA: unused import                                                                                          
+import unittest
+import flogging
+
+from config.redfish1_0_config import config
 from on_http_redfish_1_0 import RedfishvApi as redfish
-from datetime import datetime
-from proboscis.asserts import assert_equal
-from proboscis.asserts import assert_false
-from proboscis.asserts import assert_raises
-from proboscis.asserts import assert_not_equal
-from proboscis.asserts import assert_true
-from proboscis.asserts import fail
-from proboscis import SkipTest
-from proboscis import test
-from json import loads,dumps
+from json import loads, dumps
+from nosedep import depends
+from nose.plugins.attrib import attr
 
-LOG = Log(__name__)
+logs = flogging.get_loggers()
 
-@test(groups=['redfish.chassis.tests'], \
-    depends_on_groups=['obm.tests', 'amqp.tests'])
-class ChassisTests(object):
 
-    def __init__(self):
-        self.__client = config.api_client
-        self.__chassisList = None
-        self.__membersList = None
+# @test(groups=['redfish.chassis.tests'],
+#    depends_on_groups=['obm.tests', 'amqp.tests'])
+@attr(regression=True, smoke=True, chassis_rf1_tests=True)
+class ChassisTests(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.__client = config.api_client
+        cls.__chassisList = None
+        cls.__membersList = None
 
     def __get_data(self):
         return loads(self.__client.last_response.data)
 
-    @test(groups=['redfish.list_chassis'])
+    # @test(groups=['redfish.list_chassis'])
     def test_list_chassis(self):
-        """ Testing GET /Chassis """
+        # """ Testing GET /Chassis """
         redfish().list_chassis()
         chassis = self.__get_data()
-        LOG.debug(chassis,json=True)
-        assert_not_equal(0, len(chassis), message='Chassis list was empty!')
-        self.__chassisList = chassis
-    
-    @test(groups=['redfish.get_chassis'], depends_on_groups=['redfish.list_chassis'])
+        logs.debug(dumps(chassis, indent=4))
+        self.assertNotEqual(0, len(chassis), msg='Chassis list was empty!')
+        self.__class__.__chassisList = chassis
+
+    # @test(groups=['redfish.get_chassis'], depends_on_groups=['redfish.list_chassis'])
+    @depends(after='test_list_chassis')
     def test_get_chassis(self):
-        """ Testing GET /Chassis/{identifier} """
-        self.__membersList = self.__chassisList.get('Members')
-        assert_not_equal(None, self.__membersList)
-        for member in self.__membersList:
+        # """ Testing GET /Chassis/{identifier} """
+        self.__class__.__membersList = self.__class__.__chassisList.get('Members')
+        self.assertNotEqual(None, self.__class__.__membersList)
+        for member in self.__class__.__membersList:
             dataId = member.get('@odata.id')
-            assert_not_equal(None,dataId)
+            self.assertNotEqual(None, dataId)
             dataId = dataId.split('/redfish/v1/Chassis/')[1]
-            LOG.info(dataId)
+            logs.info("Chassis: %s", dataId)
             redfish().get_chassis(dataId)
             chassis = self.__get_data()
-            LOG.debug(chassis,json=True)
+            logs.debug(dumps(chassis, indent=4))
             id = chassis.get('Id')
-            assert_equal(dataId, id, message='unexpected id {0}, expected {1}'.format(id,dataId))
+            self.assertEqual(dataId, id, msg='unexpected id {0}, expected {1}'.format(id, dataId))
+            member['ChassisType'] = chassis.get('ChassisType')
+            member['Id'] = id
 
-    @test(groups=['redfish.get_chassis_thermal'], depends_on_groups=['redfish.get_chassis'])
+    # @test(groups=['redfish.get_chassis_thermal'], depends_on_groups=['redfish.get_chassis'])
+    @depends(after='test_get_chassis')
     def test_get_chassis_thermal(self):
-        """ Testing GET /Chassis/{identifier}/Thermal """
-        for member in self.__membersList:
-            dataId = member.get('@odata.id')
-            assert_not_equal(None,dataId)
-            dataId = dataId.split('/redfish/v1/Chassis/')[1]
-            redfish().get_thermal(dataId)
+        # """ Testing GET /Chassis/{identifier}/Thermal """
+        for member in self.__class__.__membersList:
+            logs.info("Chassis:  %s", member.get('Id'))
+            redfish().get_thermal(member.get('Id'))
             thermal = self.__get_data()
-            LOG.debug(thermal,json=True)
-            assert_not_equal({}, thermal, message='thermal object undefined!')
+            logs.debug(dumps(thermal, indent=4))
+            self.assertNotEqual({}, thermal, msg='thermal object undefined!')
             name = thermal.get('Name')
-            assert_not_equal('', name, message='empty thermal name!')
+            self.assertNotEqual('', name, msg='empty thermal name!')
             temperature = thermal.get('Temperatures')
-            assert_not_equal(0, len(temperature), message='temperature list was empty!')
-            fans = thermal.get('Fans')
-            assert_not_equal(0, len(fans), message='fans list was empty!')
-            
-            
-    @test(groups=['redfish.get_chassis_power'], depends_on_groups=['redfish.get_chassis'])
+            self.assertNotEqual(0, len(temperature), msg='temperature list was empty!')
+            if member.get('ChassisType') == 'Enclosure':
+                fans = thermal.get('Fans')
+                self.assertNotEqual(0, len(fans), msg='fans list was empty!')
+
+    # @test(groups=['redfish.get_chassis_power'], depends_on_groups=['redfish.get_chassis'])
+    @depends(after='test_get_chassis')
     def test_get_chassis_power(self):
-        """ Testing GET /Chassis/{identifier}/Power """
-        for member in self.__membersList:
-            dataId = member.get('@odata.id')
-            assert_not_equal(None,dataId)
-            dataId = dataId.split('/redfish/v1/Chassis/')[1]
-            redfish().get_power(dataId)
+        # """ Testing GET /Chassis/{identifier}/Power """
+        for member in self.__class__.__membersList:
+            logs.info("Chassis:  %s", member.get('Id'))
+            redfish().get_power(member.get('Id'))
             power = self.__get_data()
-            LOG.debug(power,json=True)
-            assert_not_equal({}, power, message='power object undefined!')
+            logs.debug(dumps(power, indent=4))
+            self.assertNotEqual({}, power, msg='power object undefined!')
             name = power.get('Name')
-            assert_not_equal('', name, message='empty power name!')
-            voltages = power.get('Voltages')
-            assert_not_equal(0, len(power), message='voltages list was empty!')
-            
+            self.assertNotEqual('', name, msg='empty power name!')
+            if member.get('ChassisType') != 'Enclosure':
+                voltages = power.get('Voltages')
+                self.assertNotEqual(0, len(voltages), msg='voltages list was empty!')
