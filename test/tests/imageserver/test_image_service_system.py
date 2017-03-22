@@ -12,7 +12,6 @@ import os
 import sys
 import time
 import flogging
-import requests
 import random
 import json
 import fit_common
