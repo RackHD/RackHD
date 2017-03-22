@@ -26,7 +26,11 @@ logs = flogging.get_loggers()
 try:
     FILE_CONFIG = json.loads(open(fit_common.CONFIG_PATH + "fileserver_config.json").read())
 except BaseException:
-    logs.error("**** Global Config file: " + fit_common.CONFIG_PATH + "FILE_CONFIG.json" + " missing or corrupted! Exiting....")
+    logs.error(
+        "**** Global Config file: " +
+        fit_common.CONFIG_PATH +
+        "FILE_CONFIG.json" +
+        " missing or corrupted! Exiting....")
     sys.exit(255)
 
 
@@ -36,15 +40,15 @@ class test_os_image_service(fit_common.unittest.TestCase):
         self.test_delete_all_images()
 
     def _get_serverip(self):
-        args=fit_common.fitargs()['unhandled_arguments']
+        args = fit_common.fitargs()['unhandled_arguments']
         for arg in args:
             if "imageserver" in arg:
-                serverip=arg.split("=")[1]
+                serverip = arg.split("=")[1]
                 return serverip
 
     def _mount_local_os_repo(self, file_name, mountpoint):
         try:
-            if os.path.exists(mountpoint) == False:
+            if os.path.exists(mountpoint) is False:
                 command = "mkdir " + mountpoint
                 os.popen(command)
             # use fuseiso tool to mount without root privilege. user need install fuseiso before the test.
@@ -81,7 +85,6 @@ class test_os_image_service(fit_common.unittest.TestCase):
             if api_data['status'] == 201:
                 return True
         return False
-
 
     def _release(self, file_name, mountpoint):
         try:
@@ -285,18 +288,17 @@ class test_os_image_service(fit_common.unittest.TestCase):
 
     def _get_tester_ip(self):
         serverip = self._get_serverip()
-        monip=FILE_CONFIG["rackhd_control_ip"]
-        cmd="ping -R -c 1 "+ monip + ""
+        monip = FILE_CONFIG["rackhd_control_ip"]
+        cmd = "ping -R -c 1 " + monip + ""
         (command_output, exitstatus) = pexpect.run(
-                                "ssh -q -o StrictHostKeyChecking=no -t " + FILE_CONFIG['usr'] + "@" + serverip +
-                                " sudo bash -c \\\"" + cmd + "\\\"", withexitstatus=1,
-                                events={"assword": FILE_CONFIG['pwd'] + "\n"}, timeout=300)
+            "ssh -q -o StrictHostKeyChecking=no -t " + FILE_CONFIG['usr'] + "@" + serverip +
+            " sudo bash -c \\\"" + cmd + "\\\"", withexitstatus=1,
+            events={"assword": FILE_CONFIG['pwd'] + "\n"}, timeout=300)
         print command_output
-        uud= command_output.split("\t")
+        uud = command_output.split("\t")
         myip = uud[1].split("\r\n")[0]
         logs.debug('My IP address is: ' + myip)
         return myip
-
 
     def test_create_os_repo_from_iso_upload(self):
         for osrepo in FILE_CONFIG["os_image"]:
@@ -386,7 +388,7 @@ class test_os_image_service(fit_common.unittest.TestCase):
                     found_flag = True
                     break
             self.assertTrue(found_flag, "image with id " + osid + " not found!")
-        logs.error( "Found all os, list is correct!")
+        logs.error("Found all os, list is correct!")
 
     def test_delete_all_images(self):
         os_image_list = self._list_os_image()

@@ -38,13 +38,13 @@ class test_image_service_system(fit_common.unittest.TestCase):
 
     def tearDown(self):
         print "finished"
-        #self.test_delete_all_images()
+        # self.test_delete_all_images()
 
     def _get_serverip(self):
-        args=fit_common.fitargs()['unhandled_arguments']
+        args = fit_common.fitargs()['unhandled_arguments']
         for arg in args:
             if "imageserver" in arg:
-                serverip=arg.split("=")[1]
+                serverip = arg.split("=")[1]
                 return serverip
 
     def _apply_obmsetting_to_node(self, nodeid):
@@ -156,9 +156,9 @@ class test_image_service_system(fit_common.unittest.TestCase):
         monip = FILE_CONFIG["rackhd_control_ip"]
         cmd = "ping -R -c 1 " + monip + ""
         (command_output, exitstatus) = pexpect.run(
-                                "ssh -q -o StrictHostKeyChecking=no -t " + FILE_CONFIG['usr'] + "@" + serverip +
-                                " sudo bash -c \\\"" + cmd + "\\\"", withexitstatus=1,
-                                events={"assword": FILE_CONFIG['pwd'] + "\n"}, timeout=300)
+            "ssh -q -o StrictHostKeyChecking=no -t " + FILE_CONFIG['usr'] + "@" + serverip +
+            " sudo bash -c \\\"" + cmd + "\\\"", withexitstatus=1,
+            events={"assword": FILE_CONFIG['pwd'] + "\n"}, timeout=300)
         print command_output
         uud = command_output.split("\t")
         myip = uud[1].split("\r\n")[0]
@@ -265,7 +265,7 @@ class test_image_service_system(fit_common.unittest.TestCase):
             payload={
                 "command": "cancel",
                 "options": {}
-                    })
+            })
         nodehostname = 'esxi60'
         payload_data = {"options": {
                         "defaults": {
@@ -284,7 +284,7 @@ class test_image_service_system(fit_common.unittest.TestCase):
         result = fit_common.rackhdapi(
             '/api/2.0/nodes/' + node + '/workflows?name=Graph.InstallEsxi', action='post', payload=payload_data)
         self.assertEqual(
-            result['status'], 201,  'Was expecting code 201. Got ' + str(result['status']))
+            result['status'], 201, 'Was expecting code 201. Got ' + str(result['status']))
         self.assertEqual(
             self._wait_for_task_complete(result['json']["instanceId"], retries=80), True,
             'TaskID ' + result['json']["instanceId"] + ' not successfully completed.')
@@ -307,8 +307,8 @@ class test_image_service_system(fit_common.unittest.TestCase):
         logs.debug_3('Running rediscover, resetting system node...')
         # Reboot the node to begin rediscover.
         resetresponse = fit_common.rackhdapi(
-                        '/redfish/v1/Systems/' + node + '/Actions/ComputerSystem.Reset', action='post',
-                        payload={"reset_type": "ForceRestart"})
+            '/redfish/v1/Systems/' + node + '/Actions/ComputerSystem.Reset', action='post',
+            payload={"reset_type": "ForceRestart"})
         self.assertTrue(resetresponse['status'] < 209,
                         'Incorrect HTTP return code, expected <209 , got:' + str(resetresponse['status']))
         # Delete original node
