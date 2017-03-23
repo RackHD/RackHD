@@ -179,11 +179,11 @@ class rackhd_ha_resource_install(unittest.TestCase):
         vmnum = nodelist[0]
         sb_net = self.get_southbound_network()
         self.assertIsNotNone(sb_net, "Could not find southbound address")
-        rabbitmq_rsc_list = []
+        rabbit_rsc_list = []
         # set rabbitmq resource
         for rabbit in range(1, numrs + 1):
             rsc = 'docker_rabbit_{}'.format(rabbit)
-            rabbitmq_rsc_list.append(rsc)
+            rabbit_rsc_list.append(rsc)
             command = ("crm configure primitive {} ocf:heartbeat:docker " +
                        "params allow_pull=true image='registry.hwimo.lab.emc.com/rabbitmq:management' " +
                        "run_opts=\\\'--privileged=true --net='host' -d " +
@@ -205,19 +205,19 @@ class rackhd_ha_resource_install(unittest.TestCase):
         # put rabbitmq hostname on each node
         self.install_rabbitmq_hostname_config(vip_dict['rabbit'])
         # anti colocation between rabbit resources
-        for rsc in range(len(rabbitmq_rsc_list)):
-            for r_rsc in range(rsc + 1, len(rabbitmq_rsc_list)):
+        for rsc in range(len(rabbit_rsc_list)):
+            for r_rsc in range(rsc + 1, len(rabbit_rsc_list)):
                 command = "crm configure colocation rabbit_anti_{0}{1} -inf: {2} {3}" \
-                          .format(rsc + 1, r_rsc + 1, rabbitmq_rsc_list[rsc], rabbitmq_rsc_list[r_rsc])
+                          .format(rsc + 1, r_rsc + 1, rabbit_rsc_list[rsc], rabbit_rsc_list[r_rsc])
                 self.assertEqual(fit_common.remote_shell(command, vmnum=vmnum)['exitcode'],
-                                 0, "{} and {} anti colocation failure".format(rabbitmq_rsc_list[rsc], rabbitmq_rsc_list[r_rsc]))
+                                 0, "{} and {} anti colocation failure".format(rabbit_rsc_list[rsc], rabbit_rsc_list[r_rsc]))
         # restart rabbitmq resource
-        for rsc in rabbitmq_rsc_list:
+        for rsc in rabbit_rsc_list:
             command = "crm resource restart {}".format(rsc)
             fit_common.remote_shell(command, vmnum=vmnum)['exitcode']
             time.sleep(5)
         # set rabbitmq cluster policy for RackHD
-        self.set_rabbitmq_cluster_policy(vmnum, rabbitmq_rsc_list)
+        self.set_rabbitmq_cluster_policy(vmnum, rabbit_rsc_list)
 
 
 if __name__ == '__main__':
