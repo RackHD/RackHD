@@ -120,7 +120,7 @@ class rackhd_ha_resource_install(unittest.TestCase):
         rabbitmq_config = open('rabbitmq.config', 'w')
         rabbitmq_config.write("[ { rabbit, [{ loopback_users, [ ] },{cluster_nodes, {[%s], disc}} ] } ]." % rabbit_list)
         rabbitmq_config.close()
-        for vmnum in range(1, numvms +1):
+        for vmnum in range(1, numvms + 1):
             # copy file to ORA
             fit_common.scp_file_to_host('rabbitmq.config', vmnum)
             self.assertEqual(fit_common.remote_shell('mkdir -p /docker;cp rabbitmq.config /docker/', vmnum=vmnum)['exitcode'],
@@ -186,9 +186,11 @@ class rackhd_ha_resource_install(unittest.TestCase):
             rabbitmq_rsc_list.append(rsc)
             command = ("crm configure primitive {} ocf:heartbeat:docker " +
                        "params allow_pull=true image='registry.hwimo.lab.emc.com/rabbitmq:management' " +
-                       "run_opts=\\\'--privileged=true --net='host' -d -v /docker/rabbitmq.config:/etc/rabbitmq/rabbitmq.config " +
+                       "run_opts=\\\'--privileged=true --net='host' -d " +
+                       "-v /docker/rabbitmq.config:/etc/rabbitmq/rabbitmq.config " +
                        "-p 8080:15672 -p 4369:4369 -p 25672:25672 -p 5672:5672 -p 35197:35197 " +
-                       "-e RABBITMQ_NODENAME=rabbit@rabbit{} -e RABBITMQ_ERLANG_COOKIE=secret_cookie_example\\\'").format(rsc, rabbit)
+                       "-e RABBITMQ_NODENAME=rabbit@rabbit{} "
+                       "-e RABBITMQ_ERLANG_COOKIE=secret_cookie_example\\\'").format(rsc, rabbit)
             self.assertEqual(fit_common.remote_shell(command, vmnum=vmnum)['exitcode'], 0, "{} resource failure".format(rsc))
             # configure virtual ip for rabbitmq resource
             ip = '{}.13{}'.format(sb_net, rabbit)
@@ -203,12 +205,12 @@ class rackhd_ha_resource_install(unittest.TestCase):
         # put rabbitmq hostname on each node
         self.install_rabbitmq_hostname_config(vip_dict['rabbit'])
         # anti colocation between rabbit resources
-        for index in range(len(rabbitmq_rsc_list)):
-            for r_index in range(index + 1, len(rabbitmq_rsc_list)):
+        for rsc in range(len(rabbitmq_rsc_list)):
+            for r_rsc in range(rsc + 1, len(rabbitmq_rsc_list)):
                 command = "crm configure colocation rabbit_anti_{0}{1} -inf: {2} {3}" \
-                          .format(index + 1, r_index + 1, rabbitmq_rsc_list[index], rabbitmq_rsc_list[r_index])
+                          .format(rsc + 1, r_rsc + 1, rabbitmq_rsc_list[rsc], rabbitmq_rsc_list[r_rsc])
                 self.assertEqual(fit_common.remote_shell(command, vmnum=vmnum)['exitcode'],
-                                 0, "{} and {} anti colocation failure".format(rabbitmq_rsc_list[index], rabbitmq_rsc_list[r_index]))
+                                 0, "{} and {} anti colocation failure".format(rabbitmq_rsc_list[rsc], rabbitmq_rsc_list[r_rsc]))
         # restart rabbitmq resource
         for rsc in rabbitmq_rsc_list:
             command = "crm resource restart {}".format(rsc)
