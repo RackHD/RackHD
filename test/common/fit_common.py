@@ -169,6 +169,10 @@ def compose_config(use_sysargs=False):
             # stack overlay configuration
             apply_stack_config()
 
+            # apply any additional configurations specified on command line
+            if fitcfg()['cmd-args-list']['extra']:
+                cfg_obj.add_from_file_list(fitcfg()['cmd-args-list']['extra'].split(','))
+
             # add significant environment variables
             cfg_obj.add_from_dict({
                 'env': {
@@ -313,6 +317,8 @@ def mkargs(in_args=None):
                             help="test to execute, default: tests/")
     arg_parser.add_argument("-config", default="config",
                             help="config file location, default: config")
+    arg_parser.add_argument("-extra", default=None,
+                            help="comma separated list of extra config files (found in 'config' directory)")
     arg_parser.add_argument("-group", default="all",
                             help="test group to execute: 'smoke', 'regression', 'extended', default: 'all'")
     arg_parser.add_argument("-stack", default="vagrant",
