@@ -18,7 +18,7 @@ class StreamMonitorBaseClass(object):
         be a stream-monitor plugin so that the methods are called at the proper
         times.
         """
-        self._in_test = False
+        self.__in_test = None
         self.__match_groups = None
         self.__group_stack = None
         self.__seen_before_test = []
@@ -35,7 +35,7 @@ class StreamMonitorBaseClass(object):
         """
         self.__match_groups = StreamGroupsRoot()
         self.__group_stack = [self.__match_groups]
-        self.__in_test = False
+        self.__in_test = None
 
     def handle_start_test(self, test):
         """
@@ -45,13 +45,19 @@ class StreamMonitorBaseClass(object):
         self.__match_groups.handle_start_test(test)
         self.__seen_before_test = []
         self.__seen_during_test = []
-        self.__in_test = True
+        self.__in_test = test
 
     def handle_stop_test(self, test):
         """
         called at stream-monitor stop-test.
         """
-        self.__in_test = False
+        pass
+
+    def handle_after_test(self, test):
+        """
+        called at stream-monitor after-test
+        """
+        self.__in_test = None
 
     def _add_matcher(self, matcher):
         """

@@ -1,27 +1,24 @@
-# Copyright 2016, EMC, Inc.
+'''
+Copyright 2017 Dell Inc. or its subsidiaries. All Rights Reserved.
 
-"""
-  Purpose:
+Purpose:
   This script will generate a list of discovered nodes and identifiers
   using the RackHD API calls.
-"""
+'''
 
-#pylint: disable=relative-import
 
 import fit_path  # NOQA: unused import
-import os
-import sys
-import subprocess
-import json
-import pprint
 from nosedep import depends
 import fit_common
 import test_api_utils
 
+fit_common.VERBOSITY = 1  # this is needed for suppressing debug messages to make reports readable
+
+
 class display_rackhd_node_list(fit_common.unittest.TestCase):
     def test_display_node_list(self):
         # This test displays a list of the nodes, type and name
-        mondata = fit_common.rackhdapi("/api/1.1/nodes")
+        mondata = fit_common.rackhdapi("/api/2.0/nodes")
         nodes = mondata['json']
         result = mondata['status']
         if result == 200:
@@ -39,16 +36,16 @@ class display_rackhd_node_list(fit_common.unittest.TestCase):
 
     @depends(after='test_display_node_list')
     def test_display_node_list_discovery_data(self):
-        # This test displays a list of the nodes along with 
-        # the associated BMC, RMM, and OBM settings for the discovered compute nodes 
-        mondata = fit_common.rackhdapi("/api/1.1/nodes")
+        # This test displays a list of the nodes along with
+        # the associated BMC, RMM, and OBM settings for the discovered compute nodes
+        mondata = fit_common.rackhdapi("/api/2.0/nodes")
         nodes = mondata['json']
         result = mondata['status']
 
         if result == 200:
-            #print "result" + str(result)
+            # print "result" + str(result)
             # Display node info
-            print "\nNumber of nodes found: "+str(len(nodes))+"\n"
+            print "\nNumber of nodes found: " + str(len(nodes)) + "\n"
             i = 0
             for node in nodes:
                 i += 1
@@ -76,7 +73,7 @@ class display_rackhd_node_list(fit_common.unittest.TestCase):
                     else:
                         print "Not associated with a monorail enclosure"
                     # try to get the BMC info from the catalog
-                    monurl = "/api/1.1/nodes/"+nn+"/catalogs/bmc"
+                    monurl = "/api/2.0/nodes/" + nn + "/catalogs/bmc"
                     mondata = fit_common.rackhdapi(monurl, action="get")
                     catalog = mondata['json']
                     bmcresult = mondata['status']
@@ -95,7 +92,7 @@ class display_rackhd_node_list(fit_common.unittest.TestCase):
                         print "\t" + catalog["data"]["IP Address"],
                         print "\t" + catalog["data"]["IP Address Source"],
                     # Get RMM info from the catalog, if present
-                    rmmurl = "/api/1.1/nodes/"+nn+"/catalogs/rmm"
+                    rmmurl = "/api/2.0/nodes/" + nn + "/catalogs/rmm"
                     rmmdata = fit_common.rackhdapi(rmmurl, action="get")
                     rmmcatalog = rmmdata['json']
                     rmmresult = rmmdata['status']
@@ -106,7 +103,7 @@ class display_rackhd_node_list(fit_common.unittest.TestCase):
                         print "\t" + rmmcatalog["data"].get("IP Address", "-"),
                         print "\t" + rmmcatalog["data"].get("IP Address Source", "-") + "\t",
 
-                    nodeurl = "/api/1.1/nodes/"+nn
+                    nodeurl = "/api/2.0/nodes/" + nn
                     nodedata = fit_common.rackhdapi(nodeurl, action="get")
                     nodeinfo = nodedata['json']
                     result = nodedata['status']
@@ -125,9 +122,10 @@ class display_rackhd_node_list(fit_common.unittest.TestCase):
                                 print "Invalid or empty OBM setting"
                             else:
                                 print obmhost,
-                                print "\t" + obmlist[0]["config"].get("user","Error: No User defined!")
+                                print "\t" + obmlist[0]["config"].get("user", "Error: No User defined!")
         else:
             print "Cannot get RackHD nodes from stack, http response code: ", result
+
 
 if __name__ == '__main__':
     fit_common.unittest.main()
