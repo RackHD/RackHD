@@ -138,5 +138,32 @@ class rackhd20_api_nodes(fit_common.unittest.TestCase):
             api_data = fit_common.rackhdapi("/api/2.0/nodes/" + nodeid + "/ssh")
             self.assertEqual(api_data['status'], 200, 'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
 
+    def test_api_20_nodes_readonly(self):
+        # TODO: will need to add a node to the list before checking for any...
+        nodelist = []
+        api_data = fit_common.rackhdapi('/api/2.0/nodes/readonly')
+        self.assertEqual(api_data['status'], 200, 'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
+        self.assertGreater(len(api_data['json']), 0, 'nodes error')
+
+        for mon_node in api_data['json']:
+            if mon_node['type'] != 'switch' and \
+               mon_node['type'] != 'mgmt' and \
+               mon_node['type'] != 'enclosure':
+                nodelist.append(mon_node)
+
+        # duplicate check
+        for nodenum in range(1, len(nodelist)):
+            # check node ID, name, identifiers(MACs)
+            for nodecheck in range(0, len(nodelist)):
+                if nodenum != nodecheck:
+                    self.assertNotEqual(nodelist[nodenum]['id'], nodelist[nodecheck]['id'],
+                                        "Duplicate node id " + nodelist[nodenum]['id'])
+                    self.assertNotEqual(nodelist[nodenum]['name'], nodelist[nodecheck]['name'],
+                                        "Duplicate node name " + nodelist[nodenum]['id'])
+                    self.assertNotEqual(nodelist[nodenum]['identifiers'],
+                                        nodelist[nodecheck]['identifiers'],
+                                        "Duplicate node identifiers " + nodelist[nodenum]['id'])
+
+
 if __name__ == '__main__':
     fit_common.unittest.main()
