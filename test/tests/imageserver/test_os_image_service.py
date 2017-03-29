@@ -107,10 +107,10 @@ class test_os_image_service(fit_common.unittest.TestCase):
                 file_size_dl += len(buffer)
                 f.write(buffer)
                 # logs dose not have ability to draw digital in original place. use print instead.
-                if fit_common.VERBOSITY >= 3:
+                if fit_common.VERBOSITY >= 9:
                     status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
-                    status = status + chr(8) * (len(status) + 1)
-                    print status, "\r"
+                    status = status + chr(8) * (len(status) + 1) + "\r"
+                    print status
             f.close()
         return file_name
 

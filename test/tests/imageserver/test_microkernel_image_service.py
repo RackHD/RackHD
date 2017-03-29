@@ -63,9 +63,11 @@ class static_microkernel_image_service(fit_common.unittest.TestCase):
                     break
                 file_size_dl += len(file_buffer)
                 f.write(file_buffer)
-                status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
-                status = status + chr(8) * (len(status) + 1)
-                print status, "\r"
+                # logs dose not have ability to draw digital in original place. use print instead.
+                if fit_common.VERBOSITY >= 9:
+                    status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
+                    status = status + chr(8) * (len(status) + 1) + "\r"
+                    print status
             f.close()
         return file_name
 
@@ -137,7 +139,7 @@ class static_microkernel_image_service(fit_common.unittest.TestCase):
                 file_name = self._download_file(microkernelrepo)
             self.assertNotEqual(self._upload_microkernel(file_name), "fail", "Upload microkernel failed!")
             microkernel_list.append(file_name)
-            fileurl = "http://" + serverip + ":"+file_port + "/common/" + file_name
+            fileurl = "http://" + serverip + ":" + file_port + "/common/" + file_name
             self.assertTrue(self._file_exists(fileurl), "The microkernel file url could not found!")
             logs.debug_3("microkernel_list=%s" % microkernel_list)
             self._release(file_name)
