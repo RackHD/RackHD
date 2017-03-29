@@ -16,7 +16,6 @@ import requests
 import fit_common
 import pexpect
 import unittest
-import test_api_utils
 from nose.plugins.attrib import attr
 logs = flogging.get_loggers()
 control_port = str(fit_common.fitcfg()["image_service"]["control_port"])
