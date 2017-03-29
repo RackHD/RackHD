@@ -110,7 +110,7 @@ class test_os_image_service(fit_common.unittest.TestCase):
                 if fit_common.VERBOSITY >= 9:
                     status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
                     status = status + chr(8) * (len(status) + 1) + "\r"
-                    print status
+                    print(status)
             f.close()
         return file_name
 
