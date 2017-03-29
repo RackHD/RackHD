@@ -10,22 +10,16 @@ This test focus on image service microkernel related functionality itself.
 import os
 import sys
 import urllib2
-import json
 import requests
 import flogging
+import pexpect
 import fit_common
 import unittest
 from nose.plugins.attrib import attr
 logs = flogging.get_loggers()
-
-try:
-    MICROKERNEL_CONFIG = json.loads(open(fit_common.CONFIG_PATH + "fileserver_config.json").read())
-except BaseException:
-    logs.debug_3(
-        "**** Global Config file: " + fit_common.CONFIG_PATH + "fileserver_config.json" +
-        " missing or corrupted! Exiting....")
-    sys.exit(255)
-test_microkernel_url = MICROKERNEL_CONFIG["microkernel"]
+control_port = str(fit_common.fitcfg()["image_service"]["control_port"])
+file_port = str(fit_common.fitcfg()["image_service"]["file_port"])
+test_microkernel_urls = fit_common.fitcfg()["image_service"]["microkernel"]
 
 
 @attr(all=True, regression=False, smoke=False)
@@ -42,6 +36,7 @@ class static_microkernel_image_service(fit_common.unittest.TestCase):
             if "imageserver" in arg:
                 serverip = arg.split("=")[1]
                 return serverip
+        return fit_common.fitcfg()["image_service"]["imageserver"]
 
     def _release(self, file_name):
         try:
@@ -70,7 +65,7 @@ class static_microkernel_image_service(fit_common.unittest.TestCase):
                 f.write(file_buffer)
                 status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
                 status = status + chr(8) * (len(status) + 1)
-                print status,
+                print status, "\r"
             f.close()
         return file_name
 
@@ -86,42 +81,63 @@ class static_microkernel_image_service(fit_common.unittest.TestCase):
         myfile = open(filename, 'rb')
         serverip = self._get_serverip()
         mon_url = '/microkernel?name=' + filename
-        response = fit_common.restful("http://" + serverip + ":7070" + mon_url, rest_action="binary-put",
+        response = fit_common.restful("http://" + serverip + ":" + control_port + mon_url, rest_action="binary-put",
                                       rest_payload=myfile)
         if response['status'] in range(200, 205):
             return response['json']
         else:
-            logs.debug_3('Incorrect HTTP return code, expected 201, got:' + str(response['status']))
+            logs.debug_3('Incorrect HTTP return code, expected 201-205, got:' + str(response['status']))
             return "fail"
 
     def _list_microkernel(self):
         mon_url = '/microkernel'
         serverip = self._get_serverip()
-        response = fit_common.restful("http://" + serverip + ":7070" + mon_url)
+        response = fit_common.restful("http://" + serverip + ":" + control_port + mon_url)
         if response['status'] in range(200, 205):
             return response['json']
         else:
-            logs.debug_3('Incorrect HTTP return code, expected 201, got:' + str(response['status']))
+            logs.debug_3('Incorrect HTTP return code, expected 201-205, got:' + str(response['status']))
             return "fail"
 
     def _delete_microkernel(self, filename):
         mon_url = '/microkernel?name=' + filename
         serverip = self._get_serverip()
-        response = fit_common.restful("http://" + serverip + ":7070" + mon_url, rest_action="delete")
+        response = fit_common.restful("http://" + serverip + ":" + control_port + mon_url, rest_action="delete")
         if response['status'] in range(200, 205):
             return response['json']
         else:
-            logs.debug_3('Incorrect HTTP return code, expected 201, got:' + str(response['status']))
+            logs.debug_3('Incorrect HTTP return code, expected 201-205, got:' + str(response['status']))
             return "fail"
+
+    def _scp_file(self, url):
+        file_name = url.split('/')[-1]
+        logs.debug_3("scp file %s from RackHD" % url)
+        if os.path.exists(file_name) is False:
+            path = url[6:]
+            rackhd_hostname = fit_common.fitargs()['rackhd_host']
+            scp_file = fit_common.fitcreds()['rackhd_host'][0]['username'] + '@{0}:{1}'.format(rackhd_hostname, path)
+            cmd = 'scp -o StrictHostKeyChecking=no {0} .'.format(scp_file)
+            logs.debug_3("scp command : '{0}'".format(cmd))
+            if fit_common.VERBOSITY >= 9:
+                logfile_redirect = sys.stdout
+            (command_output, ecode) = pexpect.run(
+                cmd, withexitstatus=1,
+                events={'(?i)assword: ': fit_common.fitcreds()['rackhd_host'][0]['password'] + '\n'},
+                logfile=logfile_redirect)
+            assert ecode == 0, 'failed "{0}" because {1}. Output={2}'.format(cmd, ecode, command_output)
+        return file_name
 
     def test_upload_list_microkernel(self):
         microkernel_list = []
         serverip = self._get_serverip()
-        for microkernelrepo in test_microkernel_url:
-            file_name = self._download_file(microkernelrepo)
+        for microkernelrepo in test_microkernel_urls:
+            if microkernelrepo[:3] == "scp":
+                file_name = self._scp_file(microkernelrepo)
+            else:
+                file_name = self._download_file(microkernelrepo)
             self.assertNotEqual(self._upload_microkernel(file_name), "fail", "Upload microkernel failed!")
             microkernel_list.append(file_name)
-            fileurl = "http://" + serverip + ":9090/common/" + file_name
+            fileurl = "http://" + serverip + ":"+file_port + "/common/" + file_name
             self.assertTrue(self._file_exists(fileurl), "The microkernel file url could not found!")
             logs.debug_3("microkernel_list=%s" % microkernel_list)
             self._release(file_name)
@@ -141,7 +157,7 @@ class static_microkernel_image_service(fit_common.unittest.TestCase):
         serverip = self._get_serverip()
         for microkernel in microkernel_list:
             self.assertNotEqual(self._delete_microkernel(microkernel["name"]), "fail", "delete image failed!")
-            fileurl = "http://" + serverip + ":9090/common/" + microkernel["name"]
+            fileurl = "http://" + serverip + ":" + file_port + "/common/" + microkernel["name"]
             self.assertFalse(self._file_exists(fileurl), "The kernel image does not deleted completely")
         microkernel_list_clear = self._list_microkernel()
         self.assertTrue(microkernel_list_clear == [])

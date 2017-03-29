@@ -13,21 +13,15 @@ import sys
 import time
 import flogging
 import random
-import json
 import fit_common
+import urllib2
 import pexpect
 import unittest
 import test_api_utils
 from nose.plugins.attrib import attr
 logs = flogging.get_loggers()
-
-try:
-    FILE_CONFIG = json.loads(open(fit_common.CONFIG_PATH + "fileserver_config.json").read())
-except BaseException:
-    logs.error(
-        "**** Global Config file: " + fit_common.CONFIG_PATH + "FILE_CONFIG.json" +
-        " missing or corrupted! Exiting....")
-    sys.exit(255)
+control_port = str(fit_common.fitcfg()["image_service"]["control_port"])
+file_port = str(fit_common.fitcfg()["image_service"]["file_port"])
 
 
 @attr(all=True, regression=False, smoke=False)
@@ -77,7 +71,7 @@ class test_image_service_system(fit_common.unittest.TestCase):
         response = fit_common.restful(
             "http://" +
             serverip +
-            ":7070" +
+            ":" + control_port +
             mon_url,
             rest_action="put",
             rest_payload={},
@@ -92,41 +86,41 @@ class test_image_service_system(fit_common.unittest.TestCase):
     def _list_os_image(self):
         mon_url = '/images'
         serverip = self._get_serverip()
-        response = fit_common.restful("http://" + serverip + ":7070" + mon_url)
+        response = fit_common.restful("http://" + serverip + ":" + control_port + mon_url)
         if response['status'] in range(200, 205):
             return response['json']
         else:
-            logs.error('Incorrect HTTP return code, expected 201, got:' + str(response['status']))
+            logs.error('Incorrect HTTP return code, expected 201-205, got:' + str(response['status']))
             return "fail"
 
     def _list_os_iso(self):
         mon_url = '/iso'
         serverip = self._get_serverip()
-        response = fit_common.restful("http://" + serverip + ":7070" + mon_url)
+        response = fit_common.restful("http://" + serverip + ":" + control_port + mon_url)
         if response['status'] in range(200, 205):
             return response['json']
         else:
-            logs.error('Incorrect HTTP return code, expected 201, got:' + str(response['status']))
+            logs.error('Incorrect HTTP return code, expected 201-205, got:' + str(response['status']))
             return "fail"
 
     def _delete_os_image(self, osname, osversion):
         mon_url = '/images?name=' + osname + '&version=' + osversion
         serverip = self._get_serverip()
-        response = fit_common.restful("http://" + serverip + ":7070" + mon_url, rest_action="delete")
+        response = fit_common.restful("http://" + serverip + ":" + control_port + mon_url, rest_action="delete")
         if response['status'] in range(200, 205):
             return response['json']
         else:
-            logs.error('Incorrect HTTP return code, expected 201, got:' + str(response['status']))
+            logs.error('Incorrect HTTP return code, expected 201-205, got:' + str(response['status']))
             return "fail"
 
     def _delete_os_iso(self, isoname):
         mon_url = '/iso?name=' + isoname
         serverip = self._get_serverip()
-        response = fit_common.restful("http://" + serverip + ":7070" + mon_url, rest_action="delete")
+        response = fit_common.restful("http://" + serverip + ":" + control_port + mon_url, rest_action="delete")
         if response['status'] in range(200, 205):
             return response['json']
         else:
-            logs.error('Incorrect HTTP return code, expected 201, got:' + str(response['status']))
+            logs.error('Incorrect HTTP return code, expected 201-205, got:' + str(response['status']))
             return "fail"
 
     def _wait_for_task_complete(self, taskid, retries=60):
@@ -145,12 +139,12 @@ class test_image_service_system(fit_common.unittest.TestCase):
 
     def _get_tester_ip(self):
         serverip = self._get_serverip()
-        monip = FILE_CONFIG["rackhd_control_ip"]
+        monip = fit_common.fitcfg()["rackhd-config"]["apiServerAddress"]
         cmd = "ping -R -c 1 " + monip + ""
         (command_output, exitstatus) = pexpect.run(
-            "ssh -q -o StrictHostKeyChecking=no -t " + FILE_CONFIG['usr'] + "@" + serverip +
+            "ssh -q -o StrictHostKeyChecking=no -t " + fit_common.fitcfg()["image_service"]['usr'] + "@" + serverip +
             " sudo bash -c \\\"" + cmd + "\\\"", withexitstatus=1,
-            events={"assword": FILE_CONFIG['pwd'] + "\n"}, timeout=300)
+            events={"assword": fit_common.fitcfg()["image_service"]['pwd'] + "\n"}, timeout=300)
         uud = command_output.split("\t")
         myip = uud[1].split("\r\n")[0]
         logs.debug('My IP address is: ' + myip)
@@ -158,7 +152,7 @@ class test_image_service_system(fit_common.unittest.TestCase):
 
     def _create_esxi_repo(self):
         logs.debug("create a ESXi repo")
-        for osrepo in FILE_CONFIG["os_image"]:
+        for osrepo in fit_common.fitcfg()["image_service"]["os_image"]:
             if osrepo["osname"] == "ESXi" and osrepo["version"] == "6.0":
                 os_name = osrepo["osname"]
                 os_version = osrepo["version"]
@@ -172,7 +166,8 @@ class test_image_service_system(fit_common.unittest.TestCase):
         for image_repo in os_image_list:
             self.assertNotEqual(
                 self._delete_os_image(image_repo["name"], image_repo["version"]), "fail", "delete image failed!")
-            fileurlprefix = "http://" + serverip + ":9090/" + image_repo["name"] + '/' + image_repo["version"] + '/'
+            fileurlprefix = "http://" + serverip + ":" + control_port + "/" + \
+                            image_repo["name"] + '/' + image_repo["version"] + '/'
             self.assertFalse(self._file_exists(fileurlprefix), "The repo url does not deleted completely")
         os_image_list_clear = self._list_os_image()
         self.assertTrue(os_image_list_clear == [])
@@ -187,7 +182,7 @@ class test_image_service_system(fit_common.unittest.TestCase):
         myfile = open(filename, 'rb')
         serverip = self._get_serverip()
         mon_url = '/microkernel?name=' + filename
-        response = fit_common.restful("http://" + serverip + ":7070" + mon_url, rest_action="binary-put",
+        response = fit_common.restful("http://" + serverip + ":" + control_port + mon_url, rest_action="binary-put",
                                       rest_payload=myfile)
         if response['status'] in range(200, 205):
             return response['json']
@@ -198,26 +193,70 @@ class test_image_service_system(fit_common.unittest.TestCase):
     def _list_microkernel(self):
         mon_url = '/microkernel'
         serverip = self._get_serverip()
-        response = fit_common.restful("http://" + serverip + ":7070" + mon_url)
+        response = fit_common.restful("http://" + serverip + ":" + control_port + mon_url)
         if response['status'] in range(200, 205):
             return response['json']
         else:
-            logs.debug_3('Incorrect HTTP return code, expected 201, got:' + str(response['status']))
+            logs.debug_3('Incorrect HTTP return code, expected 201-205, got:' + str(response['status']))
             return "fail"
 
     def _delete_microkernel(self, filename):
         mon_url = '/microkernel?name=' + filename
         serverip = self._get_serverip()
-        response = fit_common.restful("http://" + serverip + ":7070" + mon_url, rest_action="delete")
+        response = fit_common.restful("http://" + serverip + ":" + control_port + mon_url, rest_action="delete")
         if response['status'] in range(200, 205):
             return response['json']
         else:
-            logs.debug_3('Incorrect HTTP return code, expected 201, got:' + str(response['status']))
+            logs.debug_3('Incorrect HTTP return code, expected 201-205, got:' + str(response['status']))
             return "fail"
 
+    def _scp_file(self, url):
+        file_name = url.split('/')[-1]
+        logs.debug_3("scp file %s from RackHD" % url)
+        if os.path.exists(file_name) is False:
+            path = url[6:]
+            rackhd_hostname = fit_common.fitargs()['rackhd_host']
+            scp_file = fit_common.fitcreds()['rackhd_host'][0]['username'] + '@{0}:{1}'.format(rackhd_hostname, path)
+            cmd = 'scp -o StrictHostKeyChecking=no {0} .'.format(scp_file)
+            logs.debug_3("scp command : '{0}'".format(cmd))
+            if fit_common.VERBOSITY >= 9:
+                logfile_redirect = sys.stdout
+            (command_output, ecode) = pexpect.run(
+                cmd, withexitstatus=1,
+                events={'(?i)assword: ': fit_common.fitcreds()['rackhd_host'][0]['password'] + '\n'},
+                logfile=logfile_redirect)
+            assert ecode == 0, 'failed "{0}" because {1}. Output={2}'.format(cmd, ecode, command_output)
+        return file_name
+
+    def _download_file(self, url):
+        logs.debug_3("downloading url=%s" % url)
+        file_name = url.split('/')[-1]
+        if os.path.exists(file_name) is False:
+            u = urllib2.urlopen(url)
+            f = open(file_name, 'wb')
+            meta = u.info()
+            file_size = int(meta.getheaders("Content-Length")[0])
+            logs.debug_3("Downloading: %s Bytes: %s" % (file_name, file_size))
+            file_size_dl = 0
+            block_sz = 8192
+            while True:
+                file_buffer = u.read(block_sz)
+                if not file_buffer:
+                    break
+                file_size_dl += len(file_buffer)
+                f.write(file_buffer)
+                status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
+                status = status + chr(8) * (len(status) + 1)
+                print status, "\r"
+            f.close()
+        return file_name
+
     def _upload_all_microkernels(self):
-        for microkernelrepo in FILE_CONFIG["microkernel"]:
-            file_name = self._download_file(microkernelrepo)
+        for microkernelrepo in fit_common.fitcfg()["image_service"]["microkernel"]:
+            if microkernelrepo[:3] == "scp":
+                file_name = self._scp_file(microkernelrepo)
+            else:
+                file_name = self._download_file(microkernelrepo)
             self._upload_microkernel(file_name)
             self._release(file_name)
 
@@ -237,12 +276,29 @@ class test_image_service_system(fit_common.unittest.TestCase):
         self.assertTrue(microkernel_list_clear == [])
         logs.debug_3("All microkernels are cleared!")
 
+    def _wait_for_discover(self, node_uuid):
+        for dummy in range(0, 30):
+            fit_common.time.sleep(30)
+            rest_data = fit_common.rackhdapi('/redfish/v1/Systems/')
+            if rest_data['json']['Members@odata.count'] == 0:
+                continue
+            node_collection = rest_data['json']['Members']
+            for computenode in node_collection:
+                nodeidurl = computenode['@odata.id']
+                api_data = fit_common.rackhdapi(nodeidurl)
+                if api_data['status'] > 399:
+                    break
+                if node_uuid == api_data['json']['UUID']:
+                    return True
+        logs.error("Timeout in rediscovery!")
+        return False
+
     def test_bootstrapping_ext_esxi6(self):
         self._create_esxi_repo()
         node_collection = test_api_utils.get_node_list_by_type("compute")
         node = ""
         fileserver_ip = self._get_tester_ip()
-        repourl = "http://" + fileserver_ip + ':9090/' + 'ESXi' + '/' + '6.0' + '/'
+        repourl = "http://" + fileserver_ip + ':' + file_port + '/ESXi' + '/' + '6.0' + '/'
         # Select one node at random
         for dummy in node_collection:
             node = node_collection[random.randint(0, len(node_collection) - 1)]
@@ -263,14 +319,7 @@ class test_image_service_system(fit_common.unittest.TestCase):
                             "version": "6.0",
                             "repo": repourl,
                             "rootPassword": "1234567",
-                            "hostname": nodehostname,
-                            "domain": "hwimo.lab.emc.com",
-                            "dnsServers": ["172.31.128.1"],
-                            "users": [{
-                                "name": "onrack",
-                                "password": "111111",
-                                "uid": 1010,
-                            }]
+                            "hostname": nodehostname
                         }}}
         result = fit_common.rackhdapi(
             '/api/2.0/nodes/' + node + '/workflows?name=Graph.InstallEsxi', action='post', payload=payload_data)
@@ -292,9 +341,16 @@ class test_image_service_system(fit_common.unittest.TestCase):
         logs.debug_3('Checking OBM setting...')
         node_obm = fit_common.rackhdapi('/api/2.0/nodes/' + node)['json']['obms']
         if node_obm == []:
-            self.assertTrue(self._apply_obmsetting(node), "Fail to apply obm setting!")
+            self.assertTrue(self._apply_obmsetting_to_node(node), "Fail to apply obm setting!")
         node_uuid = fit_common.rackhdapi('/redfish/v1/Systems/' + node)['json']['UUID']
         logs.debug_3('UUID of selected Node is:' + node_uuid)
+        # Cancel all active workflow on target node
+        fit_common.rackhdapi(
+            '/api/2.0/nodes/' + node + '/workflows/action', action='put',
+            payload={
+                "command": "cancel",
+                "options": {}
+            })
         logs.debug_3('Running rediscover, resetting system node...')
         # Reboot the node to begin rediscover.
         resetresponse = fit_common.rackhdapi(
@@ -303,8 +359,8 @@ class test_image_service_system(fit_common.unittest.TestCase):
         self.assertTrue(resetresponse['status'] < 209,
                         'Incorrect HTTP return code, expected <209 , got:' + str(resetresponse['status']))
         # Delete original node
-        for dummy in range(0, 20):
-            time.sleep(1)
+        for dummy in range(0, 30):
+            time.sleep(2)
             result = fit_common.rackhdapi('/api/2.0/nodes/' + node, action='delete')
             if result['status'] < 209:
                 break

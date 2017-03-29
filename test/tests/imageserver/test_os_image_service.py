@@ -10,28 +10,17 @@ You need put an config file in the /config directory
 '''
 
 import os
-import sys
 import urllib2
 import flogging
 import requests
-import json
 import fit_common
 import pexpect
 import unittest
 import test_api_utils
 from nose.plugins.attrib import attr
 logs = flogging.get_loggers()
-
-
-try:
-    FILE_CONFIG = json.loads(open(fit_common.CONFIG_PATH + "fileserver_config.json").read())
-except BaseException:
-    logs.error(
-        "**** Global Config file: " +
-        fit_common.CONFIG_PATH +
-        "FILE_CONFIG.json" +
-        " missing or corrupted! Exiting....")
-    sys.exit(255)
+control_port = str(fit_common.fitcfg()["image_service"]["control_port"])
+file_port = str(fit_common.fitcfg()["image_service"]["file_port"])
 
 
 @attr(all=True, regression=False, smoke=False)
@@ -45,6 +34,7 @@ class test_os_image_service(fit_common.unittest.TestCase):
             if "imageserver" in arg:
                 serverip = arg.split("=")[1]
                 return serverip
+        return fit_common.fitcfg()["image_service"]["imageserver"]
 
     def _mount_local_os_repo(self, file_name, mountpoint):
         try:
@@ -120,7 +110,7 @@ class test_os_image_service(fit_common.unittest.TestCase):
                 if fit_common.VERBOSITY >= 3:
                     status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
                     status = status + chr(8) * (len(status) + 1)
-                    print status,
+                    print status, "\r"
             f.close()
         return file_name
 
@@ -139,8 +129,8 @@ class test_os_image_service(fit_common.unittest.TestCase):
         logs.debug_3("entering ..." + walkpath)
         os_name = walkpath
         serverip = self._get_serverip()
-        fileurlprefix = "http://" + serverip + ":9090/" + os_name + '/' + os_version
-        filetocompare = FILE_CONFIG["filetocompare"]
+        fileurlprefix = "http://" + serverip + ":" + file_port + "/" + os_name + '/' + os_version
+        filetocompare = fit_common.fitcfg()["image_service"]["filetocompare"]
         i = 0
         for path, dirs, files in os.walk("./" + walkpath):
             logs.debug_3(path)
@@ -163,12 +153,12 @@ class test_os_image_service(fit_common.unittest.TestCase):
         mon_url = '/images?name=' + osname + '&version=' + osversion + '&isoclient=' + filename
         myfile = open(filename, 'rb')
         response = fit_common.restful(
-            "http://" + serverip + ":7070" + mon_url, rest_action="binary-put", rest_payload=myfile,
+            "http://" + serverip + ":" + control_port + mon_url, rest_action="binary-put", rest_payload=myfile,
             rest_timeout=None, rest_headers={})
         if response['status'] in range(200, 205):
             return response['json']
         else:
-            logs.error('Incorrect HTTP return code, expected 201, got:' + str(response['status']))
+            logs.error('Incorrect HTTP return code, expected 201-205, got:' + str(response['status']))
             return "fail"
 
     def _upload_iso_file_to_store(self, filename):
@@ -176,10 +166,7 @@ class test_os_image_service(fit_common.unittest.TestCase):
         mon_url = '/iso?name=' + filename
         file = open(filename, 'rb')
         response = fit_common.restful(
-            "http://" +
-            serverip +
-            ":7070" +
-            mon_url,
+            "http://" + serverip + ":" + control_port + mon_url,
             rest_action="binary-put",
             rest_payload=file,
             rest_timeout=None,
@@ -187,17 +174,14 @@ class test_os_image_service(fit_common.unittest.TestCase):
         if response['status'] in range(200, 205):
             return response['json']
         else:
-            logs.error('Incorrect HTTP return code, expected 201, got:' + str(response['status']))
+            logs.error('Incorrect HTTP return code, expected 201-205, got:' + str(response['status']))
             return "fail"
 
     def _upload_os_by_network(self, osname, osversion, source_url):
         mon_url = '/images?name=' + osname + '&version=' + osversion + '&isoweb=' + source_url
         serverip = self._get_serverip()
         response = fit_common.restful(
-            "http://" +
-            serverip +
-            ":7070" +
-            mon_url,
+            "http://" + serverip + ":" + control_port + mon_url,
             rest_action="put",
             rest_payload={},
             rest_timeout=None,
@@ -205,71 +189,71 @@ class test_os_image_service(fit_common.unittest.TestCase):
         if response['status'] in range(200, 205):
             return response['json']
         else:
-            logs.error('Incorrect HTTP return code, expected 201, got:' + str(response['status']))
+            logs.error('Incorrect HTTP return code, expected 201-205, got:' + str(response['status']))
             return "fail"
 
     def _upload_os_by_store(self, osname, osversion, filename):
         mon_url = '/images?name=' + osname + '&version=' + osversion + '&isostore=' + filename
         serverip = self._get_serverip()
         response = fit_common.restful(
-            "http://" + serverip + ":7070" + mon_url, rest_action="put", rest_payload={}, rest_timeout=None,
+            "http://" + serverip + ":" + control_port + mon_url, rest_action="put", rest_payload={}, rest_timeout=None,
             rest_headers={})
         if response['status'] in range(200, 205):
             return response['json']
         else:
-            logs.error('Incorrect HTTP return code, expected 201, got:' + str(response['status']))
+            logs.error('Incorrect HTTP return code, expected 201-205, got:' + str(response['status']))
             return "fail"
 
     def _upload_os_from_local(self, osname, osversion, path):
         mon_url = '/images?name=' + osname + '&version=' + osversion + '&isolocal=' + path
         serverip = self._get_serverip()
         response = fit_common.restful(
-            "http://" + serverip + ":7070" + mon_url, rest_action="put", rest_payload={}, rest_timeout=None,
+            "http://" + serverip + ":" + control_port + mon_url, rest_action="put", rest_payload={}, rest_timeout=None,
             rest_headers={})
         if response['status'] in range(200, 205):
             return response['json']
         else:
-            logs.error('Incorrect HTTP return code, expected 201, got:' + str(response['status']))
+            logs.error('Incorrect HTTP return code, expected 201-205, got:' + str(response['status']))
             return "fail"
 
     def _list_os_image(self):
         mon_url = '/images'
         serverip = self._get_serverip()
-        response = fit_common.restful("http://" + serverip + ":7070" + mon_url)
+        response = fit_common.restful("http://" + serverip + ":" + control_port + mon_url)
         if response['status'] in range(200, 205):
             return response['json']
         else:
-            logs.error('Incorrect HTTP return code, expected 201, got:' + str(response['status']))
+            logs.error('Incorrect HTTP return code, expected 201-205, got:' + str(response['status']))
             return "fail"
 
     def _list_os_iso(self):
         mon_url = '/iso'
         serverip = self._get_serverip()
-        response = fit_common.restful("http://" + serverip + ":7070" + mon_url)
+        response = fit_common.restful("http://" + serverip + ":" + control_port + mon_url)
         if response['status'] in range(200, 205):
             return response['json']
         else:
-            logs.error('Incorrect HTTP return code, expected 201, got:' + str(response['status']))
+            logs.error('Incorrect HTTP return code, expected 201-205, got:' + str(response['status']))
             return "fail"
 
     def _delete_os_image(self, osname, osversion):
         mon_url = '/images?name=' + osname + '&version=' + osversion
         serverip = self._get_serverip()
-        response = fit_common.restful("http://" + serverip + ":7070" + mon_url, rest_action="delete")
+        response = fit_common.restful("http://" + serverip + ":" + control_port + mon_url, rest_action="delete")
         if response['status'] in range(200, 205):
             return response['json']
         else:
-            logs.error('Incorrect HTTP return code, expected 201, got:' + str(response['status']))
+            logs.error('Incorrect HTTP return code, expected 201-205, got:' + str(response['status']))
             return "fail"
 
     def _delete_os_iso(self, isoname):
         mon_url = '/iso?name=' + isoname
         serverip = self._get_serverip()
-        response = fit_common.restful("http://" + serverip + ":7070" + mon_url, rest_action="delete")
+        response = fit_common.restful("http://" + serverip + ":" + control_port + mon_url, rest_action="delete")
         if response['status'] in range(200, 205):
             return response['json']
         else:
-            logs.error('Incorrect HTTP return code, expected 201, got:' + str(response['status']))
+            logs.error('Incorrect HTTP return code, expected 201-205, got:' + str(response['status']))
             return "fail"
 
     def _wait_for_task_complete(self, taskid, retries=60):
@@ -288,19 +272,19 @@ class test_os_image_service(fit_common.unittest.TestCase):
 
     def _get_tester_ip(self):
         serverip = self._get_serverip()
-        monip = FILE_CONFIG["rackhd_control_ip"]
+        monip = fit_common.fitcfg()["rackhd-config"]["apiServerAddress"]
         cmd = "ping -R -c 1 " + monip + ""
         (command_output, exitstatus) = pexpect.run(
-            "ssh -q -o StrictHostKeyChecking=no -t " + FILE_CONFIG['usr'] + "@" + serverip +
+            "ssh -q -o StrictHostKeyChecking=no -t " + fit_common.fitcfg()["image_service"]['usr'] + "@" + serverip +
             " sudo bash -c \\\"" + cmd + "\\\"", withexitstatus=1,
-            events={"assword": FILE_CONFIG['pwd'] + "\n"}, timeout=300)
+            events={"assword": fit_common.fitcfg()["image_service"]['pwd'] + "\n"}, timeout=300)
         uud = command_output.split("\t")
         myip = uud[1].split("\r\n")[0]
         logs.debug('My IP address is: ' + myip)
         return myip
 
     def test_create_os_repo_from_iso_upload(self):
-        for osrepo in FILE_CONFIG["os_image"]:
+        for osrepo in fit_common.fitcfg()["image_service"]["os_image"]:
             file_name = self._download_file(osrepo["url"])
             self.assertNotEqual(
                 self._upload_iso_file(osrepo["osname"], osrepo["version"], file_name), "fail", "upload image failed!")
@@ -310,7 +294,7 @@ class test_os_image_service(fit_common.unittest.TestCase):
         self.test_delete_all_images()
 
     def test_create_os_repo_from_http(self):
-        for osrepo in FILE_CONFIG["os_image"]:
+        for osrepo in fit_common.fitcfg()["image_service"]["os_image"]:
             if osrepo["linktype"] == "http":
                 os_name = osrepo["osname"]
                 os_version = osrepo["version"]
@@ -324,7 +308,7 @@ class test_os_image_service(fit_common.unittest.TestCase):
         self.test_delete_all_images()
 
     def test_create_os_repo_from_ftp(self):
-        for osrepo in FILE_CONFIG["os_image"]:
+        for osrepo in fit_common.fitcfg()["image_service"]["os_image"]:
             if osrepo["linktype"] == "ftp":
                 os_name = osrepo["osname"]
                 os_version = osrepo["version"]
@@ -338,7 +322,7 @@ class test_os_image_service(fit_common.unittest.TestCase):
         self.test_delete_all_images()
 
     def test_create_os_repo_from_store(self):
-        for osrepo in FILE_CONFIG["os_image"]:
+        for osrepo in fit_common.fitcfg()["image_service"]["os_image"]:
             os_name = osrepo["osname"]
             os_version = osrepo["version"]
             iso_url = osrepo["url"]
@@ -352,15 +336,16 @@ class test_os_image_service(fit_common.unittest.TestCase):
         self.test_delete_all_images()
 
     def test_create_os_repo_from_local(self):
-        for osrepo in FILE_CONFIG["os_image"]:
+        for osrepo in fit_common.fitcfg()["image_service"]["os_image"]:
             os_name = osrepo["osname"]
             os_version = osrepo["version"]
             iso_url = osrepo["url"]
             servercmd = "wget " + osrepo["url"]
             serverip = self._get_serverip()
             fit_common.remote_shell(
-                shell_cmd=servercmd, address=serverip, user=FILE_CONFIG['usr'], password=FILE_CONFIG['pwd'])
-            path = "/home/" + FILE_CONFIG['usr']
+                shell_cmd=servercmd, address=serverip, user=fit_common.fitcfg()["image_service"]['usr'],
+                password=fit_common.fitcfg()["image_service"]['pwd'])
+            path = "/home/" + fit_common.fitcfg()["image_service"]['usr']
             file_name = self._download_file(iso_url)
             self.assertNotEqual(
                 self._upload_os_from_local(os_name, os_version, path + '/' + file_name), "fail", "upload image failed!")
@@ -371,7 +356,7 @@ class test_os_image_service(fit_common.unittest.TestCase):
 
     def test_list_images(self):
         os_id_list = []
-        for osrepo in FILE_CONFIG["os_image"]:
+        for osrepo in fit_common.fitcfg()["image_service"]["os_image"]:
             os_name = osrepo["osname"]
             os_version = osrepo["version"]
             response = self._upload_os_by_network(os_name, os_version, osrepo["url"])
@@ -395,7 +380,8 @@ class test_os_image_service(fit_common.unittest.TestCase):
         for image_repo in os_image_list:
             self.assertNotEqual(
                 self._delete_os_image(image_repo["name"], image_repo["version"]), "fail", "delete image failed!")
-            fileurlprefix = "http://" + serverip + ":9090/" + image_repo["name"] + '/' + image_repo["version"] + '/'
+            fileurlprefix = "http://" + serverip + ":" + file_port + "/" + image_repo["name"] + '/' + \
+                            image_repo["version"] + '/'
             self.assertFalse(self._file_exists(fileurlprefix), "The repo url does not deleted completely")
         os_image_list_clear = self._list_os_image()
         self.assertTrue(os_image_list_clear == [])
