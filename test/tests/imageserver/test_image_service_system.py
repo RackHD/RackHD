@@ -20,8 +20,6 @@ import unittest
 import test_api_utils
 from nose.plugins.attrib import attr
 logs = flogging.get_loggers()
-control_port = str(fit_common.fitcfg()["image_service"]["control_port"])
-file_port = str(fit_common.fitcfg()["image_service"]["file_port"])
 
 
 @attr(all=False, regression=False, smoke=False)
@@ -68,6 +66,7 @@ class test_image_service_system(fit_common.unittest.TestCase):
     def _upload_os_by_network(self, osname, osversion, source_url):
         mon_url = '/images?name=' + osname + '&version=' + osversion + '&isoweb=' + source_url
         serverip = self._get_serverip()
+        control_port = str(fit_common.fitcfg()["image_service"]["control_port"])
         response = fit_common.restful(
             "http://" +
             serverip +
@@ -86,6 +85,7 @@ class test_image_service_system(fit_common.unittest.TestCase):
     def _list_os_image(self):
         mon_url = '/images'
         serverip = self._get_serverip()
+        control_port = str(fit_common.fitcfg()["image_service"]["control_port"])
         response = fit_common.restful("http://" + serverip + ":" + control_port + mon_url)
         if response['status'] in range(200, 205):
             return response['json']
@@ -96,6 +96,7 @@ class test_image_service_system(fit_common.unittest.TestCase):
     def _list_os_iso(self):
         mon_url = '/iso'
         serverip = self._get_serverip()
+        control_port = str(fit_common.fitcfg()["image_service"]["control_port"])
         response = fit_common.restful("http://" + serverip + ":" + control_port + mon_url)
         if response['status'] in range(200, 205):
             return response['json']
@@ -106,6 +107,7 @@ class test_image_service_system(fit_common.unittest.TestCase):
     def _delete_os_image(self, osname, osversion):
         mon_url = '/images?name=' + osname + '&version=' + osversion
         serverip = self._get_serverip()
+        control_port = str(fit_common.fitcfg()["image_service"]["control_port"])
         response = fit_common.restful("http://" + serverip + ":" + control_port + mon_url, rest_action="delete")
         if response['status'] in range(200, 205):
             return response['json']
@@ -116,6 +118,7 @@ class test_image_service_system(fit_common.unittest.TestCase):
     def _delete_os_iso(self, isoname):
         mon_url = '/iso?name=' + isoname
         serverip = self._get_serverip()
+        control_port = str(fit_common.fitcfg()["image_service"]["control_port"])
         response = fit_common.restful("http://" + serverip + ":" + control_port + mon_url, rest_action="delete")
         if response['status'] in range(200, 205):
             return response['json']
@@ -166,6 +169,7 @@ class test_image_service_system(fit_common.unittest.TestCase):
         for image_repo in os_image_list:
             self.assertNotEqual(
                 self._delete_os_image(image_repo["name"], image_repo["version"]), "fail", "delete image failed!")
+            control_port = str(fit_common.fitcfg()["image_service"]["control_port"])
             fileurlprefix = "http://" + serverip + ":" + control_port + "/" + \
                             image_repo["name"] + '/' + image_repo["version"] + '/'
             self.assertFalse(self._file_exists(fileurlprefix), "The repo url does not deleted completely")
@@ -182,6 +186,7 @@ class test_image_service_system(fit_common.unittest.TestCase):
         myfile = open(filename, 'rb')
         serverip = self._get_serverip()
         mon_url = '/microkernel?name=' + filename
+        control_port = str(fit_common.fitcfg()["image_service"]["control_port"])
         response = fit_common.restful("http://" + serverip + ":" + control_port + mon_url, rest_action="binary-put",
                                       rest_payload=myfile)
         if response['status'] in range(200, 205):
@@ -193,6 +198,7 @@ class test_image_service_system(fit_common.unittest.TestCase):
     def _list_microkernel(self):
         mon_url = '/microkernel'
         serverip = self._get_serverip()
+        control_port = str(fit_common.fitcfg()["image_service"]["control_port"])
         response = fit_common.restful("http://" + serverip + ":" + control_port + mon_url)
         if response['status'] in range(200, 205):
             return response['json']
@@ -203,6 +209,7 @@ class test_image_service_system(fit_common.unittest.TestCase):
     def _delete_microkernel(self, filename):
         mon_url = '/microkernel?name=' + filename
         serverip = self._get_serverip()
+        control_port = str(fit_common.fitcfg()["image_service"]["control_port"])
         response = fit_common.restful("http://" + serverip + ":" + control_port + mon_url, rest_action="delete")
         if response['status'] in range(200, 205):
             return response['json']
@@ -300,6 +307,7 @@ class test_image_service_system(fit_common.unittest.TestCase):
         node_collection = test_api_utils.get_node_list_by_type("compute")
         node = ""
         fileserver_ip = self._get_tester_ip()
+        file_port = str(fit_common.fitcfg()["image_service"]["file_port"])
         repourl = "http://" + fileserver_ip + ':' + file_port + '/ESXi' + '/' + '6.0' + '/'
         # Select one node at random
         for dummy in node_collection:

@@ -18,8 +18,6 @@ import pexpect
 import unittest
 from nose.plugins.attrib import attr
 logs = flogging.get_loggers()
-control_port = str(fit_common.fitcfg()["image_service"]["control_port"])
-file_port = str(fit_common.fitcfg()["image_service"]["file_port"])
 
 
 @attr(all=False, regression=False, smoke=False)
@@ -128,6 +126,7 @@ class test_os_image_service(fit_common.unittest.TestCase):
         logs.debug_3("entering ..." + walkpath)
         os_name = walkpath
         serverip = self._get_serverip()
+        file_port = str(fit_common.fitcfg()["image_service"]["file_port"])
         fileurlprefix = "http://" + serverip + ":" + file_port + "/" + os_name + '/' + os_version
         filetocompare = fit_common.fitcfg()["image_service"]["filetocompare"]
         i = 0
@@ -151,6 +150,7 @@ class test_os_image_service(fit_common.unittest.TestCase):
         serverip = self._get_serverip()
         mon_url = '/images?name=' + osname + '&version=' + osversion + '&isoclient=' + filename
         myfile = open(filename, 'rb')
+        control_port = str(fit_common.fitcfg()["image_service"]["control_port"])
         response = fit_common.restful(
             "http://" + serverip + ":" + control_port + mon_url, rest_action="binary-put", rest_payload=myfile,
             rest_timeout=None, rest_headers={})
@@ -164,6 +164,7 @@ class test_os_image_service(fit_common.unittest.TestCase):
         serverip = self._get_serverip()
         mon_url = '/iso?name=' + filename
         file = open(filename, 'rb')
+        control_port = str(fit_common.fitcfg()["image_service"]["control_port"])
         response = fit_common.restful(
             "http://" + serverip + ":" + control_port + mon_url,
             rest_action="binary-put",
@@ -179,6 +180,7 @@ class test_os_image_service(fit_common.unittest.TestCase):
     def _upload_os_by_network(self, osname, osversion, source_url):
         mon_url = '/images?name=' + osname + '&version=' + osversion + '&isoweb=' + source_url
         serverip = self._get_serverip()
+        control_port = str(fit_common.fitcfg()["image_service"]["control_port"])
         response = fit_common.restful(
             "http://" + serverip + ":" + control_port + mon_url,
             rest_action="put",
@@ -194,6 +196,7 @@ class test_os_image_service(fit_common.unittest.TestCase):
     def _upload_os_by_store(self, osname, osversion, filename):
         mon_url = '/images?name=' + osname + '&version=' + osversion + '&isostore=' + filename
         serverip = self._get_serverip()
+        control_port = str(fit_common.fitcfg()["image_service"]["control_port"])
         response = fit_common.restful(
             "http://" + serverip + ":" + control_port + mon_url, rest_action="put", rest_payload={}, rest_timeout=None,
             rest_headers={})
@@ -206,6 +209,7 @@ class test_os_image_service(fit_common.unittest.TestCase):
     def _upload_os_from_local(self, osname, osversion, path):
         mon_url = '/images?name=' + osname + '&version=' + osversion + '&isolocal=' + path
         serverip = self._get_serverip()
+        control_port = str(fit_common.fitcfg()["image_service"]["control_port"])
         response = fit_common.restful(
             "http://" + serverip + ":" + control_port + mon_url, rest_action="put", rest_payload={}, rest_timeout=None,
             rest_headers={})
@@ -218,6 +222,7 @@ class test_os_image_service(fit_common.unittest.TestCase):
     def _list_os_image(self):
         mon_url = '/images'
         serverip = self._get_serverip()
+        control_port = str(fit_common.fitcfg()["image_service"]["control_port"])
         response = fit_common.restful("http://" + serverip + ":" + control_port + mon_url)
         if response['status'] in range(200, 205):
             return response['json']
@@ -228,6 +233,7 @@ class test_os_image_service(fit_common.unittest.TestCase):
     def _list_os_iso(self):
         mon_url = '/iso'
         serverip = self._get_serverip()
+        control_port = str(fit_common.fitcfg()["image_service"]["control_port"])
         response = fit_common.restful("http://" + serverip + ":" + control_port + mon_url)
         if response['status'] in range(200, 205):
             return response['json']
@@ -238,6 +244,7 @@ class test_os_image_service(fit_common.unittest.TestCase):
     def _delete_os_image(self, osname, osversion):
         mon_url = '/images?name=' + osname + '&version=' + osversion
         serverip = self._get_serverip()
+        control_port = str(fit_common.fitcfg()["image_service"]["control_port"])
         response = fit_common.restful("http://" + serverip + ":" + control_port + mon_url, rest_action="delete")
         if response['status'] in range(200, 205):
             return response['json']
@@ -248,6 +255,7 @@ class test_os_image_service(fit_common.unittest.TestCase):
     def _delete_os_iso(self, isoname):
         mon_url = '/iso?name=' + isoname
         serverip = self._get_serverip()
+        control_port = str(fit_common.fitcfg()["image_service"]["control_port"])
         response = fit_common.restful("http://" + serverip + ":" + control_port + mon_url, rest_action="delete")
         if response['status'] in range(200, 205):
             return response['json']
@@ -379,6 +387,7 @@ class test_os_image_service(fit_common.unittest.TestCase):
         for image_repo in os_image_list:
             self.assertNotEqual(
                 self._delete_os_image(image_repo["name"], image_repo["version"]), "fail", "delete image failed!")
+            file_port = str(fit_common.fitcfg()["image_service"]["file_port"])
             fileurlprefix = "http://" + serverip + ":" + file_port + "/" + image_repo["name"] + '/' + \
                             image_repo["version"] + '/'
             self.assertFalse(self._file_exists(fileurlprefix), "The repo url does not deleted completely")

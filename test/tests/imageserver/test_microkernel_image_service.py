@@ -17,9 +17,6 @@ import fit_common
 import unittest
 from nose.plugins.attrib import attr
 logs = flogging.get_loggers()
-control_port = str(fit_common.fitcfg()["image_service"]["control_port"])
-file_port = str(fit_common.fitcfg()["image_service"]["file_port"])
-test_microkernel_urls = fit_common.fitcfg()["image_service"]["microkernel"]
 
 
 @attr(all=False, regression=False, smoke=False)
@@ -83,6 +80,7 @@ class static_microkernel_image_service(fit_common.unittest.TestCase):
         myfile = open(filename, 'rb')
         serverip = self._get_serverip()
         mon_url = '/microkernel?name=' + filename
+        control_port = str(fit_common.fitcfg()["image_service"]["control_port"])
         response = fit_common.restful("http://" + serverip + ":" + control_port + mon_url, rest_action="binary-put",
                                       rest_payload=myfile)
         if response['status'] in range(200, 205):
@@ -94,6 +92,7 @@ class static_microkernel_image_service(fit_common.unittest.TestCase):
     def _list_microkernel(self):
         mon_url = '/microkernel'
         serverip = self._get_serverip()
+        control_port = str(fit_common.fitcfg()["image_service"]["control_port"])
         response = fit_common.restful("http://" + serverip + ":" + control_port + mon_url)
         if response['status'] in range(200, 205):
             return response['json']
@@ -104,6 +103,7 @@ class static_microkernel_image_service(fit_common.unittest.TestCase):
     def _delete_microkernel(self, filename):
         mon_url = '/microkernel?name=' + filename
         serverip = self._get_serverip()
+        control_port = str(fit_common.fitcfg()["image_service"]["control_port"])
         response = fit_common.restful("http://" + serverip + ":" + control_port + mon_url, rest_action="delete")
         if response['status'] in range(200, 205):
             return response['json']
@@ -132,6 +132,7 @@ class static_microkernel_image_service(fit_common.unittest.TestCase):
     def test_upload_list_microkernel(self):
         microkernel_list = []
         serverip = self._get_serverip()
+        test_microkernel_urls = fit_common.fitcfg()["image_service"]["microkernel"]
         for microkernelrepo in test_microkernel_urls:
             if microkernelrepo[:3] == "scp":
                 file_name = self._scp_file(microkernelrepo)
@@ -139,6 +140,7 @@ class static_microkernel_image_service(fit_common.unittest.TestCase):
                 file_name = self._download_file(microkernelrepo)
             self.assertNotEqual(self._upload_microkernel(file_name), "fail", "Upload microkernel failed!")
             microkernel_list.append(file_name)
+            file_port = str(fit_common.fitcfg()["image_service"]["file_port"])
             fileurl = "http://" + serverip + ":" + file_port + "/common/" + file_name
             self.assertTrue(self._file_exists(fileurl), "The microkernel file url could not found!")
             logs.debug_3("microkernel_list=%s" % microkernel_list)
@@ -159,6 +161,7 @@ class static_microkernel_image_service(fit_common.unittest.TestCase):
         serverip = self._get_serverip()
         for microkernel in microkernel_list:
             self.assertNotEqual(self._delete_microkernel(microkernel["name"]), "fail", "delete image failed!")
+            file_port = str(fit_common.fitcfg()["image_service"]["file_port"])
             fileurl = "http://" + serverip + ":" + file_port + "/common/" + microkernel["name"]
             self.assertFalse(self._file_exists(fileurl), "The kernel image does not deleted completely")
         microkernel_list_clear = self._list_microkernel()
