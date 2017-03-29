@@ -22,7 +22,7 @@ file_port = str(fit_common.fitcfg()["image_service"]["file_port"])
 test_microkernel_urls = fit_common.fitcfg()["image_service"]["microkernel"]
 
 
-@attr(all=True, regression=False, smoke=False)
+@attr(all=False, regression=False, smoke=False)
 class static_microkernel_image_service(fit_common.unittest.TestCase):
     def setUp(self):
         self.test_delete_microkernels()

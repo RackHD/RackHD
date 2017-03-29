@@ -22,7 +22,7 @@ control_port = str(fit_common.fitcfg()["image_service"]["control_port"])
 file_port = str(fit_common.fitcfg()["image_service"]["file_port"])
 
 
-@attr(all=True, regression=False, smoke=False)
+@attr(all=False, regression=False, smoke=False)
 class test_os_image_service(fit_common.unittest.TestCase):
     def setUp(self):
         self.test_delete_all_images()

@@ -24,7 +24,7 @@ control_port = str(fit_common.fitcfg()["image_service"]["control_port"])
 file_port = str(fit_common.fitcfg()["image_service"]["file_port"])
 
 
-@attr(all=True, regression=False, smoke=False)
+@attr(all=False, regression=False, smoke=False)
 class test_image_service_system(fit_common.unittest.TestCase):
     def _get_serverip(self):
         args = fit_common.fitargs()['unhandled_arguments']
