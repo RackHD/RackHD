@@ -22,6 +22,10 @@ logs = flogging.get_loggers()
 
 INITIAL_NODES = {}
 INITIAL_OBMS = {}
+UCSM_IP = fit_common.fitcfg().get('ucsm_ip')
+UCSM_USER = fit_common.fitcfg().get('ucsm_user')
+UCSM_PASS = fit_common.fitcfg().get('ucsm_pass')
+UCS_SERVICE_URI = fit_common.fitcfg().get('ucs_service_uri')
 
 
 def get_nodes_utility():
@@ -126,17 +130,15 @@ def restore_obms_utility():
     return True
 
 
-@attr(all=True, regression=True, smoke=True, ucs_rackhd=True)
+@attr(all=True, regression=True, smoke=True, ucs=True)
 class rackhd_ucs_api(unittest.TestCase):
 
-    UCS_IP = fit_common.fitcfg().get("ucs_ip")
-    UCS_PORT = fit_common.fitcfg().get("ucs_port")
-    RACKHD_IP = fit_common.fitcfg().get("rackhd_host")
     MAX_WAIT = 60
     INITIAL_CATALOGS = {}
     UCS_NODES = []
     UCS_COMPUTE_NODES = []
-    EXPECTED_UCS_NODES = 22
+    EXPECTED_UCS_PHYSICAL_NODES = 22
+    EXPECTED_UCS_LOGICAL_NODES = 18
 
     @classmethod
     def setUpClass(cls):
@@ -178,13 +180,25 @@ class rackhd_ucs_api(unittest.TestCase):
                         .format(name, status, counter, id))
             return status
 
+    def get_ucs_node_list(self):
+        nodeList = []
 
-    @unittest.skipUnless("ucs_ip" in fit_common.fitcfg(), "")
+        api_data = fit_common.rackhdapi('/api/2.0/nodes')
+        self.assertEqual(api_data['status'], 200,
+                         'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
+        for node in api_data['json']:
+            if node["obms"] != [] and node["obms"][0]["service"] == "ucs-obm-service":
+                nodeList.append(node)
+
+        return (nodeList)
+
+    @unittest.skipUnless("ucsm_ip" in fit_common.fitcfg(), "")
     def test_check_ucs_params(self):
-        self.assertNotEqual(self.UCS_IP, None, "Expected value for UCS_IP other then None and found {0}"
-                            .format(self.UCS_IP))
-        self.assertNotEqual(self.UCS_PORT, None, "Expected value for UCS_PORT other then None and found {0}"
-                            .format(self.UCS_IP))
+        self.assertNotEqual(UCSM_IP, None, "Expected value for UCSM_IP other then None and found {0}"
+                            .format(UCSM_IP))
+        self.assertNotEqual(UCS_SERVICE_URI, None,
+                            "Expected value for UCS_SERVICE_URI other then None and found {0}"
+                            .format(UCS_SERVICE_URI))
 
     @depends(after=test_check_ucs_params)
     def test_api_20_ucs_discovery(self):
@@ -192,16 +206,19 @@ class rackhd_ucs_api(unittest.TestCase):
         Tests the UCS Discovery workflow in rackHD
         :return:
         """
+
+        initialNodeCount = len(self.get_ucs_node_list())
+
         data_payload = {
             "name": "Graph.Ucs.Discovery",
             "options":
                 {
                     "defaults":
                         {
-                            "username": "ucspe",
-                            "password": "ucspe",
-                            "ucs": self.UCS_IP,
-                            "uri": "https://" + self.RACKHD_IP + ":7080/sys"
+                            "username": UCSM_USER,
+                            "password": UCSM_PASS,
+                            "ucs": UCSM_IP,
+                            "uri": UCS_SERVICE_URI
                         }
                 }
         }
@@ -213,40 +230,110 @@ class rackhd_ucs_api(unittest.TestCase):
                          'Incorrect HTTP return code, expected 201, got:' + str(api_data['status']))
         status = self.wait_utility(str(id), 0, "Discovery")
         self.assertEqual(status, 'succeeded', 'Discovery graph returned status {}'.format(status))
-        api_data = fit_common.rackhdapi('/api/2.0/nodes')
-        self.assertEqual(api_data['status'], 200,
-                         'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
+
+        newNodeCount = len(self.get_ucs_node_list())
+
         logs.info_1("Found {0} Nodes after cataloging the UCS".format(len(api_data['json'])))
 
-        for node in api_data['json']:
-            if node["obms"] != [] and node["obms"][0]["service"] == "ucs-obm-service":
-                self.UCS_NODES.append(node)
-                if node["type"] == "compute":
-                    self.UCS_COMPUTE_NODES.append(node)
-        self.assertGreaterEqual(len(self.UCS_NODES), self.EXPECTED_UCS_NODES,
+        self.assertGreaterEqual(newNodeCount - initialNodeCount, self.EXPECTED_UCS_PHYSICAL_NODES,
                                 'Expected to discover {0} UCS nodes, got: {1}'
-                                .format(self.EXPECTED_UCS_NODES, len(self.UCS_NODES)))
+                                .format(self.EXPECTED_UCS_PHYSICAL_NODES, newNodeCount - initialNodeCount))
+
+        # rerun discovery and verify duplicate nodes are not created
+        api_data = fit_common.rackhdapi("/api/2.0/workflows", action="post",
+                                        headers=header, payload=data_payload)
+        id = api_data["json"]["context"]["graphId"]
+        self.assertEqual(api_data['status'], 201,
+                         'Incorrect HTTP return code, expected 201, got:' + str(api_data['status']))
+        status = self.wait_utility(str(id), 0, "Discovery")
+        self.assertEqual(status, 'succeeded', 'Discovery graph returned status {}'.format(status))
+
+        newNodeCount = len(self.get_ucs_node_list())
+
+        logs.info_1("Found {0} Nodes after cataloging the UCS".format(len(api_data['json'])))
+
+        self.assertGreaterEqual(newNodeCount - initialNodeCount, 0,
+                                'Expected to discover {0} UCS nodes, got: {1}'
+                                .format(0, newNodeCount - initialNodeCount))
+
+    @depends(after=test_api_20_ucs_discovery)
+    def test_api_20_ucs_serviceProfile_discovery(self):
+        """
+        Tests the UCS Service Profile Discovery workflow in rackHD
+        :return:
+        """
+        initialNodeCount = len(self.get_ucs_node_list())
+
+        data_payload = {
+            "name": "Graph.Ucs.Service.Profile.Discovery",
+            "options":
+                {
+                    "defaults":
+                        {
+                            "username": UCSM_USER,
+                            "password": UCSM_PASS,
+                            "ucs": UCSM_IP,
+                            "uri": UCS_SERVICE_URI
+                        }
+                }
+        }
+
+        header = {"Content-Type": "application/json"}
+        api_data = fit_common.rackhdapi("/api/2.0/workflows", action="post",
+                                        headers=header, payload=data_payload)
+        id = api_data["json"]["context"]["graphId"]
+        self.assertEqual(api_data['status'], 201,
+                         'Incorrect HTTP return code, expected 201, got:' + str(api_data['status']))
+        status = self.wait_utility(str(id), 0, "Service Profile Discovery")
+        self.assertEqual(status, 'succeeded', 'Service Profile Discovery graph returned status {}'.format(status))
+
+        newNodeCount = len(self.get_ucs_node_list())
+
+        self.assertGreaterEqual(newNodeCount - initialNodeCount, self.EXPECTED_UCS_LOGICAL_NODES,
+                                'Expected to discover {0} UCS nodes, got: {1}'
+                                .format(self.EXPECTED_UCS_LOGICAL_NODES, newNodeCount - initialNodeCount))
         logs.info_1("Found {0} UCS nodes {1}".format(len(self.UCS_COMPUTE_NODES), self.UCS_COMPUTE_NODES))
 
+        # rerun discovery graph and verify duplicate nodes are not created
+        api_data = fit_common.rackhdapi("/api/2.0/workflows", action="post",
+                                        headers=header, payload=data_payload)
+        id = api_data["json"]["context"]["graphId"]
+        self.assertEqual(api_data['status'], 201,
+                         'Incorrect HTTP return code, expected 201, got:' + str(api_data['status']))
+        status = self.wait_utility(str(id), 0, "Service Profile Discovery")
+        self.assertEqual(status, 'succeeded', 'Service Profile Discovery graph returned status {}'.format(status))
 
-    @depends(after=[test_check_ucs_params, test_api_20_ucs_discovery])
+        newNodeCount = len(self.get_ucs_node_list())
+
+        self.assertGreaterEqual(newNodeCount - initialNodeCount, 0,
+                                'Expected to discover {0} UCS nodes, got: {1}'
+                                .format(0, newNodeCount - initialNodeCount))
+
+    @depends(after=[test_api_20_ucs_serviceProfile_discovery, test_api_20_ucs_discovery])
     def test_api_20_ucs_catalog(self):
         """
         Tests the UCS Catalog workflow in rackHD
         :return:
         """
-        for x in range(len(self.UCS_NODES)):
-            postUrl = '/api/2.0/nodes/' + str(self.UCS_NODES[x]["id"]) + "/workflows?name=Graph.Ucs.Catalog"
+
+        ucsNodes = self.get_ucs_node_list()
+        errNodes = ''
+        errGraphs = ''
+
+        for x in range(len(ucsNodes)):
+            postUrl = '/api/2.0/nodes/' + str(ucsNodes[x]["id"]) + "/workflows?name=Graph.Ucs.Catalog"
             header = {"Content-Type": "application/json"}
             api_data = fit_common.rackhdapi(postUrl, headers=header, action="post", payload={})
-            self.assertEqual(api_data['status'], 201,
-                             'Expected to catalog {0} UCS nodes with status {1}, got: {2}'
-                             .format(self.UCS_NODES[x]["id"], 201, api_data['status']))
+            if api_data['status'] != 201:
+                errNodes += 'POST for node {} returned {}, '.format(ucsNodes[x]['id'], api_data['status'])
             status = self.wait_utility(api_data["json"]["instanceId"], 0, "Catalog")
-            self.assertEqual(status, 'succeeded', 'Catalog graph returned status {}'.format(status))
+            if status != 'succeeded':
+                errGraphs += 'graph id {} finished with status: {}, '.format(api_data["json"]["instanceId"], status)
 
             logs.info_1("Posted URL: {0} with status: {1}".format(postUrl, api_data['status']))
 
+        self.assertEqual(len(errNodes), 0, errNodes)
+        self.assertEqual(len(errGraphs), 0, errGraphs)
 
 if __name__ == '__main__':
     unittest.main()

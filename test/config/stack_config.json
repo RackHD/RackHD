@@ -12,8 +12,11 @@
   "vagrant":{
     "rackhd_host": "localhost",
     "type": "vagrant",
-    "ucs_ip" : "172.31.128.252",
-    "ucs_port" : "6080"
+    "ucsm_ip" : "172.31.128.252",
+    "ucsm_user" : "ucspe",
+    "ucsm_pass" : "ucspe",
+    "ucs_service_uri" : "https://localhost:7080",
+    "ucsm_config_file" : "./tests/ucs/ucsm_config.xml"
   },
   "vagrant_remote": {
     "rackhd_host": "127.0.0.1",
