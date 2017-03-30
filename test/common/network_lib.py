@@ -82,10 +82,13 @@ def dhcp_config_file(ipaddress=None, netmask="255.255.255.0", default_lease_time
     ipsplit = split_ipv4(ipaddress)
     ip_prefix = ipsplit[0] + '.' + ipsplit[1] + '.' + ipsplit[2] + '.'
     masksplit = split_ipv4(netmask)
-    dhcp_high = \
-        str(int(ipsplit[0]) + (255 - int(masksplit[0]))) + '.' + \
-        str(int(ipsplit[1]) + (255 - int(masksplit[1]))) + '.' + \
-        str(int(ipsplit[2]) + (255 - int(masksplit[2]))) + '.' + '254'
+    masksplit[0] = str(int(ipsplit[0]) + (255 - int(masksplit[0])))
+    masksplit[1] = str(int(ipsplit[1]) + (255 - int(masksplit[1])))
+    masksplit[2] = str(int(ipsplit[2]) + (255 - int(masksplit[2])))
+    for index in range(0, 3):
+        if int(masksplit[index]) > 255:
+            masksplit[index] = '255'
+    dhcp_high = masksplit[0] + '.' + masksplit[1] + '.' + masksplit[2] + '.254'
     dhcp_low = ip_prefix + str(int(ipsplit[3]) + 2)
     config_string = 'ddns-update-style none;\n' \
                     'option domain-name "example.org";\n' \
@@ -98,6 +101,8 @@ def dhcp_config_file(ipaddress=None, netmask="255.255.255.0", default_lease_time
                     'subnet ' + ip_prefix + '0 netmask ' + fit_common.fitrackhd()['dhcpSubnetMask'] + ' {\n' \
                     '  range ' + dhcp_low + ' ' + dhcp_high + ';\n' \
                     '  option vendor-class-identifier "PXEClient";\n' \
+                    '  option routers ' + ipaddress + ';\n' \
+                    '  option domain-name-servers ' + ipaddress + ';\n' \
                     '}\n'
     return config_string
 
