@@ -1,0 +1,28 @@
+server:
+  port: 46015
+ # ssl:
+ #   key-store: /etc/ssl/keystore.jks
+ #   key-store-password: changeit
+
+# remove this section if enforcing security
+security:
+  ignored:
+   - /**
+
+spring:
+  # remove the line below if enforcing security
+  autoconfigure.exclude: org.keycloak.adapters.springboot.KeycloakSpringBootConfiguration
+  jpa:
+    database: POSTGRESQL
+    properties:
+      hibernate:
+        default_schema: virtualidentity
+    show-sql: true
+    generate-ddl: true
+    hibernate:
+      ddl-auto: update
+  datasource:
+    platform: postgres
+    url: jdbc:postgresql://service-registry:5433/postgres
+    username: postgres
+    password: Dell123$
