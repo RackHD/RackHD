@@ -160,8 +160,8 @@ class api20_bootstrap_base(fit_common.unittest.TestCase):
                                 "rootPassword": "1234567",
                                 "hostname": "rackhdnode",
                                 "dnsServers": [rackhdconfig['apiServerAddress']],
-                                "users": [{"name": "RackHDRocks!",
-                                           "password": "R@ckHD1!",
+                                "users": [{"name": "rackhduser",
+                                           "password": "RackHDRocks!",
                                            "uid": 1010}]}}}
                 # OS specific requirements
                 if item['workflow'] == "Graph.InstallUbuntu":
