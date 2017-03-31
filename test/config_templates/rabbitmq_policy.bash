@@ -1,9 +1,8 @@
 #!/bin/bash
 
-# Setup policy for rabbitmq mirored queue cluster
+# Setup policy for rabbitmq mirrored queue cluster
 
-policies=("on-all ^on\. {\"ha-mode\":\"all\"}" "sku-all ^sku\. {\"ha-mode\":\"all\"}"  "graph-all ^graph\. {\"ha-mode\":\"all\"}" "waterline waterline {\"ha-mode\":\"all\"}")
-for i in "${policies[@]}"
-do
-    docker exec -t -i docker_rabbit_1 rabbitmqctl set_policy $i
-done
+docker exec -t -i docker_rabbit_1 rabbitmqctl set_policy on-all "^on." '{"ha-mode":"all"}'
+docker exec -t -i docker_rabbit_1 rabbitmqctl set_policy sku-all "^sku\." '{"ha-mode":"all"}'
+docker exec -t -i docker_rabbit_1 rabbitmqctl set_policy graph-all "^graph\." '{"ha-mode":"all"}'
+docker exec -t -i docker_rabbit_1 rabbitmqctl set_policy waterline "waterline" '{"ha-mode":"all"}'

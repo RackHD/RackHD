@@ -111,7 +111,7 @@ class rackhd_ha_resource_install(unittest.TestCase):
         self.assertEqual(fit_common.remote_shell("./mongo_replica_init.bash", vmnum=vmnum)['exitcode'],
                          0, "Mongo replica initiation failure")
 
-    def install_amqp_config_file(self):
+    def create_amqp_config_file(self):
         # AMQP config file
         result = ""
         for rsnum in range(1, numrs + 1):
@@ -120,44 +120,16 @@ class rackhd_ha_resource_install(unittest.TestCase):
         rabbitmq_config = open('rabbitmq.config', 'w')
         rabbitmq_config.write("[ { rabbit, [{ loopback_users, [ ] },{cluster_nodes, {[%s], disc}} ] } ]." % rabbit_list)
         rabbitmq_config.close()
-        for vmnum in range(1, numvms + 1):
-            # copy file to ORA
-            fit_common.scp_file_to_host('rabbitmq.config', vmnum)
-            self.assertEqual(fit_common.remote_shell('mkdir -p /docker;cp rabbitmq.config /docker/', vmnum=vmnum)['exitcode'],
-                             0, "rabbitMQ Config failure.")
-        os.remove('rabbitmq.config')
 
-    def install_rabbitmq_hostname_config(self, ip_list):
+    def create_rabbitmq_hostname_config(self, ip_list):
         # create rabbitmq hosts
         hosts_conf = open('hosts-conf', 'w')
         for rsnum in range(1, numrs + 1):
             line = '{}\trabbit{}\n'.format(ip_list[rsnum - 1], rsnum)
             hosts_conf.write(line)
         hosts_conf.close()
-        # copy file to ORA
-        for vmnum in range(1, numvms + 1):
-            fit_common.scp_file_to_host('hosts-conf', vmnum)
-            # Clean out the previous entries to be idempotent
-            command = "grep -v rabbit /etc/hosts > hosts"
-            self.assertEqual(fit_common.remote_shell(command, vmnum=vmnum)['exitcode'],
-                             0, "Hosts Config failure; Cleaning out previous entries")
-            # Add the new entries
-            self.assertEqual(fit_common.remote_shell('cat hosts-conf >> hosts', vmnum=vmnum)['exitcode'],
-                             0, "Hosts Config failure; Adding new entries")
-            # Move the new file into place
-            self.assertEqual(fit_common.remote_shell('mv hosts /etc/hosts', vmnum=vmnum)['exitcode'],
-                             0, "Hosts Config failure; Moving new file into place")
-        os.remove('hosts-conf')
 
-    def set_rabbitmq_cluster_policy(self, vmnum, rabbit_rsc_list):
-        # collect hostname for first rabbitmq resource
-        command = "crm_resource -W -r {} | sed \\\'s/.*node//g\\\'".format(rabbit_rsc_list[0])
-        rc = fit_common.remote_shell(command, vmnum=vmnum)
-        # clean out login stuff
-        splitnode = rc['stdout'].split('\n')
-        for item in splitnode:
-            if "assword" not in item and item.split(" ")[0]:
-                node = int(item)
+    def get_rabbitmq_cluster_policy(self):
         # create file for policies
         template_folder = './config_templates'
         env = Environment(loader=FileSystemLoader(template_folder))
@@ -166,15 +138,16 @@ class rackhd_ha_resource_install(unittest.TestCase):
         rabbitmq_policy = open('rabbitmq.bash', 'w')
         rabbitmq_policy.write(rendered)
         rabbitmq_policy.close()
-        # copy file to ORA
-        fit_common.scp_file_to_host('rabbitmq.bash', vmnum=node)
-        fit_common.remote_shell("chmod 777 rabbitmq.bash", vmnum=node)
-        self.assertEqual(fit_common.remote_shell("./rabbitmq.bash", vmnum=node)['exitcode'],
-                         0, "Rabbitmq mirrored queue policy failure.")
 
     def test02_install_rabbitmq_resource(self):
         # install rabbitmq config on cluster nodes
-        self.install_amqp_config_file()
+        self.create_amqp_config_file()
+        for vmnum in range(1, numvms + 1):
+            # copy file to ORA
+            fit_common.scp_file_to_host('rabbitmq.config', vmnum)
+            self.assertEqual(fit_common.remote_shell('mkdir -p /docker;cp rabbitmq.config /docker/', vmnum=vmnum)['exitcode'],
+                             0, "rabbitMQ Config failure.")
+        os.remove('rabbitmq.config')
         # create resource on first active node
         vmnum = nodelist[0]
         sb_net = self.get_southbound_network()
@@ -202,8 +175,22 @@ class rackhd_ha_resource_install(unittest.TestCase):
             command = "crm configure colocation {} inf: {} {}".format(rabbit_cls, rsc, rsc_ip)
             self.assertEqual(fit_common.remote_shell(command, vmnum=vmnum)['exitcode'],
                              0, "{} and {} colocation failure".format(rsc, rsc_ip))
-        # put rabbitmq hostname on each node
-        self.install_rabbitmq_hostname_config(vip_dict['rabbit'])
+        # create rabbitmq hostname on each node
+        self.create_rabbitmq_hostname_config(vip_dict['rabbit'])
+        # copy file to ORA
+        for vmnum in range(1, numvms + 1):
+            fit_common.scp_file_to_host('hosts-conf', vmnum)
+            # Clean out the previous entries to be idempotent
+            command = "grep -v rabbit /etc/hosts > hosts"
+            self.assertEqual(fit_common.remote_shell(command, vmnum=vmnum)['exitcode'],
+                             0, "Hosts Config failure; Cleaning out previous entries")
+            # Add the new entries
+            self.assertEqual(fit_common.remote_shell('cat hosts-conf >> hosts', vmnum=vmnum)['exitcode'],
+                             0, "Hosts Config failure; Adding new entries")
+            # Move the new file into place
+            self.assertEqual(fit_common.remote_shell('mv hosts /etc/hosts', vmnum=vmnum)['exitcode'],
+                             0, "Hosts Config failure; Moving new file into place")
+        os.remove('hosts-conf')
         # anti colocation between rabbit resources
         for rsc in range(len(rabbit_rsc_list)):
             for r_rsc in range(rsc + 1, len(rabbit_rsc_list)):
@@ -216,8 +203,20 @@ class rackhd_ha_resource_install(unittest.TestCase):
             command = "crm resource restart {}".format(rsc)
             fit_common.remote_shell(command, vmnum=vmnum)['exitcode']
             time.sleep(5)
-        # set rabbitmq cluster policy for RackHD
-        self.set_rabbitmq_cluster_policy(vmnum, rabbit_rsc_list)
+        # collect hostname for first rabbitmq resource
+        command = "crm_resource -W -r {} | sed \\\'s/.*node//g\\\'".format(rabbit_rsc_list[0])
+        rc = fit_common.remote_shell(command, vmnum=vmnum)
+        # clean out login stuff
+        splitnode = rc['stdout'].split('\n')
+        for item in splitnode:
+            if "assword" not in item and item.split(" ")[0]:
+                node = int(item)
+        self.get_rabbitmq_cluster_policy()
+        # copy file to ORA
+        fit_common.scp_file_to_host('rabbitmq.bash', vmnum=node)
+        fit_common.remote_shell("chmod 777 rabbitmq.bash", vmnum=node)
+        self.assertEqual(fit_common.remote_shell("./rabbitmq.bash", vmnum=node)['exitcode'],
+                         0, "Rabbitmq mirrored queue policy failure.")
 
 
 if __name__ == '__main__':
