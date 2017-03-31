@@ -278,10 +278,9 @@ class NodesTests(object):
         for n in nodes:
             if n.get('type') == 'compute':
                 Api().nodes_get_workflow_by_id(identifier=n.get('id'))
-                resps.append(self.__get_data())
+                resps.append(self.__client.last_response)
         for resp in resps:
-            assert_not_equal(0, len(resp), message='No Workflows found for Node')
-        Api().nodes_get_workflow_by_id('fooey')
+            assert_not_equal(404, resp.status, message='No Workflows found for Node')
 
     @test(groups=['node_post_workflows-api2'], depends_on_groups=['node_workflows-api2'])
     def test_node_workflows_post(self):
