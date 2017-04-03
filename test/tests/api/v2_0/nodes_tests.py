@@ -269,7 +269,7 @@ class NodesTests(object):
             assert_equal(200,resp.status, message=resp.reason)
         assert_raises(rest.ApiException, Api().nodes_get_catalog_source_by_id, 'fooey','bmc')
 
-    @test(groups=['node_workflows-api2'], depends_on_groups=['catalog_source-api2'])
+    @test(groups=['node_workflows-api2'])
     def test_node_workflows_get(self):
         """ Testing GET:/api/2.0/nodes/:id/workflows """
         resps = []
@@ -281,7 +281,12 @@ class NodesTests(object):
                 resps.append(self.__get_data())
         for resp in resps:
             assert_not_equal(0, len(resp), message='No Workflows found for Node')
-        Api().nodes_get_workflow_by_id('fooey')
+        try:
+            Api().nodes_get_workflow_by_id('fooey')
+            fail(message='did not raise exception for nodes_get_workflow_by_id with bad id')
+        except rest.ApiException as e:
+            assert_equal(404, e.status,
+                message='unexpected response {0}, expected 404 for bad nodeId'.format(e.status))
 
     @test(groups=['node_post_workflows-api2'], depends_on_groups=['node_workflows-api2'])
     def test_node_workflows_post(self):
