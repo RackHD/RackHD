@@ -25,6 +25,9 @@ import unittest
 import fit_common
 import pdu_lib
 import flogging
+from ucsmsdk import ucshandle
+from ucsmsdk.utils.ucsbackup import import_ucs_backup
+
 log = flogging.get_loggers()
 
 # Locals
@@ -290,6 +293,19 @@ class rackhd_stack_init(unittest.TestCase):
         if poller_list != []:
             log.error("Poller IDs with error or no data: {}".format(json.dumps(poller_list, indent=4)))
         return False
+
+    # Optionally configure UCS Manager if present
+    @unittest.skipUnless("ucsm_ip" in fit_common.fitcfg(), "")
+    def test13_load_ucs_manager_config(self):
+        """
+        loads the test configuration into the UCS Manger
+        """
+        handle = ucshandle.UcsHandle(fit_common.fitcfg()['ucsm_ip'], fit_common.fitcfg()['ucsm_user'],
+                                     fit_common.fitcfg()['ucsm_pass'])
+        self.assertTrue(handle.login(), 'Failed to log in to UCS Manager!')
+        path, file = os.path.split(fit_common.fitcfg()['ucsm_config_file'])
+        import_ucs_backup(handle, file_dir=path, file_name=file)
+        self.assertTrue(handle.logout(), 'Failed to log out from UCS Manager!')
 
 
 if __name__ == '__main__':
