@@ -142,7 +142,7 @@ for item in OSLIST:
 # ------------------------ Tests -------------------------------------
 
 
-@attr(all=True, regression=True)
+@attr(all=True)
 class api20_bootstrap_base(fit_common.unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -166,7 +166,9 @@ class api20_bootstrap_base(fit_common.unittest.TestCase):
                 # OS specific requirements
                 if item['workflow'] == "Graph.InstallUbuntu":
                     payload_data["options"]["defaults"]["baseUrl"] = "install/netboot/ubuntu-installer/amd64"
-                    payload_data["options"]["defaults"]["kargs"] = {"live-installer/net-image": rackhdhost + proxy_select(item['path']) + "/ubuntu/install/filesystem.squashfs"}
+                    payload_data["options"]["defaults"]["kargs"] = {"live-installer/net-image": rackhdhost +
+                                                                    proxy_select(item['path']) +
+                                                                    "/ubuntu/install/filesystem.squashfs"}
                 # run workflow
                 result = fit_common.rackhdapi('/api/2.0/nodes/' +
                                               NODECATALOG[nodeindex] +
