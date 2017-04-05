@@ -9,7 +9,7 @@ This routine runs OS bootstrap jobs simultaneously on multiple nodes.
 For 12 tests to run, 12 nodes are required in the stack. If there are less than that, tests will be skipped.
 This test takes 15-20 minutes to run.
 
-OS bootstrap tests require the following entries in config/install_default.json. 
+OS bootstrap tests require the following entries in config/install_default.json.
 If an entry is missing, then that test will be skipped.
 
         "os-install": [
