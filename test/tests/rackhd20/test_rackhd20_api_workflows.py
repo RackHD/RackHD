@@ -74,7 +74,7 @@ class rackhd20_api_workflows(fit_common.unittest.TestCase):
         data_payload = {
             "friendlyName": "Multi-REST-call",
             "injectableName": "Graph.REST.call",
-            "tasks":[
+            "tasks": [
                 {
                     "label": "REST-call-good",
                     "taskDefinition": {
@@ -120,9 +120,9 @@ class rackhd20_api_workflows(fit_common.unittest.TestCase):
                         "friendlyName": "final REST call",
                         "injectableName": "Task.Rest.GET",
                         "implementsTask": "Task.Base.Rest",
-                        "options":{
-                            "url":"http://localhost:8080/api/1.1/nodes",
-                            "method":"GET"
+                        "options": {
+                            "url": "http://localhost:8080/api/1.1/nodes",
+                            "method": "GET"
                         },
                         "properties": {}
                     },
@@ -137,16 +137,16 @@ class rackhd20_api_workflows(fit_common.unittest.TestCase):
                 {
                     "label" : "REST-call-final-pending",
                     "taskDefinition": {
-                        "friendlyName":"final REST call",
+                        "friendlyName": "final REST call",
                         "injectableName":"Task.Rest.GET",
                         "implementsTask": "Task.Base.Rest",
-                        "options":{
-                            "url":"http://localhost:8080/api/1.1/nodes",
-                            "method":"GET"
+                        "options": {
+                            "url": "http://localhost:8080/api/1.1/nodes",
+                            "method": "GET"
                         },
                         "properties": {}
                     },
-                    "waitOn":{
+                    "waitOn": {
                         "anyOf":{
                             "REST-call-good": "failed",
                             "REST-call-bad": "failed"
@@ -156,17 +156,17 @@ class rackhd20_api_workflows(fit_common.unittest.TestCase):
                 {
                     "label" : "REST-call-final-succeeded-2",
                     "taskDefinition": {
-                        "friendlyName":"final REST call",
-                        "injectableName":"Task.Rest.GET",
+                        "friendlyName": "final REST call",
+                        "injectableName": "Task.Rest.GET",
                         "implementsTask": "Task.Base.Rest",
-                        "options":{
-                            "url":"http://localhost:8080/api/1.1/nodes",
-                            "method":"GET"
+                        "options": {
+                            "url": "http://localhost:8080/api/1.1/nodes",
+                            "method": "GET"
                         },
                         "properties": {}
                     },
-                    "waitOn":{
-                        "anyOf":{
+                    "waitOn": {
+                        "anyOf": {
                             "REST-call-good": "failed",
                             "REST-call-bad": "succeeded"
                         }
@@ -179,7 +179,7 @@ class rackhd20_api_workflows(fit_common.unittest.TestCase):
         if not node_id:
             print "Cannot find any NODE connected with this RackHD server"
             raise
-        
+
         # Assume previous test will make sure this will success
         setup_return = fit_common.rackhdapi("/api/2.0/workflows/graphs", action="put", payload=data_payload)
         
@@ -194,13 +194,19 @@ class rackhd20_api_workflows(fit_common.unittest.TestCase):
         running_result = result_return['json']['tasks']
         for task in running_result:
             if task['label'] == "REST-call-final-pending":
-                self.assertEqual(task['state'], 'pending', "When all the conditions under anyOf are failed, task should be marked unreachable, but got "+task['state'])
+                self.assertEqual(task['state'], 'pending', 
+                        "When all the conditions under anyOf are failed," +
+                        " task should be marked unreachable, but got "+task['state'])
 
             if task['label'] == "REST-call-final-succeeded-2":
-                self.assertEqual(task['state'], 'succeeded', "When one of the conditions under anyOf is failed but other fufilled, task should be reachable and executed, but got "+ task['state'])
+                self.assertEqual(task['state'], 'succeeded', 
+                        "When one of the conditions under anyOf is failed but other fufilled," +
+                        " task should be reachable and executed, but got "+ task['state'])
 
             if task['label'] == "REST-call-final-good":
-                self.assertEqual(task['state'], 'succeeded', "When all of the conditions under anyOf is fulfilled, task should be reachable and executed, but got " + task['state'])
+                self.assertEqual(task['state'], 'succeeded', 
+                        "When all of the conditions under anyOf is fulfilled," +
+                        " task should be reachable and executed, but got " + task['state'])
 
 if __name__ == '__main__':
     fit_common.unittest.main()
