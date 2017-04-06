@@ -33,6 +33,11 @@ fi
 rm -f $"${BASENAME}.mf" # remove checksum file, otherwise, existing mf file will prevent ovftool converting
 echo "convert ${OVA} to OVF file, named ${OVF}"
 ovftool $OVA  $OVF
+if [ $? != 0 ]; then
+    echo "[Error] ovftool exec failed..(ovftool $OVA  $OVF) exit"
+    exit 1
+fi
+
 echo "modify the OVF adding property."
 
 #######################################################
@@ -73,7 +78,7 @@ sed -i 's/<\/VirtualSystem>/ \
 /'  $OVF
 ################
 #[ OVF Template Injection Step #2 ]
-# specific the "OVF enviroment transport" method to VMWare Tools
+# specify the "OVF enviroment transport" method to VMWare Tools
 ###############
 sed -i 's/<VirtualHardwareSection>/<VirtualHardwareSection ovf:transport="com.vmware.guestInfo" > /' $OVF
 
@@ -92,5 +97,8 @@ sed  -i -E  "s/SHA1\(.*ovf\)=.*$/SHA1\($OVF\)= $NewChk/g"  $"${BASENAME}.mf"
 ##############
 rm -f $OVA  #remove old OVA
 ovftool $OVF $OVA
-
+if [ $? != 0 ]; then
+     echo "[Error] ovftool exec failed..(ovftool $OVF  $OVA) exit"
+     exit 1
+fi
 echo "[Info] the new OVA is created , with customized ovf property feature : ${OVA}"
