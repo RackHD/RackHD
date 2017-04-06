@@ -269,7 +269,7 @@ class NodesTests(object):
             assert_equal(200,resp.status, message=resp.reason)
         assert_raises(rest.ApiException, Api().nodes_get_catalog_source_by_id, 'fooey','bmc')
 
-    @test(groups=['node_workflows-api2'], depends_on_groups=['catalog_source-api2'])
+    @test(groups=['node_workflows-api2'])#, depends_on_groups=['catalog_source-api2'])
     def test_node_workflows_get(self):
         """ Testing GET:/api/2.0/nodes/:id/workflows """
         resps = []
@@ -279,7 +279,7 @@ class NodesTests(object):
             if n.get('type') == 'compute':
                 Api().nodes_get_workflow_by_id(identifier=n.get('id'))
                 resps.append(self.__get_data())
-        Api().nodes_get_workflow_by_id('fooey')
+#        Api().nodes_get_workflow_by_id('fooey')
 
 #        try:
 #            Api().nodes_get_workflow_by_id('fooey')
@@ -294,6 +294,7 @@ class NodesTests(object):
         resps = []
         Api().nodes_get_all()
         nodes = self.__get_data()
+        print nodes
         for n in nodes:
             if n.get('type') == 'compute':
                 id = n.get('id')
