@@ -4,7 +4,7 @@ Copyright 2017 Dell Inc. or its subsidiaries. All Rights Reserved.
 Author(s):
 George Paulos
 
-This script tests base case of the RackHD API 2.0 OS bootstrap workflows.
+This script tests minimum payload base case of the RackHD API 2.0 OS bootstrap workflows using proxy method.
 This routine runs OS bootstrap jobs simultaneously on multiple nodes.
 For 11 tests to run, 11 nodes are required in the stack. If there are less than that, tests will be skipped.
 This test takes 15-20 minutes to run.
@@ -65,6 +65,7 @@ import fit_path  # NOQA: unused import
 from nose.plugins.attrib import attr
 import fit_common
 import flogging
+import time
 log = flogging.get_loggers()
 
 # This gets the list of nodes
@@ -73,27 +74,29 @@ NODECATALOG = fit_common.node_select()
 # dict containing bootstrap workflow IDs and states
 NODE_STATUS = {}
 
+# global timer
+START_TIME = time.time()
+
 # download RackHD config from host
 rackhdconfig = fit_common.rackhdapi('/api/2.0/config')['json']
 rackhdhost = "http://" + str(rackhdconfig['apiServerAddress']) + ":" + str(rackhdconfig['apiServerPort'])
 
 
-# this routine polls a task ID for completion
-def wait_for_task_complete(taskid, retries=60):
-    for dummy in range(0, retries):
+# this routine polls a workflow task ID for completion
+def wait_for_workflow_complete(taskid):
+    while time.time() - START_TIME < 1800:  # limit test to 30 minutes
         result = fit_common.rackhdapi("/api/2.0/workflows/" + taskid)
         if result['status'] != 200:
-            log.error(" " + result['text'])
+            log.error(" HTTP error: " + result['text'])
             return False
         if result['json']['status'] == 'running' or result['json']['status'] == 'pending':
             log.info_5("{} workflow status: {}".format(result['json']['injectableName'], result['json']['status']))
             fit_common.time.sleep(30)
         elif result['json']['status'] == 'succeeded':
             log.info_5("{} workflow status: {}".format(result['json']['injectableName'], result['json']['status']))
-            log.info_5(" " + result['text'])
             return True
         else:
-            log.error(" " + result['text'])
+            log.error(" Workflow failed: " + result['text'])
             return False
     log.error(" Workflow Timeout: " + result['text'])
     return False
@@ -153,6 +156,7 @@ class api20_bootstrap_base(fit_common.unittest.TestCase):
             if proxy_select(item['path']) and nodeindex < len(NODECATALOG):
                 # delete active workflows for specified node
                 fit_common.cancel_active_workflows(NODECATALOG[nodeindex])
+                # base payload common to all Linux
                 payload_data = {"options": {"defaults": {
                                 "version": item['version'],
                                 "kvm": item['kvm'],
@@ -163,7 +167,7 @@ class api20_bootstrap_base(fit_common.unittest.TestCase):
                                 "users": [{"name": "rackhduser",
                                            "password": "RackHDRocks!",
                                            "uid": 1010}]}}}
-                # OS specific requirements
+                # OS specific payload requirements
                 if item['workflow'] == "Graph.InstallUbuntu":
                     payload_data["options"]["defaults"]["baseUrl"] = "install/netboot/ubuntu-installer/amd64"
                     payload_data["options"]["defaults"]["kargs"] = {"live-installer/net-image": rackhdhost +
@@ -175,16 +179,16 @@ class api20_bootstrap_base(fit_common.unittest.TestCase):
                                               '/workflows?name=' + item['workflow'],
                                               action='post', payload=payload_data)
                 if result['status'] == 201:
-                    # this branch saves the task and node IDs
+                    # this saves the task and node IDs
                     NODE_STATUS[NODECATALOG[nodeindex]] = \
                         {"workflow": item['workflow'],
                          "version": item['version'],
                          "kvm": item['kvm'],
                          "id": result['json']['instanceId']}
-                    log.info_5(" TaskID: " + result['text'])
+                    log.info_5(" TaskID: " + result['json']['instanceId'])
                     log.info_5(" Payload: " + fit_common.json.dumps(payload_data))
                 else:
-                    # this is the failure case where there is no task ID
+                    # if no task ID is returned put 'failed' in ID field
                     NODE_STATUS[NODECATALOG[nodeindex]] = \
                         {"workflow": item['workflow'],
                          "version": item['version'],
@@ -198,57 +202,57 @@ class api20_bootstrap_base(fit_common.unittest.TestCase):
     @fit_common.unittest.skipUnless(node_taskid("Graph.InstallESXi", "5.5", False) != '',
                                     "Skipping ESXi5.5, repo not configured or node unavailable")
     def test_api20_bootstrap_esxi55(self):
-        self.assertTrue(wait_for_task_complete(node_taskid("Graph.InstallESXi", "5.5", False)), "ESXi5.5 failed.")
+        self.assertTrue(wait_for_workflow_complete(node_taskid("Graph.InstallESXi", "5.5", False)), "ESXi5.5 failed.")
 
     @fit_common.unittest.skipUnless(node_taskid("Graph.InstallESXi", "6.0", False) != '',
                                     "Skipping ESXi6.0, repo not configured or node unavailable")
     def test_api20_bootstrap_esxi60(self):
-        self.assertTrue(wait_for_task_complete(node_taskid("Graph.InstallESXi", "6.0", False)), "ESXi6.0 failed.")
+        self.assertTrue(wait_for_workflow_complete(node_taskid("Graph.InstallESXi", "6.0", False)), "ESXi6.0 failed.")
 
     @fit_common.unittest.skipUnless(node_taskid("Graph.InstallCentOS", "6.5", False) != '',
                                     "Skipping Centos 6.5, repo not configured or node unavailable")
     def test_api20_bootstrap_centos65(self):
-        self.assertTrue(wait_for_task_complete(node_taskid("Graph.InstallCentOS", "6.5", False)), "Centos 6.5 failed.")
+        self.assertTrue(wait_for_workflow_complete(node_taskid("Graph.InstallCentOS", "6.5", False)), "Centos 6.5 failed.")
 
     @fit_common.unittest.skipUnless(node_taskid("Graph.InstallCentOS", "6.5", True) != '',
                                     "Skipping Centos 6.5 KVM, repo not configured or node unavailable")
     def test_api20_bootstrap_centos65_kvm(self):
-        self.assertTrue(wait_for_task_complete(node_taskid("Graph.InstallCentOS", "6.5", True)), "Centos 6.5 KVM failed.")
+        self.assertTrue(wait_for_workflow_complete(node_taskid("Graph.InstallCentOS", "6.5", True)), "Centos 6.5 KVM failed.")
 
     @fit_common.unittest.skipUnless(node_taskid("Graph.InstallCentOS", "7", False) != '',
                                     "Skipping Centos 7.0, repo not configured or node unavailable")
     def test_api20_bootstrap_centos70(self):
-        self.assertTrue(wait_for_task_complete(node_taskid("Graph.InstallCentOS", "7", False)), "Centos 7.0 failed.")
+        self.assertTrue(wait_for_workflow_complete(node_taskid("Graph.InstallCentOS", "7", False)), "Centos 7.0 failed.")
 
     @fit_common.unittest.skipUnless(node_taskid("Graph.InstallCentOS", "7", True) != '',
                                     "Skipping Centos 7.0 KVM, repo not configured or node unavailable")
     def test_api20_bootstrap_centos70_kvm(self):
-        self.assertTrue(wait_for_task_complete(node_taskid("Graph.InstallCentOS", "7", True)), "Centos 7.0 KVM failed.")
+        self.assertTrue(wait_for_workflow_complete(node_taskid("Graph.InstallCentOS", "7", True)), "Centos 7.0 KVM failed.")
 
     @fit_common.unittest.skipUnless(node_taskid("Graph.InstallRHEL", "7", False) != '',
                                     "Skipping Redhat 7.0, repo not configured or node unavailable")
     def test_api20_bootstrap_rhel70(self):
-        self.assertTrue(wait_for_task_complete(node_taskid("Graph.InstallRHEL", "7", False)), "RHEL 7.0 failed.")
+        self.assertTrue(wait_for_workflow_complete(node_taskid("Graph.InstallRHEL", "7", False)), "RHEL 7.0 failed.")
 
     @fit_common.unittest.skipUnless(node_taskid("Graph.InstallRHEL", "7", True) != '',
                                     "Skipping Redhat 7.0 KVM, repo not configured or node unavailable")
     def test_api20_bootstrap_rhel70_kvm(self):
-        self.assertTrue(wait_for_task_complete(node_taskid("Graph.InstallRHEL", "7", True)), "RHEL 7.0 KVM failed.")
+        self.assertTrue(wait_for_workflow_complete(node_taskid("Graph.InstallRHEL", "7", True)), "RHEL 7.0 KVM failed.")
 
     @fit_common.unittest.skipUnless(node_taskid("Graph.InstallUbuntu", "trusty", False) != '',
                                     "Skipping Ubuntu 14, repo not configured or node unavailable")
     def test_api20_bootstrap_ubuntu14(self):
-        self.assertTrue(wait_for_task_complete(node_taskid("Graph.InstallUbuntu", "trusty", False)), "Ubuntu 14 failed.")
+        self.assertTrue(wait_for_workflow_complete(node_taskid("Graph.InstallUbuntu", "trusty", False)), "Ubuntu 14 failed.")
 
     @fit_common.unittest.skipUnless(node_taskid("Graph.InstallCoreOS", "899.17.0", False) != '',
                                     "Skipping CoreOS 899.17.0, repo not configured or node unavailable")
     def test_api20_bootstrap_coreos899_17(self):
-        self.assertTrue(wait_for_task_complete(node_taskid("Graph.InstallCoreOS", "899.17.0", False)), "CoreOS 899.17 failed.")
+        self.assertTrue(wait_for_workflow_complete(node_taskid("Graph.InstallCoreOS", "899.17.0", False)), "CoreOS 899 failed.")
 
     @fit_common.unittest.skipUnless(node_taskid("Graph.InstallSUSE", "12", False) != '',
                                     "Skipping SuSe 12, repo not configured or node unavailable")
     def test_api20_bootstrap_suse12(self):
-        self.assertTrue(wait_for_task_complete(node_taskid("Graph.InstallSUSE", "12", False)), "SuSe 12 failed.")
+        self.assertTrue(wait_for_workflow_complete(node_taskid("Graph.InstallSUSE", "12", False)), "SuSe 12 failed.")
 
 
 if __name__ == '__main__':
