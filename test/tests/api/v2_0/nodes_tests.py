@@ -294,7 +294,6 @@ class NodesTests(object):
         resps = []
         Api().nodes_get_all()
         nodes = self.__get_data()
-        print nodes
         for n in nodes:
             if n.get('type') == 'compute':
                 id = n.get('id')
