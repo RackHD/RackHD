@@ -269,7 +269,7 @@ class NodesTests(object):
             assert_equal(200,resp.status, message=resp.reason)
         assert_raises(rest.ApiException, Api().nodes_get_catalog_source_by_id, 'fooey','bmc')
 
-    @test(groups=['node_workflows-api2'])#, depends_on_groups=['catalog_source-api2'])
+    @test(groups=['node_workflows-api2'], depends_on_groups=['catalog_source-api2'])
     def test_node_workflows_get(self):
         """ Testing GET:/api/2.0/nodes/:id/workflows """
         resps = []
