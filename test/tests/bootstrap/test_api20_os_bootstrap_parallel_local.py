@@ -127,7 +127,8 @@ rackhdhost = "http://" + str(rackhdconfig['apiServerAddress']) + ":" + str(rackh
 
 # this routine polls a workflow task ID for completion
 def wait_for_workflow_complete(taskid):
-    while time.time() - START_TIME < 1800:  # limit test to 30 minutes
+    result = None
+    while time.time() - START_TIME < 1800 or result is None:  # limit test to 30 minutes
         result = fit_common.rackhdapi("/api/2.0/workflows/" + taskid)
         if result['status'] != 200:
             log.error(" HTTP error: " + result['text'])
