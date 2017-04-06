@@ -179,7 +179,7 @@ class rackhd20_api_workflows(fit_common.unittest.TestCase):
         if not node_id:
             print "Cannot find any NODE connected with this RackHD server"
             raise
-
+ 
         # Assume previous test will make sure this will success
         setup_return = fit_common.rackhdapi("/api/2.0/workflows/graphs", action="put", payload=data_payload)
         
