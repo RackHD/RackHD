@@ -91,7 +91,6 @@ class rackhd11_api_workflows(fit_common.unittest.TestCase):
         api_data = fit_common.rackhdapi("/api/1.1/workflows/library/" + 'Graph.Obm.Ipmi.CreateSettings.Test')
         self.assertEqual(api_data['status'], 200, 'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
 
-
 if __name__ == '__main__':
     fit_common.unittest.main()
 
