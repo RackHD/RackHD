@@ -279,7 +279,7 @@ class NodesTests(object):
             if n.get('type') == 'compute':
                 Api().nodes_get_workflow_by_id(identifier=n.get('id'))
                 resps.append(self.__get_data())
-        Api().nodes_get_workflow_by_id('fooey')
+#        Api().nodes_get_workflow_by_id('fooey')
 
 #        try:
 #            Api().nodes_get_workflow_by_id('fooey')
