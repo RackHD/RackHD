@@ -65,6 +65,7 @@ import fit_path  # NOQA: unused import
 from nose.plugins.attrib import attr
 import fit_common
 import flogging
+import sys
 import time
 log = flogging.get_loggers()
 
