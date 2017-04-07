@@ -1,0 +1,9 @@
+---
+- name: RackHD Demonstration Server
+  hosts: local
+  vars:
+    rackhd_version: ""
+    is_release: false
+  sudo: no
+  roles:
+    - rackhd-builds

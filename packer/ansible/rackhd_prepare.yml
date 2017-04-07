@@ -1,0 +1,23 @@
+---
+- name: RackHD Demonstration Server
+  hosts: local
+  vars:
+  sudo: no
+  roles:
+    - apt
+    - build
+    - git
+    - rabbitmq
+    - mongodb
+    - node
+    - isc-dhcp-server
+    - monorail
+    - config_admin_ip
+    - snmptool
+    - ipmitool
+    - foreman
+    - pm2
+
+    - integrationtest
+    - postgresql
+    - setuptools
