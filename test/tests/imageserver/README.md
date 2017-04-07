@@ -23,7 +23,7 @@ An optional FIT parameter "-imageserver" is used to specify the image service se
 python run_tests.py -test ./tests/fileserver/test_os_static_file_server.py  -rackhd_host XX.XX.XX.XX -extra imageservice_config.json -imageserver=xx.xx.xx.xx
 
 #### Sample global_config.json file:
- {
+ `{
   "image_service": {
     "os_image": [
       {
@@ -76,5 +76,5 @@ python run_tests.py -test ./tests/fileserver/test_os_static_file_server.py  -rac
     "file_port":9090,
     "filetocompare": 100
   }
-}
+}`
 

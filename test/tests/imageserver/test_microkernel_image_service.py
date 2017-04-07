@@ -19,7 +19,7 @@ from nose.plugins.attrib import attr
 logs = flogging.get_loggers()
 
 
-@attr(all=False, regression=False, smoke=False)
+@attr(all=False, regression=False, smoke=False, imageservice=True)
 class static_microkernel_image_service(fit_common.unittest.TestCase):
     def setUp(self):
         self.test_delete_microkernels()

@@ -22,7 +22,7 @@ from nose.plugins.attrib import attr
 logs = flogging.get_loggers()
 
 
-@attr(all=False, regression=False, smoke=False)
+@attr(all=False, regression=False, smoke=False, imageservice=False)
 class test_image_service_system(fit_common.unittest.TestCase):
     def _get_serverip(self):
         args = fit_common.fitargs()['unhandled_arguments']
