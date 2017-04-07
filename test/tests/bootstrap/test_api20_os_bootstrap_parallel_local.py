@@ -106,6 +106,7 @@ from nose.plugins.attrib import attr
 import fit_common
 import flogging
 import time
+import sys
 log = flogging.get_loggers()
 
 # This gets the list of nodes
@@ -121,7 +122,11 @@ START_TIME = time.time()
 OSLIST = fit_common.fitcfg()["install-config"]["os-install"]
 
 # download RackHD config from host
-rackhdconfig = fit_common.rackhdapi('/api/2.0/config')['json']
+rackhdresult = fit_common.rackhdapi('/api/2.0/config')
+if rackhdresult['status'] != 200:
+    log.error(" Unable to contact host, exiting. ")
+    sys.exit(255)
+rackhdconfig = rackhdresult['json']
 rackhdhost = "http://" + str(rackhdconfig['apiServerAddress']) + ":" + str(rackhdconfig['apiServerPort'])
 
 
@@ -135,7 +140,7 @@ def wait_for_workflow_complete(taskid):
             return False
         if result['json']['status'] == 'running' or result['json']['status'] == 'pending':
             log.info_5("{} workflow status: {}".format(result['json']['injectableName'], result['json']['status']))
-            fit_common.time.sleep(30)
+            time.sleep(30)
         elif result['json']['status'] == 'succeeded':
             log.info_5("{} workflow status: {}".format(result['json']['injectableName'], result['json']['status']))
             return True
