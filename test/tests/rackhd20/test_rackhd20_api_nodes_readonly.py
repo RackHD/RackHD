@@ -30,7 +30,7 @@ class rackhd_api_nodes_readonly(unittest.TestCase):
     def test_api_20_nodes_readonly(self):
         # TODO: will need to add a node to the list before checking for any...
         nodelist = []
-        api_data = fit_common.rackhdapi('/api/2.0/nodes/readonly')
+        api_data = common.rackhdapi('/api/2.0/nodes/readonly')
         self.assertEqual(api_data['status'], 200, 'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
         self.assertGreater(len(api_data['json']), 0, 'nodes error')
 
