@@ -83,6 +83,11 @@
   shell: "npm install bootprint"
   args:
     chdir: "{{ ansible_env.HOME }}/src/on-http"
+    
+- name: Npm install bootprint-swagger
+  shell: "npm install bootprint-swagger"
+  args:
+    chdir: "{{ ansible_env.HOME }}/src/on-http"
 
 - name: Render 1.1 API docs for local reference
   shell: "npm run apidoc"
