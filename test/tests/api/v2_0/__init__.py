@@ -14,6 +14,7 @@ from users_tests import UsersTests
 from swagger_tests import SwaggerTests
 from sel_alert_poller_tests import SELPollerAlertTests
 from os_install_tests import OSInstallTests
+from decomission_node_tests import DecommissionNodesTests
 
 tests = [
     'nodes_api2.tests',
@@ -35,5 +36,6 @@ tests = [
 ]
 
 regression_tests = [
-    'os-install.v2.0.tests'
+    'os-install.v2.0.tests',
+    'deccommission-nodes.v2.0.tests'
 ]
