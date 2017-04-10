@@ -73,6 +73,11 @@
   shell: "npm install apidoc"
   args:
     chdir: "{{ ansible_env.HOME }}/src/on-http"
+    
+- name: Npm install html-pdf
+  shell: "npm install html-pdf"
+  args:
+    chdir: "{{ ansible_env.HOME }}/src/on-http"
 
 - name: Render 1.1 API docs for local reference
   shell: "npm run apidoc"
