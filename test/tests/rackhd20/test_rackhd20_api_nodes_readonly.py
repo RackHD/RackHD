@@ -20,13 +20,6 @@ logs = flogging.get_loggers()
 
 @attr(all=False, regression=False, smoke=False)
 class rackhd_api_nodes_readonly(unittest.TestCase):
-
-    # POST
-    # TODO: write test...
-
-    # GET
-
-
     def test_api_20_nodes_readonly(self):
         # TODO: will need to add a node to the list before checking for any...
         nodelist = []
