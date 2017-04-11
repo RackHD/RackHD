@@ -58,12 +58,21 @@ class _TempLogfileObserver(object):
         fdata = self.__get_tail_chunk()
         return re.finditer(iter_re, fdata, re.VERBOSE | re.MULTILINE)
 
+    def iter_on_line(self):
+        fdata = self.__get_tail_chunk()
+        for line in fdata.split('\n'):
+            yield line
+
 
 class TempLogfileChecker(object):
     """
     Crude logfile checker that holds the "business logic" to check for backtraces and
     capture stdout or stderr contents (or lack thereof!)
     """
+    _upto_msg_re = r'''^\d\d\d\d-\d\d-\d\d\s           # '2017-01-12 '
+                       \d\d:\d\d:\d\d,\d\d\d\s         # '10:10:46,106 '
+                       (?P<level_name>\S+)\s+          # 'INFO '
+                       '''
 
     def __init__(self, file_name, stringio_override=None):
         self.__lf_observer = _TempLogfileObserver(file_name, stringio_override)
@@ -119,15 +128,13 @@ class TempLogfileChecker(object):
         max level the logging system will in theory produce. kind of). Or, if the start_at_levelno
         is None, we expect to NOT see anything!
         """
-        line_re = r'''^\d\d\d\d-\d\d-\d\d\s     # '2017-01-12 '
-                      \d\d:\d\d:\d\d,\d\d\d\s   # '10:10:46,106 '
-                      (?P<level>\S+)\s+         # 'WARNING_9 ' or 'INFO   '
-                      MATCH-START\s             # 'MATCH-START '
-                      (?P<logger_name>\S+)\s    # 'infra.run '
-                      (?P<levelno>\d+)\(        # '28('
-                      (?P<level_name>\S+?)\)\s  # 'WARNING_2) '
-                      MATCH-END\s+              # 'MATCH-END    '
-                      .*?$                      # rest-of-line
+        line_re = self._upto_msg_re + '''             # 'timestamp INFO   '
+                      MATCH-START\s                   # 'MATCH-START '
+                      (?P<logger_name>\S+)\s          # 'infra.run '
+                      (?P<levelno>\d+)\(              # '28('
+                      (?P<match_level_name>\S+?)\)\s  # 'WARNING_2) '
+                      MATCH-END\s+                    # 'MATCH-END    '
+                      .*?$                            # rest-of-line
                       '''
         if start_at_levelno is None:
             test_levelno = 1  # lowest legal value
@@ -144,10 +151,10 @@ class TempLogfileChecker(object):
         for match in self.__lf_observer.iter_on_re(line_re):
             count += 1
             test_level_name = levelno_to_name(test_levelno)
-            found_log_level_name = match.group("level")
+            found_log_level_name = match.group("level_name")
             found_msg_logger_name = match.group("logger_name")
             found_msg_levelno = int(match.group("levelno"))
-            found_msg_level_name = match.group("level_name")
+            found_msg_level_name = match.group("match_level_name")
             test.assertEqual(test_levelno, found_msg_levelno,
                              'expected levelno {0} != found levelno {1}'.format(
                                  test_levelno, found_msg_levelno))
@@ -163,6 +170,244 @@ class TempLogfileChecker(object):
             test_levelno += 1
         test.assertEqual(count, exp_count,
                          'Expected {0} matches, but only saw {1}'.format(exp_count, count))
+
+    def __check_sobs(self, test, line_iter, lg_names):
+        """
+        Utility method for check_full_format to take a closer look at the lines like:
+        "2017-02-22 10:31:11,348 DEBUG    Start Of Test Block: 3                                                infra.data"
+
+        The method checks:
+        * if a line appears for each expected lg_names
+        * all lines that match have the same test-block value
+
+        It also returns the test-block-number
+        """
+        sob_re = self._upto_msg_re + r'''                       # time-stamp + 'INFO '
+                            Start\sOf\sTest\sBlock:\s+         # 'Start Of Test Block: '
+                            (?P<block_number>\d+)\s+           # '1       '
+                            (?P<line_logger_name>\S+)\s*$      # 'infra.run'<eol>
+                            '''
+        in_consume = True
+        cre = re.compile(sob_re, re.VERBOSE)
+        found = 0
+        tcn = None
+        exp_lines = len(lg_names)
+        found_lg_names = []
+        for inx in range(0, exp_lines):
+            line = line_iter.next()
+            if in_consume:
+                if 'removing previous logging dir' in line:
+                    continue
+                if 'this runs logging dir' in line:
+                    continue
+                in_consume = False
+            m = cre.match(line)
+            test.assertIsNotNone(
+                m, "did not match '{0}' {1} of {2}".format(sob_re, found, exp_lines))
+            found += 1
+            if tcn is None:
+                tcn = m.group('block_number')
+            test.assertEqual(tcn, m.group('block_number'),
+                             'already found block {0} and now found {1}'.format(
+                             tcn, m.group('block_number')))
+            found_lg_names.append(m.group('line_logger_name'))
+        test.assertSetEqual(set(lg_names), set(found_lg_names),
+                            "logger names from normal line format do not match expected")
+        return tcn
+
+    def __check_start_tests(self, test, line_iter, lg_names, test_block, test_name):
+        """
+        Utility method for check_full_format to take a closer look at the lines like:
+        "2017-02-22 10:31:11,349 DEBUG   +3.01 - STARTING TEST: [runTest (test_log_stream_fmat.TC)]                  infra.data"
+
+        The method checks:
+        * if a line appears for each expected lg_names
+        * if the test-block number matches the one passed in as test_block
+        * if test_name is same as passed in as test_name
+
+        It also returns the full test-case-number we will expect in further lines in this batch.
+        """
+        st_re = self._upto_msg_re + r'''                  # time-stamp + 'INFO '
+                       \+(?P<tc_number>\S+)\s             # '+1.01 '
+                       -\sSTARTING\sTEST:\s+              # '- STARTING TEST: '
+                       \[(?P<test_name>.*?)\]\s+          # '[testTest (test_moo.TC)]  '
+                       (?P<line_logger_name>.*?)\s+$      # 'infra.run'<eol>
+                       '''
+        cre = re.compile(st_re, re.VERBOSE)
+        found = 0
+        tcn = None
+        found_lg_names = []
+        for lg_name in lg_names:
+            line = line_iter.next()
+            m = cre.match(line)
+            test.assertIsNotNone(
+                m, "did not match '{0}' {1} of {2}".format(st_re, found, len(lg_names)))
+            found += 1
+            found_tcn = m.group('tc_number')
+            if tcn is None:
+                found_block, found_tn = found_tcn.split('.', 1)
+                test.assertEqual(found_block, test_block,
+                                 'found test-block {0} in {1}, but expected was {2}'.format(
+                                     found_block, found_tcn, test_block))
+                tcn = found_tcn
+            test.assertEqual(found_tcn, tcn,
+                             'found test-number {0} but expected was {1}'.format(
+                                 found_tcn, tcn))
+            found_lg_names.append(m.group('line_logger_name'))
+            found_test_name = m.group('test_name')
+            test.assertEqual(
+                found_test_name, test_name,
+                "found test name '{0}' but was expected '{1}'".format(
+                    found_test_name, test_name))
+        test.assertSetEqual(set(lg_names), set(found_lg_names),
+                            "logger names from normal line format do not match expected")
+        return tcn
+
+    def __check_main_lines(self, test, line_iter, lg_names, tcn, test_name, call_file):
+        """
+        Utility method for check_full_format to take a close look at the lines like:
+        2017-02-22 10:02:54,207 INFO    MATCH-FMAT-START root MATCH-FMAT-END                                                       root >1.01 77927 MainProcess stream-monitor/test/test_log_stream_fmat.py:runTest@19 gl-main [runTest (test_log_stream_fmat.TC)]"  # noqa E501
+
+        Validates:
+        * logger names found both inside the message AND in the logger-name slot match list of loggers from lg_names
+        * test-case-number from line matches passed in tcn
+        * pid matches os.getpid()
+        * process-name is 'MainProcess' (needs own test for multiproc)
+        * call_file argument ends with the call_file value from line (call_file param is entire path)
+        * method-name from line matches "testRun" (all that can show up in plugin tests)
+        * line-no from line is a positive int
+        * greenlet field from line is 'gl-main' (needs own test for other greenlets)
+        * test-name field from line matches passed in test-name
+        """
+        main_line_re = self._upto_msg_re + r'''           # time-stamp + 'INFO  '
+                       MATCH-FMAT-START\s+                # 'MATCH-FMAT-START  '
+                       (?P<match_logger_name>\S+)\s+      # 'infra.run '
+                       MATCH-FMAT-END\s+                  # 'MATCH-FMAT-END  '
+                       (?P<line_logger_name>\S+)\s+       # 'infra.run '
+                       >(?P<tc_number>\S+)\s              # '>1.01 '
+                       (?P<pid>\d+)\s                     # '1234   '
+                       (?P<process_name>\S+)\s            # 'MainProcess '
+                       (?P<call_file>\S+):                # 'stream-monitor/test/foo.py:'
+                       (?P<method_name>\S+)@              # 'runTest@'
+                       (?P<line_no>\d+)\s+                # '19 '
+                       (?P<greenlet>\S+)\s+               # 'gl-main '
+                       \[(?P<test_name>.*?)\]$            # '[testTest (test_moo.TC)]eol'
+                       '''
+        cre = re.compile(main_line_re, re.VERBOSE)
+        found = 0
+        found_match_lg_names = []
+        found_line_lg_names = []
+        for lg_name in lg_names:
+            line = line_iter.next()
+            m = cre.match(line)
+            test.assertIsNotNone(
+                m, "did not match '{0}' {1} of {2} [[{3}]]".format(
+                    main_line_re, found, len(lg_names), line))
+            found += 1
+            found_tcn = m.group('tc_number')
+            test.assertEqual(found_tcn, tcn,
+                             'found test-number {0} but expected was {1} [[{2}]]'.format(
+                                 found_tcn, tcn, line))
+            found_line_lg_names.append(m.group('line_logger_name'))
+            found_match_lg_names.append(m.group("match_logger_name"))
+            found_test_name = m.group('test_name')
+            test.assertEqual(
+                found_test_name, test_name,
+                "found test name '{0}' but was expected '{1}'".format(
+                    found_test_name, test_name))
+            found_greenlet = m.group('greenlet')
+            exp_greenlet = 'gl-main'    # no test for this yet, so hard code
+            test.assertEqual(found_greenlet, exp_greenlet, 'found greenlet {0} expected {1}'.format(
+                found_greenlet, exp_greenlet))
+            found_pid = m.group('pid')
+            exp_pid = str(os.getpid())
+            test.assertEqual(found_pid, exp_pid, "found pid '{0}' expected '{1}'".format(
+                found_pid, exp_pid))
+            pname = m.group('process_name')
+            epname = 'MainProcess'    # no test for this yet, so hard unicode
+            test.assertEqual(pname, epname, 'found process-name {0} expected {1}'.format(
+                pname, epname))
+            found_call_file = m.group('call_file')
+            test.assertTrue(call_file.endswith(found_call_file),
+                            "found call-file '{0}' that did not match end-of expected file {1}".format(
+                                found_call_file, call_file))
+            mname = m.group('method_name')
+            emname = 'runTest'         # currently fixed. Add as arg if expanding
+            test.assertEqual(mname, emname, 'found method-name {0} expected {1}'.format(
+                mname, emname))
+            line_no = m.group('line_no')
+            # nothing we can really do with this in terms of matching. Make sure
+            # it is an int just to test something.
+            int(line_no)
+            test.assertTrue(line_no > 0, 'line number {0} not a positive number'.format(
+                line_no))
+        test.assertSetEqual(set(lg_names), set(found_line_lg_names),
+                            "logger names from normal line format do not match expected")
+        test.assertSetEqual(set(lg_names), set(found_match_lg_names),
+                            "logger names from message section do not match expected")
+
+    def __check_end_tests(self, test, line_iter, lg_names, tcn, test_name):
+        """
+        Utility method for check_full_format to take a close look at the lines like:
+        "2017-02-22 10:02:54,475 INFO    -5.01 - ENDING TEST: [runTest (test_log_stream_fmat.TC)]                        root"
+
+        The method checks:
+        * if a line appears for eache expected lg_names
+        * if the test-case number matches passed in one as tcn
+        * if test_name is same as passed in as test_name
+        """
+        et_re = self._upto_msg_re + r'''                  # time-stamp + 'INFO '
+                       -(?P<tc_number>\S+)\s+             # '-1.01 '
+                       -\sENDING\sTEST:\s+                # '- ENDING TEST: '
+                       \[(?P<test_name>.*?)\]\s+          # '[testTest (test_moo.TC)]  '
+                       (?P<line_logger_name>.*?)\s*$      # 'infra.run'<eol>
+                       '''
+        cre = re.compile(et_re, re.VERBOSE)
+        found = 0
+        found_lg_names = []
+        for lg_name in lg_names:
+            line = line_iter.next()
+            m = cre.match(line)
+            test.assertIsNotNone(
+                m, "did not match '{0}' {1} of {2}".format(et_re, found, len(lg_names)))
+            found += 1
+            found_tcn = m.group('tc_number')
+            test.assertEqual(found_tcn, tcn,
+                             'found test-number {0} but expected was {1}'.format(
+                                 found_tcn, tcn))
+            found_lg_names.append(m.group('line_logger_name'))
+            found_test_name = m.group('test_name')
+            test.assertEqual(
+                found_test_name, test_name,
+                "found test name '{0}' but was expected '{1}'".format(
+                    found_test_name, test_name))
+        test.assertSetEqual(set(lg_names), set(found_lg_names),
+                            "logger names from normal line format do not match expected")
+
+    def check_full_format(self, test, match_lg_names, bracketing_lg_names, test_name, calling_file):
+        """
+        Checker method for test_log_stream_fmat.py's tests.
+
+        It coordinates:
+        * getting a line iterator from the log-file observer
+        * checking for Start Of Test Block sanity, which also yields the current test-block-number
+        * checking for "STARTING TEST:" sanity, which also yields the current test-case-number
+          (block-#:test-in-block-#)
+        * checking for the injected MATCH-FMAT-... lines
+        * checking for "ENDING TEST:" sanity
+
+        param test: unitest.TestCase instance to call asserts from
+        param match_lg_names: list of logger names that must appear in the main-lines section
+        param bracketing_lg_names: list of logger names that must appear in the start-of-block, start-tests,
+            end-tests sections.
+        param test_name: string name to match test-name from lines against.
+        param calling_file: value of test files __file__.
+        """
+        data_iter = self.__lf_observer.iter_on_line()
+        test_block = self.__check_sobs(test, data_iter, bracketing_lg_names)
+        tcn = self.__check_start_tests(test, data_iter, bracketing_lg_names, test_block, test_name)
+        self.__check_main_lines(test, data_iter, match_lg_names, tcn, test_name, calling_file)
+        self.__check_end_tests(test, data_iter, bracketing_lg_names, tcn, test_name)
 
 
 def levelno_to_name(levelno):

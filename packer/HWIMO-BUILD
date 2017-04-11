@@ -11,6 +11,7 @@
 # * ATLAS_NAME     - optional, required only when UPLOAD_BOX_TO_ATLAS is true.
 # * ATLAS_TOKEN    - optional, required only when UPLOAD_BOX_TO_ATLAS is true.
 # * ATLAS_VERSION  - optional, by default is "".when UPLOAD_BOX_TO_ATLAS is true, the box will be uploaded to ATLAS as ATLAS_VERSION( format only accepts like 1.2.3).
+# * CUSTOMIZED_PROPERTY_OVA - optional, by default false, only effective when BUILD_TYPE is vmware.. if true, the OVA can be specified IP during deployment. only supported by vCenter
 ###################################################
 
 INFO_HEADER="[Info]"
@@ -70,7 +71,6 @@ fi
 
 
 # By default. use ansible playbook : rackhd_local.yml
-# can become an ENV VAR in the future
 if  [ ! -n "${ANSIBLE_PLAYBOOK}" ];  then
     ANSIBLE_PLAYBOOK=rackhd_local
 fi
@@ -93,6 +93,23 @@ else
        echo "${INFO_HEADER} Install RackHD Package without specific version."
    fi
 fi
+
+
+# By default. disable CUSTOMIZED_PROPERTY_OVA, because only supported by vCenter. not by vSphere
+if  [ ! -n "${CUSTOMIZED_PROPERTY_OVA}" ];  then
+    CUSTOMIZED_PROPERTY_OVA=false;
+fi
+
+if [ "$BUILD_TYPE"  == "vmware" ]
+then
+    if [ "${CUSTOMIZED_PROPERTY_OVA}" == "true" ];
+    then
+         echo "${INFO_HEADER} the OVA created will carry with customized property, like admin port IP "
+    else
+         echo "${INFO_HEADER} the OVA created will not carry with customized property."
+    fi
+fi
+
 
 ############################  Parameter Process ################ end #############
 
@@ -192,15 +209,16 @@ else
     echo "${INFO_HEADER}No signing to be performed.. skip."
 fi
 
-# Conver the VM Disk and VMX folder into an OVA
-
 BASENAME=${VM_NAME}
 OVA="${BASENAME}.ova"
-ovftool $SIGN_ARGS -o ${VMDIR}/${VM_NAME}.vmx $OVA
 
-if [ $? != 0 ]; then
-    echo "${ERROR_HEADER} ovftool exec failed.. exit"
-    exit 4
+# Conver the VM Disk and VMX folder into an OVA
+if [ "$BUILD_TYPE"  == "vmware" ];  then
+    ovftool $SIGN_ARGS -o ${VMDIR}/${VM_NAME}.vmx $OVA
+    if [ $? != 0 ]; then
+        echo "${ERROR_HEADER} ovftool exec failed.. exit"
+        exit 4
+    fi
 fi
 
 # Do Virus Scan
@@ -214,85 +232,14 @@ else
 fi
 
 
-#### BEGIN ###### Modify the OVF file and update checksum ##############
-#
-#Background:
-#   for the purpose of RackHD deployment enviroment without DHCP on admin port (e.x.: eth0),
-#   "OVF Environment" is leveraged to configure VM's IP during OVA/OVF deployment
-#
-#Implementation:
-#   1. define customized fields in OVF template file(XML format)
-#   2. when deploy RackHD OVA , you can specific the eth0 IP (thru OVF Env Parameter) like ```ovftool --prop:adminIP=1.2.3.4 .....```
-#   3. in VM OS's bootup scripts: use VMWare Tool to retrieve IP and set the primary NIC(eth0 for example)
-#
-#  Reference: http://www.v-front.de/2014/01/building-self-configuring-nested-esxi.html
-#
-###################################################################
-rm -f $"${BASENAME}.mf" # remove checksum file, otherwise, existing mf file will prevent ovftool coverting
-echo "covert to OVF"
-OVF=$"${BASENAME}.ovf"
-ovftool $OVA  $OVF
-echo "modify the OVF"
-
-#######################################################
-# Note : this is ESXi format. (other ESX version may varies )
-# Add ProductSection/Property xml nodes under VirtualSystem xml node( kind of declare OVF Enviromental Properties)
-#######################################################
-
-################
-#[ OVF Template Injection Step #1 ]
-# Below 'sed' will "insert" below XML tree at the end of <VirtualSystem> tag of the OVF template file.
-#     |-ProductSection
-#     |----Info
-#     |----Product
-#     |----Category
-#     |----Property #1
-#     |----Property #..
-#     |----Property #n
-#################
-sed -i 's/<\/VirtualSystem>/ \
-  <ProductSection>    \
-     <Info>Information about the installed software<\/Info> \
-     <Product>Rackhd<\/Product> \
-     <Category>adminnetwork<\/Category>  \
-     <Property ovf:key="adminIP" ovf:type="string" ovf:userConfigurable="true"> \
-        <Label>adminIP<\/Label> \
-     <\/Property> \
-     <Property ovf:key="adminGateway" ovf:type="string" ovf:userConfigurable="true"> \
-        <Label>adminGateway<\/Label> \
-     <\/Property> \
-     <Property ovf:key="adminNetmask" ovf:type="string" ovf:userConfigurable="true"> \
-        <Label>adminNetmask<\/Label> \
-     <\/Property> \
-     <Property ovf:key="adminDNS" ovf:type="string" ovf:userConfigurable="true"> \
-        <Label>adminDNS<\/Label> \
-     <\/Property>  \
-  <\/ProductSection> \
-<\/VirtualSystem>   \
-/'  $OVF
-################
-#[ OVF Template Injection Step #2 ]
-# specific the "OVF enviroment transport" method to VMWare Tools
-###############
-sed -i 's/<VirtualHardwareSection>/<VirtualHardwareSection ovf:transport="com.vmware.guestInfo" > /' $OVF
-
-
-
-echo "recovert back to OVA"
-###############
-#[ OVF Template Injection Step #3 ]
-# update checksum
-###############
-NewChk=$(sha1sum $OVF | awk '{print $1}')
-sed  -i -E  "s/SHA1\(.*ovf\)=.*$/SHA1\($OVF\)= $NewChk/g"  $"${BASENAME}.mf"
-##############
-#[ OVF Template Injection Step #4 ]
-# re-package into OVA
-##############
-rm $OVA
-ovftool $OVF $OVA
-### END ####### Modify the OVF file and update checksum ##############
-
+if [ "${CUSTOMIZED_PROPERTY_OVA}" == "true" ];
+then
+    bash add_IP_property_to_ova.sh ${OVA}
+    if [ $? != 0 ]; then
+         echo "${ERROR_HEADER} add_IP_property_to_ova.sh ${OVA} failed! Abort!"
+         exit 5
+    fi
+fi # End of [ "${CUSTOMIZED_PROPERTY_OVA}" == "true" ]
 
 
 # Create MD5 & Sha256 checksum file

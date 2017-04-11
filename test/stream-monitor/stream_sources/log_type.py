@@ -4,11 +4,11 @@ Copyright (c) 2016-2017 Dell Inc. or its subsidiaries. All Rights Reserved.
 from logging import Logger, DEBUG, INFO
 from logging import getLogger as real_getLogger
 from logging import _srcfile  # yes, this is evil. No, we don't have a choice.
-from .monitor_abc import StreamMonitorABC
+from .monitor_abc import StreamMonitorBaseClass
 import sys
 
 
-class LoggingMarker(StreamMonitorABC):
+class LoggingMarker(StreamMonitorBaseClass):
     _all_blocks = 0
 
     def __init__(self):
@@ -23,6 +23,11 @@ class LoggingMarker(StreamMonitorABC):
         # todo: use nose plugin debug options
         self.__loggers = self.__find_loggers()
         self.__test_cnt = 1
+        self.__test_number_str = ''
+        self.__set_test_number_str()
+
+    def __set_test_number_str(self):
+        self.__test_number_str = '{0}.{1:02d}'.format(self._all_blocks, self.__test_cnt)
 
     @classmethod
     def enabled_for_nose(self):
@@ -42,18 +47,49 @@ class LoggingMarker(StreamMonitorABC):
         self.__loggers = self.__find_loggers()
         self._all_blocks += 1
         self.__test_cnt = 1
+        self.__set_test_number_str()
         self.__mark_all_loggers('', ' Start Of Test Block: {}'.format(self._all_blocks))
 
+    def handle_before_test(self, test):
+        """
+        Handle just before the given test starts. I.E., will cover setup and such.
+        We just tell our infra-logging where we are at.
+        """
+        self.__set_running_test_all_loggers(test, '+')
+
     def handle_start_test(self, test):
-        self.__mark_all_loggers('',
-                                '+{0}.{1:02d} - STARTING TEST: %s'.format(self._all_blocks, self.__test_cnt),
-                                str(test))
+        self.__mark_all_loggers('', '+%s - STARTING TEST: [%s]', self.__test_number_str, str(test))
+        self.__set_running_test_all_loggers(test, '>')
 
     def handle_stop_test(self, test):
-        self.__mark_all_loggers('',
-                                '-{0}.{1:02d} - ENDING TEST: %s'.format(self._all_blocks, self.__test_cnt),
-                                str(test))
+        self.__set_running_test_all_loggers(test, '-')
+        self.__mark_all_loggers('', '-%s - ENDING TEST: [%s]', self.__test_number_str, str(test))
+
+    def handle_after_test(self, test):
+        """
+        Handle after the test is complete and recorded (between tests, basically)
+        We just tell our infra-logging where we are at.
+        """
+        self.__set_running_test_all_loggers(test, '*')
         self.__test_cnt += 1
+        self.__set_test_number_str()
+
+    def __set_running_test_all_loggers(self, test, where):
+        """
+        Tell each logger where we are "at" in terms of which test is running. This
+        allows infra-logging to put the test-name into the log line.
+        param test: test case current being handled
+        param where: string about what step this is on.
+        """
+        loggers = self.__loggers.values()
+        loggers.append(real_getLogger())
+        for logger in loggers:
+            handlers = getattr(logger, 'handlers', [])
+            for handler in handlers:
+                for filter in handler.filters:
+                    if hasattr(filter, 'sm_set_running_test'):
+                        tns = '{0}{1}'.format(where, self.__test_number_str)
+                        filter.sm_set_running_test(tns, str(test))
 
     def __mark_all_in_logger(self, level, logger, msg, args, exc_info=None, extra=None):
         # Note: 'handlers' only exists on Logger() instances.

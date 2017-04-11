@@ -32,6 +32,19 @@ class _GeventInfoFilter(logging.Filter):
         # pop up two levels to the 'fit_tests' directory.
         test_dir = os.path.dirname(os.path.dirname(our_dir))
         self.__path_trim = test_dir + '/'
+        self.__current_test_name = 'any tests'
+        self.__current_test_case_number = '**.**'
+
+    def sm_set_running_test(self, test_case_number, test_name):
+        """
+        Method to allow a stream-monitor plugin for test execution to tell us where
+        in execution we are.
+        param test_case_number: string of a test-case number for this test. Also includes
+            '+' for setup, '-' for teardown, '=' for in, and '*' for after.
+        param test_name: actual test name (may contain spaces)
+        """
+        self.__current_test_name = test_name
+        self.__current_test_case_number = test_case_number
 
     # todo: trim 'pathname' to root of tree, not global
     #  and log shortening event (to keep abs context)
@@ -45,6 +58,8 @@ class _GeventInfoFilter(logging.Filter):
         else:
             gname = getattr(cur, 'log_facility', str(cur))
         record.greenlet = '{0!s}'.format(gname)
+        record.test_name = self.__current_test_name
+        record.test_case_number = self.__current_test_case_number
 
         # This section removes the process, path, and greenlet information
         # from any mssage that starts with any of the characters ' +-'.
@@ -55,7 +70,9 @@ class _GeventInfoFilter(logging.Filter):
         if any(elem in record.msg[0] for elem in r' +-?%'):
             lif = ''
         else:
-            lif = '{r.process} {r.processName} {r.pathname}:{r.funcName}@{r.lineno} {r.greenlet}'.format(r=record)
+            u_lif = '{r.test_case_number} {r.process} {r.processName} {r.pathname}:{r.funcName}@{r.lineno} ' + \
+                '{r.greenlet} [{r.test_name}]'
+            lif = u_lif.format(r=record)
         record.location_info_string = lif
 
         return True
@@ -136,7 +153,7 @@ class _LoggerSetup(object):
     def __makedirs_dash_p(self, *args, **kwargs):
         try:
             os.makedirs(*args, **kwargs)
-        except OSError, e:
+        except OSError as e:
             # be happy if someone already created the path
             if e.errno != errno.EEXIST:
                 raise
@@ -198,7 +215,7 @@ class _LoggerSetup(object):
 
     def __do_level_names(self):
         lvl_copy = dict(_levelNames)
-        for adj in xrange(0, 10):
+        for adj in range(0, 10):
             for lvl_key, lvl_value in lvl_copy.items():
                 if isinstance(lvl_key, str) and lvl_key != 'NOTSET':
                     new_name = "{0}_{1}".format(lvl_key, adj)
@@ -308,7 +325,7 @@ class _LoggerSetup(object):
             'formatters': {
                 'simple': {
                     'format': '%(asctime)s %(levelname)-7s %(message)-90s'
-                              ' %(location_info_string)s'
+                              ' %(name)s %(location_info_string)s'
                 },
                 'original': {
                     'format': '%(asctime)s %(process)d %(processName)s '

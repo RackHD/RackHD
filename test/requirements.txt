@@ -1,6 +1,7 @@
 amqp==1.4.8
 ansible==1.8.4
 anyjson==0.3.3
+docker-py==1.10.6
 flake8==3.2.1
 gevent==1.1.2
 greenlet==0.4.10
@@ -19,6 +20,7 @@ requests==2.9.0
 setuptools==33.1.1
 # urllib3 1.20 breaks CIT test, specify version as a temp solution
 urllib3==1.19.1
+ucsmsdk==0.9.2.0
 exrex=0.10.4
 
 # WARNING: do not just replace this file with "pip freeze > requirements.txt".
