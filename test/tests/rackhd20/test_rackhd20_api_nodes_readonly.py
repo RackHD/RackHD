@@ -15,8 +15,8 @@ from common import fit_common
 import flogging
 from nose.plugins.attrib import attr
 
-logs = flogging.get_loggers()
 
+logs = flogging.get_loggers()
 
 @attr(all=False, regression=False, smoke=False)
 class rackhd_api_nodes_readonly(unittest.TestCase):
