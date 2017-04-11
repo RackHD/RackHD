@@ -18,16 +18,11 @@ Copyright 2015, DellEMC LLC
                python run_tests.py -stack 2 -test tests/security/test_api_security_login.py
 '''
 
-import os
 import sys
-import fit_path
-import unittest
 import flogging
 import fit_common
-import random
 import string
 import exrex
-from random import randint
 from nose.plugins.attrib import attr
 sys.path.append(fit_common.TEST_PATH + "/classes")
 from classes.administrator import Administrator

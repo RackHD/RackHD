@@ -138,8 +138,8 @@ class User:
             'accept': 'application/json',
             'authorization': 'JWT ' + fit_common.AUTH_TOKEN
         }
-        url = "https://{0}:{1}/api/2.0/users/{2}".format(fit_common.fitargs()['rackhd_host'], str(fit_common.fitports()['https']),
-                                                         self.username)
+        url = "https://{0}:{1}/api/2.0/users/{2}".format(fit_common.fitargs()['rackhd_host'],
+                                                         str(fit_common.fitports()['https']), self.username)
         try:
             r = requests.delete(url, headers=headers, timeout=User.timeout, verify=False)
         except requests.exceptions.RequestException as e:
