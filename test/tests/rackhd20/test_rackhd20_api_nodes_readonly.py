@@ -15,8 +15,8 @@ from common import fit_common
 import flogging
 from nose.plugins.attrib import attr
 
-
 logs = flogging.get_loggers()
+
 
 @attr(all=False, regression=False, smoke=False)
 class rackhd_api_nodes_readonly(unittest.TestCase):
@@ -25,6 +25,8 @@ class rackhd_api_nodes_readonly(unittest.TestCase):
     # TODO: write test...
 
     # GET
+
+
     def test_api_20_nodes_readonly(self):
         # TODO: will need to add a node to the list before checking for any...
         nodelist = []
@@ -53,6 +55,7 @@ class rackhd_api_nodes_readonly(unittest.TestCase):
 
     # DELETE
     # TODO: write test...
+
 
 if __name__ == '__main__':
     unittest.main()
