@@ -329,7 +329,7 @@ class NodesTests(object):
                 assert_not_equal(timeout, 0, message='Failed to delete an active workflow')
         assert_raises(rest.ApiException, Api().nodes_workflow_action_by_id, 'fooey', {'command': 'test'})
 
-    @test(groups=['node_tags_patch'], depends_on_groups=['node_workflows_del_active-api2'])
+    @test(groups=['node_tags_patch'], depends_on_groups=['node_workflows-api2'])
     def test_node_tags_patch(self):
         """ Testing PATCH:/api/2.0/nodes/:id/tags """
         codes = []
