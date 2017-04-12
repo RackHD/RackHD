@@ -27,6 +27,8 @@ from nose.plugins.attrib import attr
 
 # Import the logging feature
 import flogging
+
+# Get access to the stream-monitor singleton
 from sm_plugin import AMQPStreamMonitor
 
 # set up the logging

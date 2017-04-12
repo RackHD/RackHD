@@ -9,9 +9,11 @@ import optparse
 import uuid
 import gevent
 import gevent.queue
+from pexpect.pxssh import ExceptionPxssh
 from .monitor_abc import StreamMonitorBaseClass
 from .stream_matchers_base import StreamMatchBase
 from .amqp_od import RackHDAMQPOnDemand
+from .ssh_helper import SSHHelper
 from kombu import Connection, Producer, Queue, Exchange, Consumer
 
 
@@ -30,7 +32,7 @@ class _AMQPServerWrapper(object):
             self.__consumer.consume()
             try:
                 self.__connection.drain_events(timeout=0.1)
-            except Exception as ex:
+            except Exception as ex:     # NOQA: assigned but not used (left in for super-duper-low-level-debug)
                 # print("was woken because {}".format(ex))
                 pass
             gevent.sleep(0)
@@ -165,18 +167,62 @@ class AMQPStreamMonitor(StreamMonitorBaseClass):
         super(AMQPStreamMonitor, self).handle_begin()
         self.__monitors = []
         sm_amqp_url = getattr(self.__options, 'sm_amqp_url', None)
+        self.__cleanup_user = None
+        self.__amqp_on_demand = False
         if sm_amqp_url is None:
             sm_amqp_url = None
         elif sm_amqp_url == 'on-demand':
             self.__amqp_on_demand = RackHDAMQPOnDemand()
             sm_amqp_url = self.__amqp_on_demand.get_url()
-        else:
-            self.__amqp_on_demand = None
-
+        elif sm_amqp_url.startswith('generate'):
+            sm_amqp_url, self.__cleanup_user = self.__setup_generated_amqp(sm_amqp_url)
         if sm_amqp_url is None:
             self.__amqp_server = None
         else:
             self.__amqp_server = _AMQPServerWrapper(sm_amqp_url)
+
+    def handle_finalize(self):
+        """
+        Handle end-of-run cleanup
+        """
+        if self.__cleanup_user is not None:
+            clean = SSHHelper('dut', 'amqp-user-delete-ssh-stdouterr: ')
+            cmd_text, ecode, output = clean.sendline_and_stat('rabbitmqctl delete_user {}'.format(
+                self.__cleanup_user))
+        assert ecode == 0 or 'no_such_user' in output, \
+            "{} failed with something other than 'no_such_user':".format(cmd_text, output)
+
+    def __setup_generated_amqp(self, generate_string):
+        """
+        Handle the case where we are told to generate an AMQP user
+        and even set it up on the DUT.
+        """
+        port = int(generate_string.split(':')[1])
+        uid = str(uuid.uuid4())
+        auser = 'tdd_amqp_user_{}'.format(uid)
+        apw = uid
+        try:
+            fixed = SSHHelper('dut', 'amqp-user-setup-ssh-stdouterr: ')
+            cmd_text, ecode, output = fixed.sendline_and_stat('rabbitmqctl delete_user {}'.format(auser))
+            # the user probably WON'T be there, so don't worry much.
+            assert ecode == 0 or 'no_such_user' in output, \
+                "{} failed with something other than 'no_such_user':".format(cmd_text, output)
+            # now add this user.
+            fixed.sendline_and_stat('rabbitmqctl add_user {} {}'.format(auser, apw), must_be_0=True)
+            # add administrator tag
+            fixed.sendline_and_stat('rabbitmqctl set_user_tags {} administrator'.format(auser), must_be_0=True)
+            # now add permissions
+            fixed.sendline_and_stat(r'''rabbitmqctl set_permissions {} ".*" ".*" ".*"'''.format(auser), must_be_0=True)
+            fixed.logout()
+            return 'amqp://{}:{}@{}:{}'.format(auser, apw, fixed.dut_ssh_host, port), auser
+        except ExceptionPxssh as ex:
+            # the PR in-queue behind with one sets up better logging in the sources.
+            # Rather than try to pull that forward, manually grab flogging and
+            # update this block in next merge.
+            from flogging import get_loggers
+            logs = get_loggers()
+            logs.irl.debug('unable to set up amqp user. AMQP monitors disabled: %s', ex)
+        return None, None
 
     @property
     def has_amqp_server(self):
