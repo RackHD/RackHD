@@ -16,7 +16,7 @@ if CONFIG:
     defaults['RACKHD_HOST'] = fit_common.fitcfg()['rackhd_host']
     defaults['RACKHD_PORT'] = fit_common.fitports()['http']
     defaults['RACKHD_PORT_AUTH'] = fit_common.fitports()['https']
-    defaults['RACKHD_USER_AUTH_PORT'] = fit_common.fitports()['https']
+    #defaults['RACKHD_USER_AUTH_PORT'] = fit_common.fitports()['https']
     defaults['RACKHD_HTTPD_PORT'] = fit_common.fitports()['httpd']
     defaults['RACKHD_SSH_PORT'] = fit_common.fitports()['ssh']
     defaults['RACKHD_SSH_USER'] = fit_common.fitcreds()['rackhd_ssh'][0]['username']
