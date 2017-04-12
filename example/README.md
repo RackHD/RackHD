@@ -39,8 +39,8 @@ Clone RackHD repo to your local machine.
     cd example
     # create the RackHD instance.
     vagrant up dev
-    # start the RackHD services
-    vagrant ssh dev -c "sudo pm2 start rackhd-pm2-config.yml"
+    # access the RackHD VM
+    vagrant ssh dev
 
 ### LOCAL SOURCE
 
@@ -74,22 +74,39 @@ local machine.
 
 To view the list of nodes that has been discovered:
 
-    curl http://localhost:9090/api/1.1/nodes | python -m json.tool
+    curl http://localhost:9090/api/2.0/nodes | python -m json.tool
 
 
 View the list of catalogs logged into RackHD:
 
-    curl http://localhost:9090/api/1.1/catalogs | python -m json.tool
+    curl http://localhost:9090/api/2.0/catalogs | python -m json.tool
 
 
 (both of these should result in empty lists in a brand new installation)
 
 To view a list of all the existing workflows already in the RackHD definitions:
 
-    curl http://localhost:9090/api/1.1/workflows/library/* | python -m json.tool
+    curl http://localhost:9090/api/2.0/workflows/graphs | python -m json.tool
 
 
 ### Authentication
+
+Setup the first user with localhost exception. The localhost exception permits 
+unauthenticated access to create the first user in the system. With authentication 
+enabled, the first user can be created by issuing a POST to the /users API only if 
+the API is issued from localhost. The first user must be assigned a role with 
+privileges to create other users, such as an Administrator role.
+
+Here is an example of creating an initial 'admin' user with a password of 'admin123':
+
+    curl -X POST -H "Content-Type:application/json" localhost:9090/api/2.0/users \
+    -d '{ "username": "admin", "password": "admin123", "role": "Administrator" }' \
+    | python -m json.tool
+    
+    {
+        "role": "Administrator",
+        "username": "admin"
+    }
 
 An optional authenticated northbound endpoint will be enabled on port 9093.
 Login with the default username/password to retrieve the login token:
