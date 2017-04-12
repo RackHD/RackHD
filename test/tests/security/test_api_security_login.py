@@ -21,7 +21,6 @@ Copyright 2015, DellEMC LLC
 import sys
 import flogging
 import fit_common
-import string
 import exrex
 from nose.plugins.attrib import attr
 sys.path.append(fit_common.TEST_PATH + "/classes")
