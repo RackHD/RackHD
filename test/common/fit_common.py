@@ -196,12 +196,16 @@ def apply_stack_config():
     stack = fitargs()['stack']
     if stack is not None:
         mkcfg().add_from_file('stack_config.json', stack)
-        if fitargs()['rackhd_host'] == 'localhost' and 'rackhd_host' in fitcfg():
-            fitargs()['rackhd_host'] = fitcfg()['rackhd_host']
-        if 'bmc' in fitcfg():
-            fitargs()['bmc'] = fitcfg()['bmc']
-        if 'hyper' in fitcfg():
-            fitargs()['hyper'] = fitcfg()['hyper']
+
+    if mkcfg().config_exists('deploy_generated.json'):
+        mkcfg().add_from_file('deploy_generated.json')
+
+    if fitargs()['rackhd_host'] == 'localhost' and 'rackhd_host' in fitcfg():
+        fitargs()['rackhd_host'] = fitcfg()['rackhd_host']
+    if 'bmc' in fitcfg():
+        fitargs()['bmc'] = fitcfg()['bmc']
+    if 'hyper' in fitcfg():
+        fitargs()['hyper'] = fitcfg()['hyper']
 
 
 def add_globals():
