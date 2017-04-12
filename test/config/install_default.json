@@ -4,7 +4,7 @@
       "ports": {
         "_comment": "These are the northbound rest API port assignments",
         "http": 8080,
-        "https": 8443,
+        "https": 9093,
         "httpd": 8010,
         "amqp":5672,
         "amqp-vagrant":9091,
