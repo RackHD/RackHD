@@ -288,25 +288,25 @@ class NodesTests(object):
 #            assert_equal(404, e.status,
 #                message='unexpected response {0}, expected 404 for bad nodeId'.format(e.status))
 
-#    @test(groups=['node_post_workflows-api2'], depends_on_groups=['node_workflows-api2'])
-#    def test_node_workflows_post(self):
-#        """ Testing POST:/api/2.0/nodes/:id/workflows """
-#        resps = []
-#        Api().nodes_get_all()
-#        nodes = self.__get_data()
-#        for n in nodes:
-#            if n.get('type') == 'compute':
-#                id = n.get('id')
-#                timeout = self.__post_workflow(id,'Graph.Discovery')
-#                if timeout > 0:
-#                    data = self.__get_data()
-#                resps.append({'data': data, 'id':id})
-#        for resp in resps:
-#            assert_not_equal(0, len(resp['data']), 
-#                message='No Workflows found for Node {0}'.format(resp['id']))
-#        assert_raises(rest.ApiException, Api().nodes_post_workflow_by_id, 'fooey',name='Graph.Discovery',body={})
+    @test(groups=['node_post_workflows-api2'], depends_on_groups=['node_workflows-api2'])
+    def test_node_workflows_post(self):
+        """ Testing POST:/api/2.0/nodes/:id/workflows """
+        resps = []
+        Api().nodes_get_all()
+        nodes = self.__get_data()
+        for n in nodes:
+            if n.get('type') == 'compute':
+                id = n.get('id')
+                timeout = self.__post_workflow(id,'Graph.Discovery')
+                if timeout > 0:
+                    data = self.__get_data()
+                resps.append({'data': data, 'id':id})
+        for resp in resps:
+            assert_not_equal(0, len(resp['data']), 
+                message='No Workflows found for Node {0}'.format(resp['id']))
+        assert_raises(rest.ApiException, Api().nodes_post_workflow_by_id, 'fooey',name='Graph.Discovery',body={})
 
-    @test(groups=['node_workflows_del_active-api2'], depends_on_groups=['node_workflows-api2'])
+    @test(groups=['node_workflows_del_active-api2'], depends_on_groups=['node_post_workflows-api2'])
     def test_workflows_action(self):
         """ Testing PUT:/api/2.0/nodes/:id/workflows/action """
         Api().nodes_get_all()
