@@ -196,6 +196,7 @@ class ucs_api(unittest.TestCase):
         self.assertEqual(total_elements, 18, "Expected 18 elements but found {0}"
                          .format(total_elements))
 
+    @depends(after=test_check_ucs_params)
     def test_api_20_ucs_power(self):
         """
         Test the GET and POST api for server power state
