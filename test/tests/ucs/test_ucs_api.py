@@ -153,6 +153,64 @@ class ucs_api(unittest.TestCase):
                                 .format(total_elements))
         # TO DO: deeper check on the catalog data
 
+    def check_all_server_power_state(self, state):
+        """
+        Test to see if all Associated servers are in the specified state
+        :return: True or False
+        """
+
+        url, headers = self.ucs_url_factory("serviceProfile")
+        api_data = fit_common.restful(url, rest_headers=headers)
+        self.assertEqual(api_data['status'], 200,
+                         'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
+        total_elements = 0
+        for server in api_data["json"]["ServiceProfile"]["members"]:
+            url, headers = self.ucs_url_factory("power", identifier=str(server["path"]))
+            api_data_c = fit_common.restful(url, rest_headers=headers)
+            self.assertEqual(api_data_c['status'], 200,
+                             'Incorrect HTTP return code, expected 200, got:' + str(api_data_c['status']))
+            self.assertEqual(api_data_c["json"]["serverState"], state,
+                             'Server ' + str(server["path"]) + ' reported power state ' +
+                             str(api_data_c["json"]["serverState"]) + ' expected: ' + state)
+            total_elements += 1
+        self.assertEqual(total_elements, 18, "Expected 18 elements but found {0}"
+                         .format(total_elements))
+
+    def set_all_server_power_state(self, state):
+        """
+        Use the POST /power ucs API to set the state of all servers
+        :return:
+        """
+
+        url, headers = self.ucs_url_factory("serviceProfile")
+        api_data = fit_common.restful(url, rest_headers=headers)
+        self.assertEqual(api_data['status'], 200,
+                         'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
+        total_elements = 0
+        for server in api_data["json"]["ServiceProfile"]["members"]:
+            url, headers = self.ucs_url_factory("power", identifier=str(server["path"]))
+            api_data_c = fit_common.restful(url + "&action=" + state, rest_headers=headers, rest_action='post')
+            self.assertEqual(api_data_c['status'], 200,
+                             'Incorrect HTTP return code, expected 200, got:' + str(api_data_c['status']))
+            total_elements += 1
+        self.assertEqual(total_elements, 18, "Expected 18 elements but found {0}"
+                         .format(total_elements))
+
+    def test_api_20_ucs_power(self):
+        """
+        Test the GET and POST api for server power state
+        :return:
+        """
+
+        # first power off all servers
+        self.set_all_server_power_state("off")
+        # verify power state is down
+        self.check_all_server_power_state("down")
+        # now power on the servers
+        self.set_all_server_power_state("on")
+        # verify power state is up
+        self.check_all_server_power_state("up")
+
 
 if __name__ == '__main__':
     unittest.main()
