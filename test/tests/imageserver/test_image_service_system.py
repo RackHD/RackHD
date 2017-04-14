@@ -36,7 +36,10 @@ class test_image_service_system(fit_common.unittest.TestCase):
         pwd = ''
         response = fit_common.rackhdapi(
             '/api/2.0/nodes/' + nodeid + '/catalogs/bmc')
-        bmcip = response['json']['data']['IP Address']
+        if response['status'] in range(200, 205):
+            bmcip = response['json']['data']['IP Address']
+        else:
+            bmcip = "0.0.0.0"
         if bmcip == "0.0.0.0":
             response = fit_common.rackhdapi(
                 '/api/2.0/nodes/' + nodeid + '/catalogs/rmm')
@@ -82,19 +85,7 @@ class test_image_service_system(fit_common.unittest.TestCase):
             logs.error('Incorrect HTTP return code, expected 201, got:' + str(response['status']))
             return "fail"
 
-    def _list_os_image(self):
-        mon_url = '/images'
-        serverip = self._get_serverip()
-        control_port = str(fit_common.fitcfg()["image_service"]["control_port"])
-        response = fit_common.restful("http://" + serverip + ":" + control_port + mon_url)
-        if response['status'] in range(200, 205):
-            return response['json']
-        else:
-            logs.error('Incorrect HTTP return code, expected 201-205, got:' + str(response['status']))
-            return "fail"
-
-    def _list_os_iso(self):
-        mon_url = '/iso'
+    def _list_file(self, mon_url):
         serverip = self._get_serverip()
         control_port = str(fit_common.fitcfg()["image_service"]["control_port"])
         response = fit_common.restful("http://" + serverip + ":" + control_port + mon_url)
@@ -161,10 +152,12 @@ class test_image_service_system(fit_common.unittest.TestCase):
                 os_version = osrepo["version"]
                 http_iso_url = osrepo["url"]
                 self._upload_os_by_network(os_name, os_version, http_iso_url)
-                break
+                logs.debug("create ESXi repo successfully")
+                return
+        logs.error("No ESXi source found in config")
 
     def _delete_all_images(self):
-        os_image_list = self._list_os_image()
+        os_image_list = self._list_file('/images')
         serverip = self._get_serverip()
         for image_repo in os_image_list:
             self.assertNotEqual(
@@ -172,14 +165,14 @@ class test_image_service_system(fit_common.unittest.TestCase):
             control_port = str(fit_common.fitcfg()["image_service"]["control_port"])
             fileurlprefix = "http://" + serverip + ":" + control_port + "/" + \
                             image_repo["name"] + '/' + image_repo["version"] + '/'
-            self.assertFalse(self._file_exists(fileurlprefix), "The repo url does not deleted completely")
-        os_image_list_clear = self._list_os_image()
+            self.assertFalse(self._file_exists(fileurlprefix), "The repo url is not deleted completely")
+        os_image_list_clear = self._list_file('/images')
         self.assertTrue(os_image_list_clear == [])
-        os_iso_list = self._list_os_iso()
+        os_iso_list = self._list_file('/iso')
         for iso_repo in os_iso_list:
             self.assertNotEqual(self._delete_os_iso(iso_repo["name"]), "fail", "delete iso failed!")
-        os_iso_list_clear = self._list_os_iso()
-        self.assertTrue(os_iso_list_clear == [], "The iso does not deleted completely")
+        os_iso_list_clear = self._list_file('/iso')
+        self.assertTrue(os_iso_list_clear == [], "The iso is not deleted completely")
         logs.debug("All repo is cleared!")
 
     def _upload_microkernel(self, filename):
@@ -195,16 +188,6 @@ class test_image_service_system(fit_common.unittest.TestCase):
             logs.debug_3('Incorrect HTTP return code, expected 201, got:' + str(response['status']))
             return "fail"
 
-    def _list_microkernel(self):
-        mon_url = '/microkernel'
-        serverip = self._get_serverip()
-        control_port = str(fit_common.fitcfg()["image_service"]["control_port"])
-        response = fit_common.restful("http://" + serverip + ":" + control_port + mon_url)
-        if response['status'] in range(200, 205):
-            return response['json']
-        else:
-            logs.debug_3('Incorrect HTTP return code, expected 201-205, got:' + str(response['status']))
-            return "fail"
 
     def _delete_microkernel(self, filename):
         mon_url = '/microkernel?name=' + filename
@@ -220,12 +203,13 @@ class test_image_service_system(fit_common.unittest.TestCase):
     def _scp_file(self, url):
         file_name = url.split('/')[-1]
         logs.debug_3("scp file %s from RackHD" % url)
-        if os.path.exists(file_name) is False:
+        if not os.path.exists(file_name):
             path = url[6:]
             rackhd_hostname = fit_common.fitargs()['rackhd_host']
             scp_file = fit_common.fitcreds()['rackhd_host'][0]['username'] + '@{0}:{1}'.format(rackhd_hostname, path)
             cmd = 'scp -o StrictHostKeyChecking=no {0} .'.format(scp_file)
             logs.debug_3("scp command : '{0}'".format(cmd))
+            logfile_redirect = None
             if fit_common.VERBOSITY >= 9:
                 logfile_redirect = sys.stdout
             (command_output, ecode) = pexpect.run(
@@ -278,12 +262,31 @@ class test_image_service_system(fit_common.unittest.TestCase):
             return False
 
     def _delete_all_microkernels(self):
-        microkernel_list = self._list_microkernel()
+        microkernel_list = self._list_file('/microkernel')
         for microkernel in microkernel_list:
             self.assertNotEqual(self._delete_microkernel(microkernel["name"]), "fail", "delete image failed!")
-        microkernel_list_clear = self._list_microkernel()
+        microkernel_list_clear = self._list_file('/microkernel')
         self.assertTrue(microkernel_list_clear == [])
         logs.debug_3("All microkernels are cleared!")
+
+    def _delete_all_images(self):
+        os_image_list = self._list_os_image()
+        serverip = self._get_serverip()
+        for image_repo in os_image_list:
+            self.assertNotEqual(
+                self._delete_os_image(image_repo["name"], image_repo["version"]), "fail", "delete image failed!")
+            file_port = str(fit_common.fitcfg()["image_service"]["file_port"])
+            fileurlprefix = "http://" + serverip + ":" + file_port + "/" + image_repo["name"] + '/' + \
+                            image_repo["version"] + '/'
+            self.assertFalse(self._file_exists(fileurlprefix), "The repo url does not deleted completely")
+        os_image_list_clear = self._list_os_image()
+        self.assertTrue(os_image_list_clear == [])
+        os_iso_list = self._list_os_iso()
+        for iso_repo in os_iso_list:
+            self.assertNotEqual(self._delete_os_iso(iso_repo["name"]), "fail", "delete iso failed!")
+        os_iso_list_clear = self._list_os_iso()
+        self.assertTrue(os_iso_list_clear == [], "The iso does not deleted completely")
+        logs.debug("All repo is cleared!")
 
     def _wait_for_discover(self, node_uuid):
         for dummy in range(0, 30):
@@ -305,7 +308,6 @@ class test_image_service_system(fit_common.unittest.TestCase):
     def test_bootstrapping_ext_esxi6(self):
         self._create_esxi_repo()
         node_collection = test_api_utils.get_node_list_by_type("compute")
-        node = ""
         fileserver_ip = self._get_tester_ip()
         file_port = str(fit_common.fitcfg()["image_service"]["file_port"])
         repourl = "http://" + fileserver_ip + ':' + file_port + '/ESXi' + '/' + '6.0' + '/'
@@ -338,12 +340,12 @@ class test_image_service_system(fit_common.unittest.TestCase):
         self.assertEqual(
             self._wait_for_task_complete(result['json']["instanceId"], retries=80), True,
             'TaskID ' + result['json']["instanceId"] + ' not successfully completed.')
+        self._delete_all_images()
 
     def test_rediscover(self):
         # Select one node at random that's not a management server
         self._upload_all_microkernels()
         node_collection = test_api_utils.get_node_list_by_type("compute")
-        node = ""
         for dummy in node_collection:
             node = node_collection[random.randint(0, len(node_collection) - 1)]
             if fit_common.rackhdapi('/api/2.0/nodes/' + node)['json']['name'] != "Management Server":
