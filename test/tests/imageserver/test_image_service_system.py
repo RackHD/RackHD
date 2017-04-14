@@ -43,7 +43,10 @@ class test_image_service_system(fit_common.unittest.TestCase):
         if bmcip == "0.0.0.0":
             response = fit_common.rackhdapi(
                 '/api/2.0/nodes/' + nodeid + '/catalogs/rmm')
-            bmcip = response['json']['data']['IP Address']
+            if response['status'] in range(200, 205):
+                bmcip = response['json']['data']['IP Address']
+            else:
+                return False
         # Try credential record in config file
         for creds in fit_common.fitcreds()['bmc']:
             if fit_common.remote_shell(
@@ -156,25 +159,6 @@ class test_image_service_system(fit_common.unittest.TestCase):
                 return
         logs.error("No ESXi source found in config")
 
-    def _delete_all_images(self):
-        os_image_list = self._list_file('/images')
-        serverip = self._get_serverip()
-        for image_repo in os_image_list:
-            self.assertNotEqual(
-                self._delete_os_image(image_repo["name"], image_repo["version"]), "fail", "delete image failed!")
-            control_port = str(fit_common.fitcfg()["image_service"]["control_port"])
-            fileurlprefix = "http://" + serverip + ":" + control_port + "/" + \
-                            image_repo["name"] + '/' + image_repo["version"] + '/'
-            self.assertFalse(self._file_exists(fileurlprefix), "The repo url is not deleted completely")
-        os_image_list_clear = self._list_file('/images')
-        self.assertTrue(os_image_list_clear == [])
-        os_iso_list = self._list_file('/iso')
-        for iso_repo in os_iso_list:
-            self.assertNotEqual(self._delete_os_iso(iso_repo["name"]), "fail", "delete iso failed!")
-        os_iso_list_clear = self._list_file('/iso')
-        self.assertTrue(os_iso_list_clear == [], "The iso is not deleted completely")
-        logs.debug("All repo is cleared!")
-
     def _upload_microkernel(self, filename):
         myfile = open(filename, 'rb')
         serverip = self._get_serverip()
@@ -187,7 +171,6 @@ class test_image_service_system(fit_common.unittest.TestCase):
         else:
             logs.debug_3('Incorrect HTTP return code, expected 201, got:' + str(response['status']))
             return "fail"
-
 
     def _delete_microkernel(self, filename):
         mon_url = '/microkernel?name=' + filename
