@@ -70,8 +70,7 @@ def extract_tgz_file_to_datadir(pkginfo, logdir):
     '''
     status = False
     pstr = pkginfo.split("/")
-    nlen = len(pstr)
-    pn = pstr[nlen - 1]
+    pn = pstr[-1]
     pkgname = pn.rstrip("\r")
 
     # Check the log directory for the existance of the tarball
