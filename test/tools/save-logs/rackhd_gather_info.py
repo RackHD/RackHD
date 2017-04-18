@@ -20,6 +20,7 @@
 # of this script.  Updates could be added back in to make uses of all
 # the options.
 
+from __future__ import print_function
 import errno
 import getopt
 import os
@@ -34,15 +35,10 @@ import subprocess
 
 # for package xml metadata
 import xml.etree.ElementTree as etree
+from functools import reduce
 
 PROGNAME = os.path.basename(sys.argv[0])
 REVISION = "Revision: 001"
-
-try:
-    True
-except NameError:
-    True = 1
-    False = 0
 
 SUPPORT_DIR = None
 TMP_SUPPORT_DIR = None
@@ -267,7 +263,8 @@ def generate_scripts(run_utils):
         os.write(localfd, footer)
         os.close(localfd)
 
-    except OSError, (errno, strerror):
+    except OSError as err:
+        (errno, strerror) = err.args
         error("OS error: %s" % os.strerror(errno))
 
 
@@ -312,7 +309,7 @@ def main():
     options.group_utils = []
 
     # Allow all directory and data creation to be accessed by the group users
-    os.umask(0002)
+    os.umask(0o002)
 
     # parse options
     get_options()
@@ -332,7 +329,7 @@ def main():
     # Convert gather_script/_expr to UTILITIES commands; Add to UTILITIES
     # Create include_list using the final updated UTILITIES.
     if "all" in options.includes:
-        include_list = UTILITIES.keys()
+        include_list = list(UTILITIES.keys())
     else:
         include_list = options.includes
 
@@ -380,7 +377,7 @@ def main():
     task = "Running gather script on stack"
     (exit, output) = get_cmd_output("bash " + LOCAL_GATHER_SCRIPT)
     if exit:
-        print("ERROR %s" % task)
+        print(("ERROR %s" % task))
         log.write("Gather Failed. %s" % output)
         for line in output:
             print(line)
@@ -394,7 +391,7 @@ def main():
     # if this generation fails, we can continue, but dump traceback info
     try:
         savePackageInfo(pkginfo, PACKAGE_INFO)
-    except Exception, e:
+    except Exception as e:
         try:
             traceback.print_exc(file=open(PACKAGE_INFO, 'a'))
         except:
@@ -410,7 +407,7 @@ def main():
         os.chdir(TMP_SUPPORT_DIR)
         (exit, output) = get_cmd_output(tar_command)
         if exit:
-            print("ERROR tar returned %d" % (exit >> 8)),
+            print(("ERROR tar returned %d" % (exit >> 8)))
             log.write("Gather Failed")
             if output:
                 print(" output follows:")
@@ -420,12 +417,13 @@ def main():
                 print(" ")
             error("Could not create compressed package.")
             log.write("Gather Failed. Could not create compressed package.")
-    except OSError, (errno, strerror):
+    except OSError as err:
+        (errno, strerror) = err.args
         error("FAILED system call (tar): %s" % (os.strerror(errno)))
         log.write("Gather Failed %s" % (os.strerror(errno)))
 
     print("Packaging complete...")
-    print("Package: %s" % pkg_path_name)
+    print(("Package: %s" % pkg_path_name))
     log.write("Package: %s" % pkg_path_name)
 
     # If we don't have the exit_status set, then the log gathered
@@ -441,11 +439,11 @@ def main():
 
         try:
             os.utime(FULLGATHER_FILE, (start_time, start_time))
-        except Exception, e:
+        except Exception as e:
             sys.stderr.write('WARNING: Full Gather run data update failed. %s\n' % str(e))
             log.write("Gather Failed. WARNING: Full Gather run data update failed.")
 
-    print("Cleaning up temporary data..."),
+    print("Cleaning up temporary data...")
     if clean_tmp_dir(TMP_SUPPORT_DIR) == 0:
         print("done.")
 
@@ -475,7 +473,7 @@ def get_popen(cmd, include_stderr=True, stdin=None):
                                 stdout=subprocess.PIPE, close_fds=True,
                                 shell=True)
     except OSError:
-        print("While runnin {}".format(cmd))
+        print(("While runnin {}".format(cmd)))
         raise
 
 
@@ -490,7 +488,8 @@ def get_popen_output(p, raw, strip=True):
         try:
             error = p.wait()
             break
-        except EnvironmentError, (error, strerror):
+        except EnvironmentError as err:
+            (error, strerror) = err.args
             if error == errno.EINTR:
                 continue
             else:
@@ -536,7 +535,7 @@ def get_cmd_output(cmd, include_stderr=True, raw=False, strip=True):
 def saveCommandLine():
     try:
         mode = os.O_RDWR | os.O_CREAT | os.O_TRUNC
-        fd = os.open(SAVED_COMMAND_LINE, mode, 0666)
+        fd = os.open(SAVED_COMMAND_LINE, mode, 0o666)
         os.write(fd, " ".join(sys.argv) + "\n")
         os.close(fd)
     except OSError:
@@ -597,8 +596,9 @@ def waitForChildren(children):
 def makeDir(path):
     if not os.path.exists(path):
         try:
-            os.makedirs(path, 0775)
-        except OSError, (errno, strerror):
+            os.makedirs(path, 0o775)
+        except OSError as err:
+            (errno, strerror) = err.args
             error("couldn't make %s directory: %s" % (path, os.strerror(errno)))
 
 
@@ -606,7 +606,8 @@ def getHostname():
     try:
         f = os.popen("/bin/hostname", "r")
         host_name = f.readline()
-    except OSError, (errno, strerror):
+    except OSError as err:
+        (errno, strerror) = err.args
         error("error running hostname: %s" % os.strerror(errno))
     f.close()
 
@@ -647,21 +648,21 @@ def makeDirs(dirs):
 
 def listGroups():
     print("\nKnown groups (included with the --group option): \n")
-    groups = GROUPS.keys()
+    groups = list(GROUPS.keys())
     groups.sort()
     for g in groups:
-        print("  %s" % g)
+        print(("  %s" % g))
     print("")
 
 
 def listUtils():
     print("")
     print("Known utilities (included with the -i option): \n")
-    utils = UTILITIES.keys()
+    utils = list(UTILITIES.keys())
     utils.sort()
     for u in utils:
         if u not in EXEMPT:
-            print("  %s" % u)
+            print(("  %s" % u))
     print("")
 
 
@@ -671,14 +672,13 @@ def listUtils():
 # hurt anything being in there (since the keys of the UTILITIES dict
 # is what's searched).
 def pruneUtils(requested):
-    ulist = UTILITIES.keys()
+    ulist = list(UTILITIES.keys())
     nlist = []
     for r in requested:
         if r not in ulist:
-            print("WARNING: unknown utility (%s), ignored..." % r)
+            print(("WARNING: unknown utility (%s), ignored..." % r))
         else:
             nlist.append(r)
-
     return(nlist)
 
 
@@ -686,18 +686,18 @@ def pruneUtils(requested):
 # EXEMPT actually exists.
 def validateUtils():
     util_errors = 0
-    for (group, utils) in GROUPS.items():
+    for (group, utils) in list(GROUPS.items()):
         for util in utils:
             # if not UTILITIES.has_key(util):
             if util not in UTILITIES:
                 util_errors += 1
-                print("Unknown utility '%s' in group '%s'!" % (util, group))
+                print(("Unknown utility '%s' in group '%s'!" % (util, group)))
     for util in EXEMPT:
         # if not UTILITIES.has_key(util):
         if util not in UTILITIES:
-            print("Unknown utility '%s' in default group!" % util)
+            print(("Unknown utility '%s' in default group!" % util))
     if util_errors:
-        print("%d utility errors." % util_errors)
+        print(("%d utility errors." % util_errors))
         sys.exit(1)
 
 
@@ -771,7 +771,7 @@ def getUtilityExecuteCmd(name, cmd, args):
 
 def makeUniqueDictKeyName(name, dict):
     new_name, count = name, 0
-    while new_name in dict.keys():
+    while new_name in list(dict.keys()):
         count += 1
         new_name = '%s-%d' % (name, count)
     return new_name
@@ -779,11 +779,11 @@ def makeUniqueDictKeyName(name, dict):
 
 def verbose(str):
     if options.verbose:
-        print >> sys.stdout, str
+        print(str, file=sys.stdout)
 
 
 def error(str):
-    print >> sys.stderr, PROGNAME + ':', str
+    print(PROGNAME + ':', str, file=sys.stderr)
     sys.exit(1)
 
 
@@ -796,7 +796,7 @@ def clean_tmp_dir(dir=TMP_SUPPORT_DIR):
     (exit, output) = get_cmd_output(cmd)
     if exit:
         error_count += 1
-        print("\nERROR cleaning up %s, output follows:\n%s" % (dir, "\n".join(output)))
+        print(("\nERROR cleaning up %s, output follows:\n%s" % (dir, "\n".join(output))))
     if error_count:
         print("You may wish to delete these files manually.")
     return error_count
@@ -842,11 +842,11 @@ class MyLock(object):
     def _lock(self):
         """helper to lock()"""
         try:
-            self.lockFD = os.open(self.lockfile, os.O_EXCL | os.O_CREAT | os.O_RDWR, 0400)
+            self.lockFD = os.open(self.lockfile, os.O_EXCL | os.O_CREAT | os.O_RDWR, 0o400)
             os.write(self.lockFD, str(self.pid))
             os.close(self.lockFD)
             return True
-        except OSError, e:
+        except OSError as e:
             if e.errno == 17:   # file exists!
                 return False
             return False
@@ -980,7 +980,7 @@ def get_options():
                 for each in a.split(', '):
                     try:
                         EXEMPT.remove(each)
-                    except ValueError, e:
+                    except ValueError as e:
                         error("Utility %s does not exist to be excluded." % (each))
             elif o in ['-t', '--tarfile']:
                 options.tarfile = a
@@ -1010,15 +1010,15 @@ def get_options():
                 try:
                     options.group_utils.extend(GROUPS[a])
                     options.group.append(a)
-                except KeyError, e:
-                    print("Invalid group specified: %s" % a)
+                except KeyError as e:
+                    print(("Invalid group specified: %s" % a))
                     listGroups()
                     sys.exit(1)
             else:
-                print("Unknown argument: %s" % o)
+                print(("Unknown argument: %s" % o))
                 usage(1)
 
-    except getopt.GetoptError, e:
+    except getopt.GetoptError as e:
         error(str(e.msg))
 
 
@@ -1043,7 +1043,7 @@ Options:
 
 
 def version():
-    print('%s version: %s' % (PROGNAME, REVISION))
+    print(('%s version: %s' % (PROGNAME, REVISION)))
     sys.exit(0)
 
 
