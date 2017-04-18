@@ -11,7 +11,7 @@ Readonly test script that tests:
 
 import fit_path  # NOQA: unused import
 import unittest
-from fit_common
+import fit_common
 import flogging
 from nose.plugins.attrib import attr
 
