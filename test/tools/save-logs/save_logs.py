@@ -25,16 +25,18 @@ import socket
 try:
     import pexpect
 except IOError:
-    print "Python 'pexpect' package required for this script." \
-          "\nUse: 'pip install pexpect'\nExiting...\n"
+    print("Python 'pexpect' package required for this script.")
+    print("Use: 'pip install pexpect'\nExiting...\n")
 try:
     import extract_logs
 except IOError:
-    print "Python \'extract_logs\' package required for this script, check for errors."
+    print("Python \'extract_logs\' script required for this script, check for errors.")
     exit(1)
 
 # Default gather script
 gather_script = "rackhd_gather_info.py"
+
+real_raw_input = vars(__builtins__).get('raw_input', input)
 
 
 def main():
@@ -64,10 +66,10 @@ def main():
     ARGS_LIST = ARG_PARSER.parse_args()
     try:
         CONFIG = json.loads(open("save_logs_conf.json").read())
-        print "save_logs: Using configuration from \"save_logs_conf.json\"."
+        print("save_logs: Using configuration from \"save_logs_conf.json\".")
         config = True
     except:
-        print "save_logs: No config file found"
+        print("save_logs: No config file found")
         config = False
 
     if ARGS_LIST.user == "None":
@@ -75,11 +77,11 @@ def main():
             ARGS_LIST.user = CONFIG["username"]
         except:
             if config is True:
-                print "Username required"
-                print "Usage: {0} -user <username>".format(myfile)
+                print("Username required")
+                print("Usage: {0} -user <username>".format(myfile))
             else:
-                print "Missing Required Parameters"
-                print "Usage: ./save_logs.py -ip <ip> -user <username> -pwd <password>"
+                print("Missing Required Parameters")
+                print("Usage: ./save_logs.py -ip <ip> -user <username> -pwd <password>")
             sys.exit(-1)
 
     if ARGS_LIST.pwd == "None":
@@ -87,11 +89,11 @@ def main():
             ARGS_LIST.pwd = CONFIG["password"]
         except:
             if config is True:
-                print "Password required"
-                print "Usage: {0} -pwd <password>".format(myfile)
+                print("Password required")
+                print("Usage: {0} -pwd <password>".format(myfile))
             else:
-                print "Missing Required Parameters"
-                print "Usage: ./save_logs.py -ip <ip> -user <username> -pwd <password>"
+                print("Missing Required Parameters")
+                print("Usage: ./save_logs.py -ip <ip> -user <username> -pwd <password>")
             sys.exit(-1)
 
     if ARGS_LIST.ip == "0.0.0.0":
@@ -99,11 +101,11 @@ def main():
             ARGS_LIST.ip = CONFIG["ip"]
         except:
             if config is True:
-                print "Stack IP address or hostname required."
-                print "Usage: {0} -ip <ip or hostname>".format(myfile)
+                print("Stack IP address or hostname required.")
+                print("Usage: {0} -ip <ip or hostname>".format(myfile))
             else:
-                print "Missing Required Parematers"
-                print "Usage: ./save_logs.py -ip <ip> -user <username> -pwd <password>"
+                print("Missing Required Parematers")
+                print("Usage: ./save_logs.py -ip <ip> -user <username> -pwd <password>")
             sys.exit(-1)
 
     # scp requires a capital P, ssh requires a lowercase p, for port. Setting up the string format here.
@@ -120,20 +122,21 @@ def main():
             ARGS_LIST.log_path = CONFIG["log_directory_path"]
             # check if value from config file is valid
             if not os.path.isdir(ARGS_LIST.log_path):
-                print 'Output directory path is not present on this system: {0}'.format(ARGS_LIST.log_path)
-                print "Saving logs in current directory: {}".format(cur_dir)
+                print('Output directory path is not present on this system: {0}'.format(ARGS_LIST.log_path))
+                print("Saving logs in current directory: {}".format(cur_dir))
                 ARGS_LIST.log_path = cur_dir
             else:
-                print 'Saving logs in directory path: {}'.format(ARGS_LIST.log_path)
+                print('Saving logs in directory path: {}'.format(ARGS_LIST.log_path))
         except:
-            print "Saving logs in current directory: {}".format(cur_dir)
+            print("Saving logs in current directory: {}".format(cur_dir))
             ARGS_LIST.log_path = cur_dir
     else:
-        print 'Saving logs in directory path: {}'.format(ARGS_LIST.log_path)
+        print('Saving logs in directory path: {}'.format(ARGS_LIST.log_path))
 
     # Get the target directory name, will get appended to the log path and created
     if ARGS_LIST.target_dir == "None":
-        ARGS_LIST.name = raw_input("Enter name of target directory, will be created: ")
+        ARGS_LIST.name = real_raw_input("Enter name of target directory, will be created: ")
+        print("Directory: {} ".format(ARGS_LIST.name))
     else:
         ARGS_LIST.name = ARGS_LIST.target_dir
 
@@ -142,13 +145,13 @@ def main():
 
     # Run the save logs function
     save_logs(ARGS_LIST)
-    # If log server used, print log location
+    # If log server used, print(log location)
     try:
         if ARGS_LIST.log_path == CONFIG["log_directory_path"]:
-            print "Webserver: {0}{1}".format(CONFIG["webserver"], ARGS_LIST.name)
+            print("Webserver: {0}{1}".format(CONFIG["webserver"], ARGS_LIST.name))
     except:
         pass
-    print "\n----Done----"
+    print("\n----Done----")
 
 
 def save_logs(args):
@@ -158,27 +161,27 @@ def save_logs(args):
     This is outside of main in order to allow other scripts acess to this utility
     :param args: command line arguments
     '''
-    print "This utility will attempt to gather log files and data from your appliance for debugging."
+    print("This utility will attempt to gather log files and data from your appliance for debugging.")
 
     teststack = args.ip
-    print "Pushing gather script to stack...."
+    print("Pushing gather script to stack....")
     if copy_loggather_script_to_stack(teststack, args) is True:
         if args.log_path[-1] != "/":
             args.log_path = args.log_path + "/"
         logdir = args.log_path + args.name
         # make the log directory
         if extract_logs.mk_datadir(logdir, args.name) is True:
-            print "Running gather logs script, please wait....."
+            print("Running gather logs script, please wait.....")
             pkg = run_gather_logs(teststack, args)
             if pkg != "none":
-                print "Saved logs on stack in ", pkg
-                print "Copying from stack...."
+                print("Saved logs on stack in {}".format(pkg))
+                print("Copying from stack....")
                 if scp_tgz_to_logserver(teststack, pkg, logdir, args) is True:
                     if args.no_extract is False:
                         extract_logs.extract_tgz_file_to_datadir(pkg, logdir)
-                print "\nLog directory: " + logdir
+                print("Log directory: {}".format(logdir))
         else:
-            print "Could not create Log directory \"" + logdir + "\""
+            print("Could not create Log directory \"" + logdir + "\"")
 
     # Attempt to clean up gather script from stack regardless
     remove_gather_script(teststack, args)
@@ -238,8 +241,8 @@ def remove_gather_script(testhost, args):
 
     remote_ssh_res = remote_shell(str_remove_cmd, args)
     if remote_ssh_res['exitcode'] != 0:
-        print "Error in remove command from " + testhost
-        print "Please clean up /tmp directory on stack"
+        print("Error in remove command from " + testhost)
+        print("Please clean up /tmp directory on stack")
 
 
 def run_gather_logs(testhost, args):
@@ -261,7 +264,7 @@ def run_gather_logs(testhost, args):
 
     remote_ssh_res = remote_shell(str_gather_cmd, args)
     if remote_ssh_res['exitcode'] != 0:
-        print "Error in executing " + gather_script + " on " + testhost
+        print("Error in executing " + gather_script + " on " + testhost)
     else:
         pstr = remote_ssh_res['stdout']
         # the rackhd_gather_info.py script returns the package name in the output
@@ -295,18 +298,18 @@ def scp_tgz_to_logserver(testhost, pkginfo, logdir, args):
         time.sleep(10)
         status = True
     else:
-        print child.before
-        print "ERROR: Expecting password for SCP timed out."
-        print "SCP of log files failed due to password error."
-        print "Please manually scp " + pkginfo + " to desired location."
+        print(child.before)
+        print("ERROR: Expecting password for SCP timed out.")
+        print("SCP of log files failed due to password error.")
+        print("Please manually scp " + pkginfo + " to desired location.")
 
     child.close()
     return status
 
 
 def handle_pexpect_error(child, errstr):
-    print errstr
-    print child.before, child.after
+    print(errstr)
+    print(child.before, child.after)
     child.terminate()
 
 
@@ -324,7 +327,7 @@ def remote_shell(shell_cmd, args, expect_receive="", expect_send=""):
     logfile_redirect = None
     shell_cmd.replace("'", "\\\'")
     if args.v is True:
-        print "remote_shell: Shell Command: ", shell_cmd
+        print("remote_shell: Shell Command: {}".format(shell_cmd))
         logfile_redirect = sys.stdout
     if expect_receive == "" or expect_send == "":
         (command_output, exitstatus) = \
@@ -342,7 +345,8 @@ def remote_shell(shell_cmd, args, expect_receive="", expect_send=""):
                                 expect_receive: expect_send + "\n"},
                         timeout=600, logfile=logfile_redirect)
     if args.v is True:
-        print shell_cmd, "\nremote_shell: Exit Code:", exitstatus
+        print("Shell cmd: {}".format(shell_cmd))
+        print("Exit Code: {}".format(exitstatus))
     return {'stdout': command_output, 'exitcode': exitstatus}
 
 
@@ -373,7 +377,7 @@ def setup_connection(args):
         elif i == 3:   # Connected to the host
             break
         else:
-            print "ERROR: Unable to access host exiting..."
+            print("ERROR: Unable to access host exiting...")
             exit(-1)
 
 

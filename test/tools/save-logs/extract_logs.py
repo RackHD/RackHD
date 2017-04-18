@@ -35,10 +35,10 @@ def main():
     # parse arguments to ARGS_LIST dict
     ARGS_LIST = ARG_PARSER.parse_args()
     if ARGS_LIST.pkg == "None":
-        print "No package given, please provide a package with the -pkg flag"
+        print("No package given, please provide a package with the -pkg flag")
         exit(1)
     if ARGS_LIST.dir == "None":
-        print "No source directory given, please provide the source directory with the -dir flag"
+        print("No s(urce directory given, please provide the source directory with the -dir flag")
         exit(1)
     if ARGS_LIST.dir[-1] != "/":
         ARGS_LIST.dir = ARGS_LIST.dir + "/"
@@ -53,7 +53,7 @@ def main():
         pn = pstr[-1]
         pkgname = pn.rstrip("\r")
         shutil.copy(ARGS_LIST.dir + pkgname, out_dir)
-    print "Extracting to: {0}".format(out_dir)
+    print("Extracting to: {}".format(out_dir))
     extract_tgz_file_to_datadir(ARGS_LIST.pkg, out_dir)
 
 
@@ -78,7 +78,7 @@ def extract_tgz_file_to_datadir(pkginfo, logdir):
     if os.path.isfile(tgzpkg) is True:
         # Extract the tarball
         if tarfile.is_tarfile(tgzpkg) is True:
-            print "Extracting tarball....."
+            print("Extracting tarball.....")
             tar = tarfile.open(tgzpkg)
             tar.extractall(path=logdir)
             tar.close()
@@ -86,10 +86,10 @@ def extract_tgz_file_to_datadir(pkginfo, logdir):
             unpack_tarballs(logdir + "/stack")
             status = True
         else:
-            print "Error: Could not unpack tarfile", tgzpkg
+            print("Error: Could not unpack tarfile {}".format(tgzpkg))
             status = False
     else:
-        print "Error: Cannot find tarball" + pkgname
+        print("Error: Cannot find tarball {}".format(pkgname))
         status = False
 
     if status is True:
@@ -119,7 +119,7 @@ def unpack_tarballs(logdir):
                 # that are already extracted
                 continue
     else:
-        print "Directory does not exist ", logdir
+        print("Directory does not exist {} ".format(logdir))
 
 
 def chmod_logpath(logdir):
@@ -130,29 +130,29 @@ def chmod_logpath(logdir):
     '''
     # Walk the log directory and chmod to 0777 for directories and 0666 for files
     if os.path.isdir(logdir):
-        os.chmod(logdir, 0777)
+        os.chmod(logdir, 0o777)
         for root, dirs, files in os.walk(logdir):
             for dname in dirs:
                 try:
-                    os.chmod(os.path.join(root, dname), 0777)
+                    os.chmod(os.path.join(root, dname), 0o777)
                 except:
                     continue
             for fname in files:
                 if os.access(os.path.join(root, fname), os.X_OK) is True:
                     try:
-                        os.chmod(os.path.join(root, fname), 0777)
+                        os.chmod(os.path.join(root, fname), 0o777)
                     except:
                         continue
                 else:
                     try:
-                        os.chmod(os.path.join(root, fname), 0666)
+                        os.chmod(os.path.join(root, fname), 0o666)
                     except:
                         continue
 
 
 def handle_pexpect_error(child, errstr):
-    print errstr
-    print child.before, child.after
+    print(errstr)
+    print(child.before, child.after)
     child.terminate()
 
 
@@ -167,12 +167,11 @@ def mk_datadir(logdir, name):
         False on any error
     '''
     try:
-        os.makedirs(logdir, 0777)
+        os.makedirs(logdir, 0o777)
     except OSError as exc:
         if exc.errno == errno.EEXIST and os.path.isdir(logdir):
-            print "Directory exists for ", logdir
-            print "Error: {0} already exists.".format(logdir)
-            print "Please use a new name, such as " + name + "-1 or delete the existing one."
+            print("Error: Directory {} already exists.".format(logdir))
+            print("Please use a new name, such as {}-1 or delete the existing one.".format(name))
             return False
     return True
 

@@ -242,7 +242,7 @@ def generate_scripts(run_utils):
             header += "SUDO='sudo '\n"
             # print "Sudo header:", header
 
-        localfd = os.open(LOCAL_GATHER_SCRIPT, flags, 0755)
+        localfd = os.open(LOCAL_GATHER_SCRIPT, flags, 0o755)
         os.write(localfd, header)
 
         for util in run_utils:
@@ -279,7 +279,6 @@ def generate_scripts(run_utils):
 def main():
     global stack, options, log, re_upload
 
-    # print "GATHER_STATUS_PATH:", GATHER_STATUS_PATH
     log = Logger(GATHER_STATUS_PATH)
 
     #
@@ -319,7 +318,7 @@ def main():
     get_options()
 
     if stack.password:
-        print "\nNote: A password is only required with -T.  Ignoring."
+        print("\nNote: A password is only required with -T.  Ignoring.")
 
     # update paths
     update_support_dirs(options)
@@ -373,18 +372,18 @@ def main():
     start_time = int(time.time())
     exit_status = 0
 
-    print "Running gather script."
-    print "This may take several minutes.  Please do not interrupt the script."
-    print
+    print("Running gather script.")
+    print("This may take several minutes.  Please do not interrupt the script.")
+    print(" ")
 
     log.write("Gather In Progress on stack. Running.")
     task = "Running gather script on stack"
     (exit, output) = get_cmd_output("bash " + LOCAL_GATHER_SCRIPT)
     if exit:
-        print "ERROR %s" % task
+        print("ERROR %s" % task)
         log.write("Gather Failed. %s" % output)
         for line in output:
-            print line
+            print(line)
 
     # Save package xml metadata
     pkginfo = {
@@ -403,7 +402,7 @@ def main():
 
     # put everything into one tarball
     log.write("Gather Succeeded.")
-    print "Information gathering completed... creating compressed package."
+    print("Information gathering completed... creating compressed package.")
     pkg_path_name = makePkgName()
 
     try:
@@ -411,22 +410,22 @@ def main():
         os.chdir(TMP_SUPPORT_DIR)
         (exit, output) = get_cmd_output(tar_command)
         if exit:
-            print "ERROR tar returned %d" % (exit >> 8),
+            print("ERROR tar returned %d" % (exit >> 8)),
             log.write("Gather Failed")
             if output:
-                print ", output follows:"
+                print(" output follows:")
                 for line in output:
-                    print line
+                    print(line)
             else:
-                print ""
+                print(" ")
             error("Could not create compressed package.")
             log.write("Gather Failed. Could not create compressed package.")
     except OSError, (errno, strerror):
         error("FAILED system call (tar): %s" % (os.strerror(errno)))
         log.write("Gather Failed %s" % (os.strerror(errno)))
 
-    print "Packaging complete..."
-    print "Package: %s" % pkg_path_name
+    print("Packaging complete...")
+    print("Package: %s" % pkg_path_name)
     log.write("Package: %s" % pkg_path_name)
 
     # If we don't have the exit_status set, then the log gathered
@@ -446,9 +445,9 @@ def main():
             sys.stderr.write('WARNING: Full Gather run data update failed. %s\n' % str(e))
             log.write("Gather Failed. WARNING: Full Gather run data update failed.")
 
-    print "Cleaning up temporary data...",
+    print("Cleaning up temporary data..."),
     if clean_tmp_dir(TMP_SUPPORT_DIR) == 0:
-        print "done."
+        print("done.")
 
     verbose("\nCleaning up core/dumps")
 
@@ -476,7 +475,7 @@ def get_popen(cmd, include_stderr=True, stdin=None):
                                 stdout=subprocess.PIPE, close_fds=True,
                                 shell=True)
     except OSError:
-        print "While running", cmd
+        print("While runnin {}".format(cmd))
         raise
 
 
@@ -647,23 +646,23 @@ def makeDirs(dirs):
 
 
 def listGroups():
-    print "\nKnown groups (included with the --group option): \n"
+    print("\nKnown groups (included with the --group option): \n")
     groups = GROUPS.keys()
     groups.sort()
     for g in groups:
-        print "  %s" % g
-    print
+        print("  %s" % g)
+    print("")
 
 
 def listUtils():
-    print
-    print "Known utilities (included with the -i option): \n"
+    print("")
+    print("Known utilities (included with the -i option): \n")
     utils = UTILITIES.keys()
     utils.sort()
     for u in utils:
         if u not in EXEMPT:
-            print "  %s" % u
-    print
+            print("  %s" % u)
+    print("")
 
 
 # this routine is simply here to print the warning message, and alert
@@ -676,7 +675,7 @@ def pruneUtils(requested):
     nlist = []
     for r in requested:
         if r not in ulist:
-            print "WARNING: unknown utility (%s), ignored..." % r
+            print("WARNING: unknown utility (%s), ignored..." % r)
         else:
             nlist.append(r)
 
@@ -692,13 +691,13 @@ def validateUtils():
             # if not UTILITIES.has_key(util):
             if util not in UTILITIES:
                 util_errors += 1
-                print "Unknown utility '%s' in group '%s'!" % (util, group)
+                print("Unknown utility '%s' in group '%s'!" % (util, group))
     for util in EXEMPT:
         # if not UTILITIES.has_key(util):
         if util not in UTILITIES:
-            print "Unknown utility '%s' in default group!" % util
+            print("Unknown utility '%s' in default group!" % util)
     if util_errors:
-        print "%d utility errors." % util_errors
+        print("%d utility errors." % util_errors)
         sys.exit(1)
 
 
@@ -797,9 +796,9 @@ def clean_tmp_dir(dir=TMP_SUPPORT_DIR):
     (exit, output) = get_cmd_output(cmd)
     if exit:
         error_count += 1
-        print "\nERROR cleaning up %s, output follows:\n%s" % (dir, "\n".join(output))
+        print("\nERROR cleaning up %s, output follows:\n%s" % (dir, "\n".join(output)))
     if error_count:
-        print "You may wish to delete these files manually."
+        print("You may wish to delete these files manually.")
     return error_count
 
 
@@ -878,21 +877,21 @@ class MyLock(object):
                 self.unlock()
                 return self._lock()
             else:
-                print "%s is currently locked. Status Updates will not be written to file." % (self.lockfile)
+                print("%s is currently locked. Status Updates will not be written to file." % (self.lockfile))
         return False
 
     def unlock(self):
         """ unlocks lockfile """
         if os.path.exists(self.lockfile):
-            print "Gather-status unlocked"
+            print("Gather-status unlocked")
             try:
                 os.remove(self.lockfile)
             except Exception:
-                print "Error unlocking lockfile"
+                print("Error unlocking lockfile")
                 return False
             return True
         else:
-            print ("Gather-status lock does not exit")
+            print("Gather-status lock does not exit")
             return False
 
 
@@ -914,7 +913,7 @@ class Logger(threading.Thread):
             try:
                 self.fileFD = open(self.filename, 'w')
             except IOError:
-                print "Could not open gather-status file. "
+                print("Could not open gather-status file. ")
                 self.disable = True
         else:
             self.disable = True
@@ -948,7 +947,7 @@ class Logger(threading.Thread):
                 self.flock.unlock()
                 threading.Thread.join(self, timeout)
             except Exception:
-                print "Error unlocking gather log"
+                print("Error unlocking gather log")
                 pass
 
 
@@ -991,7 +990,7 @@ def get_options():
                 # not always desirable.  I'd replace -T but I have no
                 # idea if its being used.
                 if not a.startswith('/'):
-                    print "Tar directory %s invalid; it must begin with /"
+                    print("Tar directory %s invalid; it must begin with /")
                     sys.exit(1)
                 options.tardir = a
             elif o in ['-T', '--temp']:
@@ -1012,11 +1011,11 @@ def get_options():
                     options.group_utils.extend(GROUPS[a])
                     options.group.append(a)
                 except KeyError, e:
-                    print "Invalid group specified: %s" % a
+                    print("Invalid group specified: %s" % a)
                     listGroups()
                     sys.exit(1)
             else:
-                print "Unknown argument: %s" % o
+                print("Unknown argument: %s" % o)
                 usage(1)
 
     except getopt.GetoptError, e:
@@ -1044,7 +1043,7 @@ Options:
 
 
 def version():
-    print '%s version: %s' % (PROGNAME, REVISION)
+    print('%s version: %s' % (PROGNAME, REVISION))
     sys.exit(0)
 
 
