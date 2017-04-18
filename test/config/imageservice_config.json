@@ -2,40 +2,10 @@
   "image_service": {
     "os_image": [
       {
-        "osname": "ESXi",
-        "version": "6.0",
-        "linktype": "http",
-        "url": "http://10.240.19.193/repo/ISO/VMware-VMvisor-Installer-6.0.0.update02-3620759.x86_64.iso"
-      },
-      {
-        "osname": "Ubuntu",
-        "version": "16.04",
-        "linktype": "http",
-        "url": "http://10.240.19.193/repo/ISO/ubuntu-14.04.4-server-amd64.iso"
-      },
-      {
         "osname": "CentOS",
         "version": "7.0",
         "linktype": "http",
-        "url": "http://10.240.19.193/repo/ISO/CentOS-7-x86_64-DVD-1511.iso"
-      },
-      {
-        "osname": "Ubuntuserver",
-        "version": "14.04",
-        "linktype": "http",
-        "url": "http://10.240.19.193/repo/ISO/ubuntu-14.04.4-server-amd64.iso"
-      },
-      {
-        "osname": "RedhatEnterpise",
-        "version": "7.2",
-        "linktype": "http",
-        "url": "http://10.240.19.193/repo/ISO/rhel-server-7.2-x86_64-dvd.iso"
-      },
-      {
-        "osname": "openSUSE",
-        "version": "42.1",
-        "linktype": "http",
-        "url": "http://10.240.19.193/repo/ISO/openSUSE-Leap-42.1-DVD-x86_64.iso"
+        "url": "http://buildlogs.centos.org/rolling/7/isos/x86_64/CentOS-7-x86_64-DVD.iso"
       }
     ],
     "microkernel": [
