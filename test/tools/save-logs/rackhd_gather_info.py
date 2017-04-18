@@ -77,7 +77,7 @@ UTILITIES = {
     'pm2o_log': ('tar', "cd /home", "onrack-pm2log.tar onrack/.pm2"),
     'pm2_status': ('exe', "${SUDO} pm2 status ", "pm2status"),
     # 'apache2status': ('exe', "${SUDO}service apache2 status", "apache2status"),
-    #'conductor': ('exe', "systemctl status conductor", "conductor_status"),
+    # 'conductor': ('exe', "systemctl status conductor", "conductor_status"),
     'df': ('exe', "/bin/df -li", "df"),
     'dpkg_info': ('exe', "dpkg -l | grep \"ii  on\"", "dpkg_list"),
     'dhcp_leases': ('tar', "cd /var/lib", "varlib-dhcp.tar dhcp"),
