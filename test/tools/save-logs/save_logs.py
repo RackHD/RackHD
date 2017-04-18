@@ -13,7 +13,7 @@ The script will create the target directory
 A configuration file 'save_logs_conf.json' can be setup to provide the following information.
   user, password, webserver, local directory to store files
 '''
-
+from __future__ import print_function
 import json
 import argparse
 import subprocess
@@ -47,7 +47,7 @@ def main():
     ARG_PARSER = argparse.ArgumentParser(description="Command Help")
     ARG_PARSER.add_argument("-v", action='store_true',
                             help="Turn on verbose mode")
-    ARG_PARSER.add_argument("-ip", default="0.0.0.0",
+    ARG_PARSER.add_argument("-ip", default="None",
                             help="Appliance IP address or hostname")
     ARG_PARSER.add_argument("-port", default="",
                             help="Optional port argument for scp/ssh")
@@ -96,7 +96,7 @@ def main():
                 print("Usage: ./save_logs.py -ip <ip> -user <username> -pwd <password>")
             sys.exit(-1)
 
-    if ARGS_LIST.ip == "0.0.0.0":
+    if ARGS_LIST.ip == "None":
         try:
             ARGS_LIST.ip = CONFIG["ip"]
         except:
