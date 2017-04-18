@@ -25,5 +25,18 @@
         "amqp_ssl": 9091
       }
     }
+  },
+  "vagrant_guest": {
+    "rackhd_host": "127.0.0.1",
+    "type": "vagrant",
+    "install-config": {
+      "ports": {
+        "mongo_port": 27017,
+        "http": 8080,
+        "https": 8443,
+        "amqp_ssl": 5672,
+        "amqp_nossl": 5671
+      }
+    }
   }
 }
