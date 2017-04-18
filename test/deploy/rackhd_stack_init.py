@@ -36,16 +36,28 @@ MAX_CYCLES = 60
 
 class rackhd_stack_init(unittest.TestCase):
     def test01_set_auth_user(self):
-        fit_common.remote_shell('rm auth.json')
         auth_json = open('auth.json', 'w')
         auth_json.write('{"username":"' + fit_common.fitcreds()["api"][0]["admin_user"] + '", "password":"' +
                         fit_common.fitcreds()["api"][0]["admin_pass"] + '", "role":"Administrator"}')
         auth_json.close()
-        fit_common.scp_file_to_ora('auth.json')
-        rc = fit_common.remote_shell("curl -ks -X POST -H 'Content-Type:application/json' https://localhost:" +
-                                     str(fit_common.fitports()['https']) + "/api/2.0/users -d @auth.json")
-        if rc['exitcode'] != 0:
-            log.info_5("ALERT: Auth admin user not set! Please manually set the admin user account if required.")
+        try:
+            # add first user to remote rackhd directly
+            return_code = ""
+            rackhd_hostname = fit_common.fitargs()['rackhd_host']
+            set_auth_url = "https://" + rackhd_hostname + ":" + str(fit_common.fitports()['https']) + "/api/2.0/users"
+            rc = fit_common.restful(url_command=set_auth_url, rest_action="post", rest_payload=json.load(open('auth.json')))
+            return_code = str(rc['status'])
+        except Exception as e:
+            log.info_5("ALERT: RackHD is not in localhost, will set first user through ssh{0}".format(e))
+        if return_code != '201':
+            log.info_5("ALERT: Can't set first user to RackHD https port directly, will set it through ssh")
+            # ssh login to rackhd and add first user to localhost rackhd
+            fit_common.remote_shell('rm auth.json')
+            fit_common.scp_file_to_ora('auth.json')
+            rc = fit_common.remote_shell("curl -ks -X POST -H 'Content-Type:application/json' https://localhost:" +
+                                         str(fit_common.fitports()['https']) + "/api/2.0/users -d @auth.json")
+            if rc['exitcode'] != 0:
+                log.info_5("ALERT: Auth admin user not set! Please manually set the admin user account if required.")
 
     def test02_preload_sku_packs(self):
         log.info_5("**** Downloading SKU packs from GitHub")
