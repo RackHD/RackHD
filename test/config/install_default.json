@@ -3,9 +3,9 @@
       "template": "ora-ubuntu-1604.ova",
       "ports": {
         "_comment": "These are the northbound rest API port assignments",
-        "http": 8080,
-        "https": 8443,
-        "httpd": 8010,
+        "http": 9090,
+        "https": 9093,
+        "httpd": 9010,
         "amqp":5672,
         "amqp-vagrant":9091,
         "ssh": 2222

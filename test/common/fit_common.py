@@ -1102,7 +1102,7 @@ def run_nose(nosepath=None):
     # if nosepath is a directory, recurse through subdirs else run single test file
     if os.path.isdir(nosepath):
         # Skip the CIT test directories that match these expressions
-        regex = '(tests/*$)|(tests/api-cit/*)|(tests/api$)|(tests/api/.*)'
+        regex = '(tests/*$)|(tests/api$)|(tests/api/.*)'
         pathspecs = []
         for root, _, _ in os.walk(nosepath):
             if not re.search(regex, root):
