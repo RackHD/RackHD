@@ -197,7 +197,7 @@ for rebooting the `pxe-1` virtual machine.
 ### UNPACKING AN OS INSTALL ISO
 
 For example, you can [manually download the ESXi installation ISO](https://www.vmware.com/go/download-vspherehypervisor)
-or download a [CentOS 7 Installation ISO](http://mirrors.mit.edu/centos/7/isos/x86_64/CentOS-7-x86_64-DVD-1511.iso).
+or download a [CentOS 7 Installation ISO](http://mirrors.mit.edu/centos/7/isos/x86_64/CentOS-7-x86_64-DVD-1611.iso).
 
 **NOTE:** Below, we show two methods (A&B) of ensuring we have the iso file properly placed to be referenced by our helper script.
 
@@ -210,13 +210,13 @@ Copy it into the `examples` directory and then you can unpack it in vagrant:
 
 `cd ~/src/rackhd/examples`
 
-`wget http://mirrors.mit.edu/centos/7/isos/x86_64/CentOS-7-x86_64-DVD-1511.iso`
+`wget http://mirrors.mit.edu/centos/7/isos/x86_64/CentOS-7-x86_64-DVD-1611.iso`
 _NOTE_: this is a 4GB download.
 
 `vagrant ssh dev`:
 
     sudo mkdir -p /var/mirrors
-    sudo python ~/src/on-tools/scripts/setup_iso.py /vagrant/CentOS-7-x86_64-DVD-1511.iso /var/mirrors --link=/home/vagrant/src
+    sudo python ~/src/on-tools/scripts/setup_iso.py /vagrant/CentOS-7-x86_64-DVD-1611.iso /var/mirrors --link=/home/vagrant/src
 
 
 ---
@@ -228,9 +228,17 @@ _NOTE_: this is a 4GB download.
 
     sudo mkdir -p /var/mirrors
     cd /tmp
-    wget http://mirrors.mit.edu/centos/7/isos/x86_64/CentOS-7-x86_64-DVD-1511.iso
-    # 4GB download!
+    # 4GB download!!
+    wget http://mirrors.mit.edu/centos/7/isos/x86_64/CentOS-7-x86_64-DVD-1611.iso
+    cd ~
+    sudo mkdir src
+    cd src
+    sudo git clone https://github.com/RackHD/on-tools.git
+    sudo mkdir -p on-http/static/http
+    sudo mkdir -p on-tftp/static/tftp
     sudo python ~/src/on-tools/scripts/setup_iso.py /tmp/CentOS-7-x86_64*.iso /var/mirrors --link=/home/vagrant/src
+    cd /opt/monorail/static/http
+    sudo ln -s ~/src/on-http/static/http/Centos
 
 And then invoking the workflow to install CentOS you just unpacked
 
@@ -244,13 +252,13 @@ And then invoking the workflow to install CentOS you just unpacked
 
     curl -H "Content-Type: application/json" \
     -X POST —-data @samples/noop_body.json \
-    http://localhost:9090/api/1.1/nodes/<insertTheNodeId>/obm | python -m json.tool
+    http://localhost:9090/api/2.0/nodes/<insertTheNodeId>/obm | python -m json.tool
 
     # next post the workflow
 
     curl -H "Content-Type: application/json" \
     -X POST --data @samples/centos_iso_boot.json \
-    http://localhost:9090/api/1.1/nodes/<insertTheNodeId>/workflows | python -m json.tool
+    http://localhost:9090/api/2.0/nodes/<insertTheNodeId>/workflows | python -m json.tool
 
 You can see the example stanza for posting a workflow with options at
 [samples/centos_iso_boot.json](samples/centos_iso_boot.json).
