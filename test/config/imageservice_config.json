@@ -1,0 +1,24 @@
+{
+  "image_service": {
+    "os_image": [
+      {
+        "osname": "CentOS",
+        "version": "7.0",
+        "linktype": "http",
+        "url": "http://buildlogs.centos.org/rolling/7/isos/x86_64/CentOS-7-x86_64-DVD.iso"
+      }
+    ],
+    "microkernel": [
+      "scp:///var/renasar/on-http/static/http/common/vmlinuz-3.16.0-25-generic",
+      "scp:///var/renasar/on-http/static/http/common/discovery.overlay.cpio.gz",
+      "scp:///var/renasar/on-http/static/http/common/initrd.img-3.16.0-25-generic",
+      "scp:///var/renasar/on-http/static/http/common/base.trusty.3.16.0-25-generic.squashfs.img"
+    ],
+    "usr": "onrack",
+    "pwd": "onrack",
+    "control_port":7070,
+    "imageserver":"localhost",
+    "file_port":9090,
+    "filetocompare": 100
+  }
+}
