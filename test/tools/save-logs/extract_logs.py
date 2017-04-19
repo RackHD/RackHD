@@ -150,12 +150,6 @@ def chmod_logpath(logdir):
                         continue
 
 
-def handle_pexpect_error(child, errstr):
-    print(errstr)
-    print(child.before, child.after)
-    child.terminate()
-
-
 def mk_datadir(logdir, name):
     '''
     This function creates a dirctory name on the logserver or current dir path
