@@ -251,7 +251,7 @@ And then invoking the workflow to install CentOS you just unpacked
     # set this to be empty because our pxe-client has no obm.
 
     curl -H "Content-Type: application/json" \
-    -X POST —-data @samples/noop_body.json \
+    -X PUT —-data @samples/noop_body.json \
     http://localhost:9090/api/2.0/nodes/<insertTheNodeId>/obm | python -m json.tool
 
     # next post the workflow
