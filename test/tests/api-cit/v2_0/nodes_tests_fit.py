@@ -19,7 +19,6 @@ from modules.amqp import AMQPWorker
 from modules.worker import WorkerThread, WorkerTasks
 from on_http_api2_0 import ApiApi as Api
 from on_http_api2_0 import rest
-from config.api1_1_config import config as config_old   #TODO remove when 2.0 worklfow API is implemented
 from config.api2_0_config import config
 from datetime import datetime
 from json import loads
@@ -35,7 +34,6 @@ class NodesTests(unittest.TestCase):
 #@test(groups=['nodes_api2.tests'])
 
     def setUp(self):
-        self.__client_old = config_old.api_client
         self.__client = config.api_client
         self.__worker = None
         self.__discovery_duration = None
