@@ -48,10 +48,7 @@ class AmqpWorker(threading.Thread):
             pika_logger.setLevel(logging.WARNING)
         else:
             pika_logger.setLevel(logging.ERROR)
-        if fit_common.API_PORT == 9090:
-            amqp_port = fit_common.fitports()['amqp-vagrant']
-        else:
-            amqp_port = fit_common.fitports()['amqp']
+        amqp_port = fit_common.fitports()['amqp_ssl']
         self.connection = pika.BlockingConnection(
             pika.ConnectionParameters(host=fit_common.fitargs()["ora"], port=amqp_port))
         self.channel = self.connection.channel()
