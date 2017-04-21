@@ -196,9 +196,9 @@ fi
 
 # pre-process the packer template file
 PACKER_TEMP=template-${OS_VER}.json.tmp
+TMP_FILE_STREAM=$(cat template-${OS_VER}.json)
 if [[ $IS_UPLOAD_ATLAS == false ]] && [[ "$BUILD_TYPE"  != "vmware" ]]
 then
-    TMP_FILE_STREAM=$(cat template-${OS_VER}.json)
     if [ ! -n "$(which jq)" ] ; then
         echo "${ERROR_HEADER} jq is not installed . please install it, e.x. sudo apt-get install jq... Aborting. "
         exit 5
@@ -209,8 +209,8 @@ then
 
      echo "[Info] the template-${OS_VER}.json has been cutomized , to remove the vagrant-upload step"
      # Write back the template file
-     echo "$TMP_FILE_STREAM" > $PACKER_TEMP
 fi
+echo "$TMP_FILE_STREAM" > $PACKER_TEMP
 
 # indictor of packer build type for vmware
 if [ "$BUILD_TYPE"  == "vmware" ];  then
