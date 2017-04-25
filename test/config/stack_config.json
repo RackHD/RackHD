@@ -19,6 +19,11 @@
   },
   "vagrant_remote": {
     "rackhd_host": "127.0.0.1",
-    "type": "vagrant"
+    "type": "vagrant",
+    "install-config": {
+      "ports": {
+        "amqp_ssl": 9091
+      }
+    }
   }
 }

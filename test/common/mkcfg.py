@@ -60,6 +60,9 @@ class mkcfg(object):
     def config_is_loaded(self):
         return self.config_path is not None
 
+    def config_exists(self, filename):
+        return os.path.isfile(self.config_dir + '/' + filename)
+
     def create(self, config_dir='config'):
         if self.config_path:
             raise mkcfgException('creating configuration on top of existing object')

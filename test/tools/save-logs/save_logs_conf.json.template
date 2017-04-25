@@ -1,0 +1,7 @@
+{
+	"ip": "1.2.3.4",
+	"username": "abc",
+	"password": "abc",
+	"webserver": "https://web.hwimo.lab.emc.com/qa/log/bug_logs/",
+	"log_directory_path": "/mnt/cilogserver/bug_logs/"
+}
