@@ -11,7 +11,7 @@ from nose.plugins.xunit import Tee
 from nose import SkipTest
 from StringIO import StringIO
 from logging import ERROR, WARNING
-from flogging import LoggerArgParseHelper
+from flogging import LoggerArgParseHelper, get_loggers
 
 
 class StreamMonitorPlugin(Plugin):
@@ -100,6 +100,7 @@ class StreamMonitorPlugin(Plugin):
         self.__flogger_opts_helper.process_parsed(self.conf.options)
         self.__stream_plugins['amqp'].set_options(self.conf.options)
 
+        self.__call_all_plugin_by_attr('handle_set_flogging', get_loggers())
         self.__call_all_plugin_by_attr('handle_begin')
 
     def beforeTest(self, test):
@@ -114,8 +115,6 @@ class StreamMonitorPlugin(Plugin):
         self.__end_capture()
         self.__current_stdout = None
         self.__current_stderr = None
-        for pg in self.__stream_plugins.values():
-            pg.handle_after_test(test)
 
     def startTest(self, test):
         self.__take_step('startTest', test=test)

@@ -78,6 +78,7 @@ class AMQPOnDemand(object):
         # todo: hashify or randomize port ids so more than one of these can
         #  run at once.
         host_config = self.__main_client.create_host_config(
+            dns=[],
             port_bindings={
                 4369: ('127.0.0.1',),
                 5671: ('127.0.0.1',),
