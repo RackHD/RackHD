@@ -7,8 +7,9 @@
         "https": 9093,
         "httpd": 9010,
         "amqp_nossl": 5671,
-        "amqp_ssl": 5672,
-        "ssh": 2222
+        "amqp_ssl": 9091,
+        "ssh": 2222,
+        "mongo_port": 37017
       },
       "install": {
         "rackhd":       {"repo":"https://github.com/rackhd/rackhd","branch":"master"},
