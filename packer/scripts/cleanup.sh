@@ -7,6 +7,7 @@ apt-get -y clean
 apt-get purge linux-headers-$(uname -r) build-essential zlib1g-dev libssl-dev libreadline-gplv2-dev
 
 echo "Cleaning up mongodb"
+sudo service mongodb start
 echo "db.dropDatabase()" | mongo pxe
 
 echo "Cleaning up rackhd log"

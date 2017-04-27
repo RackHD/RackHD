@@ -1088,7 +1088,12 @@ def run_nose(nosepath=None):
 
     exitcode = 0
     # set nose options
-    noseopts = ['--exe', '--with-nosedep', '--with-stream-monitor']
+    noseopts = ['--exe', '--with-nosedep', '--with-stream-monitor',
+                '--sm-amqp-url', 'generate:{}'.format(fitports()['amqp_ssl']),
+                '--sm-dut-ssh-user', fitcreds()['rackhd_host'][0]['username'],
+                '--sm-dut-ssh-password', fitcreds()['rackhd_host'][0]['password'],
+                '--sm-dut-ssh-port', str(fitports()['ssh']),
+                '--sm-dut-ssh-host', fitargs()['rackhd_host']]
     if fitargs()['group'] != 'all' and fitargs()['group'] != '':
         noseopts.append('-a')
         noseopts.append(str(fitargs()['group']))
