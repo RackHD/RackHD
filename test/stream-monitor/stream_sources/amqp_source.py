@@ -9,7 +9,7 @@ import optparse
 import uuid
 import gevent
 import gevent.queue
-from pexpect.pxssh import ExceptionPxssh
+from pexpect import EOF
 from .monitor_abc import StreamMonitorBaseClass
 from .stream_matchers_base import StreamMatchBase
 from .amqp_od import RackHDAMQPOnDemand
@@ -189,8 +189,8 @@ class AMQPStreamMonitor(StreamMonitorBaseClass):
             clean = SSHHelper('dut', 'amqp-user-delete-ssh-stdouterr: ')
             cmd_text, ecode, output = clean.sendline_and_stat('rabbitmqctl delete_user {}'.format(
                 self.__cleanup_user))
-        assert ecode == 0 or 'no_such_user' in output, \
-            "{} failed with something other than 'no_such_user':".format(cmd_text, output)
+            assert ecode == 0 or 'no_such_user' in output, \
+                "{} failed with something other than 'no_such_user':".format(cmd_text, output)
 
     def __setup_generated_amqp(self, generate_string):
         """
@@ -215,13 +215,22 @@ class AMQPStreamMonitor(StreamMonitorBaseClass):
             fixed.sendline_and_stat(r'''rabbitmqctl set_permissions {} ".*" ".*" ".*"'''.format(auser), must_be_0=True)
             fixed.logout()
             return 'amqp://{}:{}@{}:{}'.format(auser, apw, fixed.dut_ssh_host, port), auser
-        except ExceptionPxssh as ex:
+        except EOF as ex:
             # the PR in-queue behind with one sets up better logging in the sources.
             # Rather than try to pull that forward, manually grab flogging and
             # update this block in next merge.
             from flogging import get_loggers
             logs = get_loggers()
-            logs.irl.debug('unable to set up amqp user. AMQP monitors disabled: %s', ex)
+            logs.irl.warning('unable to connect ot instance to setup AMQP user. AMQP monitors disabled: %s', ex)
+            logs.irl.warning('^^^^ this is -usually- caused by incorrect configuration, such as " + \
+                "the wrong host or ssh port for the given installation')
+        except Exception as ex:
+            # same comment as EOF. Note, with next commit, I will drop this from warning to debug, since this is kind of
+            # normal in
+            from flogging import get_loggers
+            logs = get_loggers()
+            logs.irl.warning('unable to set up amqp user. AMQP monitors disabled: %s', ex)
+            logs.irl.warning('^^^^ if this is a deploy test, this is probably ok. If it is a real test, this is a problem.')
         return None, None
 
     @property
