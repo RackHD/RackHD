@@ -9,11 +9,9 @@ import sys
 def run_tests(group=['smoke-tests']):
 
     import tests.api.v2_0 as api_2_0
-    import tests.api.redfish_1_0 as api_redfish_1_0
 
     register(groups=['api-v2.0'], depends_on_groups=api_2_0.tests)
-    register(groups=['api-redfish-1.0'], depends_on_groups=api_redfish_1_0.tests)
-    register(groups=['smoke-tests'], depends_on_groups=['api-v2.0', 'api-redfish-1.0'])
+    register(groups=['smoke-tests'], depends_on_groups=['api-v2.0'])
     register(groups=['regression-tests'], depends_on_groups=['smoke-tests'] +
                     [test for test in api_2_0.regression_tests])
 
