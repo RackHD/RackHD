@@ -133,7 +133,7 @@ def restore_obms_utility():
 @attr(all=True, regression=True, smoke=True, ucs=True)
 class rackhd_ucs_api(unittest.TestCase):
 
-    MAX_WAIT = 60
+    MAX_WAIT = 120
     INITIAL_CATALOGS = {}
     UCS_NODES = []
     UCS_COMPUTE_NODES = []
@@ -211,17 +211,25 @@ class rackhd_ucs_api(unittest.TestCase):
 
         data_payload = {
             "name": "Graph.Ucs.Discovery",
-            "options":
-                {
-                    "defaults":
-                        {
-                            "username": UCSM_USER,
-                            "password": UCSM_PASS,
-                            "ucs": UCSM_IP,
-                            "uri": UCS_SERVICE_URI
-                        }
+            "options": {
+                "defaults": {
+                    "username": UCSM_USER,
+                    "password": UCSM_PASS,
+                    "ucs": UCSM_IP,
+                    "uri": UCS_SERVICE_URI
+                },
+                "when-discover-physical-ucs": {
+                    "discoverPhysicalServers": "true",
+                },
+                "when-discover-logical-ucs": {
+                    "discoverLogicalServer": "false"
+                },
+                "when-catalog-ucs": {
+                    "autoCatalogUcs": "false"
                 }
+            }
         }
+
         header = {"Content-Type": "application/json"}
         api_data = fit_common.rackhdapi("/api/2.0/workflows", action="post",
                                         headers=header, payload=data_payload)
@@ -235,7 +243,7 @@ class rackhd_ucs_api(unittest.TestCase):
 
         logs.info_1("Found {0} Nodes after cataloging the UCS".format(len(api_data['json'])))
 
-        self.assertGreaterEqual(newNodeCount - initialNodeCount, self.EXPECTED_UCS_PHYSICAL_NODES,
+        self.assertEqual(newNodeCount - initialNodeCount, self.EXPECTED_UCS_PHYSICAL_NODES,
                                 'Expected to discover {0} UCS nodes, got: {1}'
                                 .format(self.EXPECTED_UCS_PHYSICAL_NODES, newNodeCount - initialNodeCount))
 
@@ -265,31 +273,38 @@ class rackhd_ucs_api(unittest.TestCase):
         initialNodeCount = len(self.get_ucs_node_list())
 
         data_payload = {
-            "name": "Graph.Ucs.Service.Profile.Discovery",
-            "options":
-                {
-                    "defaults":
-                        {
-                            "username": UCSM_USER,
-                            "password": UCSM_PASS,
-                            "ucs": UCSM_IP,
-                            "uri": UCS_SERVICE_URI
-                        }
+            "name": "Graph.Ucs.Discovery",
+            "options": {
+                "defaults": {
+                    "username": UCSM_USER,
+                    "password": UCSM_PASS,
+                    "ucs": UCSM_IP,
+                    "uri": UCS_SERVICE_URI
+                },
+                "when-discover-physical-ucs": {
+                    "discoverPhysicalServers": "false",
+                },
+                "when-discover-logical-ucs": {
+                    "discoverLogicalServer": "true"
+                },
+                "when-catalog-ucs": {
+                    "autoCatalogUcs": "false"
                 }
+            }
         }
 
         header = {"Content-Type": "application/json"}
         api_data = fit_common.rackhdapi("/api/2.0/workflows", action="post",
                                         headers=header, payload=data_payload)
-        id = api_data["json"]["context"]["graphId"]
         self.assertEqual(api_data['status'], 201,
                          'Incorrect HTTP return code, expected 201, got:' + str(api_data['status']))
+        id = api_data["json"]["context"]["graphId"]
         status = self.wait_utility(str(id), 0, "Service Profile Discovery")
         self.assertEqual(status, 'succeeded', 'Service Profile Discovery graph returned status {}'.format(status))
 
         newNodeCount = len(self.get_ucs_node_list())
 
-        self.assertGreaterEqual(newNodeCount - initialNodeCount, self.EXPECTED_UCS_LOGICAL_NODES,
+        self.assertEqual(newNodeCount - initialNodeCount, self.EXPECTED_UCS_LOGICAL_NODES,
                                 'Expected to discover {0} UCS nodes, got: {1}'
                                 .format(self.EXPECTED_UCS_LOGICAL_NODES, newNodeCount - initialNodeCount))
         logs.info_1("Found {0} UCS nodes {1}".format(len(self.UCS_COMPUTE_NODES), self.UCS_COMPUTE_NODES))
@@ -334,6 +349,60 @@ class rackhd_ucs_api(unittest.TestCase):
 
         self.assertEqual(len(errNodes), 0, errNodes)
         self.assertEqual(len(errGraphs), 0, errGraphs)
+
+    @depends(after=[test_api_20_ucs_catalog])
+    def test_api_20_ucs_discover_and_catalog_all(self):
+        """
+        Tests the UCS Discovery and Catalon All workflow in rackHD
+        :return:
+        """
+
+        # delete all previously discovered nodes and catalogs
+        self.assertTrue(restore_node_utility(), "failed to restore nodes")
+        self.assertTrue(restore_obms_utility(), "failed to restore obms")
+
+        initialNodeCount = len(self.get_ucs_node_list())
+
+        data_payload = {
+            "name": "Graph.Ucs.Discovery",
+            "options": {
+                "defaults": {
+                    "username": UCSM_USER,
+                    "password": UCSM_PASS,
+                    "ucs": UCSM_IP,
+                    "uri": UCS_SERVICE_URI
+                },
+                "when-discover-physical-ucs": {
+                    "discoverPhysicalServers": "true",
+                },
+                "when-discover-logical-ucs": {
+                    "discoverLogicalServer": "true"
+                },
+                "when-catalog-ucs": {
+                    "autoCatalogUcs": "true"
+                }
+            }
+        }
+
+        header = {"Content-Type": "application/json"}
+        api_data = fit_common.rackhdapi("/api/2.0/workflows", action="post",
+                                        headers=header, payload=data_payload)
+        id = api_data["json"]["context"]["graphId"]
+        self.assertEqual(api_data['status'], 201,
+                         'Incorrect HTTP return code, expected 201, got:' + str(api_data['status']))
+        status = self.wait_utility(str(id), 0, "Discovery")
+        self.assertEqual(status, 'succeeded', 'Discovery graph returned status {}'.format(status))
+
+        newNodeCount = len(self.get_ucs_node_list())
+
+        logs.info_1("Found {0} Nodes after cataloging the UCS".format(len(api_data['json'])))
+
+        self.assertEqual(newNodeCount - initialNodeCount,
+                         self.EXPECTED_UCS_PHYSICAL_NODES + self.EXPECTED_UCS_LOGICAL_NODES,
+                         'Expected to discover {0} UCS nodes, got: {1}'
+                             .format(self.EXPECTED_UCS_PHYSICAL_NODES + self.EXPECTED_UCS_LOGICAL_NODES,
+                                     newNodeCount - initialNodeCount))
+
 
 if __name__ == '__main__':
     unittest.main()

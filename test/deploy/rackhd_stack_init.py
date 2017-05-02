@@ -300,13 +300,19 @@ class rackhd_stack_init(unittest.TestCase):
         """
         loads the test configuration into the UCS Manger
         """
-        handle = ucshandle.UcsHandle(fit_common.fitcfg()['ucsm_ip'], fit_common.fitcfg()['ucsm_user'],
-                                     fit_common.fitcfg()['ucsm_pass'])
+        UCSM_IP = fit_common.fitcfg().get('ucsm_ip')
+        UCSM_USER = fit_common.fitcfg().get('ucsm_user')
+        UCSM_PASS = fit_common.fitcfg().get('ucsm_pass')
+
+        handle = ucshandle.UcsHandle(UCSM_IP, UCSM_USER, UCSM_PASS)
         self.assertTrue(handle.login(), 'Failed to log in to UCS Manager!')
         path, file = os.path.split(fit_common.fitcfg()['ucsm_config_file'])
-        import_ucs_backup(handle, file_dir=path, file_name=file)
+        try:
+            import_ucs_backup(handle, file_dir=path, file_name=file)
+        except Exception as e:
+            log.info_5("error trying to configure UCSPE, continue testing")
+            log.info_5(str(e))
         self.assertTrue(handle.logout(), 'Failed to log out from UCS Manager!')
-
 
 if __name__ == '__main__':
     unittest.main()

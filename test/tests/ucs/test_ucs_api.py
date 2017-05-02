@@ -165,13 +165,14 @@ class ucs_api(unittest.TestCase):
                          'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
         total_elements = 0
         for server in api_data["json"]["ServiceProfile"]["members"]:
-            url, headers = self.ucs_url_factory("power", identifier=str(server["path"]))
-            api_data_c = fit_common.restful(url, rest_headers=headers)
-            self.assertEqual(api_data_c['status'], 200,
-                             'Incorrect HTTP return code, expected 200, got:' + str(api_data_c['status']))
-            self.assertEqual(api_data_c["json"]["serverState"], state,
-                             'Server ' + str(server["path"]) + ' reported power state ' +
-                             str(api_data_c["json"]["serverState"]) + ' expected: ' + state)
+            if server["assoc_state"] == "associated":
+                url, headers = self.ucs_url_factory("power", identifier=str(server["path"]))
+                api_data_c = fit_common.restful(url, rest_headers=headers)
+                self.assertEqual(api_data_c['status'], 200,
+                                 'Incorrect HTTP return code, expected 200, got:' + str(api_data_c['status']))
+                self.assertEqual(api_data_c["json"]["serverState"], state,
+                                 'Server ' + str(server["path"]) + ' reported power state ' +
+                                 str(api_data_c["json"]["serverState"]) + ' expected: ' + state)
             total_elements += 1
         self.assertEqual(total_elements, 18, "Expected 18 elements but found {0}"
                          .format(total_elements))
@@ -188,10 +189,11 @@ class ucs_api(unittest.TestCase):
                          'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
         total_elements = 0
         for server in api_data["json"]["ServiceProfile"]["members"]:
-            url, headers = self.ucs_url_factory("power", identifier=str(server["path"]))
-            api_data_c = fit_common.restful(url + "&action=" + state, rest_headers=headers, rest_action='post')
-            self.assertEqual(api_data_c['status'], 200,
-                             'Incorrect HTTP return code, expected 200, got:' + str(api_data_c['status']))
+            if server["assoc_state"] == "associated":
+                url, headers = self.ucs_url_factory("power", identifier=str(server["path"]))
+                api_data_c = fit_common.restful(url + "&action=" + state, rest_headers=headers, rest_action='post')
+                self.assertEqual(api_data_c['status'], 200,
+                                 'Incorrect HTTP return code, expected 200, got:' + str(api_data_c['status']))
             total_elements += 1
         self.assertEqual(total_elements, 18, "Expected 18 elements but found {0}"
                          .format(total_elements))
