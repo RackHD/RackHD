@@ -40,7 +40,7 @@ class NodesTests(unittest.TestCase):
         self.__discovered = 0
         self.__test_nodes = [
             {
-                'autoDiscover': 'false',
+                'autoDiscover': False,
                 'name': 'test_switch_node',
                 'type': 'switch',
                 'snmpSettings': {
@@ -49,7 +49,7 @@ class NodesTests(unittest.TestCase):
                 }
             },
             {
-                'autoDiscover': 'false',
+                'autoDiscover': False,
                 'name': 'test_mgmt_node',
                 'type': 'mgmt',
                 'snmpSettings': {
@@ -58,7 +58,7 @@ class NodesTests(unittest.TestCase):
                 }
             },
             {
-                'autoDiscover': 'false',
+                'autoDiscover': False,
                 'name': 'test_pdu_node',
                 'type': 'pdu',
                 'snmpSettings': {
@@ -67,12 +67,12 @@ class NodesTests(unittest.TestCase):
                 }
             },
             {
-                'autoDiscover': 'false',
+                'autoDiscover': False,
                 'name': 'test_enclosure_node',
                 'type': 'enclosure'
             },
             {
-                'autoDiscover': 'false',
+                'autoDiscover': False,
                 'name': 'test_compute_node',
                 'type': 'compute'
             }

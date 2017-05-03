@@ -31,31 +31,31 @@ class NodesTests(object):
         self.__test_nodes = [
             {
                 'identifiers': ["FF:FF:FF:01"],
-                'autoDiscover': 'false',
+                'autoDiscover': False,
                 'name': 'test_switch_node',
                 'type': 'switch'
             },
             {
                 'identifiers': ["FF:FF:FF:02"],
-                'autoDiscover': 'false',
+                'autoDiscover': False,
                 'name': 'test_mgmt_node',
                 'type': 'mgmt'
             },
             {
                 'identifiers': ["FF:FF:FF:03"],
-                'autoDiscover': 'false',
+                'autoDiscover': False,
                 'name': 'test_pdu_node',
                 'type': 'pdu'
             },
             {
                 'identifiers': ["FF:FF:FF:04"],
-                'autoDiscover': 'false',
+                'autoDiscover': False,
                 'name': 'test_enclosure_node',
                 'type': 'enclosure'
             },
             {
                 'identifiers': ["FF:FF:FF:05"],
-                'autoDiscover': 'false',
+                'autoDiscover': False,
                 'name': 'test_compute_node',
                 'type': 'compute'
             }
