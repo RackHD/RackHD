@@ -66,7 +66,6 @@ from nose.plugins.attrib import attr
 import fit_common
 import flogging
 import sys
-import time
 log = flogging.get_loggers()
 
 # This gets the list of nodes
@@ -76,7 +75,7 @@ NODECATALOG = fit_common.node_select()
 NODE_STATUS = {}
 
 # global timer
-START_TIME = time.time()
+START_TIME = fit_common.time.time()
 
 # download RackHD config from host
 rackhdresult = fit_common.rackhdapi('/api/2.0/config')
@@ -90,14 +89,14 @@ rackhdhost = "http://" + str(rackhdconfig['apiServerAddress']) + ":" + str(rackh
 # this routine polls a workflow task ID for completion
 def wait_for_workflow_complete(taskid):
     result = None
-    while time.time() - START_TIME < 1800 or result is None:  # limit test to 30 minutes
+    while fit_common.time.time() - START_TIME < 1800 or result is None:  # limit test to 30 minutes
         result = fit_common.rackhdapi("/api/2.0/workflows/" + taskid)
         if result['status'] != 200:
             log.error(" HTTP error: " + result['text'])
             return False
         if result['json']['status'] == 'running' or result['json']['status'] == 'pending':
             log.info_5("{} workflow status: {}".format(result['json']['injectableName'], result['json']['status']))
-            time.sleep(30)
+            fit_common.time.sleep(30)
         elif result['json']['status'] == 'succeeded':
             log.info_5("{} workflow status: {}".format(result['json']['injectableName'], result['json']['status']))
             return True
@@ -200,7 +199,8 @@ class api20_bootstrap_base(fit_common.unittest.TestCase):
                          "version": item['version'],
                          "kvm": item['kvm'],
                          'id': "failed"}
-                    log.error(" TaskID: " + result['text'])
+                    log.error(" OS install " + item['workflow'] + " on node " + NODECATALOG[nodeindex] + " failed! ")
+                    log.error(" Error text: " + result['text'])
                     log.error(" Payload: " + fit_common.json.dumps(payload_data))
                 # increment node index to run next bootstrap
                 nodeindex += 1
