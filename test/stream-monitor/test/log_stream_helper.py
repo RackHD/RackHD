@@ -61,6 +61,13 @@ class _TempLogfileObserver(object):
     def iter_on_line(self):
         fdata = self.__get_tail_chunk()
         for line in fdata.split('\n'):
+            # Note: we need to skip internal logging message. It might be better
+            # to hunt for the corect ones, but since there are other tests to
+            # cover formatting etc of each type, trying to track new internal logs
+            # doesn't gain us much and costs a lot.
+            if 'stream-monitor/stream_sources/' in line:
+                continue
+
             yield line
 
 
@@ -203,7 +210,7 @@ class TempLogfileChecker(object):
                 in_consume = False
             m = cre.match(line)
             test.assertIsNotNone(
-                m, "did not match '{0}' {1} of {2}".format(sob_re, found, exp_lines))
+                m, "'{0}' did not match '{1}' {2} of {3}".format(line, sob_re, found, exp_lines))
             found += 1
             if tcn is None:
                 tcn = m.group('block_number')
@@ -241,7 +248,7 @@ class TempLogfileChecker(object):
             line = line_iter.next()
             m = cre.match(line)
             test.assertIsNotNone(
-                m, "did not match '{0}' {1} of {2}".format(st_re, found, len(lg_names)))
+                m, "'{0}' did not match '{1}' {2} of {3}".format(line, st_re, found, len(lg_names)))
             found += 1
             found_tcn = m.group('tc_number')
             if tcn is None:
