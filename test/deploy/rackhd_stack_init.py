@@ -125,7 +125,7 @@ class rackhd_stack_init(unittest.TestCase):
         log.info_5("**** Creating control switch node.")
         payload = {"type": "switch",
                    "name": "Control",
-                   "autoDiscover": "true",
+                   "autoDiscover": True,
                    "obms": [{"service": "snmp",
                              "config": {"host": fit_common.fitcfg()['control'],
                                         "community": fit_common.fitcreds()['snmp'][0]['community']}}]}
@@ -139,7 +139,7 @@ class rackhd_stack_init(unittest.TestCase):
         log.info_5("**** Creating data switch node.")
         payload = {"type": "switch",
                    "name": "Data",
-                   "autoDiscover": "true",
+                   "autoDiscover": True,
                    "obms": [{"service": "snmp",
                              "config": {"host": fit_common.fitcfg()['data'],
                                         "community": fit_common.fitcreds()['snmp'][0]['community']}}]}
@@ -153,7 +153,7 @@ class rackhd_stack_init(unittest.TestCase):
         log.info_5("**** Creating PDU node.")
         payload = {"type": "pdu",
                    "name": "PDU",
-                   "autoDiscover": "true",
+                   "autoDiscover": True,
                    "obms": [{"service": "snmp",
                              "config": {"host": fit_common.fitcfg()['pdu'],
                                         "community": fit_common.fitcreds()['snmp'][0]['community']}}]}
@@ -226,7 +226,7 @@ class rackhd_stack_init(unittest.TestCase):
         if usr != "" and pwd != "":
             payload = {"name": "Management Server " + str(time.time()),
                        "type": "mgmt",
-                       "autoDiscover": "true",
+                       "autoDiscover": True,
                        "obms": [{"service": "ipmi-obm-service",
                                  "config": {"host": fit_common.fitcfg()['bmc'],
                                             "user": usr,
