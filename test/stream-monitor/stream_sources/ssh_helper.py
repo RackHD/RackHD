@@ -121,5 +121,9 @@ class SSHHelper(pxssh):
             help="Hostname of DUT.")
 
     @classmethod
+    def get_parser_options_sm_dut_ssh_host(cls):
+        return cls._parser_options.sm_dut_ssh_host
+
+    @classmethod
     def set_options(cls, parser_options):
         cls._parser_options = parser_options

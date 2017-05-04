@@ -220,8 +220,8 @@ class TestMatcherGroups(plugin_test_helper.resolve_no_verify_helper_class()):
                 makeSuite will put this test in the list, then the name-matched one, thus allowing
                 pre-setup of the recorder mode
                 """
-                qp1 = self.__amqp_sm.get_tracker_processor(self._on_events_tracker)
-                qp1.match_any(min=5, max=10)
+                qp1 = self.__amqp_sm.get_tracker_queue_processor(self._on_events_tracker)
+                qp1.match_any_event(min=5, max=10)
                 self.__amqp_sm.inject('on.events', 'on.events.tests', self.__test_payloads[0])
                 self.__amqp_sm.inject('on.events', 'on.events.tests', self.__test_payloads[1])
                 self.__amqp_sm.inject('on.events', 'on.events.tests', self.__test_payloads[2])
@@ -231,8 +231,8 @@ class TestMatcherGroups(plugin_test_helper.resolve_no_verify_helper_class()):
                 return results
 
             def test_replay_of_five(self):
-                qp1 = self.__amqp_sm.get_tracker_processor(self._on_events_tracker)
-                qp1.match_any(min=5, max=10)
+                qp1 = self.__amqp_sm.get_tracker_queue_processor(self._on_events_tracker)
+                qp1.match_any_event(min=5, max=10)
                 fin_list = self.__amqp_sm.finish()
                 results = {
                     'on-events-tracker1': fin_list[0]
@@ -240,8 +240,8 @@ class TestMatcherGroups(plugin_test_helper.resolve_no_verify_helper_class()):
                 return results
 
             def test_replay_of_five_plus_one_after(self):
-                qp1 = self.__amqp_sm.get_tracker_processor(self._on_events_tracker)
-                qp1.match_any(min=6, max=10)
+                qp1 = self.__amqp_sm.get_tracker_queue_processor(self._on_events_tracker)
+                qp1.match_any_event(min=6, max=10)
                 self.__amqp_sm.inject('on.events', 'on.events.tests', self.__test_payloads[5])
                 fin_list = self.__amqp_sm.finish()
                 results = {
@@ -250,8 +250,8 @@ class TestMatcherGroups(plugin_test_helper.resolve_no_verify_helper_class()):
                 return results
 
             def test_dont_replay_of_five(self):
-                qp1 = self.__amqp_sm.get_tracker_processor(self._on_events_tracker, start_at='now')
-                qp1.match_any(min=0, max=0)
+                qp1 = self.__amqp_sm.get_tracker_queue_processor(self._on_events_tracker, start_at='now')
+                qp1.match_any_event(min=0, max=0)
                 fin_list = self.__amqp_sm.finish()
                 results = {
                     'on-events-tracker1': fin_list[0]
@@ -260,11 +260,11 @@ class TestMatcherGroups(plugin_test_helper.resolve_no_verify_helper_class()):
 
             def test_dual_match_single(self):
                 # create 1 processor that will consume the 5 existing items from the tracker plus a real one
-                qp1 = self.__amqp_sm.get_tracker_processor(self._on_events_tracker)
-                qp1.match_any(min=6, max=10)
+                qp1 = self.__amqp_sm.get_tracker_queue_processor(self._on_events_tracker)
+                qp1.match_any_event(min=6, max=10)
                 # create a 2nd processor on the same tracker that will ONLY consume the one new item
-                qp2 = self.__amqp_sm.get_tracker_processor(self._on_events_tracker, start_at='now')
-                qp2.match_any(min=1, max=1)
+                qp2 = self.__amqp_sm.get_tracker_queue_processor(self._on_events_tracker, start_at='now')
+                qp2.match_any_event(min=1, max=1)
 
                 self.__amqp_sm.inject('on.events', 'on.events.tests', self.__test_payloads[5])
                 fin_list = self.__amqp_sm.finish()

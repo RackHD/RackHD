@@ -92,6 +92,13 @@ class _MatcherBatcher(object):
             yield is_error, is_ok
 
     @property
+    def is_empty(self):
+        """
+        True if there are no results in batch
+        """
+        return len(self.__results_seen) == 0
+
+    @property
     def has_error(self):
         """
         Returns the composite "is_error" for the entire batch. If there
