@@ -150,7 +150,7 @@ for item in OSLIST:
 # ------------------------ Tests -------------------------------------
 
 
-@attr(all=True)
+@attr(all=False)
 class api20_bootstrap_base(fit_common.unittest.TestCase):
     @classmethod
     def setUpClass(cls):
