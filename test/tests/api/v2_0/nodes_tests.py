@@ -423,6 +423,7 @@ class NodesTests(object):
         assert_equal(200, rsp.status, message=rsp.status)
         for n in nodes:
             LOG.info(n, json=True)
+            self.__test_obm["nodeId"]= str(n.get('id'))
             Api().nodes_put_obms_by_node_id(identifier=n.get('id'), body=self.__test_obm)
             LOG.info('Creating obm {0}'.format(self.__test_obm))
             rsp = self.__client.last_response
