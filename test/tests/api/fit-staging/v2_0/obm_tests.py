@@ -1,44 +1,61 @@
-from config.api2_0_config import *
+"""
+Copyright (c) 2016-2017 Dell Inc. or its subsidiaries. All Rights Reserved.
+"""
+import fit_path  # NOQA: unused import
+import fit_common
+import flogging
+
+from common import api_utils
+from nosedep import depends
+from config.api2_0_config import config
 from obm_settings import obmSettings
-from on_http_api2_0 import ApiApi as Api
-from on_http_api2_0 import rest
-from modules.logger import Log
-from datetime import datetime
-from proboscis.asserts import assert_equal
-from proboscis.asserts import assert_false
-from proboscis.asserts import assert_raises
-from proboscis.asserts import assert_true
-from proboscis.asserts import assert_not_equal
-from proboscis import SkipTest
-from proboscis import test
-from json import dumps, loads
+from nose.plugins.attrib import attr
+logs = flogging.get_loggers()
 
-LOG = Log(__name__)
 
-@test(groups=['obm_api2.tests'], depends_on_groups=['nodes.api2.discovery.test'])
-class OBMTests(object):
+@attr(regression=False, smoke=True, obm_api2_tests=True)
+class OBMTests(fit_common.unittest.TestCase):
 
-    def __init__(self):
-        self.__client = config.api_client 
+    def setUp(self):
+        self.__client = config.api_client
 
-    @test(groups=['obm_api2.tests', 'set-ipmi-obm_api2'])
-    def setup_ipmi_obm(self):
-        """ Setup IPMI OBM settings with PATCH:/nodes """
-        assert_equal(len(obmSettings().setup_nodes(service_type='ipmi-obm-service')), 0)
+    # OBM ipmi-obm-service currently applies to compute nodes
+    def test_get_compute_nodes(self):
+        nodes = api_utils.api_node_select(self.__client, node_type='compute')
+        logs.info(" List of compute nodes: %s", nodes)
+        self.assertNotEqual(0, len(nodes), msg='ipmi-obm-service - Node list was empty!')
 
-    @test(groups=['obm_api2.tests', 'check-obm_api2'], depends_on_groups=['set-ipmi-obm_api2'])
-    def check_ipmi_obm_settings(self):
-        """ Checking IPMI OBM settings GET:/nodes """
-        assert_equal(len(obmSettings().check_nodes(service_type='ipmi-obm-service')), 0, 
-                message='there are missing IPMI OBM settings!')
-    
-    @test(groups=['obm_api2.tests', 'set-snmp-obm_api2'])
-    def setup_snmp_obm(self):
-        """ Setup SNMP OBM settings with PATCH:/nodes """
-        assert_equal(len(obmSettings().setup_nodes(service_type='snmp-obm-service')), 0)
+    # @test(groups=['obm_api2.tests', 'set-ipmi-obm_api2'], depends_on_groups=['nodes_api2.tests'])
+    @depends(after='test_get_compute_nodes')
+    def test_setup_ipmi_obm_api2(self):
+        # """ Setup IPMI OBM settings with PATCH:/nodes """
+        self.assertEqual(len(obmSettings().setup_nodes(service_type='ipmi-obm-service')), 0)
 
-    @test(groups=['obm_api2.tests', 'check-obm_api2'], depends_on_groups=['set-snmp-obm_api2'])
-    def check_snmp_obm_settings(self):
-        """ Checking SNMP OBM settings GET:/nodes """
-        assert_not_equal(len(obmSettings().check_nodes(service_type='snmp-obm-service')), 0,
-                message='there are missing SNMP OBM settings!')
+    # @test(groups=['obm_api2.tests', 'check-obm_api2'], depends_on_groups=['set-ipmi-obm_api2'])
+    @depends(after='test_setup_ipmi_obm_api2')
+    def test_check_ipmi_obm_api2_settings(self):
+        # """ Checking IPMI OBM settings GET:/nodes """
+        self.assertEqual(len(obmSettings().check_nodes(service_type='ipmi-obm-service')), 0,
+                         msg='There are missing IPMI OBM settings!')
+
+    # OBM ipmi-snmp-service currently applies to switch and pdu nodes
+    def test_get_switch_nodes(self):
+        nodes = api_utils.api_node_select(self.__client, node_type='switch')
+        logs.info(" List of switch nodes: %s", nodes)
+        pdu_nodes = api_utils.api_node_select(self.__client, node_type='pdu')
+        logs.info(" List of pdu nodes: %s", pdu_nodes)
+        nodes.append(pdu_nodes)
+        self.assertNotEqual(0, len(nodes), msg='snmp-obm-service - Node list was empty!')
+
+    # @test(groups=['obm_api2.tests', 'set-snmp-obm_api2'], depends_on_groups=['nodes_api2.tests'])
+    @depends(after='test_get_switch_nodes')
+    def test_setup_snmp_obm_api2(self):
+        # """ Setup SNMP OBM settings with PATCH:/nodes """
+        self.assertEqual(len(obmSettings().setup_nodes(service_type='snmp-obm-service')), 0)
+
+    # @test(groups=['obm_api2.tests', 'check-obm_api2'], depends_on_groups=['set-snmp-obm_api2'])
+    @depends(after='test_setup_snmp_obm_api2')
+    def test_check_snmp_obm_settings(self):
+        # """ Checking SNMP OBM settings GET:/nodes """
+        self.assertNotEqual(len(obmSettings().check_nodes(service_type='snmp-obm-service')), 0,
+                            msg='There are missing SNMP OBM settings!')
