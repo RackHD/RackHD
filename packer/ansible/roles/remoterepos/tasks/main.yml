@@ -29,9 +29,8 @@
     - on-imagebuilder
 
 - name: Reset to the branch specified
-  shell: git reset --hard  {{ branch }}
+  shell: git reset --hard {{ branch }}
   when: branch is defined
-  ignore_errors: yes
   args:
     chdir: "{{ ansible_env.HOME }}/src/{{ item }}"
   with_items:
