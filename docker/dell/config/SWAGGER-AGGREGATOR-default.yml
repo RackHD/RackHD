@@ -1,0 +1,53 @@
+info:
+  component: Swagger for SMI MicroService
+
+swagger: 
+  services:   
+      - 
+        name: Device-Discovery
+        url:  ${swagger.host}:46002/v2/api-docs?group=deviceDiscovery
+        version: 1.0
+      - 
+        name: Chassis-Inventory
+        url:  ${swagger.host}:46001/v2/api-docs?group=chassisInventory
+        version: 1.0
+      - 
+        name: Server-Inventory
+        url:  ${swagger.host}:46011/v2/api-docs?group=serverInventory
+        version: 1.0
+      - 
+        name: Server-Action
+        url:  ${swagger.host}:46007/v2/api-docs?group=serverAction
+        version: 1.0
+      - 
+        name: Server-Configuration
+        url:  ${swagger.host}:46018/v2/api-docs?group=serverConfiguration
+        version: 1.0
+      - 
+        name: Server-Firmware-Update
+        url:  ${swagger.host}:46010/v2/api-docs?group=serverFirmware
+        version: 1.0
+      - 
+        name: Server-OS-Deployment
+        url:  ${swagger.host}:46014/v2/api-docs?group=serverOSDeployment
+        version: 1.0
+      - 
+        name: Virtual-Identity
+        url:  ${swagger.host}:46015/v2/api-docs?group=virtualidentity
+        version: 1.0
+      - 
+        name: Virtual-Network
+        url:  ${swagger.host}:46016/v2/api-docs?group=virtualnetwork
+        version: 1.0
+      - 
+        name: Power-Thermal-Monitor
+        url:  ${swagger.host}:46019/v2/api-docs?group=powerthermal
+        version: 1.0
+      - 
+        name: RackHD-API
+        url:  ${swagger.host}:8080/api/2.0/swagger
+        version: 2.1.0
+      - 
+        name: RackHD-Redfish-API
+        url:  ${swagger.host}:8080/redfish/v1/swagger
+        version: 2.0

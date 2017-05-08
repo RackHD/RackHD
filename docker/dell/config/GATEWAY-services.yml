@@ -1,0 +1,120 @@
+smi:
+  gateway: "http://${gateway.host}:9600"
+  service:
+    -
+      endpoint:
+        -
+          name: "ips"
+          url: "/api/1.0/discover/ips"
+        -
+          name: "range"
+          url: "/api/1.0/discover/range"
+      name: "discovery"
+    -
+      endpoint:
+        -
+          name: "hardware"
+          url: "/api/1.0/server/inventory/hardware"
+        -
+          name: "software"
+          url: "/api/1.0/server/inventory/software"
+        -
+          name: "nics"
+          url: "/api/1.0/server/inventory/nics"
+        -
+          name: "summary"
+          url: "/api/1.0/server/inventory/summary"
+        -
+          name: "boot"
+          url: "/api/1.0/server/inventory/boot"
+        -
+          name: "bios"
+          url: "/api/1.0/server/inventory/bios"
+        -
+          name: "chassisDetail"
+          url: "/api/1.0/chassis/inventory/details"
+        -
+          name: "chassisSummary"
+          url: "/api/1.0/chassis/inventory/summary"
+        -
+          name: "serverCallback"
+          url: "/api/1.0/server/inventory/callback"
+        -
+          name: "chassisCallback"
+          url: "/api/1.0/chassis/inventory/callback"
+      name: "inventory"
+    -
+      endpoint:
+        -
+          name: "power"
+          url: "/api/1.0/server/action/power"
+        -
+          name: "blinkLED"
+          url: "/api/1.0/server/action/blinkLED"
+      name: "action"
+    -
+      endpoint:
+        -
+          name: "configureTraps"
+          url: "/api/1.0/server/configuration/trap/configureTraps"
+        -
+          name: "updateTrapFormat"
+          url: "/api/1.0/server/configuration/trap/updateTrapFormat"
+        -
+          name: "export"
+          url: "/api/1.0/server/configuration/export"
+        -
+          name: "getComponents"
+          url: "/api/1.0/server/configuration/getComponents"
+        -
+          name: "import"
+          url: "/api/1.0/server/configuration/import"
+        -
+          name: "updateComponents"
+          url: "/api/1.0/server/configuration/updateComponents"
+      name: "configuration"
+    -
+      endpoint:
+        -
+          name: "comparer"
+          url: "/api/1.0/server/firmware/comparer"
+        -
+          name: "catalog"
+          url: "/api/1.0/server/firmware/comparer/catalog"
+        -
+          name: "custom"
+          url: "/api/1.0/server/firmware/comparer/custom"
+        -
+          name: "downloader"
+          url: "/api/1.0/server/firmware/downloader"
+        -
+          name: "uci"
+          url: "/api/1.0/server/firmware/uci"
+        -
+          name: "ucisi"
+          url: "/api/1.0/server/firmware/uci/si"
+        -
+          name: "updater"
+          url: "/api/1.0/server/firmware/updater"
+        -
+          name: "updaterDup"
+          url: "/api/1.0/server/firmware/updater/dup"
+        -
+          name: "updaterStatus"
+          url: "/api/1.0/server/firmware/updater/status"
+        -
+          name: "testCallback"
+          url: "/api/1.0/server/firmware/updater/testCallback"
+      name: "firmware"
+    -
+      endpoint:
+        -
+          name: "deploy"
+          url: "/api/1.0/server/osdeployment/deploy"
+        -
+          name: "isominimal"
+          url: "/api/1.0/server/osdeployment/iso/minimal"
+        -
+          name: "version"
+          url: "/api/1.0/server/osdeployment/version"
+      name: "osdeployment"
