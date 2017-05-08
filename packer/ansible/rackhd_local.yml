@@ -15,6 +15,7 @@
     - ipmitool
     - foreman
     - pm2
+    - setuptools
     - remoterepos
     - images
     - swagger
