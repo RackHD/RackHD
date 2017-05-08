@@ -7,7 +7,7 @@
   sudo: yes
 
 - name: Get RackHD from source
-  git: repo=https://github.com/rackhd/rackhd
+  git: repo=https://github.com/dell-smi/rackhd
        dest="{{ ansible_env.HOME }}/src"
        accept_hostkey=true
        version="{{ branch | default('master') }}"
@@ -29,8 +29,9 @@
     - on-imagebuilder
 
 - name: Reset to the branch specified
-  shell: git reset --hard {{ branch }}
+  shell: git reset --hard  master
   when: branch is defined
+  ignore_errors: yes
   args:
     chdir: "{{ ansible_env.HOME }}/src/{{ item }}"
   with_items:
@@ -45,6 +46,15 @@
     - on-tools
     - on-imagebuilder
 
+  name: Reset to the branch specified		 +    
+  shell: git reset --hard {{ branch }}		
+  when: branch is defined		
+   ignore_errors: yes		
+  args:		
+    chdir: "{{ ansible_env.HOME }}/src/{{ item }}"		
+  with_items:		
+    - on-http
+    
 - name: Npm install Repos
   npm: path="{{ ansible_env.HOME }}/src/{{ item }}"
        production=yes
