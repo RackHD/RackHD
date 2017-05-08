@@ -31,6 +31,27 @@
       "proxy": {
         "host": "",
         "port": ""
-      }
+      },
+      "os-install": [
+        {"workflow": "Graph.InstallESXi", "version": "6.0", "path": "/repo/esxi/6.0", "kvm": false},
+        {"workflow": "Graph.InstallCentOS", "version": "6.5", "path": "/repo/centos/6.5", "kvm": false},
+        {"workflow": "Graph.InstallUbuntu", "version": "trusty", "path": "/repo/ubuntu", "kvm": false},
+        {"workflow": "Graph.InstallESXi", "version": "5.5", "path": "/repo/esxi/5.5", "kvm": false},
+        {"workflow": "Graph.InstallCentOS", "version": "7.0", "path": "/repo/centos/7.0", "kvm": false},
+        {"workflow": "Graph.InstallRHEL", "version": "7.0", "path": "/repo/rhel/7.2", "kvm": false},
+        {"workflow": "Graph.InstallSUSE", "version": "42.1", "path": "/repo/suse/42.1", "kvm": false},
+        {"workflow": "Graph.InstallCoreOS", "version": "899.17.0", "path": "/repo/coreos", "kvm": false},
+        {"workflow": "Graph.InstallRHEL", "version": "7.0", "path": "/repo/rhel/7.2", "kvm": true},
+        {"workflow": "Graph.InstallCentOS", "version": "6.5", "path": "/repo/centos/6.5", "kvm": true},
+        {"workflow": "Graph.InstallWindowsServer",
+         "version": "2012",
+         "path": "/repo/winpe",
+         "kvm": false,
+         "productkey": "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
+         "smbUser": "onrack",
+         "smbPassword": "onrack",
+         "smbRepo": "\\windowsServer2012"
+         }
+      ]
   }
 }
