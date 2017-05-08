@@ -1,0 +1,270 @@
+version: '2'
+
+services:
+  consul:
+    image: consul:0.7.5
+    # NOTE: for additional nodes, add "-join <ip of primary> make sure the encrypt values match"
+    #command: agent -server -ui -bind ${HOST_IP} -client 0.0.0.0 -log-level "info" -encrypt "Av0SYCoqCn8+jocR9EClTg=="
+    command: agent -server -ui -bind ${HOST_IP} -client 0.0.0.0 -log-level "info" -encrypt "KEY_PLACEHOLDER"
+    restart: always
+    network_mode: "host"
+    ports:
+    - "8300:8300"
+    - "8301:8301"
+    - "8301:8301/udp"
+    - "8302:8302"
+    - "8302:8302/udp"
+    - "8400:8400"
+    - "8500:8500"
+    - "53:53"
+    volumes:
+    - /etc/ssl:/etc/ssl
+    - /usr/local/share/ca-certificates:/usr/local/share/ca-certificates
+    # uncoment the line below to persist/reuse data after container is destroyed
+    #- /var/consul/data:/consul/data
+    mem_limit: 512m
+    environment:
+      # for secondary node set bootstrap to false
+      CONSUL_LOCAL_CONFIG: '{"bootstrap": true, "enable_syslog": false, "verify_server_hostname": false, "verify_incoming": false, "verify_outgoing": false, "cert_file": "/etc/ssl/certs/${HOST}.crt", "key_file": "/etc/ssl/private/${HOST}.key", "ca_file": "/usr/local/share/ca-certificates/${HOST}.crt" }'
+
+  service-gateway-zuul:
+    container_name: service-gateway-zuul
+    image: rackhd/gateway:latest
+    depends_on:
+    - consul
+    network_mode: "host"
+    ports:
+    - 46020:46020
+    extra_hosts:
+    - "service-registry:${REGISTRY_IP}"
+    volumes:
+    - /var/log/dell/:/var/log/dell/
+    - /etc/ssl/:/etc/ssl
+    mem_limit: 512m
+    environment:
+    - "GATEWAY_HOST=${HOST_IP}"
+    - _JAVA_OPTIONS=-Xmx64m -Xss256k
+    #- "JAVA_OPTS=-Dsmi.gateway=http://100.68.123.110:46020"
+
+  service-device-discovery:
+    container_name: service-device-discovery
+    image: rackhd/device-discovery:latest
+    depends_on:
+    - consul
+    network_mode: "host"
+    ports:
+    - 46002:46002
+    extra_hosts:
+    - "service-registry:${REGISTRY_IP}"
+    volumes:
+    - /var/log/dell/:/var/log/dell/
+    - /etc/ssl/:/etc/ssl
+    mem_limit: 768m
+    environment:
+    - "SPRING_PROFILES_ACTIVE=consul"
+    - _JAVA_OPTIONS=-Xmx128m -Xss228k
+
+  service-server-action:
+    container_name: dell-server-action
+    image: rackhd/dell-server-action:latest
+    depends_on:
+    - consul
+    network_mode: "host"
+    ports:
+    - 46007:46007
+    extra_hosts:
+    - "service-registry:${REGISTRY_IP}"
+    volumes:
+    - /var/log/dell/:/var/log/dell/
+    - /etc/ssl/:/etc/ssl
+    mem_limit: 512m
+    environment:
+    - "SPRING_PROFILES_ACTIVE=consul"
+    - _JAVA_OPTIONS=-Xmx64m -Xss256k
+
+  service-chassis-inventory:
+    container_name: dell-chassis-inventory
+    image: rackhd/dell-chassis-inventory:latest
+    depends_on:
+    - consul
+    network_mode: "host"
+    ports:
+    - 46001:46001
+    extra_hosts:
+    - "service-registry:${REGISTRY_IP}"
+    volumes:
+    - /var/log/dell/:/var/log/dell/
+    - /etc/ssl/:/etc/ssl
+    mem_limit: 768m
+    environment:
+    - "SPRING_PROFILES_ACTIVE=consul"
+    - _JAVA_OPTIONS=-Xmx128m -Xss256k
+
+  service-server-inventory:
+    container_name: service-server-inventory
+    image: rackhd/dell-server-inventory:latest
+    depends_on:
+    - consul
+    network_mode: "host"
+    ports:
+    - 46011:46011
+    extra_hosts:
+    - "service-registry:${REGISTRY_IP}"
+    volumes:
+    - /var/log/dell/:/var/log/dell/
+    - /etc/ssl/:/etc/ssl
+    mem_limit: 1024m
+    environment:
+    - "SPRING_PROFILES_ACTIVE=consul"
+    - _JAVA_OPTIONS=-Xmx128m -Xss256k
+
+  service-server-configuration-profile:
+    container_name: service-server-configuration-profile
+    image: rackhd/dell-server-configuration-profile:latest
+    depends_on:
+    - consul
+    network_mode: "host"
+    ports:
+    - 46018:46018
+    extra_hosts:
+    - "service-registry:${REGISTRY_IP}"
+    privileged: true
+    volumes:
+    - /var/log/dell/:/var/log/dell/
+    - /etc/ssl/:/etc/ssl
+    mem_limit: 768m
+    environment:
+    - "SPRING_PROFILES_ACTIVE=consul"
+    - _JAVA_OPTIONS=-Xmx128m -Xss256k
+
+  service-server-firmwareupdate:
+    container_name: service-server-firmwareupdate
+    image: rackhd/dell-server-firmwareupdate:latest
+    depends_on:
+    - consul
+    network_mode: "host"
+    ports:
+    - 46010:46010
+    extra_hosts:
+    - "service-registry:${REGISTRY_IP}"
+    privileged: true
+    volumes:
+    - /var/log/dell:/var/log/dell
+    mem_limit: 1024m
+    environment:
+    - "SPRING_PROFILES_ACTIVE=consul"
+    - _JAVA_OPTIONS=-Xmx128m -Xss256k
+
+  #service-server-os-deployment:
+  #  container_name: service-server-os-deployment
+  #  image: docker-registry.smi.delllabs.net/dell_smi/service-server-os-deployment:latest
+  #  depends_on:
+  #  - consul
+  #  network_mode: "host"
+  #  ports:
+  #  - 46014:46014
+  #  extra_hosts:
+  #  - "service-registry:${REGISTRY_IP}"
+  #  privileged: true
+  #  volumes:
+  #  - /var/log/dell:/var/log/dell
+  #  mem_limit: 512m
+  #  environment:
+  #  - "SPRING_PROFILES_ACTIVE=consul"
+  #  - _JAVA_OPTIONS=-Xmx64m -Xss256k
+
+  service-virtualnetwork:
+    container_name: service-virtualnetwork
+    image: rackhd/virtualnetwork:latest
+    depends_on:
+    - consul
+    - postgresql
+    network_mode: "host"
+    ports:
+    - 46016:46016
+    extra_hosts:
+    - "service-registry:${REGISTRY_IP}"
+    volumes:
+    - /var/log/dell/:/var/log/dell/
+    - /etc/ssl/:/etc/ssl/
+    mem_limit: 512m
+    environment:
+    - "SPRING_PROFILES_ACTIVE=consul"
+    - _JAVA_OPTIONS=-Xmx64m -Xss256k
+    #- "JAVA_OPTS=-Dspring.cloud.consul.discovery.ipAddress=${HOST_IP}"
+    #- "JAVA_OPTS=-Dspring.cloud.consul.config.acl-token=VIRTUALNETWORK_ACL_TOKEN -Dspring.cloud.consul.discovery.health-check-url=https://172.31.128.1:46016/health"
+
+  service-virtualidentity:
+    container_name: service-virtualidentity
+    image: rackhd/virtualidentity:latest
+    depends_on:
+    - consul
+    - postgresql
+    network_mode: "host"
+    ports:
+    - 46015:46015
+    extra_hosts:
+    - "service-registry:${REGISTRY_IP}"
+    volumes:
+    - /var/log/dell/:/var/log/dell/
+    - /etc/ssl/:/etc/ssl
+    mem_limit: 512m
+    environment:
+    - "SPRING_PROFILES_ACTIVE=consul"
+    - _JAVA_OPTIONS=-Xmx64m -Xss256k
+    #- "JAVA_OPTS=-Dspring.cloud.consul.discovery.ipAddress=${HOST_IP}"
+    #- "JAVA_OPTS=-Dspring.cloud.consul.config.acl-token=VIRTUALIDENTITY_ACL_TOKEN -Dspring.cloud.consul.discovery.health-check-url=https://172.31.128.1:46015/health"
+
+  service-powerthermal-monitoring:
+    container_name: service-powerthermal-monitoring
+    image: rackhd/dell-powerthermal-monitoring:latest
+    depends_on:
+    - consul
+    network_mode: "host"
+    ports:
+    - 46019:46019
+    extra_hosts:
+    - "service-registry:${REGISTRY_IP}"
+    volumes:
+    - /var/log/dell/:/var/log/dell/
+    - /etc/ssl/:/etc/ssl
+    mem_limit: 768m
+    environment:
+    - "SPRING_PROFILES_ACTIVE=consul"
+    - _JAVA_OPTIONS=-Xmx128m -Xss256k
+
+  #service-swagger-aggregator:
+  # container_name: service-swagger-aggregator
+  #  image: docker-registry.smi.delllabs.net/dell_smi/service-swagger-aggregator:latest
+    #command: --add-host localhost -h service-resources
+  #  depends_on:
+  #  - consul
+  #  network_mode: "host"
+  #  ports:
+  #  - 46021:46021
+  #  extra_hosts:
+  #  - "service-registry:${REGISTRY_IP}"
+  #  volumes:
+  #  - /home/devuser/config-repo:/home/devuser/config-repo
+  #  - /var/log/dell/:/var/log/dell/
+  #  - /etc/ssl/:/etc/ssl
+  #  mem_limit: 512m
+  #  environment:
+  #  - "SPRING_PROFILES_ACTIVE=consul"
+  #  - "SWAGGER_HOST=http://${HOST_IP}"
+  #  - _JAVA_OPTIONS=-Xmx64m -Xss256k
+
+  postgresql:
+    container_name: postgresql
+    image: postgres:9.6.1-alpine
+    ports:
+    - 5433:5432
+    mem_limit: 512m
+    environment:
+      - POSTGRES_PASSWORD=Dell123$$
+
+  #rabbitmq:
+    #container_name: rabbitmq
+    #image: rabbitmq:latest
+    #ports:
+    #- 46017:5672

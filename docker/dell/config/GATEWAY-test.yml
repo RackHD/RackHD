@@ -1,0 +1,351 @@
+zuul:
+  routes:
+    virtualnetwork:
+      path: /api/1.0/networks/**
+      serviceId: virtualnetwork
+      stripPrefix: false
+    virtualidentity:
+      path: /api/1.0/virtualIdentities/**
+      serviceId: virtualidentity
+      stripPrefix: false
+    SERVER-INVENTORY:
+      path: /api/1.0/server/inventory/**
+      serviceId: SERVER-INVENTORY
+      stripPrefix: false
+    CHASSIS-INVENTORY:
+      path: /api/1.0/chassis/inventory/**
+      serviceId: CHASSIS-INVENTORY
+      stripPrefix: false
+    SERVER-ACTION:
+      path: /api/1.0/server/action/**
+      serviceId: SERVER-ACTION
+      stripPrefix: false
+    DEVICE-DISCOVERY:
+      path: /api/1.0/discover/**
+      serviceId: DEVICE-DISCOVERY
+      stripPrefix: false
+    SERVER-CONFIG:
+      path: /api/1.0/server/configuration/**
+      serviceId: SERVER-CONFIG
+      stripPrefix: false
+    SERVER-FIRMWARE-UPDATE:
+      path: /api/1.0/server/firmware/**
+      serviceId: SERVER-FIRMWARE-UPDATE
+      stripPrefix: false
+    SERVER-OS-DEPLOYMENT:
+      path: /api/1.0/server/osdeployment/**
+      serviceId: SERVER-OS-DEPLOYMENT
+      stripPrefix: false
+    POWER-THERMAL-MONITORING:
+      path: /api/1.0/powerthermal/**
+      serviceId: POWER-THERMAL-MONITORING
+      stripPrefix: false
+    SWAGGER-AGGREGATOR:
+      path: /api/1.0/swagger/**
+      serviceId: SWAGGER-AGGREGATOR
+      stripPrefix: false
+
+# Increase the Hystrix timeout to 60s (globally)
+hystrix:
+  command:
+    default:
+      execution:
+        timeout: 
+          enabled: false
+        #isolation:
+          #thread:
+            #timeoutInMilliseconds: 60000
+
+virtualnetwork:
+  ribbon:
+    # Max number of retries on the same server (excluding the first try)
+    MaxAutoRetries: 1
+    # Max number of next servers to retry (excluding the first server)
+    MaxAutoRetriesNextServer: 1
+    # Whether all operations can be retried for this client
+    OkToRetryOnAllOperations: true
+    # Initial list of servers, can be changed via Archaius dynamic property at runtime
+    #listOfServers: 
+    # Interval to refresh the server list from the source
+    ServerListRefreshInterval: 2000
+    # Connect timeout used by Apache HttpClient
+    ConnectTimeout: 20000
+    # Read timeout used by Apache HttpClient
+    ReadTimeout: 20000
+    eureka:
+      enabled: false
+
+virtualidentity:
+  ribbon:
+    MaxAutoRetries: 1
+    MaxAutoRetriesNextServer: 1
+    OkToRetryOnAllOperations: true
+    #listOfServers: 
+    ServerListRefreshInterval: 1000
+    ConnectTimeout: 20000
+    ReadTimeout: 20000
+    eureka:
+      enabled: false
+
+SERVER-INVENTORY:
+  ribbon:
+    MaxAutoRetries: 2
+    MaxAutoRetriesNextServer: 2
+    OkToRetryOnAllOperations: true
+    #listOfServers: 
+    ServerListRefreshInterval: 2000
+    ConnectTimeout: 60000
+    ReadTimeout: 480000
+    eureka:
+      enabled: false
+
+SERVER-ACTION:
+  ribbon:
+    MaxAutoRetries: 2
+    MaxAutoRetriesNextServer: 2
+    OkToRetryOnAllOperations: true
+    #listOfServers: 
+    ServerListRefreshInterval: 2000
+    ConnectTimeout: 60000
+    ReadTimeout: 120000
+    eureka:
+      enabled: false
+
+DEVICE-DISCOVERY:
+  ribbon:
+    MaxAutoRetries: 2
+    MaxAutoRetriesNextServer: 2
+    OkToRetryOnAllOperations: true
+    #listOfServers: 
+    ServerListRefreshInterval: 2000
+    ConnectTimeout: 60000
+    ReadTimeout: 300000
+    eureka:
+      enabled: false
+
+SERVER-CONFIG:
+  ribbon:
+    MaxAutoRetries: 2
+    MaxAutoRetriesNextServer: 2
+    OkToRetryOnAllOperations: true
+    #listOfServers: 
+    ServerListRefreshInterval: 2000
+    ConnectTimeout: 60000
+    ReadTimeout: 300000
+    eureka:
+      enabled: false
+
+CHASSIS-INVENTORY:
+  ribbon:
+    MaxAutoRetries: 2
+    MaxAutoRetriesNextServer: 2
+    OkToRetryOnAllOperations: true
+    #listOfServers: 
+    ServerListRefreshInterval: 2000
+    ConnectTimeout: 60000
+    ReadTimeout: 300000
+    eureka:
+      enabled: false
+
+SERVER-FIRMWARE-UPDATE:
+  ribbon:
+    MaxAutoRetries: 2
+    MaxAutoRetriesNextServer: 2
+    OkToRetryOnAllOperations: true
+    #listOfServers: 
+    ServerListRefreshInterval: 2000
+    ConnectTimeout: 60000
+    ReadTimeout: 300000
+    eureka:
+      enabled: false
+
+SERVER-OS-DEPLOYMENT:
+  ribbon:
+    MaxAutoRetries: 2
+    MaxAutoRetriesNextServer: 2
+    OkToRetryOnAllOperations: true
+    #listOfServers: 
+    ServerListRefreshInterval: 2000
+    ConnectTimeout: 60000
+    ReadTimeout: 300000
+    eureka:
+      enabled: false
+
+POWER-THERMAL-MONITORING:
+  ribbon:
+    MaxAutoRetries: 2
+    MaxAutoRetriesNextServer: 2
+    OkToRetryOnAllOperations: true
+    #listOfServers: 
+    ServerListRefreshInterval: 2000
+    ConnectTimeout: 60000
+    ReadTimeout: 300000
+    eureka:
+      enabled: false
+
+SWAGGER-AGGREGATOR:
+  ribbon:
+    MaxAutoRetries: 2
+    MaxAutoRetriesNextServer: 2
+    OkToRetryOnAllOperations: true
+    #listOfServers: 
+    ServerListRefreshInterval: 1000
+    ConnectTimeout: 60000
+    ReadTimeout: 60000
+    eureka:
+      enabled: false
+
+# Service URI
+smi:
+  gateway: "http://${gateway.host}:46020"
+  service:
+    -
+      endpoint:
+        -
+          name: "ips"
+          url: "/api/1.0/discover/ips"
+        -
+          name: "range"
+          url: "/api/1.0/discover/range"
+      name: "discovery"
+    -
+      endpoint:
+        -
+          name: "hardware"
+          url: "/api/1.0/server/inventory/hardware"
+        -
+          name: "software"
+          url: "/api/1.0/server/inventory/software"
+        -
+          name: "nics"
+          url: "/api/1.0/server/inventory/nics"
+        -
+          name: "summary"
+          url: "/api/1.0/server/inventory/summary"
+        -
+          name: "boot"
+          url: "/api/1.0/server/inventory/boot"
+        -
+          name: "bios"
+          url: "/api/1.0/server/inventory/bios"
+        -
+          name: "chassisDetail"
+          url: "/api/1.0/chassis/inventory/details"
+        -
+          name: "chassisSummary"
+          url: "/api/1.0/chassis/inventory/summary"
+        -
+          name: "serverCallback"
+          url: "/api/1.0/server/inventory/callback"
+        -
+          name: "chassisCallback"
+          url: "/api/1.0/chassis/inventory/callback"
+      name: "inventory"
+    -
+      endpoint:
+        -
+          name: "power"
+          url: "/api/1.0/server/action/power"
+        -
+          name: "blinkLED"
+          url: "/api/1.0/server/action/blinkLED"
+      name: "action"
+    -
+      endpoint:
+        -
+          name: "configureTraps"
+          url: "/api/1.0/server/configuration/trap/configureTraps"
+        -
+          name: "updateTrapFormat"
+          url: "/api/1.0/server/configuration/trap/updateTrapFormat"
+        -
+          name: "export"
+          url: "/api/1.0/server/configuration/export"
+        -
+          name: "getComponents"
+          url: "/api/1.0/server/configuration/getComponents"
+        -
+          name: "import"
+          url: "/api/1.0/server/configuration/import"
+        -
+          name: "updateComponents"
+          url: "/api/1.0/server/configuration/updateComponents"
+      name: "configuration"
+    -
+      endpoint:
+        -
+          name: "comparer"
+          url: "/api/1.0/server/firmware/comparer"
+        -
+          name: "catalog"
+          url: "/api/1.0/server/firmware/comparer/catalog"
+        -
+          name: "custom"
+          url: "/api/1.0/server/firmware/comparer/custom"
+        -
+          name: "downloader"
+          url: "/api/1.0/server/firmware/downloader"
+        -
+          name: "uci"
+          url: "/api/1.0/server/firmware/uci"
+        -
+          name: "ucisi"
+          url: "/api/1.0/server/firmware/uci/si"
+        -
+          name: "updater"
+          url: "/api/1.0/server/firmware/updater"
+        -
+          name: "updaterDup"
+          url: "/api/1.0/server/firmware/updater/dup"
+        -
+          name: "updaterStatus"
+          url: "/api/1.0/server/firmware/updater/status"
+        -
+          name: "testCallback"
+          url: "/api/1.0/server/firmware/updater/testCallback"
+      name: "firmware"
+    -
+      endpoint:
+        -
+          name: "deploy"
+          url: "/api/1.0/server/osdeployment/deploy"
+        -
+          name: "isominimal"
+          url: "/api/1.0/server/osdeployment/iso/minimal"
+        -
+          name: "version"
+          url: "/api/1.0/server/osdeployment/version"
+      name: "osdeployment"
+    -
+      endpoint:
+        -
+          name: "vi"
+          url: "/api/1.0/virtualIdentities"
+        -
+          name: "vibyId"
+          url: "/api/1.0/virtualIdentities/{virtualIdentityId}"
+      name: "virtualIdentities"
+    -
+      endpoint:
+        -
+          name: "network"
+          url: "/api/1.0/networks"
+        -
+          name: "networkById"
+          url: "/api/1.0/networks/{networkId}"
+        -
+          name: "ipAddressPools"
+          url: "/api/1.0/networks/{networkId}/ipAddressPools"
+        -
+          name: "export"
+          url: "/api/1.0/networks/{networkId}/ipAddressPools/export"
+        -
+          name: "ipAddress"
+          url: "/api/1.0/networks/{networkId}/ipAddressPools/{ipAddress}"
+        -
+          name: "ipv4Ranges"
+          url: "/api/1.0/networks/{networkId}/ipv4Ranges"
+        -
+          name: "ipv4RangesById"
+          url: "/api/1.0/networks/{networkId}/ipv4Ranges/{rangeId}"
+      name: "networks"
