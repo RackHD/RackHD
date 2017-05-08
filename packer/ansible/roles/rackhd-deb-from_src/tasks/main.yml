@@ -1,0 +1,78 @@
+---
+- name: Get RackHD from source
+  git: repo=https://github.com/rackhd/rackhd
+       dest="{{ ansible_env.HOME }}/src"
+       accept_hostkey=true
+       version="{{ branch | default('master') }}"
+
+- name: Install debuild & dch
+  apt: pkg={{ item }} state=installed
+  with_items:
+    - devscripts
+    - debhelper
+  sudo: yes
+
+
+- name: Update git repos with latest
+  shell: git fetch --all --prune
+  args:
+    chdir: "{{ ansible_env.HOME }}/src/{{ item }}"
+  with_items:
+    - on-http
+    - on-tftp
+    - on-dhcp-proxy
+    - on-taskgraph
+    - on-syslog
+
+- name: Reset to the branch specified
+  shell: git reset --hard {{ branch }}
+  when: branch is defined
+  args:
+    chdir: "{{ ansible_env.HOME }}/src/{{ item }}"
+  with_items:
+    - on-http
+    - on-tftp
+    - on-dhcp-proxy
+    - on-taskgraph
+    - on-syslog
+
+- name: Build Deb Package via HWIMO-BUILD script
+  shell: ./HWIMO-BUILD
+  args:
+      chdir: "{{ ansible_env.HOME }}/src/{{ item }}"
+  with_items:
+    - on-http
+    - on-tftp
+    - on-dhcp-proxy
+    - on-taskgraph
+    - on-syslog
+
+
+- name: Install the Debian packages build
+  shell: dpkg -i ./{{item}}*.deb
+  args:
+      chdir: "{{ ansible_env.HOME }}/src/{{ item }}"
+  with_items:
+    - on-http
+    - on-tftp
+    - on-dhcp-proxy
+    - on-taskgraph
+    - on-syslog
+  sudo:  yes
+
+
+
+- file: path="/etc/default/{{ item }}" state=touch
+  with_items:
+    - on-dhcp-proxy
+    - on-http
+    - on-taskgraph
+    - on-tftp
+    - on-syslog
+  sudo: yes
+
+- name: set HTTP static directory for RackHD
+  set_fact: http_static_directory="/var/renasar/on-http/static/http"
+
+- name: set TFTP static directory for RackHD
+  set_fact: tftp_static_directory="/var/renasar/on-tftp/static/tftp"
