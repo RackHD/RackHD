@@ -66,7 +66,7 @@ class test_amqp_stream_monitor_framework(unittest.TestCase):
         track_record = on_events.test_helper_wait_for_one_message()
         self.assertIsNotNone(track_record, "message never received")
         di = track_record.msg.delivery_info
-        body = json.loads(track_record.body)
+        body = track_record.body
         self.assertEqual(di['routing_key'], 'on.events.tests')
         self.assertEqual(body['test_uuid'], payload['test_uuid'])
 
@@ -78,7 +78,7 @@ class test_amqp_stream_monitor_framework(unittest.TestCase):
         track_record = on_events.test_helper_wait_for_one_message()
         self.assertIsNotNone(track_record, "message never received")
         di = track_record.msg.delivery_info
-        body = json.loads(track_record.body)
+        body = track_record.body
         logs.data_log.info('delivery_info from message=%s', di)
         logs.data_log.info('body from message=%s', body)
 
@@ -87,7 +87,7 @@ class test_amqp_stream_monitor_framework(unittest.TestCase):
         track_record = on_hb.test_helper_wait_for_one_message(20)
         self.assertIsNotNone(track_record, "message never received")
         di = track_record.msg.delivery_info
-        body = json.loads(track_record.body)
+        body = track_record.body
         logs.data_log.info('RoutingKey: %s', di['routing_key'])
         logs.data_log.info('delivery_info from message=%s', di)
         logs.data_log.info('body from message=%s', body)
@@ -98,7 +98,7 @@ class test_amqp_stream_monitor_framework(unittest.TestCase):
             track_record = on_hb.test_helper_wait_for_one_message(20)
             self.assertIsNotNone(track_record, "message never received")
             di = track_record.msg.delivery_info
-            body = json.loads(track_record.body)
+            body = track_record.body
             logs.data_log.info('RoutingKey: %s', di['routing_key'])
             logs.data_log.info('delivery_info from message=%s', di)
             logs.data_log.info('body from message=%s', body)

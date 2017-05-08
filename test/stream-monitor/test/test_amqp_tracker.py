@@ -104,7 +104,7 @@ class TestAMQPOnDemand(plugin_test_helper.resolve_no_verify_helper_class()):
         self.assertIsNotNone(got, "message never received")
         di = got.msg.delivery_info
         self.assertEqual(di['routing_key'], expected['route_key'])
-        body = json.loads(got.body)
+        body = got.body
         self.assertEqual(body['test_uuid'], expected['payload']['test_uuid'])
         print("di={}".format(di))
         print("body={}".format(body))

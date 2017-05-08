@@ -8,12 +8,14 @@ monkey.patch_dns()
 monkey.patch_time()
 monkey.patch_builtins()
 monkey.patch_select()
+import re
 import sys
 import time
 import optparse
 import uuid
 import gevent
 import gevent.queue
+import json
 from pexpect import EOF
 from datetime import datetime
 from .monitor_abc import StreamMonitorBaseClass
@@ -56,7 +58,7 @@ class _AMQPServerWrapper(object):
                 msg.delivery_info['consumer_tag'], self.__monitors.keys())
         mon = self.__monitors[ct]
         for event_cb in mon['event_cb']:
-            event_cb(msg, msg.body)
+            event_cb(msg, json.loads(msg.body))
 
     def stop_greenlet(self):
         self.__running = False
@@ -118,10 +120,25 @@ class _AMQPMatcher(StreamMatchBase):
     """
     def __init__(self, route_key, description, min=1, max=sys.maxint):
         self.__route_key = route_key
+        if route_key is not None:
+            escaped_key = re.escape(route_key)
+            no_star = escaped_key.replace('*', '[^.]')
+            no_pound = no_star.replace('\#', '.*?')
+
+            self.__rk_regex = re.compile('^{}$'.format(no_pound))
+            self.__no_pound = no_pound
+        else:
+            self.__rk_regex = re.compile('.*')
         super(_AMQPMatcher, self).__init__(description, min=min, max=max)
 
     def _match(self, other_event):
-        return bool(other_event)
+        if self.__route_key is None:
+            return bool(other_event)
+
+        assert isinstance(other_event, _AMQPTrackerRecord), \
+            'other_event was a {} needs to be a {}'.format(type(other_event), _AMQPTrackerRecord)
+        m = self.__rk_regex.match(other_event.msg.delivery_info['routing_key'])
+        return m is not None
 
     def dump(self, ofile=sys.stdout, indent=0):
         super(_AMQPMatcher, self).dump(ofile=ofile, indent=indent)
@@ -138,19 +155,31 @@ class _AMQPProcessor(StreamMonitorBaseClass):
         self.__tracker = tracker
         self.__inbound_queue = gevent.queue.Queue()
         self.__run_till = None
-        self.__tail_wait = None
-        self.__complete_on_success = False
+        self.__tail_timeout = None
+        self.__in_finish_mode = False
+        # THIS is a hack to allow raw access to underlying tracker-records until we get a common
+        # validation phase. See get_raw_tracker_events() below for details
+        self.__matches_in_order = []
         tracker.add_processor(self, start_at=start_at)
         self.__match_greenlet = gevent.spawn(self.__match_greenlet_run)
         self.__match_greenlet.greenlet_name = 'processor-match-loop-gl'
 
     def __match_greenlet_run(self):
-        self._logs.irl.debug('Starting to watch for my events %s', self)
+        self._logs.irl.debug('Starting to watch for events %s', self)
         results = StreamRunResults()
 
-        self._logs.irl.debug("cp0")
-        while self.__run_till is not None and self.__run_till > time.time():
-            tail_waiting = self.__tail_wait
+        tail_limit = None
+        loop_exit_why = None
+        noticed_change_to_finish = False
+        while (loop_exit_why is None) and (self.__run_till is not None and self.__run_till > time.time()):
+            # we always want to setup tail_limit when we first cross over to finishing
+            if not noticed_change_to_finish and self.__in_finish_mode:
+                noticed_change_to_finish = True
+                self._logs.irl.debug(' Noticed that we shifted to finish-mode')
+                if tail_limit is None:
+                    tail_limit = time.time() + self.__tail_timeout
+                    self._logs.irl.debug('  and set tail-limit from none to %s', tail_limit)
+
             try:
                 # timeout on peek call is needed to allow us to "notice" if our run-till
                 # or tail-time has been exceeded.
@@ -160,47 +189,80 @@ class _AMQPProcessor(StreamMonitorBaseClass):
                 tracked = None
 
             if tracked is None:
-                if tail_waiting is not None and time.time() > tail_waiting:
-                    self._logs.irl.debug(' tail-wait timed out.')
-                    break
+                # no message on queue.
+                if tail_limit is not None and time.time() > tail_limit:
+                    self._logs.irl.debug(' hit tail limit during idle. Checking if end-check will work')
+                    res = self._match_groups.check_ending()
+                    if res.is_empty:
+                        self._logs.irl.debug('   and we can stop because processor in success state')
+                        loop_exit_why = "tail-wait expired while processor in success state"
+                    else:
+                        # clear the tail-limit till another event hits us
+                        self._logs.irl.debug('   and clearing tail-limit since we are not in success state: %s', res)
+                        tail_limit = None
                 continue
 
+            # So we have an event to look at...
             res = self._match_groups.check_event(tracked)
+            consume = False
             if res is not None:
-                # actually remove item from queue now that we know we have a "hit"
-                self.__inbound_queue.get()
+                consume = True
                 results.add_result(res)
+                self.__matches_in_order.append(tracked)
+            elif self.__ignore_misses:
+                # note: ignore_miss can only be set as we enter start-finish mode.
+                consume = True
 
-            if self.__complete_on_success:
-                res = self._match_groups.check_ending()
-                # currently, it's either an error (so we keep trying) or None
-                if res is None:
-                    results.add_result(res)
-                    self._logs.irl.debug('  processor is currently evaluating as a success point, so we are bailing')
-                    return results
+            if consume:
+                # remove consumed item from queue.
+                self.__inbound_queue.get()
 
-        self._logs.irl.debug('---exiting because of time---: %s -> %s', self, results)
+                if self.__tail_timeout is not None:
+                    # we consumed a message, so bump out tail-limit
+                    old_tail_limit = tail_limit
+                    tail_limit = time.time() + self.__tail_timeout
+                    self._logs.irl.debug('  consumed event. Bumping tail-limit from %s to %s', old_tail_limit, tail_limit)
+
+        if loop_exit_why is None:
+            loop_exit_why = "overall timeout occured"
+        self._logs.irl.debug('---exiting loop because %s---: %s -> %s', loop_exit_why, self, results)
         res = self._match_groups.check_ending()
         results.add_result(res)
         self._logs.irl.debug('  final results from %s is %s', self, results)
         return results
 
-    def start_finish(self, timeout, tail_timeout=1.0):
-        self._logs.irl.debug('start finish on %s called. timeout=%s, tail-timeout=%s', self, timeout, tail_timeout)
-        self.__complete_on_success = True
-        self.__tail_wait = time.time() + tail_timeout
+    def start_finish(self, timeout, tail_timeout=1.0, ignore_misses=True):
+        self._logs.irl.debug('start_finish on %s called. timeout=%s, tail-timeout=%s', self, timeout, tail_timeout)
+        self.__tail_timeout = tail_timeout
         self.__run_till = time.time() + timeout + tail_timeout
+        self.__ignore_misses = ignore_misses
+        self.__in_finish_mode = True
         return self.__match_greenlet
 
     def process_tracked_record(self, tracked_record):
         self._logs.irl.debug('Processing-tracked-record = %s', tracked_record)
         self.__inbound_queue.put(tracked_record)
 
-    def match_any(self, description=None, min=1, max=1):
+    def match_any_event(self, description=None, min=1, max=1):
         if description is None:
-            description = "match-any(rk={},min=%d,max=%d".format(None, min, max)
+            description = "match-any(rk={},min={},max={}".format(None, min, max)
         m = _AMQPMatcher(route_key=None, description=description, min=min, max=max)
         self._add_matcher(m)
+
+    def match_on_routekey(self, description=None, routing_key=None, min=1, max=1):
+        if routing_key is None:
+            routing_key = '#'
+        if description is None:
+            description = "match-maker-match-maker-name-me-better(rk={},min={},max={}".format(None, min, max)
+        m = _AMQPMatcher(route_key=routing_key, description=description, min=min, max=max)
+        self._add_matcher(m)
+
+    def get_raw_tracker_events(self):
+        """
+        total hack method to get raw access to the tracker-events. We WANT a mechanism
+        to do a veryify step at end-of-run, but for now this will have to do.
+        """
+        return self.__matches_in_order
 
 
 class _AMQPTrackerRecord(object):
@@ -264,7 +326,7 @@ class _AMQPQueueTracker(object):
     def start_finish(self, timeout):
         greenlets = []
         for processor in self.__processors:
-            self._logs.irl.debug("%s going to start finish on %s", self, processor)
+            self._logs.irl.debug("%s going to start_finish on %s", self, processor)
             gl = processor.start_finish(timeout)
             greenlets.append(gl)
         self._logs.irl.debug("  list of greenlets to finish %s", greenlets)
@@ -307,6 +369,8 @@ class AMQPStreamMonitor(StreamMonitorBaseClass):
         """
         super(AMQPStreamMonitor, self).handle_begin()
         sm_amqp_url = getattr(self.__options, 'sm_amqp_url', None)
+        sm_amqp_use_user = getattr(self.__options, 'sm_amqp_use_user', None)
+        sm_amqp_setup_user = getattr(self.__options, 'sm_amqp_setup_user', None)
         self.__cleanup_user = None
         self.__amqp_on_demand = False
         if sm_amqp_url is None:
@@ -315,7 +379,7 @@ class AMQPStreamMonitor(StreamMonitorBaseClass):
             self.__amqp_on_demand = RackHDAMQPOnDemand()
             sm_amqp_url = self.__amqp_on_demand.get_url()
         elif sm_amqp_url.startswith('generate'):
-            sm_amqp_url, self.__cleanup_user = self.__setup_generated_amqp(sm_amqp_url)
+            sm_amqp_url, self.__cleanup_user = self.__setup_generated_amqp(sm_amqp_url, sm_amqp_use_user, sm_amqp_setup_user)
         if sm_amqp_url is None:
             self.__amqp_server = None
         else:
@@ -338,7 +402,7 @@ class AMQPStreamMonitor(StreamMonitorBaseClass):
         self._logs.irl.debug('created tracker {}'.format(tracker))
         return tracker
 
-    def get_tracker_processor(self, tracker, start_at=None):
+    def get_tracker_queue_processor(self, tracker, start_at=None):
         assert tracker.tracker_name in self.__trackers, \
             "you tried to use tracker {}, but it isn't in the list of registered trackers {}".format(
                 tracker.name, self.__trackers.keys())
@@ -361,8 +425,10 @@ class AMQPStreamMonitor(StreamMonitorBaseClass):
             clean = SSHHelper('dut', 'amqp-user-delete-ssh-stdouterr: ')
             cmd_text, ecode, output = clean.sendline_and_stat('rabbitmqctl delete_user {}'.format(
                 self.__cleanup_user))
-            assert ecode == 0 or 'no_such_user' in output, \
-                "{} failed with something other than 'no_such_user':".format(cmd_text, output)
+            if ecode != 0 and 'no_such_user' not in output:
+                self._logs.irl.warning(
+                    "remove of amqp-test-user %s command '%s' failed with something other than 'no_such_user': %s",
+                    self.__cleanup_user, classmethod, output)
         if self.__amqp_server is not None:
             self.__amqp_server.stop_greenlet()
 
@@ -393,15 +459,32 @@ class AMQPStreamMonitor(StreamMonitorBaseClass):
         self._logs.irl.debug("complete set of results for finish: %s", reses)
         return reses
 
-    def __setup_generated_amqp(self, generate_string):
+    def __setup_generated_amqp(self, generate_string, use_user, setup_user):
         """
         Handle the case where we are told to generate an AMQP user
-        and even set it up on the DUT.
+        and even set it up on the DUT. There are three paths here:
+        * totally auto-setup (use_user and setup_user both None)
+        * use_user is non-none, so we use that name instead of creating one (we also don't delete the user when done)
+        * setup_user is non-none, so we create one by that name (and don't delete when done)
         """
+        assert use_user is None or setup_user is None, \
+            "can't both setup user AND use-user in same invocation"
         port = int(generate_string.split(':')[1])
-        uid = str(uuid.uuid4())
-        auser = 'tdd_amqp_user_{}'.format(uid)
-        apw = uid
+        if use_user is not None:
+            auser = use_user
+            apw = use_user
+            host = SSHHelper.get_parser_options_sm_dut_ssh_host()
+            return 'amqp://{}:{}@{}:{}'.format(auser, apw, host, port), None
+        elif setup_user is not None:
+            auser = setup_user
+            apw = setup_user
+            ret_user = None
+        else:
+            uid = str(uuid.uuid4())
+            auser = 'tdd_amqp_user_{}'.format(uid)
+            apw = uid
+            ret_user = auser
+
         try:
             fixed = SSHHelper('dut', 'amqp-user-setup-ssh-stdouterr: ')
             cmd_text, ecode, output = fixed.sendline_and_stat('rabbitmqctl delete_user {}'.format(auser))
@@ -415,7 +498,7 @@ class AMQPStreamMonitor(StreamMonitorBaseClass):
             # now add permissions
             fixed.sendline_and_stat(r'''rabbitmqctl set_permissions {} ".*" ".*" ".*"'''.format(auser), must_be_0=True)
             fixed.logout()
-            return 'amqp://{}:{}@{}:{}'.format(auser, apw, fixed.dut_ssh_host, port), auser
+            return 'amqp://{}:{}@{}:{}'.format(auser, apw, fixed.dut_ssh_host, port), ret_user
         except EOF as ex:
             self._logs.irl.warning('unable to connect to instance to setup AMQP user. AMQP monitors disabled: %s', ex)
             self._logs.irl.warning('^^^^ this is -usually- caused by incorrect configuration, such as " \
@@ -457,3 +540,9 @@ class AMQPStreamMonitor(StreamMonitorBaseClass):
         amqp_group.add_option(
             '--sm-amqp-url', dest='sm_amqp_url', default=None,
             help="set the AMQP url to use. If not set, a docker based server will be setup and used")
+        amqp_group.add_option(
+            '--sm-amqp-setup-user', dest='sm_amqp_setup_user', default=None,
+            help="assure this user exists in the instance. Disables the auto-create user")
+        amqp_group.add_option(
+            '--sm-amqp-use-user', dest='sm_amqp_use_user', default=None,
+            help="use this user instead of auto-creating one. Must already exist in instance")

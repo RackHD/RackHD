@@ -38,8 +38,6 @@ class RackHDAMQPOnDemand(AMQPOnDemand):
         self.__assure_named_queue(con, on_events, 'graph.finished')
         self.__assure_named_queue(con, on_events, 'polleralert.sel.updated', '#')
 
-        self.__assure_exchange(con, 'on.heartbeat', 'topic')
-
     def __assure_exchange(self, connection, exchange_name, exchange_type):
         exchange = Exchange(exchange_name, type=exchange_type)
         bound_exchange = exchange(connection)
