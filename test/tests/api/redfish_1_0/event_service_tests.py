@@ -86,19 +86,28 @@ class EventServiceTests(object):
     def test_submit_test_event(self):
         """ Testing POST /EventService/SubmitTestEvent  """
         global task
-        server = Httpd(port=int(HTTPD_PORT), handler_class=self.EventServiceHandler)
+        # Suppose rackhd and test stack have the same localhost
+        server = Httpd(port=int(self.__httpd_port), handler_class=self.EventServiceHandler)
         task = WorkerThread(server,'httpd')
         worker = WorkerTasks(tasks=[task], func=self.__httpd_start)
         worker.run()
-        
-        # forward port for services running on a guest host
-        session = open_ssh_forward(self.__httpd_port) 
-        
         redfish().test_event(body={})
         worker.wait_for_completion(timeout_sec=60)
-        session.logout()
+        if task.timeout:
+            # Else port forward rackhd -> localhost
+            server = Httpd(port=int(HTTPD_PORT), handler_class=self.EventServiceHandler)
+            task = WorkerThread(server, 'httpd')
+            worker = WorkerTasks(tasks=[task], func=self.__httpd_start)
+            worker.run()
+
+            # forward port for services running on a guest host
+            session = open_ssh_forward(self.__httpd_port)
+
+            redfish().test_event(body={})
+            worker.wait_for_completion(timeout_sec=60)
+            session.logout()
         assert_false(task.timeout, message='timeout waiting for task {0}'.format(task.id))
-   
+
     @test(groups=['redfish.subscriptions_collection'], \
           depends_on_groups=['redfish.submit_test_event'])
     def test_subscription_collection(self):
