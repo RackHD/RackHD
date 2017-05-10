@@ -12,7 +12,7 @@
         "playbook": "rackhd_mini_release",
         "rackhd_version": ""
     },
-     "provisioners": [
+    "provisioners": [
         {
             "type": "shell",
             "script": "scripts/base.sh",
@@ -82,76 +82,74 @@
 
     ],
   "builders": [
-    {
-      "type": "virtualbox-iso",
-      "boot_command": [
-        "<enter><wait><f6><esc><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
-        "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
-        "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
-        "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
-        "/install/vmlinuz<wait>",
-        " auto<wait>",
-        " console-setup/ask_detect=false<wait>",
-        " console-setup/layoutcode=us<wait>",
-        " console-setup/modelcode=pc105<wait>",
-        " debian-installer=en_US<wait>",
-        " fb=false<wait>",
-        " initrd=/install/initrd.gz<wait>",
-        " kbd-chooser/method=us<wait>",
-        " keyboard-configuration/layout=USA<wait>",
-        " keyboard-configuration/variant=USA<wait>",
-        " locale=en_US<wait>",
-        " netcfg/get_hostname=rackhd<wait>",
-        " netcfg/hostname=rackhd<wait>",
-        " noapic<wait>",
-        " interface=auto",
-        " preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.cfg<wait>",
-        " -- <wait>",
-        "<enter><wait>"
-      ],
-      "format": "ovf",
-      "output_directory": "output-virtualbox-iso",
-      "vm_name": "{{user `vm_name`}}",
-      "boot_wait": "20s",
-      "headless": true,
-      "disk_size": 40960,
-      "guest_os_type": "Ubuntu_64",
-      "http_directory": "http",
-      "iso_checksum": "2bce60d18248df9980612619ff0b34e6",
-      "iso_checksum_type": "md5",
-      "iso_url": "http://releases.ubuntu.com/16.04/ubuntu-16.04.2-server-amd64.iso",
-      "ssh_username": "vagrant",
-      "ssh_password": "vagrant",
-      "ssh_port": 22,
-      "ssh_wait_timeout": "10000s",
-      "shutdown_command": "echo 'shutdown -P now' > /tmp/shutdown.sh; echo 'vagrant'|sudo -S sh '/tmp/shutdown.sh'",
-      "vboxmanage": [
-        [ "modifyvm", "{{.Name}}", "--memory", "512" ],
-        [ "modifyvm", "{{.Name}}", "--cpus", "1" ],
-        [ "modifyvm", "{{.Name}}", "--nic2", "intnet" ]
-      ]
-      },
      {
-      "type": "virtualbox-ovf",
-      "source_path": "output-virtualbox-iso/rackhd-ubuntu-16.04.ovf",
-      "vm_name": "{{user `vm_name`}}",
-      "boot_wait": "20s",
-      "headless": true,
-      "http_directory": "http",
-      "ssh_username": "vagrant",
-      "ssh_password": "vagrant",
-      "ssh_port": 22,
-      "ssh_wait_timeout": "10000s",
-      "shutdown_command": "echo 'shutdown -P now' > /tmp/shutdown.sh; echo 'vagrant'|sudo -S sh '/tmp/shutdown.sh'",
-      "vboxmanage": [
-        [ "modifyvm", "{{.Name}}", "--memory", "512" ],
-        [ "modifyvm", "{{.Name}}", "--cpus", "1" ],
-        [ "modifyvm", "{{.Name}}", "--nic2", "intnet" ]
-      ]
-      },
-
-
-      {
+         "type": "virtualbox-iso",
+         "boot_command": [
+             "<enter><wait><f6><esc><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+             "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+             "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+             "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+             "/install/vmlinuz<wait>",
+             " auto<wait>",
+             " console-setup/ask_detect=false<wait>",
+             " console-setup/layoutcode=us<wait>",
+             " console-setup/modelcode=pc105<wait>",
+             " debian-installer=en_US<wait>",
+             " fb=false<wait>",
+             " initrd=/install/initrd.gz<wait>",
+             " kbd-chooser/method=us<wait>",
+             " keyboard-configuration/layout=USA<wait>",
+             " keyboard-configuration/variant=USA<wait>",
+             " locale=en_US<wait>",
+             " netcfg/get_hostname=rackhd<wait>",
+             " netcfg/hostname=rackhd<wait>",
+             " noapic<wait>",
+             " interface=auto",
+             " preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.cfg<wait>",
+             " -- <wait>",
+             "<enter><wait>"
+         ],
+         "format": "ovf",
+         "output_directory": "output-virtualbox-iso",
+         "vm_name": "{{user `vm_name`}}",
+         "boot_wait": "20s",
+         "headless": true,
+         "disk_size": 40960,
+         "guest_os_type": "Ubuntu_64",
+         "http_directory": "http",
+         "iso_checksum": "2bce60d18248df9980612619ff0b34e6",
+         "iso_checksum_type": "md5",
+         "iso_url": "http://releases.ubuntu.com/16.04/ubuntu-16.04.2-server-amd64.iso",
+         "ssh_username": "vagrant",
+         "ssh_password": "vagrant",
+         "ssh_port": 22,
+         "ssh_wait_timeout": "10000s",
+         "shutdown_command": "echo 'shutdown -P now' > /tmp/shutdown.sh; echo 'vagrant'|sudo -S sh '/tmp/shutdown.sh'",
+         "vboxmanage": [
+             [ "modifyvm", "{{.Name}}", "--memory", "512" ],
+             [ "modifyvm", "{{.Name}}", "--cpus", "1" ],
+             [ "modifyvm", "{{.Name}}", "--nic2", "intnet" ]
+          ]
+    },
+    {
+        "type": "virtualbox-ovf",
+        "source_path": "output-virtualbox-iso/rackhd-ubuntu-16.04.ovf",
+        "vm_name": "{{user `vm_name`}}",
+        "boot_wait": "20s",
+        "headless": true,
+        "http_directory": "http",
+        "ssh_username": "vagrant",
+        "ssh_password": "vagrant",
+        "ssh_port": 22,
+        "ssh_wait_timeout": "10000s",
+        "shutdown_command": "echo 'shutdown -P now' > /tmp/shutdown.sh; echo 'vagrant'|sudo -S sh '/tmp/shutdown.sh'",
+        "vboxmanage": [
+            [ "modifyvm", "{{.Name}}", "--memory", "512" ],
+            [ "modifyvm", "{{.Name}}", "--cpus", "1" ],
+            [ "modifyvm", "{{.Name}}", "--nic2", "intnet" ]
+        ]
+    },
+    {
         "type": "vmware-vmx",
         "vm_name": "{{user `vm_name`}}",
         "output_directory": "output-vmware-vmx",
@@ -204,12 +202,8 @@
             "ethernet3.pcislotnumber": "3"
         }
 
-      },
-
-
-
-
-      {
+    },
+    {
         "type": "vmware-iso",
         "vm_name": "{{user `vm_name`}}",
         "boot_command": [
@@ -293,7 +287,7 @@
             "ethernet3.addressType": "generated",
             "ethernet3.pcislotnumber": "3"
         }
-      }
+    }
   ],
   "post-processors": [
     [{

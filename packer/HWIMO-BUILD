@@ -11,8 +11,11 @@
 # * ATLAS_NAME     - optional, required only when UPLOAD_BOX_TO_ATLAS is true.
 # * ATLAS_TOKEN    - optional, required only when UPLOAD_BOX_TO_ATLAS is true.
 # * ATLAS_VERSION  - optional, by default is "".when UPLOAD_BOX_TO_ATLAS is true, the box will be uploaded to ATLAS as ATLAS_VERSION( format only accepts like 1.2.3).
-# * CUSTOMIZED_PROPERTY_OVA - optional, by default false, only effective when BUILD_TYPE is vmware.. if true, the OVA can be specified IP during deployment. only supported by vCenter
-# * BUILD_STAGE     - optional, by default is BUILD_ALL. Other options are "BUILD_TEMPLATE" (a prebuild cache, vmx or ovf), "BUILD_FINAL"( Build ova or box from the template) , or "BUILD_ALL"(including both steps).
+# * CUSTOMIZED_PROPERTY_OVA - optional, by default false, only effective when BUILD_TYPE is vmware.. 
+#                           - if true, the OVA can be specified IP during deployment. only supported by vCenter
+# * BUILD_STAGE     - optional, by default is BUILD_ALL. other options as below:
+#                   - "BUILD_TEMPLATE" (a prebuild cache, vmx or ovf),
+#                   - "BUILD_FINAL"( Build ova or box from the template) , or "BUILD_ALL"(including both steps).
 ###################################################
 
 INFO_HEADER="[Info]"
