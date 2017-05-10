@@ -9,14 +9,15 @@
         "atlas_version": "",
         "atlas_token": "{{env `ATLAS_TOKEN`}}",
         "vm_name" : "rackhd-vm",
-        "playbook": "rackhd_package",
+        "playbook": "rackhd_mini_release",
         "rackhd_version": ""
     },
     "provisioners": [
         {
             "type": "shell",
             "script": "scripts/base.sh",
-            "execute_command": "echo 'vagrant'|sudo -S bash '{{.Path}}'"
+            "execute_command": "echo 'vagrant'|sudo -S bash '{{.Path}}'",
+            "only": ["virtualbox-iso","vmware-iso"]
         },
         {
             "type": "shell",
@@ -36,26 +37,37 @@
                 "scripts/vagrant.sh",
                 "scripts/dep.sh"
             ],
-            "execute_command": "echo 'vagrant'|sudo -S bash '{{.Path}}'"
+            "execute_command": "echo 'vagrant'|sudo -S bash '{{.Path}}'",
+            "only": ["virtualbox-iso","vmware-iso"]
         },
         {
               "type": "file",
               "source": "scripts/common/get_nic_name_by_index.sh",
-              "destination": "/tmp/get_nic_name_by_index.sh"
+              "destination": "/tmp/get_nic_name_by_index.sh",
+              "only": ["virtualbox-ovf","vmware-vmx"]
         },
         {
             "type": "shell",
             "scripts": [
                 "scripts/addnetif.sh"
             ],
-            "execute_command": "echo 'vagrant'|sudo -S bash '{{.Path}}'"
+            "execute_command": "echo 'vagrant'|sudo -S bash '{{.Path}}'",
+            "only": ["virtualbox-ovf","vmware-vmx"]
+        },
+        {
+            "type": "ansible-local",
+            "inventory_groups": "local",
+            "playbook_file": "ansible/rackhd_prepare.yml",
+            "playbook_dir": "ansible",
+            "only": ["virtualbox-iso", "vmware-iso"]
         },
         {
             "type": "ansible-local",
             "inventory_groups": "local",
             "playbook_file": "ansible/{{user `playbook`}}.yml",
             "playbook_dir": "ansible",
-            "extra_arguments": [ "--extra-vars \"rackhd_version={{user `rackhd_version`}}\"" ]
+            "extra_arguments": [ "--extra-vars \"rackhd_version={{user `rackhd_version`}}\"" ],
+            "only": ["virtualbox-ovf","vmware-vmx"]
         },
         {
             "type": "shell",
@@ -64,57 +76,141 @@
                 "scripts/cleanup.sh",
                 "scripts/zerodisk.sh"
             ],
-            "execute_command": "echo 'vagrant'|sudo -S bash '{{.Path}}'"
+            "execute_command": "echo 'vagrant'|sudo -S bash '{{.Path}}'",
+            "only": ["virtualbox-ovf","vmware-vmx"]
         }
+
     ],
   "builders": [
     {
-      "type": "virtualbox-iso",
-      "boot_command": [
-        "<esc><wait>",
-        "<esc><wait>",
-        "<enter><wait>",
-        "/install/vmlinuz<wait>",
-        " auto<wait>",
-        " console-setup/ask_detect=false<wait>",
-        " console-setup/layoutcode=us<wait>",
-        " console-setup/modelcode=pc105<wait>",
-        " debian-installer=en_US<wait>",
-        " fb=false<wait>",
-        " initrd=/install/initrd.gz<wait>",
-        " kbd-chooser/method=us<wait>",
-        " keyboard-configuration/layout=USA<wait>",
-        " keyboard-configuration/variant=USA<wait>",
-        " locale=en_US<wait>",
-        " netcfg/get_hostname=rackhd<wait>",
-        " netcfg/hostname=rackhd<wait>",
-        " noapic<wait>",
-        " interface=auto",
-        " preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.cfg<wait>",
-        " -- <wait>",
-        "<enter><wait>"
-      ],
-      "boot_wait": "20s",
-      "headless": true,
-      "disk_size": 40960,
-      "guest_os_type": "Ubuntu_64",
-      "http_directory": "http",
-      "iso_checksum": "dd54dc8cfc2a655053d19813c2f9aa9f",
-      "iso_checksum_type": "md5",
-      "iso_url": "http://releases.ubuntu.com/14.04/ubuntu-14.04.5-server-amd64.iso",
-      "ssh_username": "vagrant",
-      "ssh_password": "vagrant",
-      "ssh_port": 22,
-      "ssh_wait_timeout": "10000s",
-      "shutdown_command": "echo 'shutdown -P now' > /tmp/shutdown.sh; echo 'vagrant'|sudo -S sh '/tmp/shutdown.sh'",
-      "vboxmanage": [
-        [ "modifyvm", "{{.Name}}", "--memory", "512" ],
-        [ "modifyvm", "{{.Name}}", "--cpus", "1" ],
-        [ "modifyvm", "{{.Name}}", "--nic2", "intnet" ]
-      ]
-      },
+        "type": "virtualbox-iso",
+        "boot_command": [
+            "<esc><wait>",
+            "<esc><wait>",
+            "<enter><wait>",
+            "/install/vmlinuz<wait>",
+            " auto<wait>",
+            " console-setup/ask_detect=false<wait>",
+            " console-setup/layoutcode=us<wait>",
+            " console-setup/modelcode=pc105<wait>",
+            " debian-installer=en_US<wait>",
+            " fb=false<wait>",
+            " initrd=/install/initrd.gz<wait>",
+            " kbd-chooser/method=us<wait>",
+            " keyboard-configuration/layout=USA<wait>",
+            " keyboard-configuration/variant=USA<wait>",
+            " locale=en_US<wait>",
+            " netcfg/get_hostname=rackhd<wait>",
+            " netcfg/hostname=rackhd<wait>",
+            " noapic<wait>",
+            " interface=auto",
+            " preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.cfg<wait>",
+            " -- <wait>",
+            "<enter><wait>"
+        ],
+        "format": "ovf",
+        "output_directory": "output-virtualbox-iso",
+        "vm_name": "{{user `vm_name`}}",
+        "boot_wait": "20s",
+        "headless": true,
+        "disk_size": 40960,
+        "headless": true,
+        "guest_os_type": "Ubuntu_64",
+        "http_directory": "http",
+        "iso_checksum": "dd54dc8cfc2a655053d19813c2f9aa9f",
+        "iso_checksum_type": "md5",
+        "iso_url": "http://releases.ubuntu.com/14.04/ubuntu-14.04.5-server-amd64.iso",
+        "ssh_username": "vagrant",
+        "ssh_password": "vagrant",
+        "ssh_port": 22,
+        "ssh_wait_timeout": "10000s",
+        "shutdown_command": "echo 'shutdown -P now' > /tmp/shutdown.sh; echo 'vagrant'|sudo -S sh '/tmp/shutdown.sh'",
+        "vboxmanage": [
+            [ "modifyvm", "{{.Name}}", "--memory", "512" ],
+            [ "modifyvm", "{{.Name}}", "--cpus", "1" ],
+            [ "modifyvm", "{{.Name}}", "--nic2", "intnet" ]
+        ]
+    },
+    {
+        "type": "virtualbox-ovf",
+        "source_path": "output-virtualbox-iso/rackhd-ubuntu-14.04.ovf",
+        "vm_name": "{{user `vm_name`}}",
+        "boot_wait": "20s",
+        "headless": true,
+        "headless": true,
+        "http_directory": "http",
+        "ssh_username": "vagrant",
+        "ssh_password": "vagrant",
+        "ssh_port": 22,
+        "ssh_wait_timeout": "10000s",
+        "shutdown_command": "echo 'shutdown -P now' > /tmp/shutdown.sh; echo 'vagrant'|sudo -S sh '/tmp/shutdown.sh'",
+        "vboxmanage": [
+            [ "modifyvm", "{{.Name}}", "--memory", "512" ],
+            [ "modifyvm", "{{.Name}}", "--cpus", "1" ],
+            [ "modifyvm", "{{.Name}}", "--nic2", "intnet" ]
+        ]
+    },
 
-      {
+
+    {
+        "type": "vmware-vmx",
+        "vm_name": "{{user `vm_name`}}",
+        "output_directory": "output-vmware-vmx",
+        "boot_wait": "20s",
+        "headless": true,
+        "http_directory": "http",
+        "source_path": "output-vmware-iso/rackhd-ubuntu-14.04.vmx",
+        "ssh_username": "vagrant",
+        "ssh_password": "vagrant",
+        "ssh_port": 22,
+        "ssh_wait_timeout": "10000s",
+        "shutdown_command": "echo 'shutdown -P now' > /tmp/shutdown.sh; echo 'vagrant'|sudo -S sh '/tmp/shutdown.sh'",
+        "vmx_data": {
+            "memsize": "1024",
+            "numvcpus": "2",
+            "ethernet0.networkName": "NAT",
+
+            "ethernet1.virtualDev": "e1000",
+            "ethernet1.present": "TRUE",
+            "ethernet1.pcislotnumber": "1"
+
+        },
+        "vmx_data_post":
+        {
+            "memsize": "1024",
+            "numvcpus": "2",
+            "cpuid.coresPerSocket": "1",
+
+            "ethernet0.networkName": "ADMIN",
+            "ethernet0.virtualDev": "e1000",
+            "ethernet0.present": "TRUE",
+            "ethernet0.pcislotnumber": "0",
+
+            "ethernet1.networkName": "CONTROL",
+            "ethernet1.virtualDev": "e1000",
+            "ethernet1.present": "TRUE",
+            "ethernet1.addressType": "generated",
+            "ethernet1.pcislotnumber": "1",
+
+            "ethernet2.networkName": "PDU",
+            "ethernet2.virtualDev": "e1000",
+            "ethernet2.present": "TRUE",
+            "ethernet2.addressType": "generated",
+            "ethernet2.pcislotnumber": "2",
+
+            "ethernet3.networkName": "BMC",
+            "ethernet3.virtualDev": "e1000",
+            "ethernet3.present": "TRUE",
+            "ethernet3.addressType": "generated",
+            "ethernet3.pcislotnumber": "3"
+        }
+
+    },
+
+
+
+
+    {
         "type": "vmware-iso",
         "vm_name": "{{user `vm_name`}}",
         "boot_command": [
@@ -140,6 +236,7 @@
           " -- <wait>",
           "<enter><wait>"
         ],
+        "output_directory": "output-vmware-iso",
         "boot_wait": "20s",
         "headless": true,
         "disk_size": 40960,
@@ -192,7 +289,7 @@
             "ethernet3.present": "TRUE",
             "ethernet3.addressType": "generated"
         }
-      }
+    }
   ],
   "post-processors": [
     [{

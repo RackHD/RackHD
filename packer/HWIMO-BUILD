@@ -11,12 +11,17 @@
 # * ATLAS_NAME     - optional, required only when UPLOAD_BOX_TO_ATLAS is true.
 # * ATLAS_TOKEN    - optional, required only when UPLOAD_BOX_TO_ATLAS is true.
 # * ATLAS_VERSION  - optional, by default is "".when UPLOAD_BOX_TO_ATLAS is true, the box will be uploaded to ATLAS as ATLAS_VERSION( format only accepts like 1.2.3).
-# * CUSTOMIZED_PROPERTY_OVA - optional, by default false, only effective when BUILD_TYPE is vmware.. if true, the OVA can be specified IP during deployment. only supported by vCenter
+# * CUSTOMIZED_PROPERTY_OVA - optional, by default false, only effective when BUILD_TYPE is vmware.. 
+#                           - if true, the OVA can be specified IP during deployment. only supported by vCenter
+# * BUILD_STAGE     - optional, by default is BUILD_ALL. other options as below:
+#                   - "BUILD_TEMPLATE" (a prebuild cache, vmx or ovf),
+#                   - "BUILD_FINAL"( Build ova or box from the template) , or "BUILD_ALL"(including both steps).
 ###################################################
 
 INFO_HEADER="[Info]"
 WARNING_HEADER="[Warning]"
 ERROR_HEADER="[Error]"
+
 
 # early exit on command failure
 set -e
@@ -78,7 +83,21 @@ if [ ! -f "ansible/${ANSIBLE_PLAYBOOK}.yml" ]; then
     echo "${ERROR_HEADER} The target ansible playbook(ansible/${ANSIBLE_PLAYBOOK}.yml) does not exist. Aborting..."
     exit 3
 fi
-echo "${INFO_HEADER} Install RackHD with ansible :  ${ANSIBLE_PLAYBOOK}.yml "
+if [ "$BUILD_STAGE" == "BUILD_ALL" ] ; then
+    echo "${INFO_HEADER} Full Build:  Install RackHD with (1) ansible playbook rackhd_prepare.yml, (2) ansible playbook ${ANSIBLE_PLAYBOOK}_mini.yml "
+else
+    if [ "$BUILD_STAGE" == "BUILD_FINAL" ] ; then
+        echo "${INFO_HEADER} Second Half Build: Install RackHD with ansible :  ${ANSIBLE_PLAYBOOK}_mini.yml "
+    else
+        if [ "$BUILD_STAGE" == "BUILD_TEMPLATE" ] ; then
+            echo "${INFO_HEADER} First Half Build: Prepare RackHD dependency with ansible :  rackhd_prepare.yml "
+        else
+            echo "${ERROR_HEADER} Unrecongnized parameter BUILD_STAGE=$BUILD_STAGE. Abort ! "
+            exit 2
+        fi
+    fi
+fi
+
 
 ### $RACKHD_VERSION is used for package install provisioner:  `apt-get install rackhd=$RACKHD_VERSION` ###
 
@@ -110,6 +129,13 @@ then
     fi
 fi
 
+### For OVA Build, option is to build OVA directlly from VMX, or build a VMX (which includes all RackHD Prerequisite)
+if  [ ! -n "${BUILD_STAGE}" ];  then
+    BUILD_STAGE="BUILD_ALL"
+fi
+
+
+
 
 ############################  Parameter Process ################ end #############
 
@@ -123,7 +149,12 @@ export PACKER_NO_COLOR=1  # for Jenkins usage. if manual run, suggest to turn co
 
 
 # default is output-${type}. you can customized in packer's json by "output_directory" param
-VMDIR=output-${BUILD_TYPE}-iso
+if [ "$BUILD_TYPE"  == "vmware" ]; then
+     VMDIR=output-${BUILD_TYPE}-vmx # output of Build VMWare from VMX
+else
+     VMDIR=output-${BUILD_TYPE}-ovf # output of Build VirtualBox from OVF
+fi
+
 
 VM_NAME=rackhd-${OS_VER}
 
@@ -153,12 +184,6 @@ then
     PACKER=/opt/packer/packer
 fi
 
-if [ -x /usr/local/bin/ts ]
-then
-    TS=/usr/local/bin/ts
-else
-    TS=cat
-fi
 
 
 # Check Free Disk Space,  VMWare Workstation may stuck if disk space too small
@@ -173,29 +198,69 @@ if [ "$BUILD_TYPE"  == "vmware" ];  then
 fi
 
 # pre-process the packer template file
-PACKER_TEMP=$(cat template-${OS_VER}.json)
-if [[ $IS_UPLOAD_ATLAS == false ]]
+PACKER_TEMP=template-${OS_VER}.json.tmp
+TMP_FILE_STREAM=$(cat template-${OS_VER}.json)
+if [[ $IS_UPLOAD_ATLAS == false ]] && [[ "$BUILD_TYPE"  != "vmware" ]]
 then
     if [ ! -n "$(which jq)" ] ; then
         echo "${ERROR_HEADER} jq is not installed . please install it, e.x. sudo apt-get install jq... Aborting. "
         exit 5
     fi
     # Delete the post-processors blocks in the template.json, before sending to 'packer build'
-#    PACKER_TEMP=$( jq 'del(."post-processors")'  template-${OS_VER}.json)
-     PACKER_TEMP=$( jq 'del(.["post-processors"][0][1])' template-${OS_VER}.json | jq 'del(.["push"])')
+#    TMP_FILE_STREAM=$( jq 'del(."post-processors")'  template-${OS_VER}.json)
+     TMP_FILE_STREAM=$( jq 'del(.["post-processors"][0][1])' template-${OS_VER}.json | jq 'del(.["push"])')
+
+     echo "[Info] the template-${OS_VER}.json has been cutomized , to remove the vagrant-upload step"
+     # Write back the template file
+fi
+echo "$TMP_FILE_STREAM" > $PACKER_TEMP
+
+# indictor of packer build type for vmware
+if [ "$BUILD_TYPE"  == "vmware" ];  then
+      temp_src_format=vmx
+else
+      temp_src_format=ovf
 fi
 
 
 # execute 'packer build'
-echo ${PACKER_TEMP} | $PACKER build --force --only=${BUILD_TYPE}-iso --var-file=$CFG_FILE  - | $TS | tee packer-install.log 
+if [ "$BUILD_STAGE" == "BUILD_TEMPLATE" ]; then
+    #Build from  iso, create a Pre-build Cache ( vmware:iso-->vmx, virtualbox: iso-->ovf )
+    $PACKER build --force --only=${BUILD_TYPE}-iso  --var-file=$CFG_FILE  ${PACKER_TEMP}  | tee packer-install.log
+else
 
-if [ $? != 0 ]; then
+    if [ "$BUILD_STAGE" == "BUILD_FINAL" ]; then
+         #Build from cache template, and output the final image .(vmware: vmx-->ova, virtualbox: ovf-->box)
+         $PACKER build --force --only=${BUILD_TYPE}-${temp_src_format}  --var-file=$CFG_FILE  --var "playbook=${ANSIBLE_PLAYBOOK}_mini" ${PACKER_TEMP}   | tee packer-install.log
+
+    else
+         #Build from scratch, vmware: iso-->vmx-->ova, virtualbox: iso-->ovf-->box
+         $PACKER build --force --only=${BUILD_TYPE}-${temp_src_format}  --var-file=$CFG_FILE  --var "playbook=rackhd_prepare" ${PACKER_TEMP}   | tee packer-install.log            && \
+         $PACKER build --force --only=${BUILD_TYPE}-vmx  --var-file=$CFG_FILE  --var "playbook=${ANSIBLE_PLAYBOOK}_mini" ${PACKER_TEMP}    | tee packer-install.log
+    fi
+fi
+
+## Check packer build command status, because above we use pipeline, so use  ${PIPESTATUS[0]} to catch return-code of command before pipeline.(only works on bash)
+if [ ${PIPESTATUS[0]} != 0 ]; then
     echo "${ERROR_HEADER} Packer Build failed.. exit"
     exit 3
 fi
 
-if [ "$BUILD_TYPE"  != "vmware" ];  then
+if  [ "$BUILD_STAGE" == "BUILD_TEMPLATE" ]; then
+     if [ "$BUILD_TYPE"  == "vmware" ];  then
+        echo "{INFO_HEADER} Build VMX is successful... Exit the HWIMO-BUILD Script. Use BUILD_STAGE=BUILD_FINAL and ANSIBLE_PLAYBOOK=rackhd_mini_xxxx env variable to build OVA from this VMX."
+     else
+        echo "{INFO_HEADER} Build OVF is successful... Exit the HWIMO-BUILD Script. Use BUILD_STAGE=BUILD_FINAL and ANSIBLE_PLAYBOOK=rackhd_mini_xxxx env variable to build Box from this OVF."
+     fi
+     exit 0
+ fi
+
+if [ "$BUILD_TYPE"  == "virtualbox" ];  then
     echo "${INFO_HEADER} Skip the post-processing(signing/clamscan/ovf-template injection) for virtualbox for the time being ..."
+    mv packer_virtualbox-ovf_virtualbox.box ${VM_NAME}.box
+    echo "****************"
+    echo "Successfully create ${VM_NAME}.box"
+    echo "****************"
     exit 0
 fi
 
