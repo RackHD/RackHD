@@ -54,6 +54,7 @@ jq 'del(.["post-processors", "push"])' /tmp/template-${OS_VER}.json > template-$
 - use VMWare Tools
 
  Option #1:  Install VMWare WorkStation locally on the same OS where the packer build runs ( example: install VMware Workstation 12.x )
+ Note: the licensed version of VMWare WorkStation is required, to enable the 2-stages vmware build.(iso -> temp_vmx -> final_ova )
 
  Option #2:  To use a remote VMware vSphere Hypervisor to build your VM, just to add below lines in template-ubuntu-*.json as sub fields of "builders"(refer to https://www.packer.io/docs/builders/vmware-iso.html for more info.)
 
