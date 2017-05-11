@@ -1,0 +1,20 @@
+{
+    "skupacks":{
+                  "Quanta T41":"http://web.hwimo.lab.emc.com/autotest/skupack/quanta-t41/quanta-t41_t41.tar.gz",
+               "Quanta D51 2U":"http://web.hwimo.lab.emc.com/autotest/skupack/quanta-d51/quanta-d51-2u_d51.tar.gz"
+              },
+    "firmware": {
+                    "Quanta T41": {
+                      "bios": "http://web.hwimo.lab.emc.com/autotest/firmware/Quanta-T41/bios/S2S_3A19.BIN",
+                      "bmc": "http://web.hwimo.lab.emc.com/autotest/firmware/Quanta-T41/bmc/2b2s3300.ima",
+                      "raid": "",
+                      "config": ""
+                    },
+                    "Quanta D51 2U": {
+                      "bios": "http://web.hwimo.lab.emc.com/autotest/firmware/Quanta-D51/bios/S2B_3B04.BIN",
+                      "bmc": "http://web.hwimo.lab.emc.com/autotest/firmware/Quanta-D51/bmc/2b2s2342.ima",
+                      "raid": "",
+                      "config": ""
+                      }
+                }
+}
