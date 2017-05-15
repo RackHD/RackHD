@@ -154,43 +154,7 @@ class SELPollerAlertTests(object):
                 self.run_ipmitool_command(n['node_ip'], "sel clear")
                 self.verify_empty_sel(n['node_ip'])
 
-    @test(groups=['SEL_alert_poller_api2.tests', 'sel_overflow_simulation'], depends_on_groups=['inject_single_error'])
-    def test_sel_overflow(self):
-        """Test: SEL overflow simulation """
-        #This test validates that sel poller alert can handle a SEL with the overflow option turned on.
-        #In this case when the sel is full the first sel entry in the log won't have record ID 1
-        #This is could only be simulated on virtual node by issuing a clear command
-
-        for n in self.__computeNodes:
-            self.run_ipmitool_command(n['node_ip'], "sel clear")
-            self.verify_empty_sel(n['node_ip'])
-            command = "raw 0x0a 0x44 0x01 0x00 0x02 0xab 0xcd 0xef 0x00 0x01 0x00 0x04 0x07 0x02 0xef 0x00 0x00 0x00"
-            self.run_ipmitool_command(n['node_ip'], command)
-            selInfoObj = self.selInfoObj(n['node_ip'], "sel get 0")
-            initial_first_SEL_entry = int(selInfoObj["SEL Record ID"][0],16)
-            LOG.info(selInfoObj["SEL Record ID"][0])
-
-            self.run_ipmitool_command(n['node_ip'], "sel clear")
-            self.verify_empty_sel(n['node_ip'])
-            command = "raw 0x0a 0x44 0x01 0x00 0x02 0xab 0xcd 0xef 0x00 0x01 0x00 0x04 0x07 0x02 0xef 0x00 0x00 0x00"
-            self.run_ipmitool_command(n['node_ip'], command)
-            selInfoObj = self.selInfoObj(n['node_ip'], "sel get 0")
-            LOG.info(selInfoObj["SEL Record ID"][0])
-            new_first_SEL_entry = int(selInfoObj["SEL Record ID"][0],16)
-
-            if(new_first_SEL_entry != 0):
-                LOG.info("Succesfully simulated the SEL overflow behavior")
-            else:
-                LOG.info("Couldn't simulate the SEL overflow behavior")
-
-            assert_equal(new_first_SEL_entry,initial_first_SEL_entry + 1)
-
-            # Clean up SEL log when done.
-            # TO DO: injected SEL entries are causing issue with later tests, if we assert above, no cleanup occurs
-            self.run_ipmitool_command(n['node_ip'], "sel clear")
-            self.verify_empty_sel(n['node_ip'])
-
-    @test(groups=['SEL_alert_poller_api2.tests', 'inject_full_sel'], depends_on_groups=['sel_overflow_simulation'])
+    @test(groups=['SEL_alert_poller_api2.tests', 'inject_full_sel'], depends_on_groups=['inject_single_error'])
     def test_full_sel(self):
         """Test: Full sel log"""
         #Validate the poller can digest data from a full sel log all at once
