@@ -1,11 +1,6 @@
 '''
 Copyright 2017 Dell Inc. or its subsidiaries. All Rights Reserved.
 
-Author(s):
-George Paulos
-Manfred Nde
-Erika Hohenstein
-
 This script tests arbitrary payload of the RackHD API 2.0 OS bootstrap workflows.
 The default case is running a minimum payload CentOS 7 OS install.
 Other Linux-type OS install cases can be specified by creating a payload file and specifiying it using the '-extra' argument.
@@ -36,6 +31,7 @@ from nose.plugins.attrib import attr
 import fit_common
 import flogging
 import random
+import time
 from nosedep import depends
 log = flogging.get_loggers()
 
@@ -57,20 +53,20 @@ if config:
 # this routine polls a workflow task ID for completion
 def wait_for_workflow_complete(instanceid, start_time, waittime=900, cycle=30):
     log.info_5(" Workflow started at time: " + str(start_time))
-    while start_time - fit_common.time.time() < waittime:  # limit test to 30 minutes
+    while start_time - time.time() < waittime:  # limit test to 30 minutes
         result = fit_common.rackhdapi("/api/2.0/workflows/" + instanceid)
         if result['status'] != 200:
             log.error(" HTTP error: " + result['text'])
             return False
-        if result['json']['status'] == 'running' or result['json']['status'] == 'pending':
+        if result['json']['status'] in ['running', 'pending']:
             log.info_5("{} workflow status: {}".format(result['json']['injectableName'], result['json']['status']))
             fit_common.time.sleep(cycle)
         elif result['json']['status'] == 'succeeded':
             log.info_5("{} workflow status: {}".format(result['json']['injectableName'], result['json']['status']))
-            log.info_5(" Workflow completed at time: " + str(fit_common.time.time()))
+            log.info_5(" Workflow completed at time: " + str(time.time()))
             return True
         else:
-            log.error(" Workflow failed: " + result['text'])
+            log.error(" Workflow failed: status: %s text: %s", result['json']['status'], result['text'])
             return False
     log.error(" Workflow Timeout: " + result['text'])
     return False
@@ -104,7 +100,7 @@ class api20_bootstrap_linux(fit_common.unittest.TestCase):
                                       '/workflows',
                                       action='post', payload={"name": "Graph.PowerOn.Node"})
         self.assertEqual(result['status'], 201, "Node Power on workflow API failed, see logs.")
-        self.assertTrue(wait_for_workflow_complete(result['json']['instanceId'], fit_common.time.time(), 50, 5),
+        self.assertTrue(wait_for_workflow_complete(result['json']['instanceId'], time.time(), 50, 5),
                         "Node Power on workflow failed, see logs.")
 
     @depends(after=test01_node_check)
@@ -117,15 +113,15 @@ class api20_bootstrap_linux(fit_common.unittest.TestCase):
                                       action='post', payload=PAYLOAD)
         if result['status'] == 201:
             # workflow running
-            log.info_5(" TaskID: " + result['json']['instanceId'])
+            log.info_5(" InstanceID: " + result['json']['instanceId'])
             log.info_5(" Payload: " + fit_common.json.dumps(PAYLOAD))
             workflowid = result['json']['instanceId']
         else:
             # workflow failed with response code
-            log.error(" TaskID: " + result['text'])
+            log.error(" InstanceID: " + result['text'])
             log.error(" Payload: " + fit_common.json.dumps(PAYLOAD))
             self.fail("Workflow failed with response code: " + result['status'])
-        self.assertTrue(wait_for_workflow_complete(workflowid, fit_common.time.time()), "OS Install workflow failed, see logs.")
+        self.assertTrue(wait_for_workflow_complete(workflowid, time.time()), "OS Install workflow failed, see logs.")
 
 
 if __name__ == '__main__':
