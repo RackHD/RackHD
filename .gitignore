@@ -8,6 +8,7 @@ example/bin/pxe*
 *.box
 packer_cache
 .bundle
+.vscode
 .DS_Store
 test/benchmark/utils/ansible/group_vars/benchmark.json
 

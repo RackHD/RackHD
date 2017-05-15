@@ -56,7 +56,7 @@ class _GeventInfoFilter(logging.Filter):
         if cur == self._main_greenlet:
             gname = 'gl-main'
         else:
-            gname = getattr(cur, 'log_facility', str(cur))
+            gname = getattr(cur, 'greenlet_name', str(cur))
         record.greenlet = '{0!s}'.format(gname)
         record.test_name = self.__current_test_name
         record.test_case_number = self.__current_test_case_number

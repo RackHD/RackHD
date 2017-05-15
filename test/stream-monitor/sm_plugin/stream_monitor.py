@@ -4,14 +4,14 @@ Copyright (c) 2016-2017 Dell Inc. or its subsidiaries. All Rights Reserved.
 import logging
 import os
 from nose.plugins import Plugin
-from stream_sources import LoggingMarker, SelfTestStreamMonitor, AMQPStreamMonitor
+from stream_sources import LoggingMarker, SelfTestStreamMonitor, AMQPStreamMonitor, SSHHelper
 import sys
 from nose.pyversion import format_exception
 from nose.plugins.xunit import Tee
 from nose import SkipTest
 from StringIO import StringIO
 from logging import ERROR, WARNING
-from flogging import LoggerArgParseHelper
+from flogging import LoggerArgParseHelper, get_loggers
 
 
 class StreamMonitorPlugin(Plugin):
@@ -60,6 +60,7 @@ class StreamMonitorPlugin(Plugin):
         self.__log = logging.getLogger('nose.plugins.streammonitor')
         self.__flogger_opts_helper = LoggerArgParseHelper(parser)
         AMQPStreamMonitor.add_nose_parser_opts(parser)
+        SSHHelper.add_nose_parser_opts(parser)
         super(StreamMonitorPlugin, self).options(parser, env=env)
 
     def configure(self, options, conf):
@@ -73,6 +74,7 @@ class StreamMonitorPlugin(Plugin):
 
     def finalize(self, result):
         self.__take_step('finalize', result=result)
+        self.__call_all_plugin_by_attr('handle_finalize')
         self.__log.info('Stream Monitor Report Complete')
 
     def __call_all_plugin_by_attr(self, attr_name, *args, **kwargs):
@@ -84,6 +86,7 @@ class StreamMonitorPlugin(Plugin):
     def begin(self):
         self.__take_step('begin')
         # tood: check class "enabled_for_nose()"
+        SSHHelper.set_options(self.conf.options)
         if len(self.__stream_plugins) == 0:
             self.__stream_plugins['logging'] = LoggingMarker()
             self.__stream_plugins['self-test'] = SelfTestStreamMonitor()
@@ -97,6 +100,7 @@ class StreamMonitorPlugin(Plugin):
         self.__flogger_opts_helper.process_parsed(self.conf.options)
         self.__stream_plugins['amqp'].set_options(self.conf.options)
 
+        self.__call_all_plugin_by_attr('handle_set_flogging', get_loggers())
         self.__call_all_plugin_by_attr('handle_begin')
 
     def beforeTest(self, test):
@@ -111,8 +115,6 @@ class StreamMonitorPlugin(Plugin):
         self.__end_capture()
         self.__current_stdout = None
         self.__current_stderr = None
-        for pg in self.__stream_plugins.values():
-            pg.handle_after_test(test)
 
     def startTest(self, test):
         self.__take_step('startTest', test=test)

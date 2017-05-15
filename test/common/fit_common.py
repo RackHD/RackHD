@@ -196,12 +196,16 @@ def apply_stack_config():
     stack = fitargs()['stack']
     if stack is not None:
         mkcfg().add_from_file('stack_config.json', stack)
-        if fitargs()['rackhd_host'] == 'localhost' and 'rackhd_host' in fitcfg():
-            fitargs()['rackhd_host'] = fitcfg()['rackhd_host']
-        if 'bmc' in fitcfg():
-            fitargs()['bmc'] = fitcfg()['bmc']
-        if 'hyper' in fitcfg():
-            fitargs()['hyper'] = fitcfg()['hyper']
+
+    if mkcfg().config_exists('deploy_generated.json'):
+        mkcfg().add_from_file('deploy_generated.json')
+
+    if fitargs()['rackhd_host'] == 'localhost' and 'rackhd_host' in fitcfg():
+        fitargs()['rackhd_host'] = fitcfg()['rackhd_host']
+    if 'bmc' in fitcfg():
+        fitargs()['bmc'] = fitcfg()['bmc']
+    if 'hyper' in fitcfg():
+        fitargs()['hyper'] = fitcfg()['hyper']
 
 
 def add_globals():
@@ -1084,7 +1088,12 @@ def run_nose(nosepath=None):
 
     exitcode = 0
     # set nose options
-    noseopts = ['--exe', '--with-nosedep', '--with-stream-monitor']
+    noseopts = ['--exe', '--with-nosedep', '--with-stream-monitor',
+                '--sm-amqp-url', 'generate:{}'.format(fitports()['amqp_ssl']),
+                '--sm-dut-ssh-user', fitcreds()['rackhd_host'][0]['username'],
+                '--sm-dut-ssh-password', fitcreds()['rackhd_host'][0]['password'],
+                '--sm-dut-ssh-port', str(fitports()['ssh']),
+                '--sm-dut-ssh-host', fitargs()['rackhd_host']]
     if fitargs()['group'] != 'all' and fitargs()['group'] != '':
         noseopts.append('-a')
         noseopts.append(str(fitargs()['group']))
@@ -1102,7 +1111,7 @@ def run_nose(nosepath=None):
     # if nosepath is a directory, recurse through subdirs else run single test file
     if os.path.isdir(nosepath):
         # Skip the CIT test directories that match these expressions
-        regex = '(tests/*$)|(tests/api-cit/*)|(tests/api$)|(tests/api/.*)'
+        regex = '(tests/*$)|(tests/api$)|(tests/api/.*)'
         pathspecs = []
         for root, _, _ in os.walk(nosepath):
             if not re.search(regex, root):

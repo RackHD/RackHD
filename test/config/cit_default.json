@@ -2,6 +2,7 @@
   "cit-config": {
     "_comment": "CIT-specific configuration",
     "RACKHD_TEST_LOGLVL": "WARNING",
+    "RACKHD_USER_AUTH_PORT": 8443,
     "RACKHD_GLOBAL_OBM_SERVICE_NAME": "ipmi-obm-service",
     "RACKHD_BASE_REPO_URL": "http://172.31.128.1:8080",
     "RACKHD_SMB_WINDOWS_REPO_PATH": "\\172.31.128.1\\windowsServer2012",

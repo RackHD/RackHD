@@ -31,31 +31,31 @@ class NodesTests(object):
         self.__test_nodes = [
             {
                 'identifiers': ["FF:FF:FF:01"],
-                'autoDiscover': 'false',
+                'autoDiscover': False,
                 'name': 'test_switch_node',
                 'type': 'switch'
             },
             {
                 'identifiers': ["FF:FF:FF:02"],
-                'autoDiscover': 'false',
+                'autoDiscover': False,
                 'name': 'test_mgmt_node',
                 'type': 'mgmt'
             },
             {
                 'identifiers': ["FF:FF:FF:03"],
-                'autoDiscover': 'false',
+                'autoDiscover': False,
                 'name': 'test_pdu_node',
                 'type': 'pdu'
             },
             {
                 'identifiers': ["FF:FF:FF:04"],
-                'autoDiscover': 'false',
+                'autoDiscover': False,
                 'name': 'test_enclosure_node',
                 'type': 'enclosure'
             },
             {
                 'identifiers': ["FF:FF:FF:05"],
-                'autoDiscover': 'false',
+                'autoDiscover': False,
                 'name': 'test_compute_node',
                 'type': 'compute'
             }
@@ -288,48 +288,48 @@ class NodesTests(object):
 #            assert_equal(404, e.status,
 #                message='unexpected response {0}, expected 404 for bad nodeId'.format(e.status))
 
-    @test(groups=['node_post_workflows-api2'], depends_on_groups=['node_workflows-api2'])
-    def test_node_workflows_post(self):
-        """ Testing POST:/api/2.0/nodes/:id/workflows """
-        resps = []
-        Api().nodes_get_all()
-        nodes = self.__get_data()
-        for n in nodes:
-            if n.get('type') == 'compute':
-                id = n.get('id')
-                timeout = self.__post_workflow(id,'Graph.Discovery')
-                if timeout > 0:
-                    data = self.__get_data()
-                resps.append({'data': data, 'id':id})
-        for resp in resps:
-            assert_not_equal(0, len(resp['data']), 
-                message='No Workflows found for Node {0}'.format(resp['id']))
-        assert_raises(rest.ApiException, Api().nodes_post_workflow_by_id, 'fooey',name='Graph.Discovery',body={})
+#    @test(groups=['node_post_workflows-api2'], depends_on_groups=['node_workflows-api2'])
+#    def test_node_workflows_post(self):
+#        """ Testing POST:/api/2.0/nodes/:id/workflows """
+#        resps = []
+#        Api().nodes_get_all()
+#        nodes = self.__get_data()
+#        for n in nodes:
+#            if n.get('type') == 'compute':
+#                id = n.get('id')
+#                timeout = self.__post_workflow(id,'Graph.Discovery')
+#                if timeout > 0:
+#                    data = self.__get_data()
+#                resps.append({'data': data, 'id':id})
+#        for resp in resps:
+#            assert_not_equal(0, len(resp['data']), 
+#                message='No Workflows found for Node {0}'.format(resp['id']))
+#        assert_raises(rest.ApiException, Api().nodes_post_workflow_by_id, 'fooey',name='Graph.Discovery',body={})
 
-    @test(groups=['node_workflows_del_active-api2'], depends_on_groups=['node_post_workflows-api2'])
-    def test_workflows_action(self):
-        """ Testing PUT:/api/2.0/nodes/:id/workflows/action """
-        Api().nodes_get_all()
-        nodes = self.__get_data()
-        for n in nodes:
-            if n.get('type') == 'compute':
-                id = n.get('id')
-                timeout = 5
-                done = False
-                while timeout > 0 and done == False:
-                    if 0 == self.__post_workflow(id,'Graph.Discovery'):
-                        fail('Timed out waiting for graph to start!')
-                    try:
-                        Api().nodes_workflow_action_by_id(id, {'command': 'cancel'})
-                        done = True
-                    except rest.ApiException as e:
-                        if e.status != 404:
-                            raise e
-                        timeout -= 1
-                assert_not_equal(timeout, 0, message='Failed to delete an active workflow')
-        assert_raises(rest.ApiException, Api().nodes_workflow_action_by_id, 'fooey', {'command': 'test'})
+#    @test(groups=['node_workflows_del_active-api2'], depends_on_groups=['node_post_workflows-api2'])
+#    def test_workflows_action(self):
+#        """ Testing PUT:/api/2.0/nodes/:id/workflows/action """
+#        Api().nodes_get_all()
+#        nodes = self.__get_data()
+#        for n in nodes:
+#            if n.get('type') == 'compute':
+#                id = n.get('id')
+#                timeout = 5
+#                done = False
+#                while timeout > 0 and done == False:
+#                    if 0 == self.__post_workflow(id,'Graph.Discovery'):
+#                        fail('Timed out waiting for graph to start!')
+#                    try:
+#                        Api().nodes_workflow_action_by_id(id, {'command': 'cancel'})
+#                        done = True
+#                    except rest.ApiException as e:
+#                        if e.status != 404:
+#                            raise e
+#                        timeout -= 1
+#                assert_not_equal(timeout, 0, message='Failed to delete an active workflow')
+#        assert_raises(rest.ApiException, Api().nodes_workflow_action_by_id, 'fooey', {'command': 'test'})
 
-    @test(groups=['node_tags_patch'], depends_on_groups=['node_workflows_del_active-api2'])
+    @test(groups=['node_tags_patch'], depends_on_groups=['node_workflows-api2'])
     def test_node_tags_patch(self):
         """ Testing PATCH:/api/2.0/nodes/:id/tags """
         codes = []
@@ -423,6 +423,7 @@ class NodesTests(object):
         assert_equal(200, rsp.status, message=rsp.status)
         for n in nodes:
             LOG.info(n, json=True)
+            self.__test_obm["nodeId"]= str(n.get('id'))
             Api().nodes_put_obms_by_node_id(identifier=n.get('id'), body=self.__test_obm)
             LOG.info('Creating obm {0}'.format(self.__test_obm))
             rsp = self.__client.last_response

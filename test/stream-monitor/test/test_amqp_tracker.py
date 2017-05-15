@@ -31,7 +31,7 @@ class _InnerResults(object):
 
 class TestAMQPOnDemand(plugin_test_helper.resolve_no_verify_helper_class()):
     """
-    This is the test-container for the stream-monitor matchers.
+    This is the test-container for the stream-monitor amqp trackers
 
     This is a nose-plugin tester based test-container, which means that makeSuite is
     called once for each "test_xxxx" method in this class and returns a list of
@@ -102,9 +102,9 @@ class TestAMQPOnDemand(plugin_test_helper.resolve_no_verify_helper_class()):
         expected = ires['expected']
         got = ires['got']
         self.assertIsNotNone(got, "message never received")
-        di = got.delivery_info
+        di = got.msg.delivery_info
         self.assertEqual(di['routing_key'], expected['route_key'])
-        body = json.loads(got.body)
+        body = got.body
         self.assertEqual(body['test_uuid'], expected['payload']['test_uuid'])
         print("di={}".format(di))
         print("body={}".format(body))
@@ -151,12 +151,15 @@ class TestAMQPOnDemand(plugin_test_helper.resolve_no_verify_helper_class()):
 
             def test_send_receive_async_message(self):
                 self.__skip_no_amqp()
-                on_tasks = self.__asm.get_queue_monitor('on.events', 'on.events.tests')
-                sent_info = on_tasks.inject_test()
-                msg, body = on_tasks.wait_for_one_message()
+                on_events_tracker = self.__asm.create_tracker('on-events-tsram', 'on.events', 'on.events.tests')
+                payload = {'test_uuid': str(uuid.uuid4())}
+                self.__asm.inject('on.events', 'on.events.tests', payload)
+                what_sent = {'route_key': 'on.events.tests', 'payload': payload}
+
+                tracker_record = on_events_tracker.test_helper_wait_for_one_message(timeout=100)
                 expected = {
-                    'expected': sent_info,
-                    'got': msg
+                    'expected': what_sent,
+                    'got': tracker_record
                 }
                 return expected
 

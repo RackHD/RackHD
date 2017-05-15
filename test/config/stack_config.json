@@ -12,7 +12,6 @@
   "vagrant":{
     "rackhd_host": "localhost",
     "type": "vagrant",
-    "ucsm_ip" : "172.31.128.252",
     "ucsm_user" : "ucspe",
     "ucsm_pass" : "ucspe",
     "ucs_service_uri" : "https://localhost:7080",
@@ -20,6 +19,24 @@
   },
   "vagrant_remote": {
     "rackhd_host": "127.0.0.1",
-    "type": "vagrant"
+    "type": "vagrant",
+    "install-config": {
+      "ports": {
+        "amqp_ssl": 9091
+      }
+    }
+  },
+  "vagrant_guest": {
+    "rackhd_host": "127.0.0.1",
+    "type": "vagrant",
+    "install-config": {
+      "ports": {
+        "mongo_port": 27017,
+        "http": 8080,
+        "https": 8443,
+        "amqp_ssl": 5672,
+        "amqp_nossl": 5671
+      }
+    }
   }
 }

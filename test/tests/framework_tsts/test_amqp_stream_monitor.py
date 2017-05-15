@@ -27,6 +27,8 @@ from nose.plugins.attrib import attr
 
 # Import the logging feature
 import flogging
+
+# Get access to the stream-monitor singleton
 from sm_plugin import AMQPStreamMonitor
 
 # set up the logging
@@ -58,46 +60,48 @@ class test_amqp_stream_monitor_framework(unittest.TestCase):
 
     def test_amqp_sm_send_receive_async_message(self):
         """ Send an amqp message and check it was correctly received via greenlet """
-        on_events = self.__amqp_sm.get_queue_monitor('on.events', 'on.events.tests')
-        expected = on_events.inject_test()
-        got, body = on_events.wait_for_one_message()
-        self.assertIsNotNone(got, "message never received")
-        di = got.delivery_info
-        body = json.loads(body)
+        on_events = self.__amqp_sm.create_tracker('on-events-tsram', 'on.events', 'on.events.tests')
+        payload = {'test_uuid': str(uuid.uuid4())}
+        self.__amqp_sm.inject('on.events', 'on.events.tests', payload)
+        track_record = on_events.test_helper_wait_for_one_message()
+        self.assertIsNotNone(track_record, "message never received")
+        di = track_record.msg.delivery_info
+        body = track_record.body
         self.assertEqual(di['routing_key'], 'on.events.tests')
-        self.assertEqual(body['test_uuid'], expected['payload']['test_uuid'])
+        self.assertEqual(body['test_uuid'], payload['test_uuid'])
 
     def test_amqp_sm_display_async_message(self):
         """ Send, receive, and display an AMQP message """
-        on_events = self.__amqp_sm.get_queue_monitor('on.events', 'on.events.tests')
-        on_events.inject_test()
-        got, body = on_events.wait_for_one_message()
-        self.assertIsNotNone(got, "message never received")
-        di = got.delivery_info
-        body = json.loads(body)
+        on_events = self.__amqp_sm.create_tracker('on-events-tasdam', 'on.events', 'on.events.tests')
+        payload = {'test_uuid': str(uuid.uuid4())}
+        self.__amqp_sm.inject('on.events', 'on.events.tests', payload)
+        track_record = on_events.test_helper_wait_for_one_message()
+        self.assertIsNotNone(track_record, "message never received")
+        di = track_record.msg.delivery_info
+        body = track_record.body
         logs.data_log.info('delivery_info from message=%s', di)
         logs.data_log.info('body from message=%s', body)
 
     def test_amqp_heartbeats(self):
-        on_hb = self.__amqp_sm.get_queue_monitor('on.events', 'heartbeat.#')
-        got, body = on_hb.wait_for_one_message(20)
-        self.assertIsNotNone(got, "message never received")
-        di = got.delivery_info
-        body = json.loads(body)
+        on_hb = self.__amqp_sm.create_tracker('on-events-tah', 'on.events', 'heartbeat.#')
+        track_record = on_hb.test_helper_wait_for_one_message(20)
+        self.assertIsNotNone(track_record, "message never received")
+        di = track_record.msg.delivery_info
+        body = track_record.body
         logs.data_log.info('RoutingKey: %s', di['routing_key'])
         logs.data_log.info('delivery_info from message=%s', di)
         logs.data_log.info('body from message=%s', body)
 
     def test_amqp_heartbeats_events(self):
-        on_hb = self.__amqp_sm.get_queue_monitor('on.events', 'heartbeat.#')
+        on_hb = self.__amqp_sm.create_tracker('on-events-tahe', 'on.events', 'heartbeat.#')
         for x in range(6):
-            got, body = on_hb.wait_for_one_message(20)
-            self.assertIsNotNone(got, "message never received")
-            di = got.delivery_info
-            body = json.loads(body)
+            track_record = on_hb.test_helper_wait_for_one_message(20)
+            self.assertIsNotNone(track_record, "message never received")
+            di = track_record.msg.delivery_info
+            body = track_record.body
             logs.data_log.info('RoutingKey: %s', di['routing_key'])
             logs.data_log.info('delivery_info from message=%s', di)
-            logs.data_log.debug('body from message=%s', body)
+            logs.data_log.info('body from message=%s', body)
 
 
 if __name__ == '__main__':

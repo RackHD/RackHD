@@ -12,6 +12,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     # RackHD SERVER (Install and start RackHD server)
     config.vm.define "dev" do |target|
         target.vm.box = "bento/ubuntu-16.04"
+        if Vagrant.has_plugin?("vagrant-cachier")
+          config.cache.scope = :box
+        end
+
         target.vm.provider "virtualbox" do |v|
             v.memory = 4096
             v.cpus = 4
@@ -58,6 +62,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     # RackHD SERVER TEMPLATE (RackHD installer downloaded but not installed)
     config.vm.define "template", autostart: false do |target|
         target.vm.box = "bento/ubuntu-16.04"
+        if Vagrant.has_plugin?("vagrant-cachier")
+          config.cache.scope = :box
+        end
+
         target.vm.provider "virtualbox" do |v|
             v.memory = 4096
             v.cpus = 4

@@ -29,7 +29,7 @@ class StreamRunResults(object):
 
     @property
     def is_ok(self):
-        return len(self.__ok_res_list) > 0 and len(self.__error_res_list) == 0
+        return len(self.__error_res_list) == 0
 
     @property
     def ok_count(self):
@@ -80,8 +80,7 @@ class MatcherResult(object):
           an overmatch (matched 4 times, but expected between 1 and 3) is terminal, since
           the event was "consumed" in generating the overmatch. A clean miss, however, is
           not terminal, since outside of an ordered group, more matches can attempted.
-      is_ok : currently just !is_error, but groups of matchers can currently be
-          "blank" and thus be neither errors nor ok (yet). Keeping the api the same for now.
+      is_ok : currently just !is_error
     """
     def __init__(self, description, used_for, is_error, is_terminal):
         self.description = description
