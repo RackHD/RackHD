@@ -1,5 +1,5 @@
 '''
-Copyright 2015, DellEMC LLC
+Copyright 2017 Dell Inc. or its subsidiaries. All Rights Reserved."
 
    ScriptName: test_api_security_login.py
        Author: Torrey Cuthbert
@@ -35,28 +35,25 @@ logs = flogging.get_loggers()
 def createUsername():
     return exrex.getone('[a-zA-Z]{1}[a-zA-Z0-9._\-]{1,}')
 
-@attr(regression=False, smoke=True, security=True)
-class TestCase01(fit_common.unittest.TestCase):
+@attr(regression=True, smoke=True, security=True)
+class TestCase01_RackHDAPI_account_creation(fit_common.unittest.TestCase):
 
     def setUp(self):
-        if fit_common.VERBOSITY >= 5:
-            logs.info("Running test: %s", self._testMethodName)
+        logs.info("Running test: %s", self._testMethodName)
         global admin, readonly, operator
         admin = Administrator(createUsername(), 'passwd', 'Administrator', redfish=False)
         readonly = ReadOnly(createUsername(), 'passwd', 'ReadOnly', redfish=False)
         operator = Operator(createUsername(), 'passwd', 'Operator', redfish=False)
-        if fit_common.VERBOSITY >= 5:
-            logs.info("setUP() created the following accounts for testing")
-            logs.info("   admin => %s", admin.username)
-            logs.info("readonly => %s", readonly.username)
-            logs.info("operator => %s", operator.username)
+        logs.debug_3("setUP() created the following accounts for testing")
+        logs.debug_3("   admin => %s", admin.username)
+        logs.debug_3("readonly => %s", readonly.username)
+        logs.debug_3("operator => %s", operator.username)
 
     def tearDown(self):
-        if fit_common.VERBOSITY >= 5:
-            logs.info("running tearDown() to delete following test accounts")
-            logs.info("   admin => %s", admin.username)
-            logs.info("readonly => %s", readonly.username)
-            logs.info("operator => %s", operator.username)
+        logs.debug_3("running tearDown() to delete following test accounts")
+        logs.debug_3("   admin => %s", admin.username)
+        logs.debug_3("readonly => %s", readonly.username)
+        logs.debug_3("operator => %s", operator.username)
         if isinstance(admin, Administrator):
             admin.deleteRedfishUserAccount()
         if isinstance(operator, Operator):
@@ -65,40 +62,37 @@ class TestCase01(fit_common.unittest.TestCase):
             readonly.deleteRedfishUserAccount()
 
     def shortDescription(self):
-        logs.info(" ")
-        logs.info("This scenario tests RackHD's setup administrative login credentials as well as the")
-        logs.info("system's ability to create both RackHD and Redfish accounts via the RackHD API")
-        logs.info("A successful test creates an Administrator, ReadOnly, and Operator user account each")
-        logs.info("obtaining session tokens for both RackHD and Redfish APIs.")
-        logs.info(" ")
+        logs.info("\n\n\
+            This scenario tests RackHD's out of the box administrative login credentials as well as the\n\
+            system's ability to create both RackHD and Redfish accounts via the RackHD API.\n\
+            A successful test creates an Administrator, ReadOnly, and Operator user account each\n\
+            obtaining session tokens for both RackHD and Redfish APIs.\n\n"
+        )
 
     def test_rackhd_system_roles_login_success(self):
         self.assertIsNotNone(admin)
         self.assertIsNotNone(readonly)
         self.assertIsNotNone(operator)
 
-@attr(regression=False, smoke=True, security=True)
-class TestCase02(fit_common.unittest.TestCase):
+@attr(regression=True, smoke=True, security=True)
+class TestCase02_RedfishAPI_account_creation(fit_common.unittest.TestCase):
 
     def setUp(self):
-        if fit_common.VERBOSITY >= 5:
-            logs.info("Running test: %s", self._testMethodName)
+        logs.info("Running test: %s", self._testMethodName)
         global admin, readonly, operator
         admin = Administrator(createUsername(), 'passwd', 'Administrator', redfish=True)
         readonly = ReadOnly(createUsername(), 'passwd', 'ReadOnly', redfish=True)
         operator = Operator(createUsername(), 'passwd', 'Operator', redfish=True)
-        if fit_common.VERBOSITY >= 5:
-            logs.info("setUP() created the following accounts for testing")
-            logs.info("   admin => %s", admin.username)
-            logs.info("readonly => %s", readonly.username)
-            logs.info("operator => %s", operator.username)
+        logs.debug_3("setUP() created the following accounts for testing")
+        logs.debug_3("   admin => %s", admin.username)
+        logs.debug_3("readonly => %s", readonly.username)
+        logs.debug_3("operator => %s", operator.username)
 
     def tearDown(self):
-        if fit_common.VERBOSITY >= 5:
-            logs.info("running tearDown() to delete following test accounts")
-            logs.info("   admin => %s", admin.username)
-            logs.info("readonly => %s", readonly.username)
-            logs.info("operator => %s", operator.username)
+        logs.debug_3("running tearDown() to delete following test accounts")
+        logs.debug_3("   admin => %s", admin.username)
+        logs.debug_3("readonly => %s", readonly.username)
+        logs.debug_3("operator => %s", operator.username)
         if isinstance(admin, Administrator):
             admin.deleteRedfishUserAccount()
         if isinstance(operator, Operator):
@@ -107,12 +101,12 @@ class TestCase02(fit_common.unittest.TestCase):
             readonly.deleteRedfishUserAccount()
 
     def shortDescription(self):
-        logs.info(" ")
-        logs.info("This scenario tests RackHD's setup administrative login credentials as well as the")
-        logs.info("system's ability to create both RackHD and Redfish accounts via the Redfish API")
-        logs.info("A successful test creates an Administrator, ReadOnly, and Operator user account each")
-        logs.info("obtaining session tokens for both RackHD and Redfish APIs.")
-        logs.info(" ")
+        logs.info("\n\n\
+            This scenario tests RackHD's setup administrative login credentials as well as the\n\
+            system's ability to create both RackHD and Redfish accounts via the Redfish API.\n\
+            A successful test creates an Administrator, ReadOnly, and Operator user account each\n\
+            obtaining session tokens for both RackHD and Redfish APIs.\n\n"
+        )
 
     def test_redfish_system_roles_login_success(self):
         self.assertIsNotNone(admin)

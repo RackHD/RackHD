@@ -1,12 +1,12 @@
 '''
-Copyright 2017, DellEMC LLC
+Copyright 2017 Dell Inc. or its subsidiaries. All Rights Reserved.
 
      Author: Torrey Cuthbert
       Email: torrey.cuthbert@dell.com
    Filename: readonly.py
 Create Date: 04/09/2017
-Description: Defines a RackHD ReadOnly user role class and methods. An instance of this class allows
-             for ReadOnly account permission between the ReadOnly user and the RackHD server APIs.
+Description: Defines a RackHD ReadOnly user class and its methods. An instance of this class allows
+             for ReadOnly account permission with the RackHD server APIs.
 '''
 
 from user import User
