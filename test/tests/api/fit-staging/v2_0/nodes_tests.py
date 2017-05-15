@@ -134,7 +134,7 @@ class NodesTests(fit_common.unittest.TestCase):
                 rsp = self.__client.last_response
                 if rsp.status != 204:
                     codes.append(rsp)
-                    logs.info(' Failed to delete node {} - {}'.format(uuid, name))
+                    logs.info(' Failed to delete node %s - %s', uuid, name)
         return len(codes)
 
     # @test(groups=['nodes.api2.discovery.test'])
@@ -266,7 +266,6 @@ class NodesTests(fit_common.unittest.TestCase):
     def test_node_delete(self):
         # Testing DELETE:/api/2.0/nodes/:id
         codes = []
-        # test_names = []    todo: this  is not used
         Api().nodes_get_all()
         nodes = self.__get_data()
         test_names = [t.get('name') for t in self.__test_nodes]
@@ -326,60 +325,6 @@ class NodesTests(fit_common.unittest.TestCase):
                 resps.append(self.__get_data())
         for resp in resps:
             self.assertNotEqual(0, len(resp), msg='No Workflows found for Node')
-#        Api().nodes_get_workflow_by_id('fooey')
-
-#        try:
-#            Api().nodes_get_workflow_by_id('fooey')
-#            self.fail(mmg='did not raise exception for nodes_get_workflow_by_id with bad id')
-#        except rest.ApiException as e:
-#            self.assertEqual(404, e.status,
-#                msg='unexpected response {0}, expected 404 for bad nodeId'.format(e.status))
-
-    # @test(groups=['node_post_workflows-api2'], depends_on_groups=['node_workflows-api2'])
-#    @depends(after='test_node_workflows_get')
-#    def test_node_workflows_post(self):
-#        # Testing POST:/api/2.0/nodes/:id/workflows
-#        resps = []
-#        Api().nodes_get_all()
-#        nodes = self.__get_data()
-#        for n in nodes:
-#            if n.get('type') == 'compute':
-#                id = n.get('id')
-#                timeout = self.__post_workflow(id, 'Graph.Discovery')
-#                # todo: this has to be examined because data may have incorrect value if timeout == 0
-#                if timeout > 0:
-#                    data = self.__get_data()
-#                resps.append({'data': data, 'id': id})
-#        for resp in resps:
-#            self.assertNotEqual(0, len(resp['data']),
-#                                msg='No Workflows found for Node {0}'.format(resp['id']))
-#        self.assertRaises(ApiException, Api().nodes_post_workflow_by_id, 'fooey', name='Graph.Discovery', body={})
-
-    # @test(groups=['node_workflows_del_active-api2'], depends_on_groups=['node_post_workflows-api2'])
-#    @depends(after='test_node_workflows_post')
-#    def test_workflows_action(self):
-#        # Testing PUT:/api/2.0/nodes/:id/workflows/action
-#        # This test posts a workflow against a compute node and then verifies
-#        # the workflow can be cancelled
-#        Api().nodes_get_all()
-#        nodes = self.__get_data()
-#        for n in nodes:
-#            if n.get('type') == 'compute':
-#                id = n.get('id')
-#                timeout = 5
-#                done = False
-#                while timeout > 0 and not done:
-#                    if 0 == self.__post_workflow(id, 'Graph.Discovery'):
-#                        self.fail('Timed out waiting for graph to start!')
-#                    try:
-#                        Api().nodes_workflow_action_by_id(id, {'command': 'cancel'})
-#                        done = True
-#                    except ApiException as e:
-#                        if e.status != 404:
-#                            raise e
-#                        timeout -= 1
-#                self.assertNotEqual(timeout, 0, msg='Failed to delete an active workflow')
-#        self.assertRaises(ApiException, Api().nodes_workflow_action_by_id, 'fooey', {'command': 'test'})
 
     # @test(groups=['node_tags_patch'], depends_on_groups=['node_workflows_del_active-api2'])
     # @depends(after='test_workflows_action')
@@ -485,6 +430,7 @@ class NodesTests(fit_common.unittest.TestCase):
         for n in nodes:
             if n.get('name') == 'test_compute_node':
                 logs.info(" Node to put obm: %s %s ", n.get('id'), n.get('name'))
+                self.__test_obm["nodeId"] = str(n.get('id'))
                 logs.debug(json.dumps(n, indent=4))
                 Api().nodes_put_obms_by_node_id(identifier=n.get('id'), body=self.__test_obm)
                 logs.info(' Creating obm: %s ', str(self.__test_obm))

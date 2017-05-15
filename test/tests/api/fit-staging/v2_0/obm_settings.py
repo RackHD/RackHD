@@ -39,8 +39,8 @@ class obmSettings(object):
             if 'data' in rmm:
                 mac = bmc['data'].get('MAC Address')
         if mac is not None:
-            logs.debug('BMC MAC {0} for {1}'.format(mac, uid))
-            logs.debug('BMC user {0} passowd {1}'.format(user, passwd))
+            logs.debug('BMC MAC %s for %s', mac, uid)
+            logs.debug('BMC user %s passowd %s', user, passwd)
             setting = {
                 'nodeId': uid,
                 'service': 'ipmi-obm-service',
@@ -54,7 +54,7 @@ class obmSettings(object):
             try:
                 Api().obms_put(setting)
                 rsp = self.__client.last_response
-                logs.debug(" IPMI OBM Set response {}".format(rsp.status))
+                logs.debug(" IPMI OBM Set response %s", str(rsp.status))
             except ApiException as e:
                 logs.error(e)
                 return False
@@ -96,7 +96,7 @@ class obmSettings(object):
             uid = n.get('id')
             if uuid is None or uuid == uid:
                 if node_type != 'enclosure':
-                    logs.info("Checking node: {} type {}".format(uid, node_type))
+                    logs.info("Checking node: %s type %s", uid, node_type)
                     obm_obj = []
                     Api().obms_get()
                     all_obms = loads(self.__client.last_response.data)
