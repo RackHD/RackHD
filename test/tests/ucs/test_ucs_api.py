@@ -126,6 +126,9 @@ class ucs_api(unittest.TestCase):
         api_data = fit_common.restful(url, rest_headers=headers)
         self.assertEqual(api_data['status'], 200,
                          'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
+        if len(api_data["json"]["ServiceProfile"]["members"]) == 0:
+            raise unittest.SkipTest("No Service Profiles Defined")
+
         self.assertEqual(len(api_data["json"]["ServiceProfile"]["members"]), 18,
                          "Expected 18 chassis or more but found {0}"
                          .format(len(api_data["json"]["ServiceProfile"]["members"])))
@@ -198,7 +201,7 @@ class ucs_api(unittest.TestCase):
         self.assertEqual(total_elements, 18, "Expected 18 elements but found {0}"
                          .format(total_elements))
 
-    @depends(after=test_check_ucs_params)
+    @depends(after=test_ucs_get_serviceProfile)
     def test_api_20_ucs_power(self):
         """
         Test the GET and POST api for server power state

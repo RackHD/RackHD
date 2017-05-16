@@ -130,10 +130,10 @@ def restore_obms_utility():
     return True
 
 
-@attr(all=True, regression=True, smoke=True, ucs=True)
+@attr(all=True, regression=True, smoke=True, ucs_rackhd=True)
 class rackhd_ucs_api(unittest.TestCase):
 
-    MAX_WAIT = 120
+    MAX_WAIT = 180
     INITIAL_CATALOGS = {}
     UCS_NODES = []
     UCS_COMPUTE_NODES = []
@@ -153,6 +153,27 @@ class rackhd_ucs_api(unittest.TestCase):
             raise Exception("error restoring node list")
         if not restore_obms_utility():
             raise Exception("error restoring obms list")
+
+    def get_service_profile_count(self):
+        """
+        Get a count of the number of Service Proviles defined by the UCS Manager
+        """
+        url = UCS_SERVICE_URI + "/serviceProfile"
+        headers = {"ucs-user": UCSM_USER,
+                   "ucs-password": UCSM_PASS,
+                   "ucs-host": UCSM_IP}
+
+        api_data = fit_common.restful(url, rest_headers=headers)
+        self.assertEqual(api_data['status'], 200,
+                         'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
+        if len(api_data["json"]["ServiceProfile"]["members"]) == 0:
+            raise unittest.SkipTest("No Service Profiles Defined")
+
+        self.assertEqual(len(api_data["json"]["ServiceProfile"]["members"]), 18,
+                         "Expected 18 chassis or more but found {0}"
+                         .format(len(api_data["json"]["ServiceProfile"]["members"])))
+
+        return len(api_data["json"]["ServiceProfile"]["members"])
 
 
     def wait_utility(self, id, counter, name):
@@ -270,6 +291,10 @@ class rackhd_ucs_api(unittest.TestCase):
         Tests the UCS Service Profile Discovery workflow in rackHD
         :return:
         """
+        expected_ucs_logical_nodes = self.get_service_profile_count()
+        if (expected_ucs_logical_nodes == 0):
+            raise unittest.skipTest("No Service Profiles Defined")
+
         initialNodeCount = len(self.get_ucs_node_list())
 
         data_payload = {
@@ -304,9 +329,9 @@ class rackhd_ucs_api(unittest.TestCase):
 
         newNodeCount = len(self.get_ucs_node_list())
 
-        self.assertEqual(newNodeCount - initialNodeCount, self.EXPECTED_UCS_LOGICAL_NODES,
+        self.assertEqual(newNodeCount - initialNodeCount, expected_ucs_logical_nodes,
                                 'Expected to discover {0} UCS nodes, got: {1}'
-                                .format(self.EXPECTED_UCS_LOGICAL_NODES, newNodeCount - initialNodeCount))
+                                .format(expected_ucs_logical_nodes, newNodeCount - initialNodeCount))
         logs.info_1("Found {0} UCS nodes {1}".format(len(self.UCS_COMPUTE_NODES), self.UCS_COMPUTE_NODES))
 
         # rerun discovery graph and verify duplicate nodes are not created
@@ -324,7 +349,7 @@ class rackhd_ucs_api(unittest.TestCase):
                                 'Expected to discover {0} UCS nodes, got: {1}'
                                 .format(0, newNodeCount - initialNodeCount))
 
-    @depends(after=[test_api_20_ucs_serviceProfile_discovery, test_api_20_ucs_discovery])
+    @depends(after=[test_api_20_ucs_discovery])
     def test_api_20_ucs_catalog(self):
         """
         Tests the UCS Catalog workflow in rackHD
@@ -362,6 +387,7 @@ class rackhd_ucs_api(unittest.TestCase):
         self.assertTrue(restore_obms_utility(), "failed to restore obms")
 
         initialNodeCount = len(self.get_ucs_node_list())
+        expected_ucs_logical_nodes = self.get_service_profile_count()
 
         data_payload = {
             "name": "Graph.Ucs.Discovery",
@@ -398,9 +424,9 @@ class rackhd_ucs_api(unittest.TestCase):
         logs.info_1("Found {0} Nodes after cataloging the UCS".format(len(api_data['json'])))
 
         self.assertEqual(newNodeCount - initialNodeCount,
-                         self.EXPECTED_UCS_PHYSICAL_NODES + self.EXPECTED_UCS_LOGICAL_NODES,
+                         self.EXPECTED_UCS_PHYSICAL_NODES + expected_ucs_logical_nodes,
                          'Expected to discover {0} UCS nodes, got: {1}'
-                             .format(self.EXPECTED_UCS_PHYSICAL_NODES + self.EXPECTED_UCS_LOGICAL_NODES,
+                             .format(self.EXPECTED_UCS_PHYSICAL_NODES + expected_ucs_logical_nodes,
                                      newNodeCount - initialNodeCount))
 
 
