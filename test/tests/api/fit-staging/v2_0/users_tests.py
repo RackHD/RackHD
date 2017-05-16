@@ -1,5 +1,5 @@
 """
-Copyright 2017, Dell EMC
+Copyright (c) 2017 Dell Inc. or its subsidiaries. All Rights Reserved.
 
 """
 import fit_path  # NOQA: unused import
@@ -18,18 +18,15 @@ from nosedep import depends
 logs = flogging.get_loggers()
 
 
-# @test(groups=['users_api2.tests'], depends_on_groups=['obm.tests'])
 @attr(regression=False, smoke=False, users_api2_tests=True)
 class UsersTests(fit_common.unittest.TestCase):
 
-    # @before_class()
     @classmethod
     def setUpClass(cls):
         """setup test environment"""
         cls.__client = config.api_client
         Auth.enable()
 
-    # @after_class(always_run=True)
     @classmethod
     def tearDownClass(cls):
         """ restore test environment """
@@ -68,7 +65,6 @@ class UsersTests(fit_common.unittest.TestCase):
                 break
         self.assertFalse(found, msg='Test user was not removed')
 
-    # @test(groups=['users_api2.create_user'])
     @depends(after=test_users_start_clean)
     def test_create_user(self):
         # """ Testing create new user  """
@@ -89,7 +85,6 @@ class UsersTests(fit_common.unittest.TestCase):
                 break
         self.assertTrue(found, msg='newly created user was not found')
 
-    # @test(groups=['users_api2.validate_admin_user'], depends_on_groups=['users_api2.create_user'])
     @depends(after='test_create_user')
     def test_validate_user_privilege(self):
         # """ Testing validate admin privileges  """
@@ -131,7 +126,6 @@ class UsersTests(fit_common.unittest.TestCase):
         # Restore config token
         config.api_client.default_headers['authorization'] = save_admin_token
 
-    # @test(groups=['users_api2.modify_user'], depends_on_groups=['users_api2.validate_admin_user'])
     @depends(after='test_validate_user_privilege')
     def test_modify_user(self):
         # """ Testing modifying user information  """
@@ -151,7 +145,6 @@ class UsersTests(fit_common.unittest.TestCase):
                 break
         self.assertTrue(found, msg='newly modified user was not found')
 
-    # @test(groups=['users_api2.validate_readOnly_user'], depends_on_groups=['users_api2.modify_user'])
     @depends(after='test_modify_user')
     def test_validate_user_readOnly(self):
         # """ Testing validate read Only privilege  """
@@ -182,7 +175,6 @@ class UsersTests(fit_common.unittest.TestCase):
         # Restore config token
         config.api_client.default_headers['authorization'] = save_admin_token
 
-    # @test(groups=['users_api2.remove_user'],
     # depends_on_groups=['users_api2.create_user', 'users_api2.validate_readOnly_user'])
     @depends(after=['test_create_user', 'test_validate_user_readOnly'])
     def test_remove_user(self):
