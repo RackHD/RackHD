@@ -15,9 +15,9 @@ class _SelfTestMatcher(StreamMatchBase):
     """
     Implementation of a StreamMatchBase matcher that checks for simple text equality.
     """
-    def __init__(self, match_text, description, min=1, max=1):
+    def __init__(self, logs, match_text, description, min=1, max=1):
         self.__match_text = match_text
-        super(_SelfTestMatcher, self).__init__(description, min=min, max=max)
+        super(_SelfTestMatcher, self).__init__(logs, description, min=min, max=max)
 
     def _match(self, other_text):
         return other_text == self.__match_text
@@ -42,7 +42,7 @@ class SelfTestStreamMonitor(StreamMonitorBaseClass):
         """
         if description is None:
             description = "match_single({0})".format(match_val)
-        m = _SelfTestMatcher(match_val, description, 1, 1)
+        m = _SelfTestMatcher(self._logs, match_val, description, 1, 1)
         self._add_matcher(m)
 
     def handle_start_test(self, test):

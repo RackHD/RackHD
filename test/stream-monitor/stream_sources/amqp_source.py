@@ -10,37 +10,94 @@ monkey.patch_builtins()
 monkey.patch_select()
 import re
 import sys
-import time
 import optparse
 import uuid
 import gevent
 import gevent.queue
-import json
 from pexpect import EOF
-from datetime import datetime
+from datetime import datetime, timedelta
 from .monitor_abc import StreamMonitorBaseClass
 from .stream_matchers_base import StreamMatchBase
-from .stream_matchers_results import StreamRunResults
+from .stream_matchers_results import StreamRunResults, MatcherValidationMissmatch, MatcherValidationMissingField
 from .amqp_od import RackHDAMQPOnDemand
 from .ssh_helper import SSHHelper
 from kombu import Connection, Producer, Queue, Exchange, Consumer
 
 
+class _KeyedConsumerHandler(object):
+    _keyed_consumers = {}
+
+    @classmethod
+    def get_keyed_consumer(cls, logs, connection, exchange, routing_key, queue_name, event_cb):
+        mname = "ex={} rk={} qn={}".format(exchange, routing_key, queue_name)
+        if mname not in cls._keyed_consumers:
+            new_one = _KeyedConsumerHandler(logs, connection, mname, exchange, routing_key, queue_name)
+            cls._keyed_consumers[mname] = new_one
+        cls._keyed_consumers[mname].add_new_event_handler(event_cb)
+        return cls._keyed_consumers[mname]
+
+    @classmethod
+    def test_helper_finalize_cleanup(cls):
+        cls._keyed_consumers = {}
+
+    def __init__(self, logs, connection, name, exchange, routing_key, queue_name):
+        self.__logs = logs
+        self.__ignore_some_stuff = False
+        self.name = name
+        self.__event_callbacks = []
+        if queue_name is None:
+            queue_name = ''
+            exclusive = True
+        else:
+            exclusive = False
+        chan = connection.channel()
+        ex = Exchange(exchange, 'topic', channel=chan)
+        queue = Queue(exchange=ex, routing_key=routing_key, exclusive=exclusive)
+        consumer = Consumer(chan, queues=[queue], callbacks=[self.__message_cb])
+        consumer.consume()
+        self.exchange = ex
+
+    def add_new_event_handler(self, event_cb):
+        self.__event_callbacks.append(event_cb)
+
+    def __message_cb(self, body, msg):
+        if self.__ignore_some_stuff:
+            if "heartbeat" in msg.delivery_info['routing_key']:
+                msg.ack()
+                return
+            if msg.delivery_info['routing_key'].startswith('http'):
+                msg.ack()
+                return
+            if msg.delivery_info['routing_key'].startswith('polleralert'):
+                msg.ack()
+                return
+
+        self.__logs.idl.debug(
+            'Inbound AMQP msg. %s (delivery_info=%s, content_type=%s, properties=%s, body=%s)',
+            msg, msg.delivery_info, msg.content_type, msg.properties, body)
+        for event_cb in self.__event_callbacks:
+            try:
+                event_cb(msg, body)
+                self.__logs.debug(' -- ran %s on msg', event_cb)
+            except Exception as proc_ex:
+                self.__logs.warning('exception while running %s on %s: %s', event_cb, msg, proc_ex)
+        msg.ack()
+
+
 class _AMQPServerWrapper(object):
     def __init__(self, amqp_url, logs):
         self.__logs = logs
-        self.__connection = Connection(amqp_url)
-        self.__connection.connect()
+        self.__amqp_url = amqp_url
         self.__monitors = {}
+        self.__connection = Connection(self.__amqp_url)
+        self.__connection.connect()
         self.__running = True
-        self.__consumer = Consumer(self.__connection)
         self.__consumer_gl = gevent.spawn(self.__consumer_greenlet_main)
         self.__consumer_gl.greenlet_name = 'amqp-consumer-gl'  # allowing flogging to print a nice name
         gevent.sleep(0.0)
 
     def __consumer_greenlet_main(self):
         gevent.sleep(0)
-        self.__consumer.consume()
         while self.__running:
             try:
                 self.__connection.drain_events(timeout=0.5)
@@ -50,16 +107,6 @@ class _AMQPServerWrapper(object):
             gevent.sleep(0.1)  # make -sure- to yield cpu...
             # print("---loop")
 
-    def __on_message_cb(self, msg):
-        self.__logs.idl.debug('Inbound AMQP msg: %s', msg)
-        ct = msg.delivery_info['consumer_tag']
-        assert ct in self.__monitors, \
-            "Message from consumer '{}', but we are not monitoring that (list={})".format(
-                msg.delivery_info['consumer_tag'], self.__monitors.keys())
-        mon = self.__monitors[ct]
-        for event_cb in mon['event_cb']:
-            event_cb(msg, json.loads(msg.body))
-
     def stop_greenlet(self):
         self.__running = False
 
@@ -68,28 +115,11 @@ class _AMQPServerWrapper(object):
         return self.__connection.connected
 
     def create_add_tracker(self, exchange, routing_key, event_cb, queue_name=None):
-        self.__logs.irl.debug("AMQPServerWrapper: create_add_trcker ex=%s, rk=%s, event_cb=%s", exchange, routing_key, event_cb)
-        mname = "ex={} rk={} qn={}".format(exchange, routing_key, queue_name)
-        if mname in self.__monitors:
-            mon = self.__monitors[mname]
-            mon["event_cb"].append(event_cb)
-        else:
-            if queue_name is None:
-                queue_name = ''
-                exclusive = True
-            else:
-                exclusive = False
-            ex = Exchange(exchange, 'topic')
-            queue = Queue(exchange=ex, routing_key=routing_key, exclusive=exclusive)
-            bound_queue = queue.bind(self.__connection)
-            self.__consumer.add_queue(bound_queue)
-            bound_queue.consume(mname, self.__on_message_cb)
-            mon = {
-                "event_cb": [event_cb],
-                "exchange": ex
-            }
-            self.__monitors[mname] = mon
-        return mon['exchange']
+        self.__logs.irl.debug("AMQPServerWrapper: create_add_tracker ex=%s, rk=%s, event_cb=%s",
+                              exchange, routing_key, event_cb)
+        mon = _KeyedConsumerHandler.get_keyed_consumer(
+            self.__logs, self.__connection, exchange, routing_key, queue_name, event_cb)
+        return mon.exchange
 
     def inject(self, exchange, routing_key, payload):
         self.__logs.irl.debug("Injecting a test AMQP message: ex=%s, rk=%s, payload=%s", exchange, routing_key, payload)
@@ -118,8 +148,10 @@ class _AMQPMatcher(StreamMatchBase):
     """
     Implementation of a StreamMatchBase matcher.
     """
-    def __init__(self, route_key, description, min=1, max=sys.maxint):
+    def __init__(self, logs, route_key, description, min=1, max=sys.maxint, validation_block=None, match_CB=None):
         self.__route_key = route_key
+        self.__validation_block = validation_block
+        self.__match_CB = match_CB
         if route_key is not None:
             escaped_key = re.escape(route_key)
             no_star = escaped_key.replace('*', '[^.]')
@@ -129,7 +161,7 @@ class _AMQPMatcher(StreamMatchBase):
             self.__no_pound = no_pound
         else:
             self.__rk_regex = re.compile('.*')
-        super(_AMQPMatcher, self).__init__(description, min=min, max=max)
+        super(_AMQPMatcher, self).__init__(logs, description, min=min, max=max)
 
     def _match(self, other_event):
         if self.__route_key is None:
@@ -138,7 +170,56 @@ class _AMQPMatcher(StreamMatchBase):
         assert isinstance(other_event, _AMQPTrackerRecord), \
             'other_event was a {} needs to be a {}'.format(type(other_event), _AMQPTrackerRecord)
         m = self.__rk_regex.match(other_event.msg.delivery_info['routing_key'])
-        return m is not None
+        if m is None:
+            return False
+        if self.__match_CB is None:
+            return True
+        return self.__match_CB(other_event)
+
+    def _validate(self, other_event):
+        self._logs.idl.debug('validating event %s', other_event)
+        assert isinstance(other_event, _AMQPTrackerRecord), \
+            'other_event was a {} needs to be a {}'.format(type(other_event), _AMQPTrackerRecord)
+        if self.__validation_block is None:
+            return []
+
+        error_list = []
+        if 'routing_key' in self.__validation_block:
+            crk = self.__validation_block['routing_key']
+            ork = other_event.msg.delivery_info['routing_key']
+            if crk != ork:
+                self._logs.irl.debug('  Invalidated because rk %s does not match expected %s', ork, crk)
+                err = MatcherValidationMissmatch('msg.delivery_info', 'routing_key', crk, ork)
+                error_list.append(err)
+
+        if 'body' in self.__validation_block:
+            exp_body = self.__validation_block['body']
+            other_body = other_event.body
+
+            # todo: recursion
+            # todo: extra fields in other
+            for field_name, exp_value in exp_body.items():
+                if field_name not in other_body:
+                    self._logs.irl.debug("  Invalidated because field %s not in event's fields %s", field_name,
+                                         other_body.keys())
+                    err = MatcherValidationMissingField('body', field_name, exp_value)
+                    error_list.append(err)
+                else:
+                    # ok, it's there....
+                    if exp_value == '<<present>>':
+                        # that's good enough!
+                        pass
+                    elif exp_value != other_body[field_name]:
+                        self._logs.irl.debug("  Invalidated because field %s value %s does not match expected %s",
+                                             field_name, other_body[field_name], exp_value)
+                        err = MatcherValidationMissmatch('body', field_name, exp_value, other_body[field_name])
+                        error_list.append(err)
+                        pass
+                    else:
+                        pass
+
+        self._logs.irl.debug('Validation complete: error_list=%s', error_list)
+        return error_list
 
     def dump(self, ofile=sys.stdout, indent=0):
         super(_AMQPMatcher, self).dump(ofile=ofile, indent=indent)
@@ -157,10 +238,11 @@ class _AMQPProcessor(StreamMonitorBaseClass):
         self.__run_till = None
         self.__tail_timeout = None
         self.__in_finish_mode = False
+        self.__ignore_misses = False
         # THIS is a hack to allow raw access to underlying tracker-records until we get a common
         # validation phase. See get_raw_tracker_events() below for details
         self.__matches_in_order = []
-        tracker.add_processor(self, start_at=start_at)
+        self.__started_at = tracker.add_processor(self, start_at=start_at)
         self.__match_greenlet = gevent.spawn(self.__match_greenlet_run)
         self.__match_greenlet.greenlet_name = 'processor-match-loop-gl'
 
@@ -171,28 +253,46 @@ class _AMQPProcessor(StreamMonitorBaseClass):
         tail_limit = None
         loop_exit_why = None
         noticed_change_to_finish = False
-        while (loop_exit_why is None) and (self.__run_till is not None and self.__run_till > time.time()):
+        lcnt = 0
+        loop_slice = 0.1
+        five_s_mod = int(5 / loop_slice)
+        # Note: we want to move having it possible to NOT have to call
+        #  start_finish before processing, but there are some icky glitches
+        #  there I don't have time to hunt down. So, for now, just hang here
+        #  until all the rules are set up.
+        while not self.__in_finish_mode:
+            gevent.sleep(0.1)
+
+        while (loop_exit_why is None) and (self.__run_till is None or self.__run_till > datetime.now()):
+            if lcnt % five_s_mod == 0:
+                if self.__run_till is None:
+                    left = 'N/A'
+                else:
+                    left = self.__run_till - datetime.now()
+                self._logs.irl.debug('Periodic loop: count=%d, run_till=%s, left=%s', lcnt, self.__run_till, left)
+            lcnt += 1
             # we always want to setup tail_limit when we first cross over to finishing
             if not noticed_change_to_finish and self.__in_finish_mode:
                 noticed_change_to_finish = True
                 self._logs.irl.debug(' Noticed that we shifted to finish-mode')
                 if tail_limit is None:
-                    tail_limit = time.time() + self.__tail_timeout
+                    tail_limit = datetime.now() + self.__tail_timeout
                     self._logs.irl.debug('  and set tail-limit from none to %s', tail_limit)
 
             try:
                 # timeout on peek call is needed to allow us to "notice" if our run-till
                 # or tail-time has been exceeded.
-                tracked = self.__inbound_queue.peek(timeout=0.1)
+                tracked = self.__inbound_queue.peek(timeout=loop_slice)
                 self._logs.idl.debug('%s peeked and got %s', self, tracked)
             except gevent.queue.Empty:
                 tracked = None
 
             if tracked is None:
                 # no message on queue.
-                if tail_limit is not None and time.time() > tail_limit:
+                if tail_limit is not None and datetime.now() > tail_limit:
                     self._logs.irl.debug(' hit tail limit during idle. Checking if end-check will work')
                     res = self._match_groups.check_ending()
+                    self._logs.irl.debug('   check-res was %s, results-state=%s', res, 'results.dump(None)')
                     if res.is_empty:
                         self._logs.irl.debug('   and we can stop because processor in success state')
                         loop_exit_why = "tail-wait expired while processor in success state"
@@ -202,10 +302,9 @@ class _AMQPProcessor(StreamMonitorBaseClass):
                         tail_limit = None
                 continue
 
-            # So we have an event to look at...
-            res = self._match_groups.check_event(tracked)
+            res = self._match_groups.check_event(tracked, allow_complete_miss=self.__ignore_misses)
             consume = False
-            if res is not None:
+            if not res.is_empty:
                 consume = True
                 results.add_result(res)
                 self.__matches_in_order.append(tracked)
@@ -220,11 +319,13 @@ class _AMQPProcessor(StreamMonitorBaseClass):
                 if self.__tail_timeout is not None:
                     # we consumed a message, so bump out tail-limit
                     old_tail_limit = tail_limit
-                    tail_limit = time.time() + self.__tail_timeout
+                    tail_limit = datetime.now() + self.__tail_timeout
                     self._logs.irl.debug('  consumed event. Bumping tail-limit from %s to %s', old_tail_limit, tail_limit)
 
         if loop_exit_why is None:
             loop_exit_why = "overall timeout occured"
+        self._logs.irl.debug('Periodic loop exit because %s count=%d, run_till=%s, now=%s',
+                             loop_exit_why, lcnt, self.__run_till, datetime.now())
         self._logs.irl.debug('---exiting loop because %s---: %s -> %s', loop_exit_why, self, results)
         res = self._match_groups.check_ending()
         results.add_result(res)
@@ -232,9 +333,11 @@ class _AMQPProcessor(StreamMonitorBaseClass):
         return results
 
     def start_finish(self, timeout, tail_timeout=1.0, ignore_misses=True):
+        timeout = timedelta(seconds=timeout)
+        tail_timeout = timedelta(seconds=tail_timeout)
         self._logs.irl.debug('start_finish on %s called. timeout=%s, tail-timeout=%s', self, timeout, tail_timeout)
         self.__tail_timeout = tail_timeout
-        self.__run_till = time.time() + timeout + tail_timeout
+        self.__run_till = datetime.now() + timeout + tail_timeout
         self.__ignore_misses = ignore_misses
         self.__in_finish_mode = True
         return self.__match_greenlet
@@ -246,15 +349,15 @@ class _AMQPProcessor(StreamMonitorBaseClass):
     def match_any_event(self, description=None, min=1, max=1):
         if description is None:
             description = "match-any(rk={},min={},max={}".format(None, min, max)
-        m = _AMQPMatcher(route_key=None, description=description, min=min, max=max)
+        m = _AMQPMatcher(self._logs, route_key=None, description=description, min=min, max=max)
         self._add_matcher(m)
 
-    def match_on_routekey(self, description=None, routing_key=None, min=1, max=1):
+    def match_on_routekey(self, description, routing_key=None, min=1, max=1, validation_block=None, match_CB=None):
         if routing_key is None:
             routing_key = '#'
-        if description is None:
-            description = "match-maker-match-maker-name-me-better(rk={},min={},max={}".format(None, min, max)
-        m = _AMQPMatcher(route_key=routing_key, description=description, min=min, max=max)
+        description = "{}(rk={},min={},max={})".format(description, routing_key, min, max)
+        m = _AMQPMatcher(self._logs, route_key=routing_key, description=description, min=min, max=max,
+                         validation_block=validation_block, match_CB=match_CB)
         self._add_matcher(m)
 
     def get_raw_tracker_events(self):
@@ -272,6 +375,10 @@ class _AMQPTrackerRecord(object):
         self.msg = msg
         self.body = body
         self.timestamp = datetime.now()
+
+    def __str__(self):
+        rs = 'TrackRecord(at={}, msg.delivery_info={}, body={})'.format(self.timestamp, self.msg.delivery_info, self.body)
+        return rs
 
 
 class _AMQPQueueTracker(object):
@@ -333,9 +440,10 @@ class _AMQPQueueTracker(object):
         return greenlets
 
     def test_helper_wait_for_one_message(self, timeout=5):
-        sleep_till = time.time() + timeout
+        timeout = timedelta(seconds=timeout)
+        sleep_till = datetime.now() + timeout
         self._logs.irl.debug('waiting for single message, timeout=%s', timeout)
-        while len(self.__recorded_data) == 0 and time.time() < sleep_till:
+        while len(self.__recorded_data) == 0 and datetime.now() < sleep_till:
             gevent.sleep(0)
         if len(self.__recorded_data) > 0:
             return self.__recorded_data[0]
@@ -384,6 +492,7 @@ class AMQPStreamMonitor(StreamMonitorBaseClass):
             self.__amqp_server = None
         else:
             self.__amqp_server = _AMQPServerWrapper(sm_amqp_url, self._logs)
+        self.amqp_url = sm_amqp_url
 
     def __call_for_all_trackers(self, method_name, *args, **kwargs):
         self._logs.irl.debug('relaying %s(%s) to all trackers %s', method_name, args, self.__trackers)
@@ -431,6 +540,7 @@ class AMQPStreamMonitor(StreamMonitorBaseClass):
                     self.__cleanup_user, classmethod, output)
         if self.__amqp_server is not None:
             self.__amqp_server.stop_greenlet()
+        _KeyedConsumerHandler.test_helper_finalize_cleanup()
 
     def inject(self, exchange, routing_key, payload):
         self.__amqp_server.inject(exchange, routing_key, payload)

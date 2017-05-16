@@ -475,19 +475,22 @@ def remote_shell(shell_cmd, expect_receive="", expect_send="", timeout=300,
         user = fitcreds()['rackhd_host'][0]['username']
     if not password:
         password = fitcreds()['rackhd_host'][0]['password']
+    port = fitports()['ssh']
 
     logfile_redirect = None
     if VERBOSITY >= 4:
         print "VM number: ", vmnum
+        print "remote_shell: User =", user
         print "remote_shell: Host =", address
+        print "remote_shell: Port =", port
         print "remote_shell: Command =", shell_cmd
 
     if VERBOSITY >= 9:
         print "remote_shell: STDOUT =\n"
         logfile_redirect = sys.stdout
 
-    # if localhost just run the command local
-    if fitargs()['rackhd_host'] == 'localhost':
+    # if localhost and not on a portfoward port just run the command local
+    if fitargs()['rackhd_host'] == 'localhost' and port == 22:
         (command_output, exitstatus) = \
             pexpect.run("sudo bash -c \"" + shell_cmd + "\"",
                         withexitstatus=1,
@@ -503,14 +506,14 @@ def remote_shell(shell_cmd, expect_receive="", expect_send="", timeout=300,
     if expect_receive == "" or expect_send == "":
         (command_output, exitstatus) = \
             pexpect.run("ssh -q -o StrictHostKeyChecking=no -t " + user + "@" +
-                        address + " sudo bash -c \\\"" + shell_cmd + "\\\"",
+                        address + " -p " + str(port) + " sudo bash -c \\\"" + shell_cmd + "\\\"",
                         withexitstatus=1,
                         events={"assword": password + "\n"},
                         timeout=timeout, logfile=logfile_redirect)
     else:
         (command_output, exitstatus) = \
             pexpect.run("ssh -q -o StrictHostKeyChecking=no -t " + user + "@" +
-                        address + " sudo bash -c \\\"" + shell_cmd + "\\\"",
+                        address + " -p " + str(port) + " sudo bash -c \\\"" + shell_cmd + "\\\"",
                         withexitstatus=1,
                         events={"assword": password + "\n",
                                 expect_receive: expect_send + "\n"},
