@@ -8,7 +8,7 @@
   sudo: yes
 
 - name: retrieve microkernel and overlays from bintray
-  get_url: url="https://bintray.com/artifact/download/rackhd/binary/builds/{{ item }}"
+  get_url: url="https://dl.bintray.com/rackhd/binary/builds/:{{ item }}"
            dest="{{ http_static_directory }}/common/{{ item }}"
            validate_certs=no
            force=yes
@@ -19,7 +19,7 @@
    - vmlinuz-3.16.0-25-generic
 
 - name: retrieve the latest bootloaders from bintray
-  get_url: url="https://bintray.com/artifact/download/rackhd/binary/ipxe/{{ item }}"
+  get_url: url="https://dl.bintray.com/rackhd/binary/ipxe/:{{ item }}"
            dest="{{ tftp_static_directory }}/{{ item }}"
            validate_certs=no
            force=yes
@@ -31,7 +31,7 @@
    - monorail.intel.ipxe
 
 - name: retrieve the latest syslinux bootloader from bintray
-  get_url: url="https://bintray.com/artifact/download/rackhd/binary/syslinux/{{ item }}"
+  get_url: url="https://dl.bintray.com/rackhd/binary/syslinux/:{{ item }}"
            dest="{{ tftp_static_directory }}/{{ item }}"
            validate_certs=no
            force=yes
