@@ -1,30 +1,40 @@
-from config.api2_0_config import *
+'''
+Copyright (c) 2016-2017 Dell Inc. or its subsidiaries. All Rights Reserved.
+'''
+import fit_path  # NOQA: unused import
+import fit_common
+import flogging
 import requests
-from proboscis.asserts import assert_equal
-from proboscis.asserts import assert_true
-from proboscis import test
 
-@test(groups=['swagger.tests'])
-class SwaggerTests:
-    def __init__(self):
-        print config.api_root
-        print config.host
+from config.api2_0_config import config
+from nose.plugins.attrib import attr
+
+logs = flogging.get_loggers()
+
+
+# @test(groups=['swagger.tests'])
+@attr(regression=False, smoke=True, swagger_api2_tests=True)
+class SwaggerTests(fit_common.unittest.TestCase):
+    def setUp(self):
+        logs.info(config.api_root)
+        logs.info(config.host)
         self.swagger_path = '{0}{1}/swagger'.format(config.host, config.api_root)
 
-    @test(groups=['swagger.tests.tags'])
-    def test_tags(self):
-        '''Basic validation of swagger object tags'''
+    # @test(groups=['swagger.tests.tags'])
+    def test_swagger_tags(self):
+        # """Basic validation of swagger object tags"""
         r = requests.get(self.swagger_path)
-        assert_equal(200, r.status_code)
+        self.assertEqual(200, r.status_code)
 
         swagger_def = r.json()
 
         # There should be exactly one tag named '/api/2.0'
-        assert_equal(1, len(swagger_def['tags']))
-        assert_equal('/api/2.0', swagger_def['tags'][0]['name'])
-        assert_equal('RackHD 2.0 API', swagger_def['tags'][0]['description'])
+        self.assertEqual(1, len(swagger_def['tags']))
+        self.assertEqual('/api/2.0', swagger_def['tags'][0]['name'])
+        self.assertEqual('RackHD 2.0 API', swagger_def['tags'][0]['description'])
 
         # All endpoints should be tagged with 'api/2.0'
         for path in swagger_def['paths']:
             for method in swagger_def['paths'][path]:
-                assert_true('/api/2.0' in swagger_def['paths'][path][method]['tags'])
+                logs.debug("Checking method %s, %s", method, swagger_def['paths'][path][method].get('summary'))
+                self.assertTrue('/api/2.0' in swagger_def['paths'][path][method]['tags'])
