@@ -154,6 +154,33 @@ class rackhd_ucs_api(unittest.TestCase):
         if not restore_obms_utility():
             raise Exception("error restoring obms list")
 
+    def get_physical_server_count(self):
+        """
+        Get a count of the number of Service Proviles defined by the UCS Manager
+        """
+        url = UCS_SERVICE_URI + "/rackmount"
+
+        headers = {"ucs-user": UCSM_USER,
+                   "ucs-password": UCSM_PASS,
+                   "ucs-host": UCSM_IP}
+
+        api_data = fit_common.restful(url, rest_headers=headers)
+        self.assertEqual(api_data['status'], 200,
+                         'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
+
+        count = len(api_data["json"])
+
+        url = UCS_SERVICE_URI + "/chassis"
+        api_data = fit_common.restful(url, rest_headers=headers)
+        self.assertEqual(api_data['status'], 200,
+                         'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
+
+        count += len(api_data["json"])
+        for element in api_data["json"]:
+            count += len(element["members"])
+
+        return count
+
     def get_service_profile_count(self):
         """
         Get a count of the number of Service Proviles defined by the UCS Manager
@@ -166,12 +193,6 @@ class rackhd_ucs_api(unittest.TestCase):
         api_data = fit_common.restful(url, rest_headers=headers)
         self.assertEqual(api_data['status'], 200,
                          'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
-        if len(api_data["json"]["ServiceProfile"]["members"]) == 0:
-            raise unittest.SkipTest("No Service Profiles Defined")
-
-        self.assertEqual(len(api_data["json"]["ServiceProfile"]["members"]), 18,
-                         "Expected 18 chassis or more but found {0}"
-                         .format(len(api_data["json"]["ServiceProfile"]["members"])))
 
         return len(api_data["json"]["ServiceProfile"]["members"])
 
@@ -251,6 +272,8 @@ class rackhd_ucs_api(unittest.TestCase):
             }
         }
 
+        expected_ucs_physical_nodes = self.get_physical_server_count()
+
         header = {"Content-Type": "application/json"}
         api_data = fit_common.rackhdapi("/api/2.0/workflows", action="post",
                                         headers=header, payload=data_payload)
@@ -264,9 +287,9 @@ class rackhd_ucs_api(unittest.TestCase):
 
         logs.info_1("Found {0} Nodes after cataloging the UCS".format(len(api_data['json'])))
 
-        self.assertEqual(newNodeCount - initialNodeCount, self.EXPECTED_UCS_PHYSICAL_NODES,
+        self.assertEqual(newNodeCount - initialNodeCount, expected_ucs_physical_nodes,
                                 'Expected to discover {0} UCS nodes, got: {1}'
-                                .format(self.EXPECTED_UCS_PHYSICAL_NODES, newNodeCount - initialNodeCount))
+                                .format(expected_ucs_physical_nodes, newNodeCount - initialNodeCount))
 
         # rerun discovery and verify duplicate nodes are not created
         api_data = fit_common.rackhdapi("/api/2.0/workflows", action="post",
@@ -293,7 +316,7 @@ class rackhd_ucs_api(unittest.TestCase):
         """
         expected_ucs_logical_nodes = self.get_service_profile_count()
         if (expected_ucs_logical_nodes == 0):
-            raise unittest.skipTest("No Service Profiles Defined")
+            raise unittest.SkipTest("No Service Profiles Defined")
 
         initialNodeCount = len(self.get_ucs_node_list())
 
@@ -388,6 +411,7 @@ class rackhd_ucs_api(unittest.TestCase):
 
         initialNodeCount = len(self.get_ucs_node_list())
         expected_ucs_logical_nodes = self.get_service_profile_count()
+        expected_ucs_physical_nodes = self.get_physical_server_count()
 
         data_payload = {
             "name": "Graph.Ucs.Discovery",
@@ -424,10 +448,10 @@ class rackhd_ucs_api(unittest.TestCase):
         logs.info_1("Found {0} Nodes after cataloging the UCS".format(len(api_data['json'])))
 
         self.assertEqual(newNodeCount - initialNodeCount,
-                         self.EXPECTED_UCS_PHYSICAL_NODES + expected_ucs_logical_nodes,
+                         expected_ucs_physical_nodes + expected_ucs_logical_nodes,
                          'Expected to discover {0} UCS nodes, got: {1}'
-                             .format(self.EXPECTED_UCS_PHYSICAL_NODES + expected_ucs_logical_nodes,
-                                     newNodeCount - initialNodeCount))
+                         .format(expected_ucs_physical_nodes + expected_ucs_logical_nodes,
+                                 newNodeCount - initialNodeCount))
 
 
 if __name__ == '__main__':

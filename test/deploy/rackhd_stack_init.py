@@ -295,7 +295,7 @@ class rackhd_stack_init(unittest.TestCase):
         return False
 
     # Optionally configure UCS Manager if present
-    @unittest.skipUnless("ucsm_ip" in fit_common.fitcfg(), "")
+    @unittest.skipUnless("ucsm_ip" in fit_common.fitcfg() and "ucspe" in fit_common.fitcfg(), "Skipping UCSM config")
     def test13_load_ucs_manager_config(self):
         """
         loads the test configuration into the UCS Manger

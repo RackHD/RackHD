@@ -12,12 +12,23 @@
   "vagrant":{
     "rackhd_host": "localhost",
     "type": "vagrant",
+    "ucspe": true,
     "ucsm_ip" : "172.31.128.252",
     "ucsm_user" : "ucspe",
     "ucsm_pass" : "ucspe",
     "ucs_service_uri" : "https://localhost:7080",
     "ucsm_config_file" : "./tests/ucs/ucsm_config.xml"
   },
+  "hop_stack":{
+    "rackhd_host": "localhost",
+    "type": "vagrant",
+    "ucsm_ip" : "10.240.19.70",
+    "ucsm_user" : "admin",
+    "ucsm_pass" : "Zilog256",
+    "ucs_service_uri" : "https://localhost:7080",
+    "ucsm_config_file" : "./tests/ucs/ucsm_config.xml"
+  },
+
   "vagrant_remote": {
     "rackhd_host": "127.0.0.1",
     "type": "vagrant",
