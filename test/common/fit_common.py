@@ -870,7 +870,7 @@ def node_select():
                 skuid = skuentry['id']
         # Collect node IDs
         catalog = rackhdapi('/api/2.0/nodes?type=compute')
-        if skumap['status'] != 200:
+        if catalog['status'] != 200:
             print '**** Unable to retrieve node list via API.\n'
             sys.exit(255)
         # Select node by SKU
@@ -893,14 +893,15 @@ def node_select():
                     break
         # select node by index number
         if fitargs()["nodeindex"] != 'all':
+            idlist = sorted(nodelist)
             nodelist = []
             try:
-                catalog['json'][int(fitargs()["nodeindex"])]
+                idlist[int(fitargs()["nodeindex"])]
             except:
                 print '**** Invalid node index ' + fitargs()["nodeindex"] + '.\n'
                 sys.exit(255)
             else:
-                nodelist.append(catalog['json'][int(fitargs()["nodeindex"])]['id'])
+                nodelist.append(idlist[int(fitargs()["nodeindex"])])
     if VERBOSITY >= 6:
         print "Node List:"
         print nodelist, '\n'
