@@ -29,6 +29,7 @@ services:
       - "./dhcp/defaults:/etc/defaults"
 
   files:
+    build: "./files"
     image: rackhd/files:${TAG}
     network_mode: "host"
     privileged: true
