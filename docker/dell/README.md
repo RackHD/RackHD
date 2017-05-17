@@ -27,31 +27,32 @@ echo HOST_IP=100.68.123.164 >> .env
 ~~~
 sudo docker-compose up -d consul
 ~~~
-     You can view the consul UI by navigating to http://<your_HOST_IP_address>:8500
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TYou can view the consul UI by navigating to http://<your_HOST_IP_address>:8500
 
 6. Post in microservice key/value properties into consul
 ~~~
 chmod +x set_config.sh
 ./set_config.sh
 ~~~
-     You can view the key/value data in consul by clicking on the Key/Value tab.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TYou can view the key/value data in consul by clicking on the Key/Value tab.
 
 7. Start remaining containers (or just the ones you want to start) in detached mode
 ~~~
 sudo docker-compose up -d
 ~~~
-     It takes about 2 minutes for the services to come up. To start just the containers you want, specify the names of the containers to start at the end of the command seperated by a space.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TIt takes about 2 minutes for the services to come up. To start just the containers you want, specify the names of the containers to start at the end of the command seperated by a space.
 
 8. Verify your services are online
 ~~~
 sudo docker ps -a
 ~~~
-     You can also look for your services to register in the consul UI
-     You can examine the logs by typing:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TYou can also look for your services to register in the consul UI
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TYou can examine the logs by typing:
 ~~~
 sudo docker logs <name of the service>
 ~~~ 
-     You can navigate to the swagger UI in a browser using the port for the service.. example 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TYou can navigate to the swagger UI in a browser using the port for the service.. example 
 ~~~
 http://<<your ip>>:<port>/swagger-ui.html
 ~~~
