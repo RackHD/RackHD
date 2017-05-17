@@ -1,34 +1,38 @@
-import json
-from config.api2_0_config import *
-from config.amqp import *
+'''
+Copyright (c) 2016-2017 Dell Inc. or its subsidiaries. All Rights Reserved.
+'''
+import fit_path  # NOQA: unused import
+import fit_common
+import flogging
+
+from config.api2_0_config import config
+from config.amqp import QUEUE_GRAPH_FINISH
 from on_http_api2_0 import ApiApi as Api
-from on_http_api2_0 import rest
 from on_http_api2_0.rest import ApiException
-from modules.logger import Log
 from modules.amqp import AMQPWorker
 from modules.worker import WorkerThread, WorkerTasks
-from proboscis.asserts import assert_equal
-from proboscis.asserts import assert_not_equal
-from proboscis.asserts import assert_is_not_none
-from proboscis.asserts import fail
-from proboscis import test
-from json import loads
+from json import loads, dumps
+from nose.plugins.attrib import attr
+from nosedep import depends
 
-LOG = Log(__name__)
+logs = flogging.get_loggers()
 
 HTTP_NO_CONTENT = 204
-HTTP_NOT_FOUND  = 404
+HTTP_NOT_FOUND = 404
 
-@test(groups=['workflows_api2.tests'])
-class WorkflowsTests(object):
 
-    def __init__(self):
-        self.__client = config.api_client
-        self.__task_worker = None
-        self.__graph_name = None
-        self.__tasks = []
-        self.__graph_status = []
-        self.workflowDict = {
+# @test(groups=['workflows_api2.tests'])
+@attr(regression=False, smoke=True, workflows_api2_tests=True)
+class WorkflowsTests(fit_common.unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.__client = config.api_client
+        # cls.__task_worker = None
+        cls.__graph_name = None
+        cls.__tasks = []
+        cls.__graph_status = []
+        cls.workflowDict = {
             "friendlyName": "Shell Commands API 2.0 Hwtest_1",
             "injectableName": "Graph.post.test.api2",
             "tasks": [
@@ -38,7 +42,7 @@ class WorkflowsTests(object):
                 }
             ]
         }
-        self.workflowDict2 = {
+        cls.workflowDict2 = {
             "friendlyName": "Shell Commands API 2.0 Hwtest_2",
             "injectableName": "Graph.post.test.api2",
             "tasks": [
@@ -49,76 +53,83 @@ class WorkflowsTests(object):
             ]
         }
 
-    @test(groups=['delete_all_active_workflows_api2'])
-    def delete_all_active_workflows(self):
-        """Testing node PUT:/nodes/identifier/workflows/action"""
+    # @test(groups=['delete_all_active_workflows_api2'])
+    def test_delete_all_active_workflows(self):
+        # """Testing node PUT:/nodes/identifier/workflows/action"""
         Api().nodes_get_all()
         nodes = loads(self.__client.last_response.data)
         for node in nodes:
             if node.get('type') == 'compute':
                 id = node.get('id')
-                assert_not_equal(id, None)
+                self.assertNotEqual(id, None)
                 try:
                     Api().nodes_workflow_action_by_id(id, {'command': 'cancel'})
                 except ApiException as err:
-                    LOG.warning(err)
+                    logs.warning(" Error: %s", err)
 
-    @test(groups=['workflows_get_api2'], depends_on_groups=['delete_all_active_workflows_api2'])
+    # @test(groups=['workflows_get_api2'], depends_on_groups=['delete_all_active_workflows_api2'])
+    @depends(after='test_delete_all_active_workflows')
     def test_workflows_get(self):
-        """ Testing GET:/workflows"""
+        # """ Testing GET:/workflows"""
         Api().workflows_get()
-        assert_equal(200,self.__client.last_response.status)
-        assert_not_equal(0, len(json.loads(self.__client.last_response.data)),
-                         message='Active workflows list was empty!')
+        self.assertEqual(200, self.__client.last_response.status)
+        self.assertNotEqual(0, len(loads(self.__client.last_response.data)),
+                            msg='Active workflows list was empty!')
 
-    @test(groups=['workflows_post_api2'], depends_on_groups=['delete_all_active_workflows_api2'])
+    # @test(groups=['workflows_post_api2'], depends_on_groups=['delete_all_active_workflows_api2'])
+    # @depends(after='test_delete_all_active_workflows')
+    @depends(after='test_workflows_get')
     def test_workflows_post(self):
-        """Testing POST:/workflows"""
+        # """Testing POST:/workflows"""
         Api().workflows_post(body={"name": 'Graph.noop-example'})
-        assert_equal(201, self.__client.last_response.status)
-        rawj = json.loads(self.__client.last_response.data)
+        self.assertEqual(201, self.__client.last_response.status)
+        rawj = loads(self.__client.last_response.data)
         instance_id = rawj.get('instanceId')
-        assert_is_not_none(instance_id)
-        assert_equal('Graph.noop-example', str(rawj['definition'].get('injectableName')))
+        self.assertIsNotNone(instance_id)
+        self.assertEqual('Graph.noop-example', str(rawj['definition'].get('injectableName')))
 
-    @test(groups=['workflows_get_id_api2'], depends_on_groups=['workflows_get_api2'])
+    # @test(groups=['workflows_get_id_api2'], depends_on_groups=['workflows_get_api2'])
+    @depends(after='test_workflows_get')
     def test_workflows_id_get(self):
-        """ Testing GET:/workflows/identifier"""
+        # """ Testing GET:/workflows/identifier"""
 
         # Getting the identifier of the first workflow in order to validate the get-id function
         Api().workflows_get()
-        rawj = json.loads(self.__client.last_response.data)
+        rawj = loads(self.__client.last_response.data)
         instance_id = rawj[0].get('instanceId')
-        assert_is_not_none(instance_id)
+        self.assertIsNotNone(instance_id)
         Api().workflows_get_by_instance_id(instance_id)
-        assert_equal(200,self.__client.last_response.status)
+        self.assertEqual(200, self.__client.last_response.status)
 
-    @test(groups=['workflows_get_id_api2'],depends_on_groups=['workflows_get_api2'])
+    # @test(groups=['workflows_get_id_api2'],depends_on_groups=['workflows_get_api2'])
+    @depends(after='test_workflows_get')
     def test_negative_workflows_id_get(self):
-        """ Negative Testing GET:/workflows/identifier"""
+        # """ Negative Testing GET:/workflows/identifier"""
         try:
             Api().workflows_get_by_instance_id("WrongIdentifier")
-            assert_equal(404, self.__client.last_response.status, message='status should be 404. No exception raised')
+            self.assertEqual(404, self.__client.last_response.status, msg='status should be 404. No exception raised')
         except ApiException as e:
-            assert_equal(404,e.status, message = 'status should be 404')
+            self.assertEqual(404, e.status, msg='Expected 404 status, received {}'.format(e.status))
         except (TypeError, ValueError) as e:
             assert(e.message)
 
-    @test(groups=['workflows_graphs_get_api2'])
+    # @test(groups=['workflows_graphs_get_api2'])
     def test_workflows_graphs_get(self):
-        """Testing GET:/workflows/graphs"""
+        # """Testing GET:/workflows/graphs"""
         Api().workflows_get_graphs()
-        assert_equal(200,self.__client.last_response.status)
-        assert_not_equal(0, len(json.loads(self.__client.last_response.data)),
-                         message='Workflows list was empty!')
+        self.assertEqual(200, self.__client.last_response.status)
+        resp = loads(self.__client.last_response.data)
+        logs.debug_6(" Workflow graphs: %s", dumps(resp, indent=4))
+        self.assertNotEqual(0, len(loads(self.__client.last_response.data)),
+                            msg='Workflows list was empty!')
 
-    @test(groups=['workflows_graphs_put_api2'])
+    # @test(groups=['workflows_graphs_put_api2'])
     def test_workflows_graphs_put(self):
-        """ Testing PUT:/workflows/graphs """
+        # """ Testing PUT:/workflows/graphs """
 
         # Make sure there is no workflowTask with the same name
         Api().workflows_get_graphs_by_name('*')
-        rawj = json.loads(self.__client.last_response.data)
+        rawj = loads(self.__client.last_response.data)
 
         for i, var in enumerate(rawj):
             if self.workflowDict['injectableName'] == str(rawj[i].get('injectableName')):
@@ -128,14 +139,14 @@ class WorkflowsTests(object):
                 break
 
         # Add a workflow task
-        LOG.info ("Adding workflow task : " + str(self.workflowDict))
+        logs.info("Adding workflow task: %s ", str(self.workflowDict))
         Api().workflows_put_graphs(body=self.workflowDict)
         resp = self.__client.last_response
-        assert_equal(201,resp.status)
+        self.assertEqual(201, resp.status)
 
         # Validate the content
         Api().workflows_get_graphs()
-        rawj = json.loads(self.__client.last_response.data)
+        rawj = loads(self.__client.last_response.data)
         foundInsertedWorkflow = False
         for i, var in enumerate(rawj):
             if self.workflowDict['injectableName'] == str(rawj[i].get('injectableName')):
@@ -143,87 +154,97 @@ class WorkflowsTests(object):
                 readWorkflowTask = rawj[i]
                 readFriendlyName = readWorkflowTask.get('friendlyName')
                 readInjectableName = readWorkflowTask.get('injectableName')
-                assert_equal(readFriendlyName,self.workflowDict.get('friendlyName'))
-                assert_equal(readInjectableName,self.workflowDict.get('injectableName'))
+                self.assertEqual(readFriendlyName, self.workflowDict.get('friendlyName'))
+                self.assertEqual(readInjectableName, self.workflowDict.get('injectableName'))
 
-        assert_equal(foundInsertedWorkflow, True)
+        self.assertEqual(foundInsertedWorkflow, True)
 
-    @test(groups=['workflows_graphs_get_by_name_api2'],
-          depends_on_groups=['workflows_graphs_put_api2'])
+    # @test(groups=['workflows_graphs_get_by_name_api2'],
+    #       depends_on_groups=['workflows_graphs_put_api2'])
+    @depends(after='test_workflows_graphs_put')
     def test_workflows_library_id_get(self):
-        """ Testing GET:/workflows/graphs/injectableName"""
+        # """ Testing GET:/workflows/graphs/injectableName"""
         Api().workflows_get_graphs_by_name(self.workflowDict.get('injectableName'))
-        assert_equal(200,self.__client.last_response.status)
-        rawj = json.loads(self.__client.last_response.data)
-        assert_equal(self.workflowDict.get('friendlyName'), str(rawj[0].get('friendlyName')))
+        self.assertEqual(200, self.__client.last_response.status)
+        rawj = loads(self.__client.last_response.data)
+        self.assertEqual(self.workflowDict.get('friendlyName'), str(rawj[0].get('friendlyName')))
 
-    @test(groups=['workflows_graphs_put_by_name_api2'],
-          depends_on_groups=['workflows_graphs_get_by_name_api2'])
+    # @test(groups=['workflows_graphs_put_by_name_api2'],
+    #       depends_on_groups=['workflows_graphs_get_by_name_api2'])
+    @depends(after='test_workflows_library_id_get')
     def test_workflows_graphs_name_put(self):
-        """Testing PUT:/workflows/graphs"""
+        # """Testing PUT:/workflows/graphs"""
         # Test updating a graph
         Api().workflows_get_graphs_by_name(self.workflowDict.get('injectableName'))
-        rawj = json.loads(self.__client.last_response.data)
-        assert_equal(self.workflowDict.get('friendlyName'), str(rawj[0].get('friendlyName')))
+        rawj = loads(self.__client.last_response.data)
+        self.assertEqual(self.workflowDict.get('friendlyName'), str(rawj[0].get('friendlyName')))
         Api().workflows_put_graphs(body=self.workflowDict2)
-        assert_equal(201,self.__client.last_response.status)
+        self.assertEqual(201, self.__client.last_response.status)
         Api().workflows_get_graphs_by_name(self.workflowDict.get('injectableName'))
-        rawj = json.loads(self.__client.last_response.data)
-        assert_equal(self.workflowDict2.get('friendlyName'), str(rawj[0].get('friendlyName')))
+        rawj = loads(self.__client.last_response.data)
+        self.assertEqual(self.workflowDict2.get('friendlyName'), str(rawj[0].get('friendlyName')))
 
-    @test(groups=['workflows_graphs_delete_by_name_api2'],
-          depends_on_groups=['workflows_graphs_put_by_name_api2'])
+    # @test(groups=['workflows_graphs_delete_by_name_api2'],
+    #       depends_on_groups=['workflows_graphs_put_by_name_api2'])
+    @depends(after='test_workflows_graphs_name_put')
     def test_workflows_graphs_delete(self):
-        """Testing DELETE:/workflows/graphs/injectableName"""
+        # """Testing DELETE:/workflows/graphs/injectableName"""
         Api().workflows_get_graphs_by_name(self.workflowDict.get('injectableName'))
-        rawj = json.loads(self.__client.last_response.data)
-        assert_equal(self.workflowDict2.get('friendlyName'), str(rawj[0].get('friendlyName')))
+        rawj = loads(self.__client.last_response.data)
+        self.assertEqual(self.workflowDict2.get('friendlyName'), str(rawj[0].get('friendlyName')))
         Api().workflows_delete_graphs_by_name(self.workflowDict.get('injectableName'))
-        assert_equal(204,self.__client.last_response.status)
+        self.assertEqual(204, self.__client.last_response.status)
         Api().workflows_get_graphs_by_name(self.workflowDict.get('injectableName'))
-        assert_equal(0, len(json.loads(self.__client.last_response.data)))
+        self.assertEqual(0, len(loads(self.__client.last_response.data)))
 
-    def post_workflows(self, graph_name, \
-                       timeout_sec=300, nodes=[], data={}, \
-                       tasks=[], callback=None, run_now=True):
-        self.__graph_name = graph_name
-        self.__graph_status = []
+    def post_workflows(self, graph_name, timeout_sec=10, nodes=[], data=None, tasks=None, callback=None, run_now=True):
+        self.__class__.__graph_name = graph_name
+        self.__class__.__graph_status = []
+
+        # clean up the defaults
+        tasks = tasks if tasks else []
+        data = data if data else {}
+
         if len(nodes) == 0:
             Api().nodes_get_all()
             nodes = loads(self.__client.last_response.data)
 
-        if callback == None:
+        if callback is None:
+            logs.info("handle graph finish")
             callback = self.handle_graph_finish
 
         for n in nodes:
             if n.get('type') == 'compute':
+                logs.debug("node is compute")
                 id = n.get('id')
-                assert_not_equal(id,None)
-                LOG.info('starting amqp listener for node {0}'.format(id))
+                self.assertIsNotNone(id)
+                logs.debug(' Starting amqp listener for node %s', id)
                 worker = AMQPWorker(queue=QUEUE_GRAPH_FINISH, callbacks=[callback])
                 thread = WorkerThread(worker, id)
-                self.__tasks.append(thread)
+                self.__class__.__tasks.append(thread)
                 tasks.append(thread)
                 try:
                     Api().nodes_workflow_action_by_id(id, {'command': 'cancel'})
                 except ApiException as e:
-                    assert_equal(404,e.status, message='status should be 404')
+                    self.assertEqual(404, e.status, msg='Expected 404 status, received {}'.format(e.status))
                 except (TypeError, ValueError) as e:
                     assert(e.message)
-                Api().nodes_post_workflow_by_id(id, name=self.__graph_name, body=data)
+                Api().nodes_post_workflow_by_id(id, name=self.__class__.__graph_name, body=data)
+                logs.info("Posted workflow %s on node %s", self.__class__.__graph_name, id)
 
         if run_now:
-            self.run_workflow_tasks(self.__tasks, timeout_sec)
+            logs.info("running workflow tasks....")
+            self.run_workflow_tasks(self.__class__.__tasks, timeout_sec)
 
-    def handle_graph_finish(self,body,message):
+    def handle_graph_finish(self, body, message):
         routeId = message.delivery_info.get('routing_key').split('graph.finished.')[1]
-        assert_not_equal(routeId,None)
+        self.assertIsNotNone(routeId)
         Api().workflows_get()
         workflows = loads(self.__client.last_response.data)
         message.ack()
         for w in workflows:
             injectableName = w['injectableName']
-            if injectableName == self.__graph_name:
+            if injectableName == self.__class__.__graph_name:
                 graphId = w['context'].get('graphId')
                 if graphId == routeId:
                     if 'target' in w['context']:
@@ -232,11 +253,11 @@ class WorkflowsTests(object):
                         nodeid = 'none'
                     status = body['status']
                     if status == 'succeeded' or status == 'failed':
-                        LOG.info('{0} - target: {1}, status: {2}, route: {3}'.
-                                 format(injectableName,nodeid,status,routeId))
-                        self.__graph_status.append(status)
+                        logs.info('%s - target: %s, status: %s, route: %s',
+                                  injectableName, nodeid, status, routeId)
+                        self.__class__.__graph_status.append(status)
 
-                        for task in self.__tasks:
+                        for task in self.__class__.__tasks:
                             if task.id == nodeid:
                                 task.worker.stop()
                                 task.running = False
@@ -250,27 +271,28 @@ class WorkflowsTests(object):
 
                         if status == 'failed':
                             msg['active_task'] = w['tasks']
-                            LOG.error(msg, json=True)
+                            logs.error(dumps(msg, indent=4))
                         else:
-                            LOG.info(msg, json=True)
+                            logs.info(dumps(msg, indent=4))
                         break
 
     def run_workflow_tasks(self, tasks, timeout_sec):
         def thread_func(worker, id):
             worker.start()
-        tasks = self.__tasks if tasks is None else tasks
-        worker_tasks = WorkerTasks(tasks=self.__tasks, func=thread_func)
+        tasks = self.__class__.__tasks if tasks is None else tasks
+        worker_tasks = WorkerTasks(tasks=self.__class__.__tasks, func=thread_func)
         worker_tasks.run()
         worker_tasks.wait_for_completion(timeout_sec=timeout_sec)
         for task in tasks:
             if task.timeout:
-                LOG.error('Timeout for {0}, node {1}'.format(self.__graph_name, task.id))
-                self.__graph_status.append('failed')
-        if 'failed' in self.__graph_status:
-            fail('Failure running {0}'.format(self.__graph_name))
+                logs.error('Timeout for %s, node %s', self.__class__.__graph_name, task.id)
+                self.__class__.__graph_status.append('failed')
+        if 'failed' in self.__class__.__graph_status:
+            self.fail('Failure running {}'.format(self.__class__.__graph_name))
 
-    @test(groups=['node_workflows_post_api2'],
-            depends_on_groups=['workflows_graphs_put_api2', 'delete_all_active_workflows_api2'])
+    # @test(groups=['node_workflows_post_api2'],
+    #        depends_on_groups=['workflows_graphs_put_api2', 'delete_all_active_workflows_api2'])
+    @depends(after=['test_delete_all_active_workflows', 'test_workflows_graphs_delete'])
     def test_node_workflows_post(self):
-        """Testing POST:/nodes/id/workflows"""
+        # """Testing POST:/nodes/id/workflows"""
         self.post_workflows("Graph.noop-example")
