@@ -16,7 +16,6 @@ from nosedep import depends
 logs = flogging.get_loggers()
 
 
-# @test(groups=['tags_api2.tests'])
 @attr(regression=False, smoke=True, lookups_api2_tests=True)
 class TagsTests(fit_common.unittest.TestCase):
     def setUp(self):
@@ -74,7 +73,6 @@ class TagsTests(fit_common.unittest.TestCase):
                 self.assertEqual(node.get('id'), tag_data["name"], "Failed creating tag")
         self.assertRaises(rest.ApiException, Api().create_tag, body='fooey')
 
-    # @test(groups=['test-tags-api2'], depends_on_groups=['create-tag-api2'])
     @depends(after='test_tag_create')
     def test_tags(self):
         # """ Testing GET:/api/2.0/tags """
@@ -95,7 +93,6 @@ class TagsTests(fit_common.unittest.TestCase):
                              msg='Tag {} has incorrect path: {}'.format(updated_tags[i],
                                                                         updated_tags[i]['rules'][0]['path']))
 
-    # @test(groups=['test-tags-tagname-api2'], depends_on_groups=['test-tags-api2'])
     @depends(after='test_tags')
     def test_tags_tagname(self):
         # """ Testing GET:/api/2.0/tags/:tagName """
@@ -110,7 +107,6 @@ class TagsTests(fit_common.unittest.TestCase):
                 self.assertEqual(tag.get('name'), node.get('id'),
                                  msg='Could not find the tag: {}'.format(node.get('id')))
 
-    # @test(groups=['test-nodes-tagname-api2'], depends_on_groups=['test-tags-tagname-api2'])
     @depends(after='test_tags_tagname')
     def test_nodes_tagname(self):
         # """ Testing GET:/api/2.0/tags/:tagName/nodes """
@@ -127,7 +123,6 @@ class TagsTests(fit_common.unittest.TestCase):
                                   msg="Tag {} not in taglist for node {}".format(node.get('id'),
                                                                                  tagged_node.get('id')))
 
-    # @test(groups=['test_tags_delete'], depends_on_groups=['test-nodes-tagname-api2'])
     @depends(after='test_nodes_tagname')
     def test_tags_del(self):
         # """ Testing DELETE:api/2.0/tags/:tagName """

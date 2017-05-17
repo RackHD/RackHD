@@ -12,7 +12,6 @@ from nose.plugins.attrib import attr
 logs = flogging.get_loggers()
 
 
-# @test(groups=['swagger.tests'])
 @attr(regression=False, smoke=True, swagger_api2_tests=True)
 class SwaggerTests(fit_common.unittest.TestCase):
     def setUp(self):
