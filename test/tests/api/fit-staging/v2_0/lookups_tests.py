@@ -15,7 +15,6 @@ from nose.plugins.attrib import attr
 logs = flogging.get_loggers()
 
 
-# @test(groups=['lookups_api2.tests'])
 @attr(regression=False, smoke=True, lookups_api2_tests=True)
 class LookupsTests(fit_common.unittest.TestCase):
 
@@ -40,7 +39,6 @@ class LookupsTests(fit_common.unittest.TestCase):
         self.assertEqual(200, rsp.status, msg=rsp.reason)
         self.assertNotEqual(0, len(rsp.data))
 
-    # @test(groups=['lookups_api2.tests', 'api2_check-lookups-query'], depends_on_groups=['nodes_api2.tests'])
     def test_check_lookups_query(self):
         # """ Testing GET:/lookups?q=term """
         Api().nodes_get_all()
@@ -55,13 +53,12 @@ class LookupsTests(fit_common.unittest.TestCase):
         self.assertNotEqual(0, len(hosts), msg='No OBM hosts were found!')
         logs.debug("Hosts: %s", dumps(hosts, indent=4))
         for host in hosts:
-            logs.debug("Looking up host: {}".format(host))
+            logs.debug("Looking up host: %s", host)
             Api().lookups_get(q=host)
             rsp = self.__client.last_response
             self.assertEqual(200, rsp.status, msg=rsp.reason)
             self.assertNotEqual(0, len(rsp.data))
 
-    # @test(groups=['api2_check-lookup-id'],depends_on_groups=['api2_check-lookups-query'])
     @depends(after='test_check_lookups_query')
     def test_check_lookup_id(self):
         # """ Testing GET:/lookups/:id """
@@ -85,7 +82,6 @@ class LookupsTests(fit_common.unittest.TestCase):
                 rsp = self.__client.last_response
                 self.assertEqual(200, rsp.status, msg=rsp.reason)
 
-    # @test(groups=['api2_check-post-lookup'],depends_on_groups=['api2_check-lookups-query'])
     @depends(after='test_check_lookup_id')
     def test_post_lookup(self):
         # """ Testing POST /"""
@@ -117,7 +113,6 @@ class LookupsTests(fit_common.unittest.TestCase):
         self.assertEqual(str(rsp[0].get("macAddress")), str(self.lookup.get("macAddress")))
         self.assertEqual(str(rsp[0].get("node")), str(self.lookup.get("node")))
 
-    # @test(groups=['api2_check-post-lookup-negativeTesting'],depends_on_groups=['api2_check-lookups-query','api2_check-post-lookup'])
     @depends(after='test_post_lookup')
     def test_post_lookup_negativeTesting(self):
         # """ Negative Testing POST / """
@@ -130,9 +125,6 @@ class LookupsTests(fit_common.unittest.TestCase):
         except (TypeError, ValueError) as e:
             assert(e.message)
 
-    # @test(groups=['api2_check-patch-lookup'],depends_on_groups=['api2_check-lookups-query',
-    # 'api2_check-post-lookup','api2_check-post-lookup-negativeTesting'])
-    # @depends(after=test_post_lookup_negativeTesting)
     @depends(after='test_post_lookup')
     def test_patch_lookup(self):
         # """ Testing PATCH /:id"""
@@ -144,8 +136,6 @@ class LookupsTests(fit_common.unittest.TestCase):
         rsp = loads(self.__client.last_response.data)
         self.assertEqual(str(rsp[0].get("node")), self.patchedNode.get("node"))
 
-    # @test(groups=['check-delete-lookup'], depends_on_groups=['api2_check-lookups-query',
-    # 'api2_check-post-lookup','api2_check-patch-lookup'])
     @depends(after='test_patch_lookup')
     def test_delete_lookup(self):
         # """ Testing DELETE /:id """

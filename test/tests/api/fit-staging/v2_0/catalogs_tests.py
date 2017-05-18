@@ -15,7 +15,6 @@ from nose.plugins.attrib import attr
 logs = flogging.get_loggers()
 
 
-# @test(groups=['catalogs_api2.tests'])
 @attr(regression=False, smoke=True, catalogs_api2_tests=True)
 class CatalogsTests(fit_common.unittest.TestCase):
 
@@ -23,7 +22,6 @@ class CatalogsTests(fit_common.unittest.TestCase):
         self.__client = config.api_client
         self.__expected_sources = ['dmi', 'ohai', 'bmc', 'lspci', 'lshw', 'smart']
 
-    #  @test(groups=['catalogs_api2.tests', 'api2_check-catalogs'])
     def test_catalogs(self):
         # """Testing GET:api/2.0/catalogs to get list of catalogs"""
 
@@ -49,7 +47,6 @@ class CatalogsTests(fit_common.unittest.TestCase):
                     else:
                         self.fail('Catalog {0} not found in node {1}!'.format(source, node.get('id')))
 
-    # @test(groups=['catalogs_api2.tests'], depends_on_groups=['api2_check-catalogs'])
     @depends(after=test_catalogs)
     def test_catalogs_id(self):
         # """Testing GET:api/2.0/catalogs/id to get specific catalog details"""

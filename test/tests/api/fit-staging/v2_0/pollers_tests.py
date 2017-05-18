@@ -15,7 +15,6 @@ from nose.plugins.attrib import attr
 logs = flogging.get_loggers()
 
 
-# @test(groups=['pollers_api2.tests'])
 @attr(regression=False, smoke=True, pollers_api2_tests=True)
 class PollersTests(fit_common.unittest.TestCase):
 
@@ -26,7 +25,6 @@ class PollersTests(fit_common.unittest.TestCase):
         cls.poller_libs = []
         cls.created_pollers = []
 
-    # @test(groups=['pollers_api2.tests', 'api2_get_pollers_library'])
     def test_get_pollers_lib(self):
         # """Test GET:api/2.0/pollers/library"""
         Api().pollers_lib_get()
@@ -43,8 +41,6 @@ class PollersTests(fit_common.unittest.TestCase):
 
         self.__class__.poller_libs = data
 
-    # @test(groups=['pollers_api2.tests', 'api2_get_pollers_library_by_id'],
-    #      depends_on_groups=['api2_get_pollers_library'])
     @depends(after='test_get_pollers_lib')
     def test_get_pollers_lib_by_id(self):
         # """Test GET:api/2.0/pollers/library/:identifier"""
@@ -61,8 +57,6 @@ class PollersTests(fit_common.unittest.TestCase):
         except ApiException as e:
             self.assertEqual(404, e.status, msg='Expected 404 status, received {}'.format(e.status))
 
-    # @test(groups=['pollers_api2.tests', 'api2_get_pollers'])
-    # no dependencies
     def test_get_pollers(self):
         # """Test GET:api/2.0/pollers"""
         Api().pollers_get()
@@ -78,8 +72,6 @@ class PollersTests(fit_common.unittest.TestCase):
 
         self.__class__.pollers = data
 
-    # @test(groups=['pollers_api2.tests', 'api2_get_pollers_by_id'],
-    #      depends_on_groups=['api2_get_pollers'])
     @depends(after='test_get_pollers')
     def test_get_pollers_by_id(self):
         # """Test GET:api/2.0/pollers/:identifier"""
@@ -96,8 +88,6 @@ class PollersTests(fit_common.unittest.TestCase):
         except ApiException as e:
             self.assertEqual(404, e.status, msg='Expected 404 status, received {}'.format(e.status))
 
-    # @test(groups=['pollers_api2.tests', 'api2_create_pollers'])
-    # no depends
     def test_create_pollers(self):
         # """Test POST:api/2.0/pollers"""
         pollers = [
@@ -137,8 +127,6 @@ class PollersTests(fit_common.unittest.TestCase):
 
             self.__class__.created_pollers.append(data)
 
-    # @test(groups=['pollers_api2.tests', 'api2_patch_pollers'],
-    #      depends_on_groups=['api2_create_pollers'])
     @depends(after='test_create_pollers')
     def test_pollers_patch(self):
         # """Test PATCH:api/2.0/pollers/:identifier"""
@@ -159,8 +147,6 @@ class PollersTests(fit_common.unittest.TestCase):
         except ApiException as e:
             self.assertEqual(404, e.status, msg='Expected 404 status, received {}'.format(e.status))
 
-    # @test(groups=['pollers_api2.tests', 'api2_data_get_pollers'],
-    #      depends_on_groups=['api2_get_pollers', 'api2_patch_pollers'])
     @depends(after=['test_get_pollers', 'test_pollers_patch'])
     def test_pollers_data_get(self):
         # """Test GET:/api/2.0/pollers/:identifier/data"""
@@ -174,8 +160,6 @@ class PollersTests(fit_common.unittest.TestCase):
             else:
                 self.assertEqual(len(result.data), 0, 'Poller data should have 0 length')
 
-    # @test(groups=['pollers_api2.tests', 'api2_current_data_get_pollers'],
-    #      depends_on_groups=['api2_get_pollers', 'api2_data_get_pollers'])
     @depends(after='test_pollers_data_get')
     def test_pollers_current_data_get(self):
         # """Test GET:/api/2.0/pollers/:identifier/data/current"""
@@ -189,8 +173,6 @@ class PollersTests(fit_common.unittest.TestCase):
             else:
                 self.assertEqual(len(result.data), 0, 'Poller data should have 0 length')
 
-    # @test(groups=['pollers_api2.tests', 'api2_delete_pollers'],
-    #      depends_on_groups=['api2_current_data_get_pollers'])
     @depends(after='test_pollers_current_data_get')
     def test_delete_pollers(self):
         # """Test DELETE:api/2.0/pollers/:identifier"""

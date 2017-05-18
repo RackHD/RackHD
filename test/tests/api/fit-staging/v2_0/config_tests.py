@@ -14,20 +14,17 @@ from nose.plugins.attrib import attr
 logs = flogging.get_loggers()
 
 
-# @test(groups=['config_api2.tests'])
 @attr(regression=False, smoke=True, config_api2_tests=True)
 class ConfigTests(fit_common.unittest.TestCase):
     def setUp(self):
         self.__client = config.api_client
 
-    # @test(groups=['config_api2.tests', 'api2_check-config'])
     def test_check_server_config(self):
         # """Testing GET:api/2.0/config to get server configuration"""
         Api().config_get()
         rsp = self.__client.last_response
         self.assertEqual(200, rsp.status, msg=rsp.reason)
 
-    # @test(groups=['api2_patch-config'], depends_on_groups=['api2_check-config'])
     @depends(after=test_check_server_config)
     def test_patch_server_config(self):
         # """Testing PATCH:api/2.0/config to patch a specific configuration item"""
