@@ -14,7 +14,6 @@ from nosedep import depends
 logs = flogging.get_loggers()
 
 
-# @test(groups=['workflowTasks_api2.tests'])
 @attr(regression=False, smoke=True, workflows_tasks_api2_tests=True)
 class WorkflowTasksTests(fit_common.unittest.TestCase):
 
@@ -29,14 +28,12 @@ class WorkflowTasksTests(fit_common.unittest.TestCase):
             "properties": {}
         }
 
-    # @test(groups=['workflowTasks_api2.tests', 'api2_workflowTasks_get'])
     def test_workflowTasks__get(self):
         # """ Testing GET:/worflows/tasks"""
         WorkflowApi().workflows_get_all_tasks()
         self.assertEqual(200, self.__client.last_response.status)
         self.assertNotEqual(0, len(loads(self.__client.last_response.data)), msg='Workflow tasks list was empty!')
 
-    # @test(groups=['workflowTasks_library_put'], depends_on_groups=['workflowTasks_library_get'])
     @depends(after='test_workflowTasks__get')
     def test_workflowTasks_put(self):
         # """ Testing PUT:/workflowTasks """

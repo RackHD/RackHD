@@ -21,7 +21,6 @@ HTTP_NO_CONTENT = 204
 HTTP_NOT_FOUND = 404
 
 
-# @test(groups=['workflows_api2.tests'])
 @attr(regression=False, smoke=True, workflows_api2_tests=True)
 class WorkflowsTests(fit_common.unittest.TestCase):
 
@@ -53,7 +52,6 @@ class WorkflowsTests(fit_common.unittest.TestCase):
             ]
         }
 
-    # @test(groups=['delete_all_active_workflows_api2'])
     def test_delete_all_active_workflows(self):
         # """Testing node PUT:/nodes/identifier/workflows/action"""
         Api().nodes_get_all()
@@ -67,7 +65,6 @@ class WorkflowsTests(fit_common.unittest.TestCase):
                 except ApiException as err:
                     logs.warning(" Error: %s", err)
 
-    # @test(groups=['workflows_get_api2'], depends_on_groups=['delete_all_active_workflows_api2'])
     @depends(after='test_delete_all_active_workflows')
     def test_workflows_get(self):
         # """ Testing GET:/workflows"""
@@ -76,8 +73,6 @@ class WorkflowsTests(fit_common.unittest.TestCase):
         self.assertNotEqual(0, len(loads(self.__client.last_response.data)),
                             msg='Active workflows list was empty!')
 
-    # @test(groups=['workflows_post_api2'], depends_on_groups=['delete_all_active_workflows_api2'])
-    # @depends(after='test_delete_all_active_workflows')
     @depends(after='test_workflows_get')
     def test_workflows_post(self):
         # """Testing POST:/workflows"""
@@ -88,7 +83,6 @@ class WorkflowsTests(fit_common.unittest.TestCase):
         self.assertIsNotNone(instance_id)
         self.assertEqual('Graph.noop-example', str(rawj['definition'].get('injectableName')))
 
-    # @test(groups=['workflows_get_id_api2'], depends_on_groups=['workflows_get_api2'])
     @depends(after='test_workflows_get')
     def test_workflows_id_get(self):
         # """ Testing GET:/workflows/identifier"""
@@ -101,7 +95,6 @@ class WorkflowsTests(fit_common.unittest.TestCase):
         Api().workflows_get_by_instance_id(instance_id)
         self.assertEqual(200, self.__client.last_response.status)
 
-    # @test(groups=['workflows_get_id_api2'],depends_on_groups=['workflows_get_api2'])
     @depends(after='test_workflows_get')
     def test_negative_workflows_id_get(self):
         # """ Negative Testing GET:/workflows/identifier"""
@@ -113,7 +106,6 @@ class WorkflowsTests(fit_common.unittest.TestCase):
         except (TypeError, ValueError) as e:
             assert(e.message)
 
-    # @test(groups=['workflows_graphs_get_api2'])
     def test_workflows_graphs_get(self):
         # """Testing GET:/workflows/graphs"""
         Api().workflows_get_graphs()
@@ -123,7 +115,6 @@ class WorkflowsTests(fit_common.unittest.TestCase):
         self.assertNotEqual(0, len(loads(self.__client.last_response.data)),
                             msg='Workflows list was empty!')
 
-    # @test(groups=['workflows_graphs_put_api2'])
     def test_workflows_graphs_put(self):
         # """ Testing PUT:/workflows/graphs """
 
@@ -159,8 +150,6 @@ class WorkflowsTests(fit_common.unittest.TestCase):
 
         self.assertEqual(foundInsertedWorkflow, True)
 
-    # @test(groups=['workflows_graphs_get_by_name_api2'],
-    #       depends_on_groups=['workflows_graphs_put_api2'])
     @depends(after='test_workflows_graphs_put')
     def test_workflows_library_id_get(self):
         # """ Testing GET:/workflows/graphs/injectableName"""
@@ -169,8 +158,6 @@ class WorkflowsTests(fit_common.unittest.TestCase):
         rawj = loads(self.__client.last_response.data)
         self.assertEqual(self.workflowDict.get('friendlyName'), str(rawj[0].get('friendlyName')))
 
-    # @test(groups=['workflows_graphs_put_by_name_api2'],
-    #       depends_on_groups=['workflows_graphs_get_by_name_api2'])
     @depends(after='test_workflows_library_id_get')
     def test_workflows_graphs_name_put(self):
         # """Testing PUT:/workflows/graphs"""
@@ -184,8 +171,6 @@ class WorkflowsTests(fit_common.unittest.TestCase):
         rawj = loads(self.__client.last_response.data)
         self.assertEqual(self.workflowDict2.get('friendlyName'), str(rawj[0].get('friendlyName')))
 
-    # @test(groups=['workflows_graphs_delete_by_name_api2'],
-    #       depends_on_groups=['workflows_graphs_put_by_name_api2'])
     @depends(after='test_workflows_graphs_name_put')
     def test_workflows_graphs_delete(self):
         # """Testing DELETE:/workflows/graphs/injectableName"""
@@ -290,8 +275,6 @@ class WorkflowsTests(fit_common.unittest.TestCase):
         if 'failed' in self.__class__.__graph_status:
             self.fail('Failure running {}'.format(self.__class__.__graph_name))
 
-    # @test(groups=['node_workflows_post_api2'],
-    #        depends_on_groups=['workflows_graphs_put_api2', 'delete_all_active_workflows_api2'])
     @depends(after=['test_delete_all_active_workflows', 'test_workflows_graphs_delete'])
     def test_node_workflows_post(self):
         # """Testing POST:/nodes/id/workflows"""
