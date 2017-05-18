@@ -1,37 +1,34 @@
+"""
+Copyright (c) 2017 Dell Inc. or its subsidiaries. All Rights Reserved.
+
+"""
+import fit_path  # NOQA: unused import
+import fit_common
+import flogging
+
+
 from config.api2_0_config import config
-from config.amqp import *
-from modules.logger import Log
 from on_http_api2_0 import ApiApi as Api
-from on_http_api2_0 import rest
 from on_http_api2_0.rest import ApiException
-from proboscis.asserts import assert_equal
-from proboscis.asserts import assert_not_equal
-from proboscis import test
-from nodes_tests import NodesTests
-from json import loads
-from json import dumps
-from time import sleep
+from json import loads, dumps
 from modules.auth2_0 import Auth
-from proboscis import before_class
-from proboscis import after_class
-from proboscis.asserts import fail
+from nose.plugins.attrib import attr
+from nosedep import depends
+
+logs = flogging.get_loggers()
 
 
-LOG = Log(__name__)
+@attr(regression=False, smoke=False, users_api2_tests=True)
+class UsersTests(fit_common.unittest.TestCase):
 
-@test(groups=['users_api2.tests'], depends_on_groups=['obm.tests'])
-class UsersTests(object):
-
-    def __init__(self):
-        self.__client = config.api_client        
-
-    @before_class()
-    def setup(self):
+    @classmethod
+    def setUpClass(cls):
         """setup test environment"""
+        cls.__client = config.api_client
         Auth.enable()
 
-    @after_class(always_run=True)
-    def teardown(self):
+    @classmethod
+    def tearDownClass(cls):
         """ restore test environment """
         Auth.disable()
 
@@ -46,13 +43,31 @@ class UsersTests(object):
         config.api_client.host = config.host_authed
         config.api_client.call_api(resource_path, method, body=user)
         token_blob = loads(config.api_client.last_response.data)
-        LOG.info(token_blob, json=True)
+        logs.info(dumps(token_blob, indent=4))
         config.api_client.host = stored_resource_path
         return token_blob['token']
 
-    @test(groups=['users_api2.create_user'])
+    def test_users_start_clean(self):
+        # """ Clear out any test users from previous script runs """
+        # Note: A 'not found' error is expected and is ignored
+        try:
+            Api().remove_user(name='funtest-name')
+        except:
+            pass
+
+        Api().list_users()
+        users = self.__get_data()
+        logs.debug(dumps(users, indent=4))
+        found = False
+        for user in users:
+            if user.get('username') == 'funtest-name':
+                found = True
+                break
+        self.assertFalse(found, msg='Test user was not removed')
+
+    @depends(after=test_users_start_clean)
     def test_create_user(self):
-        """ Testing create new user  """
+        # """ Testing create new user  """
         newuser = {
             'username': 'funtest-name',
             'password': 'funtest123',
@@ -61,25 +76,24 @@ class UsersTests(object):
         Api().add_user(body=newuser)
         Api().list_users()
         users = self.__get_data()
-        LOG.debug(users,json=True)
+        logs.debug(dumps(users, indent=4))
         found = False
         for user in users:
-            if newuser.get('username') == user.get('username') :
-               found = True
-               assert_equal(newuser.get('role'), user.get('role'))
-        if not found:
-            fail(message='newly created user was not found')
+            if newuser.get('username') == user.get('username'):
+                self.assertEqual(newuser.get('role'), user.get('role'))
+                found = True
+                break
+        self.assertTrue(found, msg='newly created user was not found')
 
-    @test(groups=['users_api2.validate_admin_user'], depends_on_groups=['users_api2.create_user'])
+    @depends(after='test_create_user')
     def test_validate_user_privilege(self):
-        """ Testing validate admin privileges  """
+        # """ Testing validate admin privileges  """
         user = {
             'username': 'funtest-name',
             'password': 'funtest123'
         }
         Api().get_user('funtest-name')
-        found_user = self.__get_data()
-        LOG.info(user,json=True)
+        logs.info(dumps(user, indent=4))
         save_admin_token = config.api_client.default_headers['authorization']
         config.api_client.default_headers['authorization'] = 'JWT ' + self.get_auth_token(user)
         newuser = {
@@ -90,32 +104,31 @@ class UsersTests(object):
         Api().add_user(body=newuser)
         Api().list_users()
         users = self.__get_data()
-        LOG.debug(users,json=True)
+        logs.debug(dumps(users, indent=4))
         found = False
         for user in users:
-            if newuser.get('username') == user.get('username') :
-               found = True
-               assert_equal(newuser.get('role'), user.get('role'))
-        if not found:
-            fail(message='failed to create new user')
+            if newuser.get('username') == user.get('username'):
+                self.assertEqual(newuser.get('role'), user.get('role'))
+                found = True
+                break
+        self.assertTrue(found, msg='failed to create new user')
 
         Api().remove_user(name='funtest2-name')
         Api().list_users()
         users = self.__get_data()
-        LOG.debug(users,json=True)
+        logs.debug(dumps(users, indent=4))
         found = False
         for user in users:
-            if  user.get('username') == 'funtest2-name' :
-               found = True
-        if found:
-            fail(message='failed to remove new user')
-        #Restore config token
+            if user.get('username') == 'funtest2-name':
+                found = True
+                break
+        self.assertFalse(found, msg='failed to remove new user')
+        # Restore config token
         config.api_client.default_headers['authorization'] = save_admin_token
-        
 
-    @test(groups=['users_api2.modify_user'], depends_on_groups=['users_api2.validate_admin_user'])
+    @depends(after='test_validate_user_privilege')
     def test_modify_user(self):
-        """ Testing modifying user information  """
+        # """ Testing modifying user information  """
         newuser = {
             'password': 'funtest123',
             'role': 'ReadOnly'
@@ -123,25 +136,24 @@ class UsersTests(object):
         Api().modify_user(name='funtest-name', body=newuser)
         Api().list_users()
         users = self.__get_data()
-        LOG.debug(users,json=True)
+        logs.debug(dumps(users, indent=4))
         found = False
         for user in users:
-            if 'funtest-name' == user.get('username') :
-               found = True
-               assert_equal(newuser.get('role'), user.get('role'))
-        if not found:
-            fail(message='newly modified user was not found')
+            if 'funtest-name' == user.get('username'):
+                self.assertEqual(newuser.get('role'), user.get('role'))
+                found = True
+                break
+        self.assertTrue(found, msg='newly modified user was not found')
 
-    @test(groups=['users_api2.validate_readOnly_user'], depends_on_groups=['users_api2.modify_user'])
+    @depends(after='test_modify_user')
     def test_validate_user_readOnly(self):
-        """ Testing validate read Only privilege  """
+        # """ Testing validate read Only privilege  """
         user = {
             'username': 'funtest-name',
             'password': 'funtest123'
         }
         Api().get_user('funtest-name')
-        found_user = self.__get_data()
-        LOG.info(user,json=True)
+        logs.info(dumps(user, indent=4))
         save_admin_token = config.api_client.default_headers['authorization']
         config.api_client.default_headers['authorization'] = 'JWT ' + self.get_auth_token(user)
         newuser = {
@@ -149,30 +161,31 @@ class UsersTests(object):
             'password': 'funtest123',
             'role': 'Administrator'
         }
-        LOG.info('should fail to create user')
-        try :
+        logs.info('should fail to create user')
+        try:
             Api().add_user(body=newuser)
         except ApiException as e:
-            assert_equal(403, e.status)
-        LOG.info('should be able to display users list') 
+            self.assertEqual(403, e.status, msg='Expected 403 status, received {}'.format(e.status))
+
+        logs.info('should be able to display users list')
         Api().list_users()
         users = self.__get_data()
-        LOG.debug(users,json=True)
-        assert_not_equal(0,len(users))
-        #Restore config token
+        logs.debug(dumps(users, indent=4))
+        self.assertNotEqual(0, len(users))
+        # Restore config token
         config.api_client.default_headers['authorization'] = save_admin_token
-        
 
-    @test(groups=['users_api2.remove_user'], depends_on_groups=['users_api2.create_user', 'users_api2.validate_readOnly_user'])
+    # depends_on_groups=['users_api2.create_user', 'users_api2.validate_readOnly_user'])
+    @depends(after=['test_create_user', 'test_validate_user_readOnly'])
     def test_remove_user(self):
-        """ Testing DELETE user """
+        # """ Testing DELETE user """
         Api().remove_user(name='funtest-name')
         Api().list_users()
         users = self.__get_data()
-        LOG.debug(users,json=True)
+        logs.debug(dumps(users, indent=4))
         found = False
         for user in users:
-            if  user.get('username') == 'funtest-name' :
-               found = True
-        if found:
-            fail(message='newly created user was not removed')
+            if user.get('username') == 'funtest-name':
+                found = True
+                break
+        self.assertFalse(found, msg='newly created user was not removed')
