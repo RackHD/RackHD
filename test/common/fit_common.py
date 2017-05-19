@@ -336,6 +336,8 @@ def mkargs(in_args=None):
     arg_parser.add_argument("-sku", default="all",
                             help="node SKU name, example: Quanta-T41, default=all")
     group = arg_parser.add_mutually_exclusive_group(required=False)
+    group.add_argument("-nodeindex", default="all",
+                       help="node index, integer 0 or greater")
     group.add_argument("-obmmac", default="all",
                        help="node OBM MAC address, example:00:1e:67:b1:d5:64")
     group.add_argument("-nodeid", default="None",
@@ -867,8 +869,8 @@ def node_select():
             if str(fitargs()['sku']) in json.dumps(skuentry):
                 skuid = skuentry['id']
         # Collect node IDs
-        catalog = rackhdapi('/api/2.0/nodes')
-        if skumap['status'] != 200:
+        catalog = rackhdapi('/api/2.0/nodes?type=compute')
+        if catalog['status'] != 200:
             print '**** Unable to retrieve node list via API.\n'
             sys.exit(255)
         # Select node by SKU
@@ -889,6 +891,17 @@ def node_select():
                 if fitargs()["obmmac"] in json.dumps(nodeentry['json']):
                     nodelist = [member]
                     break
+        # select node by index number
+        if fitargs()["nodeindex"] != 'all':
+            idlist = sorted(nodelist)
+            nodelist = []
+            try:
+                idlist[int(fitargs()["nodeindex"])]
+            except:
+                print '**** Invalid node index ' + fitargs()["nodeindex"] + '.\n'
+                sys.exit(255)
+            else:
+                nodelist.append(idlist[int(fitargs()["nodeindex"])])
     if VERBOSITY >= 6:
         print "Node List:"
         print nodelist, '\n'
