@@ -94,11 +94,18 @@ def get_cred(service):
         return get_b64_cred(["BMC_USER", "BMC_PASS"])
     elif service == 'redfish':
         return get_b64_cred(["REDFISH_USER", "REDFISH_PASS"])
+    elif service == 'ucs':
+        return get_b64_cred(["UCS_USER", "UCS_PASS"])
     else:
         return None
 
 def get_bmc_cred():
     return get_cred('bmc')
+
+
+def get_ucs_cred():
+    return get_cred('ucs')
+
 
 # Initial cred file to log bmc password information if it doesn't exist
 if os.path.isfile(CRED_FILE) is False:
@@ -106,11 +113,15 @@ if os.path.isfile(CRED_FILE) is False:
     bmc_pass = getpass('BMC password: ')
     redfish_user = raw_input('Redfish username: ')
     redfish_pass = getpass('Redfish password: ')
+    ucs_user = raw_input('UCS username: ')
+    ucs_pass = getpass('UCS password: ')
     creds = {
-        "BMC_USER":bmc_user, 
-        "BMC_PASS":bmc_pass,
-        "REDFISH_USER":redfish_user, 
-        "REDFISH_PASS":redfish_pass
+        "BMC_USER": bmc_user,
+        "BMC_PASS": bmc_pass,
+        "REDFISH_USER": redfish_user,
+        "REDFISH_PASS": redfish_pass,
+        "UCS_USER": ucs_user,
+        "UCS_PASS": ucs_pass
     }
     set_b64_cred(creds)
     

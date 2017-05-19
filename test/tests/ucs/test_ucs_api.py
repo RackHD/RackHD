@@ -16,13 +16,13 @@ from common import fit_common
 from nosedep import depends
 import flogging
 from nose.plugins.attrib import attr
+from config.settings import get_ucs_cred
 
 logs = flogging.get_loggers()
 
 UCSM_IP = fit_common.fitcfg().get('ucsm_ip')
-UCSM_USER = fit_common.fitcfg().get('ucsm_user')
-UCSM_PASS = fit_common.fitcfg().get('ucsm_pass')
 UCS_SERVICE_URI = fit_common.fitcfg().get('ucs_service_uri')
+UCSM_USER, UCSM_PASS = get_ucs_cred()
 
 
 @attr(all=True, regression=True, smoke=True, ucs=True)
@@ -78,15 +78,13 @@ class ucs_api(unittest.TestCase):
         self.assertEqual(api_data['status'], 200,
                          'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
 
-        self.assertEqual(len(api_data["json"]["Fabric Interconnects"]), 2,
-                         "Expected 2 Fabric Interconnects but found {0}"
-                         .format(len(api_data["json"]["Fabric Interconnects"])))
-        self.assertEqual(len(api_data["json"]["Servers"]), 7, "Expected 7 Servers but found {0}"
-                         .format(len(api_data["json"]["Servers"])))
-        self.assertEqual(len(api_data["json"]["FEX"]), 2, "Expected 2 FEX but found {0}"
-                         .format(len(api_data["json"]["FEX"])))
-        self.assertEqual(len(api_data["json"]["Chassis"]), 4, "Expected 2 Chassis but found {0}"
-                         .format(len(api_data["json"]["Chassis"])))
+        self.assertIn("Fabric Interconnects", api_data["json"], "Results did not contain 'Fabric Interconnects'")
+
+        self.assertIn("Servers", api_data["json"], "Results did not contain 'Servers")
+
+        self.assertIn("FEX", api_data["json"], "Results did not contain 'FEX")
+
+        self.assertIn("Chassis", api_data["json"], "Results did not contain 'Chassis")
 
     @depends(after=test_check_ucs_params)
     def test_ucs_get_rackmount(self):
@@ -98,8 +96,7 @@ class ucs_api(unittest.TestCase):
         api_data = fit_common.restful(url, rest_headers=headers)
         self.assertEqual(api_data['status'], 200,
                          'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
-        self.assertEqual(len(api_data["json"]), 7, "Expected 7 Rackmounts but found {0}".
-                                format(len(api_data["json"])))
+        self.assertGreater(len(api_data["json"]), 0, "Found zero Rackmounts")
         # TO DO more in depth testing for the returned content such as mac validation, etc...
 
     @depends(after=test_check_ucs_params)
@@ -112,8 +109,9 @@ class ucs_api(unittest.TestCase):
         api_data = fit_common.restful(url, rest_headers=headers)
         self.assertEqual(api_data['status'], 200,
                          'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
-        self.assertEqual(len(api_data["json"]), 4, "Expected 4 chassis but found {0}".
-                                format(len(api_data["json"])))
+
+        self.assertGreater(len(api_data["json"]), 0, "Zero chassis elements found")
+
         # TO DO more in depth testing for the returned content such as mac validation, etc...
 
     @depends(after=test_ucs_get_chassis)
@@ -126,9 +124,9 @@ class ucs_api(unittest.TestCase):
         api_data = fit_common.restful(url, rest_headers=headers)
         self.assertEqual(api_data['status'], 200,
                          'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
-        self.assertEqual(len(api_data["json"]["ServiceProfile"]["members"]), 18,
-                         "Expected 18 chassis or more but found {0}"
-                         .format(len(api_data["json"]["ServiceProfile"]["members"])))
+        if len(api_data["json"]["ServiceProfile"]["members"]) == 0:
+            raise unittest.SkipTest("No Service Profiles Defined")
+
         # TO DO more in depth testing for the returned content such as mac validation, etc...
 
     @depends(after=test_check_ucs_params)
@@ -149,8 +147,8 @@ class ucs_api(unittest.TestCase):
                 self.assertEqual(api_data_c['status'], 200,
                                  'Incorrect HTTP return code, expected 200, got:' + str(api_data_c['status']))
                 total_elements += 1
-        self.assertEqual(total_elements, 15, "Expected 15 elements but found {0}"
-                                .format(total_elements))
+
+        self.assertGreater(total_elements, 0, "Zero catalog elements found")
         # TO DO: deeper check on the catalog data
 
     def check_all_server_power_state(self, state):
@@ -165,16 +163,16 @@ class ucs_api(unittest.TestCase):
                          'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
         total_elements = 0
         for server in api_data["json"]["ServiceProfile"]["members"]:
-            url, headers = self.ucs_url_factory("power", identifier=str(server["path"]))
-            api_data_c = fit_common.restful(url, rest_headers=headers)
-            self.assertEqual(api_data_c['status'], 200,
-                             'Incorrect HTTP return code, expected 200, got:' + str(api_data_c['status']))
-            self.assertEqual(api_data_c["json"]["serverState"], state,
-                             'Server ' + str(server["path"]) + ' reported power state ' +
-                             str(api_data_c["json"]["serverState"]) + ' expected: ' + state)
+            if server["assoc_state"] == "associated":
+                url, headers = self.ucs_url_factory("power", identifier=str(server["path"]))
+                api_data_c = fit_common.restful(url, rest_headers=headers)
+                self.assertEqual(api_data_c['status'], 200,
+                                 'Incorrect HTTP return code, expected 200, got:' + str(api_data_c['status']))
+                self.assertEqual(api_data_c["json"]["serverState"], state,
+                                 'Server ' + str(server["path"]) + ' reported power state ' +
+                                 str(api_data_c["json"]["serverState"]) + ' expected: ' + state)
             total_elements += 1
-        self.assertEqual(total_elements, 18, "Expected 18 elements but found {0}"
-                         .format(total_elements))
+        self.assertGreater(total_elements, 0, "Found zero elements")
 
     def set_all_server_power_state(self, state):
         """
@@ -188,15 +186,15 @@ class ucs_api(unittest.TestCase):
                          'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
         total_elements = 0
         for server in api_data["json"]["ServiceProfile"]["members"]:
-            url, headers = self.ucs_url_factory("power", identifier=str(server["path"]))
-            api_data_c = fit_common.restful(url + "&action=" + state, rest_headers=headers, rest_action='post')
-            self.assertEqual(api_data_c['status'], 200,
-                             'Incorrect HTTP return code, expected 200, got:' + str(api_data_c['status']))
+            if server["assoc_state"] == "associated":
+                url, headers = self.ucs_url_factory("power", identifier=str(server["path"]))
+                api_data_c = fit_common.restful(url + "&action=" + state, rest_headers=headers, rest_action='post')
+                self.assertEqual(api_data_c['status'], 200,
+                                 'Incorrect HTTP return code, expected 200, got:' + str(api_data_c['status']))
             total_elements += 1
-        self.assertEqual(total_elements, 18, "Expected 18 elements but found {0}"
-                         .format(total_elements))
+        self.assertGreater(total_elements, 0, "Found zero elements")
 
-    @depends(after=test_check_ucs_params)
+    @depends(after=test_ucs_get_serviceProfile)
     def test_api_20_ucs_power(self):
         """
         Test the GET and POST api for server power state
