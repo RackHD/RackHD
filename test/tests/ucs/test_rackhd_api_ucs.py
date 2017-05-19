@@ -17,14 +17,14 @@ import time
 from nosedep import depends
 import flogging
 from nose.plugins.attrib import attr
+from config.settings import get_ucs_cred
 
 logs = flogging.get_loggers()
 
 INITIAL_NODES = {}
 INITIAL_OBMS = {}
 UCSM_IP = fit_common.fitcfg().get('ucsm_ip')
-UCSM_USER = fit_common.fitcfg().get('ucsm_user')
-UCSM_PASS = fit_common.fitcfg().get('ucsm_pass')
+UCSM_USER, UCSM_PASS = get_ucs_cred()
 UCS_SERVICE_URI = fit_common.fitcfg().get('ucs_service_uri')
 
 

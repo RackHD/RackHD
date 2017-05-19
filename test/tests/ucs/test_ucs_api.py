@@ -16,13 +16,13 @@ from common import fit_common
 from nosedep import depends
 import flogging
 from nose.plugins.attrib import attr
+from config.settings import get_ucs_cred
 
 logs = flogging.get_loggers()
 
 UCSM_IP = fit_common.fitcfg().get('ucsm_ip')
-UCSM_USER = fit_common.fitcfg().get('ucsm_user')
-UCSM_PASS = fit_common.fitcfg().get('ucsm_pass')
 UCS_SERVICE_URI = fit_common.fitcfg().get('ucs_service_uri')
+UCSM_USER, UCSM_PASS = get_ucs_cred()
 
 
 @attr(all=True, regression=True, smoke=True, ucs=True)
