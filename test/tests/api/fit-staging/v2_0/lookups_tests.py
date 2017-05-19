@@ -1,71 +1,73 @@
-from config.api2_0_config import config as config_new
+'''
+Copyright (c) 2016-2017 Dell Inc. or its subsidiaries. All Rights Reserved.
+'''
+import fit_path  # NOQA: unused import
+import fit_common
+import flogging
+
+from config.api2_0_config import config
 from on_http_api2_0 import ApiApi as Api
 from on_http_api2_0.rest import ApiException
-from modules.logger import Log
-from proboscis.asserts import assert_equal
-from proboscis.asserts import assert_not_equal
-from proboscis.asserts import assert_false
-from proboscis.asserts import assert_raises
-from proboscis.asserts import assert_true
-from proboscis.asserts import assert_is_not_none
-from proboscis import SkipTest
-from proboscis import test
-from json import dumps, loads
+from json import loads, dumps
+from nosedep import depends
+from nose.plugins.attrib import attr
 
-LOG = Log(__name__)
+logs = flogging.get_loggers()
 
-@test(groups=['lookups_api2.tests'])
-class LookupsTests(object):
 
-    def __init__(self):
-        self.__client = config_new.api_client
-        self.lookup =   {
-                            "ipAddress": "11.11.11.11",
-                            "macAddress": "ae:aa:aa:aa:aa:aa",
-                            "node":"456"
-                        }
-        self.id = ""
-        self.patchedNode= {"node": "666" }
+@attr(regression=False, smoke=True, lookups_api2_tests=True)
+class LookupsTests(fit_common.unittest.TestCase):
 
-    @test(groups=['lookups_api2.tests', 'api2_check-lookups'], depends_on_groups=['obm_api2.tests'])
-    def check_lookups(self):
-        """ Testing GET:/lookups """
+    # Tests within this script use the same created lookup id for testing
+    # if updated within a test, use self.__class__.var
+    @classmethod
+    def setUpClass(cls):
+        cls.__client = config.api_client
+        cls.lookup = {
+            "ipAddress": "11.11.11.11",
+            "macAddress": "ae:aa:aa:aa:aa:aa",
+            "node": "456"
+        }
+        cls.id = ""
+        cls.patchedNode = {"node": "666"}
+
+    def test_check_lookups(self):
+        # """ Testing GET:/lookups """
         Api().lookups_get()
         rsp = self.__client.last_response
-        LOG.info("\nLookup list: {}\n".format(rsp.data, json=True))
-        assert_equal(200, rsp.status, message=rsp.reason)
-        assert_not_equal(0, len(rsp.data))
+        logs.debug("Lookup list: %s", dumps(rsp.data, indent=4))
+        self.assertEqual(200, rsp.status, msg=rsp.reason)
+        self.assertNotEqual(0, len(rsp.data))
 
-    @test(groups=['api2_check-lookups-query'], depends_on_groups=['api2_check-lookups'])
-    def check_lookups_query(self):
-        """ Testing GET:/lookups?q=term """
+    def test_check_lookups_query(self):
+        # """ Testing GET:/lookups?q=term """
         Api().nodes_get_all()
         nodes = loads(self.__client.last_response.data)
-        assert_not_equal(0, len(nodes), message='Node list was empty!')
+        self.assertNotEqual(0, len(nodes), msg='Node list was empty!')
         Api().obms_get()
         obms = loads(self.__client.last_response.data)
-        LOG.info("OBM get data: {}".format(obms, json=True))
+        logs.debug("OBM get data: %s", dumps(obms, indent=4))
         hosts = []
         for o in obms:
             hosts.append(o.get('config').get('host'))
-        assert_not_equal(0, len(hosts), message='No OBM hosts were found!')
-        LOG.info("Hosts {}".format(hosts, json=True))
+        self.assertNotEqual(0, len(hosts), msg='No OBM hosts were found!')
+        logs.debug("Hosts: %s", dumps(hosts, indent=4))
         for host in hosts:
-            LOG.info("Looking up host: {}".format(host))
+            logs.debug("Looking up host: %s", host)
             Api().lookups_get(q=host)
             rsp = self.__client.last_response
-            assert_equal(200, rsp.status, message=rsp.reason)
-            assert_not_equal(0, len(rsp.data))
+            self.assertEqual(200, rsp.status, msg=rsp.reason)
+            self.assertNotEqual(0, len(rsp.data))
 
-    @test(groups=['api2_check-lookup-id'],depends_on_groups=['api2_check-lookups-query'])
-    def check_lookup_id(self):
-        """ Testing GET:/lookups/:id """
+    @depends(after='test_check_lookups_query')
+    def test_check_lookup_id(self):
+        # """ Testing GET:/lookups/:id """
         Api().nodes_get_all()
         nodes = loads(self.__client.last_response.data)
-        assert_not_equal(0, len(nodes), message='Node list was empty!')
+        self.assertNotEqual(0, len(nodes), msg='Node list was empty!')
         Api().obms_get()
         obms = loads(self.__client.last_response.data)
-        assert_not_equal(0, len(obms), message='No OBM settings found!')
+        self.assertNotEqual(0, len(obms), msg='No OBM settings found!')
         entries = []
         for obm in obms:
             host = obm.get('config').get('host')
@@ -73,81 +75,85 @@ class LookupsTests(object):
             list = loads(self.__client.last_response.data)
             entries.append(list)
 
-        assert_not_equal(0, len(entries), message='No lookup entries found!')
+        self.assertNotEqual(0, len(entries), msg='No lookup entries found!')
         for entry in entries:
             for id in entry:
                 Api().lookups_get_by_id(id.get('id'))
                 rsp = self.__client.last_response
-                assert_equal(200, rsp.status, message=rsp.reason)
+                self.assertEqual(200, rsp.status, msg=rsp.reason)
 
-    @test(groups=['api2_check-post-lookup'],depends_on_groups=['api2_check-lookups-query'])
-    def post_lookup(self):
-        """ Testing POST /"""
+    @depends(after='test_check_lookup_id')
+    def test_post_lookup(self):
+        # """ Testing POST /"""
 
-        #Validate that the lookup has not been posted from a previous test
+        # Validate that the lookup has not been posted from a previous test
         Api().lookups_get(q=self.lookup.get("macAddress"))
         rsp = loads(self.__client.last_response.data)
-        listLen =len(rsp)
-        for i, val in enumerate (rsp):
-            if ( self.lookup.get("macAddress") ==  str (rsp[i].get('macAddress'))  ):
-                    LOG.info("Deleting the lookup with the same info before we post again")
-                    deleteID= str (rsp[i].get('id'))
+        for i, val in enumerate(rsp):
+            if self.lookup.get("macAddress") == str(rsp[i].get('macAddress')):
+                    deleteID = str(rsp[i].get('id'))
+                    logs.info(" Deleting the lookup with the same info before we post again, ID: %s", deleteID)
                     Api().lookups_del_by_id(deleteID)
 
-
-        #Add a lookup
+        # Add a lookup
         Api().lookups_post(self.lookup)
         rsp = self.__client.last_response
-        assert_equal(201, rsp.status, message=rsp.reason)
-        self.id = str (loads(rsp.data).get('id'))
-        LOG.info("ID is "+ self.id)
+        self.assertEqual(201, rsp.status, msg=rsp.reason)
+        self.id = str(loads(rsp.data).get('id'))
+        logs.debug("ID is %s", self.id)
 
-        #Validate the content
+        # other tests depend on the value
+        self.__class__.id = self.id
+        logs.info(" The lookup ID from post: %s", self.id)
+
+        # Validate the content
         Api().lookups_get(q=self.lookup.get("macAddress"))
         rsp = loads(self.__client.last_response.data)
-        assert_equal(str(rsp[0].get("ipAddress")),str(self.lookup.get("ipAddress")))
-        assert_equal(str(rsp[0].get("macAddress")),str(self.lookup.get("macAddress")))
-        assert_equal(str(rsp[0].get("node")),str(self.lookup.get("node")))
+        self.assertEqual(str(rsp[0].get("ipAddress")), str(self.lookup.get("ipAddress")))
+        self.assertEqual(str(rsp[0].get("macAddress")), str(self.lookup.get("macAddress")))
+        self.assertEqual(str(rsp[0].get("node")), str(self.lookup.get("node")))
 
-    @test(groups=['api2_check-post-lookup-negativeTesting'],depends_on_groups=['api2_check-lookups-query','api2_check-post-lookup'])
-    def post_lookup_negativeTesting(self):
-        """ Negative Testing POST / """
-        #Validate that a POST for a lookup with same id as an existing one gets rejected
+    @depends(after='test_post_lookup')
+    def test_post_lookup_negativeTesting(self):
+        # """ Negative Testing POST / """
+        # Validate that a POST for a lookup with same id as an existing one gets rejected
+        logs.info(" The lookup ID to be re-posted is %s", self.id)
         try:
             Api().lookups_post(self.lookup)
         except ApiException as e:
-           assert_equal(400, e.status, message = 'status should be 400')
+            self.assertEqual(400, e.status, msg='Expected 400 status, received {}'.format(e.status))
         except (TypeError, ValueError) as e:
-           assert(e.message)
+            assert(e.message)
 
-    @test(groups=['api2_check-patch-lookup'],depends_on_groups=['api2_check-lookups-query','api2_check-post-lookup','api2_check-post-lookup-negativeTesting'])
-    def patch_lookup(self):
-        """ Testing PATCH /:id"""
+    @depends(after='test_post_lookup')
+    def test_patch_lookup(self):
+        # """ Testing PATCH /:id"""
+        logs.info(" The lookup ID to be patched is %s", self.id)
         Api().lookups_patch_by_id(self.id, self.patchedNode)
 
-        #validate that the node element has been updated
+        # validate that the node element has been updated
         Api().lookups_get(q=self.lookup.get("macAddress"))
         rsp = loads(self.__client.last_response.data)
-        assert_equal(str(rsp[0].get("node")),self.patchedNode.get("node") )
+        self.assertEqual(str(rsp[0].get("node")), self.patchedNode.get("node"))
 
-    @test(groups=['check-delete-lookup'], depends_on_groups=['api2_check-lookups-query','api2_check-post-lookup','api2_check-patch-lookup'])
-    def delete_lookup(self):
-        """ Testing DELETE /:id """
-        #Validate that the lookup is there before it is deleted
+    @depends(after='test_patch_lookup')
+    def test_delete_lookup(self):
+        # """ Testing DELETE /:id """
+        # Validate that the lookup is there before it is deleted
         Api().lookups_get_by_id(self.id)
         rsp = self.__client.last_response
-        assert_equal(200, rsp.status, message=rsp.reason)
+        self.assertEqual(200, rsp.status, msg=rsp.reason)
 
-        #delete the lookup
-        LOG.info("The lookup ID to be deleted is "+ self.id)
+        # delete the lookup
+        logs.info(" The lookup ID to be deleted is %s", self.id)
         Api().lookups_del_by_id(self.id)
         rsp = self.__client.last_response
-        assert_equal(204, rsp.status, message=rsp.reason)
+        self.assertEqual(204, rsp.status, msg=rsp.reason)
 
-        #Validate that the lookup has been deleted and the returned value is an empty list
+        # Validate that the lookup has been deleted and the returned value is an empty list
         try:
             Api().lookups_get_by_id(self.id)
         except ApiException as e:
-           assert_equal(404, e.status, message = 'status should be 404')
+            self.assertEqual(404, e.status, msg='Expected 404 status, received {}'.format(e.status))
         except (TypeError, ValueError) as e:
-           assert(e.message)
+            assert(e.message)
