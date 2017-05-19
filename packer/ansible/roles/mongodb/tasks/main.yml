@@ -6,19 +6,12 @@
   sudo: yes
   when: ansible_distribution == 'Ubuntu' and ansible_distribution_version == '14.02'
 
-- name: Install MongoDB 2.6.10
-  apt: pkg={{ item }} state=installed
-  with_items:
-    - mongodb=1:2.6.10-0ubuntu2
-  sudo: yes
-  when: ansible_distribution == 'Ubuntu' and ansible_distribution_version == '16.04'
-
-- name: Install MongoDB 2.6.10
+- name: Install MongoDB Default
   apt: pkg={{ item }} state=installed
   with_items:
     - mongodb
   sudo: yes
-  when: ansible_distribution != 'Ubuntu'
+  when: ansible_distribution != 'Ubuntu' or ansible_distribution_version != '14.02'
 
 - name: Copy mongodb config file to home directory
   copy: src=mongodb.conf dest=/etc
