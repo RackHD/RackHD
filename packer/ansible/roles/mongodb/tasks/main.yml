@@ -2,5 +2,9 @@
 - name: Install MongoDB
   apt: pkg={{ item }} state=installed
   with_items:
-    - mongodb
+    - mongodb=1:2.4.9-1ubuntu2
+  sudo: yes
+
+- name: Copy mongodb config file to home directory
+  copy: src=mongodb.conf dest=/etc
   sudo: yes
