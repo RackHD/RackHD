@@ -1,56 +1,67 @@
-from config.api2_0_config import *
+"""
+Copyright (c) 2016-2017 Dell Inc. or its subsidiaries. All Rights Reserved.
+"""
+import fit_path  # NOQA: unused import
+import flogging
+
+from config.api2_0_config import config, get_bmc_cred
 from on_http_api2_0 import ApiApi as Api
-from on_http_api2_0 import rest
-from modules.logger import Log
-from json import dumps, loads
+from on_http_api2_0.rest import ApiException
+from json import loads
 
-LOG = Log(__name__)
+logs = flogging.get_loggers()
 
-"""
-Class to abstract the RackHD Out-of-Band settings 
-"""
+
 class obmSettings(object):
+    """
+    Class to abstract the RackHD Out-of-Band settings
+    """
+
     def __init__(self, *args, **kwargs):
         self.__client = config.api_client
 
     def _set_snmp(self, uid):
-        LOG.warning('_set_snmp() is currently a no-op function')
+        logs.warning('_set_snmp() is currently a no-op function')
         return True
 
     def _set_ipmi(self, uid):
         user, passwd = get_bmc_cred()
         mac = None
-        Api().nodes_get_catalog_source_by_id(uid,'bmc')
+        Api().nodes_get_catalog_source_by_id(uid, 'bmc')
         rsp = self.__client.last_response
         bmc = loads(rsp.data)
         if 'data' in bmc:
             mac = bmc['data'].get('MAC Address')
         else:
-            Api().nodes_get_catalog_source_by_id(uid,'rmm')
+            Api().nodes_get_catalog_source_by_id(uid, 'rmm')
             rsp = self.__client.last_response
             rmm = loads(rsp.data)
             if 'data' in rmm:
                 mac = bmc['data'].get('MAC Address')
         if mac is not None:
-            LOG.debug('BMC MAC {0} for {1}'.format(mac,uid))
+            logs.debug('BMC MAC %s for %s', mac, uid)
+            logs.debug('BMC user %s passowd %s', user, passwd)
             setting = {
                 'nodeId': uid,
-                'service':'ipmi-obm-service',
+                'service': 'ipmi-obm-service',
                 'config': {
-                    'user':user,
-                    'password':passwd,
+                    'user': user,
+                    'password': passwd,
                     'host': mac
                 }
             }
-            LOG.info('Creating ipmi obm-settings for node {0} \n {1}'.format(uid,setting))
+            logs.info('Creating ipmi obm-settings for node %s : %s', uid, setting)
             try:
                 Api().obms_put(setting)
-            except rest.ApiException as e:
-                LOG.error(e)
+                rsp = self.__client.last_response
+                logs.debug(" IPMI OBM Set response %s", str(rsp.status))
+            except ApiException as e:
+                logs.error(e)
                 return False
         else:
-            LOG.error('Error finding configurable IPMI MAC address for {0}'.format(uid))
+            logs.error('Error finding configurable IPMI MAC address for %s', uid)
             return False
+        return True
 
     def setup_nodes(self, service_type, uuid=None):
         err = []
@@ -62,18 +73,18 @@ class obmSettings(object):
             if uuid is None or uuid == uid:
                     if service_type == 'ipmi-obm-service' and node_type == 'compute':
                         if len(self.check_nodes('ipmi-obm-service', uuid=uuid)) > 0:
-                            if self._set_ipmi(uid) == False:
+                            if not self._set_ipmi(uid):
                                 err.append('Error setting IPMI OBM settings for node {0}'.format(uid))
                             else:
-                                LOG.info('Setting IPMI OBM settings successful')
-                    if service_type == 'snmp-obm-service' and node_type != 'enclosure':
+                                logs.info('Setting IPMI OBM settings successful')
+                    if service_type == 'snmp-obm-service' and node_type != 'enclosure' and node_type != 'compute':
                         if len(self.check_nodes('snmp-obm-service', uuid=uuid)) > 0:
-                            if self._set_snmp(uid) == False:
+                            if not self._set_snmp(uid):
                                 err.append('Error setting SNMP OBM settings for node {0}'.format(uid))
                             else:
-                                LOG.info('Setting SNMP OBM settings successful')
+                                logs.info('Setting SNMP OBM settings successful')
         for e in err:
-            LOG.error(e)
+            logs.error(e)
         return err
 
     def check_nodes(self, service_type, uuid=None):
@@ -84,7 +95,8 @@ class obmSettings(object):
             node_type = n.get('type')
             uid = n.get('id')
             if uuid is None or uuid == uid:
-                if node_type not in ['enclosure', 'switch', 'pdu']:
+                if node_type != 'enclosure':
+                    logs.info("Checking node: %s type %s", uid, node_type)
                     obm_obj = []
                     Api().obms_get()
                     all_obms = loads(self.__client.last_response.data)
@@ -92,15 +104,22 @@ class obmSettings(object):
                         node_ref = obm.get('node')
                         if node_ref == uid or node_ref.split('/')[-1] == uid:
                             obm_obj.append(obm)
-                    if (obm_obj is None) or (obm_obj is not None and len(obm_obj)== 0):
-                        LOG.warning('No OBM settings for node type {0} (id={1})'.format(node_type,uid))
-                        retval.append(False)
+                    if (obm_obj is None) or (obm_obj is not None and len(obm_obj) == 0):
+                        # need to check if the failure is real depending on the node type
+                        if service_type == 'snmp-obm-service' and node_type in ['switch', 'pdu']:
+                            logs.warning('snmp-obm-service - No OBM settings for node type %s (id=%s)', node_type, uid)
+                            retval.append(False)
+                        elif service_type == 'ipmi-obm-service' and node_type == 'compute':
+                            logs.warning('ipmi-obm-service - No OBM settings for node type %s (id=%s)', node_type, uid)
+                            retval.append(False)
                     else:
                         for obm in obm_obj:
                             service = obm.get('service')
                             if service_type not in service:
-                                LOG.warning('No OBM service type {0} (id={1})'.format(service_type,uid))
-                                retval.append(False)
+                                if service_type == 'snmp-obm-service' and node_type in ['switch', 'pdu']:
+                                    logs.warning('No OBM service type %s (id=%s, type=%s)', service_type, uid, node_type)
+                                    retval.append(False)
+                                elif service_type == 'ipmi-obm-service' and node_type in ['compute']:
+                                    logs.warning('No OBM service type %s (id=%s, type=%s)', service_type, uid, node_type)
+                                    retval.append(False)
         return retval
-
-
