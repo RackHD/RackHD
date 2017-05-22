@@ -158,6 +158,12 @@ services:
     volumes:
       - "./monorail:/opt/monorail"
 
+  ucs-service: # 7080
+    build: "../ucs-service"
+    image: rackhd/ucs-service:${TAG}
+    network_mode: "host"
+    privileged: true
+
   # ELK services
 
   elasticsearch: # 9200, 9300
