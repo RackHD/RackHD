@@ -61,23 +61,23 @@ if config:
 
 # this routine polls a workflow task ID for completion
 def wait_for_workflow_complete(instanceid, start_time, waittime=3200, cycle=30):
-    log.info_5(" Workflow started at time: " + str(start_time))
+    log.info_5(" Workflow started at time: %s ", str(start_time))
     while time.time() - start_time < waittime:  # limit test to waittime seconds
         result = fit_common.rackhdapi("/api/2.0/workflows/" + instanceid)
         if result['status'] != 200:
-            log.error(" HTTP error: " + result['text'])
+            log.error(" HTTP error: %s ", result['text'])
             return False
         if result['json']['status'] in ['running', 'pending']:
             log.info_5("{} workflow status: {}".format(result['json']['injectableName'], result['json']['status']))
             fit_common.time.sleep(cycle)
         elif result['json']['status'] == 'succeeded':
             log.info_5("{} workflow status: {}".format(result['json']['injectableName'], result['json']['status']))
-            log.info_5(" Workflow completed at time: " + str(time.time()))
+            log.info_5(" Workflow completed at time: %s ", str(time.time()))
             return True
         else:
             log.error(" Workflow failed: status: %s text: %s", result['json']['status'], result['text'])
             return False
-    log.error(" Workflow Timeout: " + result['text'])
+    log.error(" Workflow Timeout: %s ", result['text'])
     return False
 
 
@@ -99,9 +99,9 @@ class api20_bootstrap_windows(fit_common.unittest.TestCase):
         # Log node data
         nodeinfo = fit_common.rackhdapi('/api/2.0/nodes/' + self.__class__.__NODE)['json']
         nodesku = fit_common.rackhdapi(nodeinfo.get('sku'))['json']['name']
-        log.info_5(" Node ID: " + self.__class__.__NODE)
-        log.info_5(" Node SKU: " + nodesku)
-        log.info_5(" Graph Name: " + PAYLOAD['name'])
+        log.info_5(" Node ID: %s ", self.__class__.__NODE)
+        log.info_5(" Node SKU: %s ", nodesku)
+        log.info_5(" Graph Name: %s ", PAYLOAD['name'])
 
         # Ensure the compute node is powered on and reachable
         result = fit_common.rackhdapi('/api/2.0/nodes/' +
@@ -122,15 +122,15 @@ class api20_bootstrap_windows(fit_common.unittest.TestCase):
                                       action='post', payload=PAYLOAD)
         if result['status'] == 201:
             # workflow running
-            log.info_5(" InstanceID: " + result['json']['instanceId'])
-            log.info_5(" Payload: " + fit_common.json.dumps(PAYLOAD))
+            log.info_5(" InstanceID: %s ", result['json']['instanceId'])
+            log.info_5(" Payload: %s ", fit_common.json.dumps(PAYLOAD))
             workflowid = result['json']['instanceId']
         else:
             # workflow failed with response code
-            log.error(" InstanceID: " + result['text'])
-            log.error(" Payload: " + fit_common.json.dumps(PAYLOAD))
+            log.error(" InstanceID: %s ", result['text'])
+            log.error(" Payload: %s ", fit_common.json.dumps(PAYLOAD))
             self.fail("Workflow failed with response code: " + result['status'])
-        self.assertTrue(wait_for_workflow_complete(workflowid, time.time()), "OS Install workflow failed, see logs.")
+        self.assertTrue(wait_for_workflow_complete(workflowid, time.time()), "Windows OS Install workflow failed, see logs.")
 
 
 if __name__ == '__main__':
