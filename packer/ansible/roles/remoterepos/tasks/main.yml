@@ -1,5 +1,5 @@
 ---
-# This role supports developers who want to pull code from one or more repositories that are forked into their github organization.
+# This role supports developers who want to pull code from one or more repositories forked into their github organization.
 # A developer does not have to fork all of the repos, just the one they want to work on.  
 # It will check if the repo exists in the passed in organization first, and if not found, will pull it from github.com/rackhd
 #
@@ -41,26 +41,33 @@
        version="{{ branch_for_rackhd_repo | default('master') }}"
        recursive=false  
 
-# Clone down the "Dependent" repos
+# Clone down the "dependent" repos
 # NOTE: a developer might have cloned only one or more repos in the specified repo
 # so we fallback to the "rackhd" organization if they do not exist
 
 - name: Create a repo list that we want to pull source from
   set_fact:
     repos:
-    - 'on-http'
-    - 'on-tftp'
+    - 'on-core'
     - 'on-dhcp-proxy'
-    - 'on-taskgraph'
+    - 'on-http'
+    - 'on-imagebuilder'
+    - 'on-statsd'
     - 'on-syslog'
-    - 'on-wss'
+    - 'on-taskgraph'
+    - 'on-tasks'
+    - 'on-tftp'
     - 'on-tools'
+    - 'on-wss'
     - 'ucs-service'
 
 
 # Determine if the repo exists in the organization specified, fallback to rackhd
 # Also determine the branch exists in the organization specified, fallback to master
-# pull down the source for the orgainzation and branch specified
+
+- name: Make a dictionary of repo, organization, and branch
+  set_fact: 
+    repo_branch_organization_dictionary: "{{ repo_branch_organization_dictionary | default([]) }}" 
 
 - name: Determine if the repo exists in the {{ organization | default('rackhd') }} organization
   shell: GIT_ASKPASS=true git ls-remote http://github.com/{{ organization | default('rackhd') }}/{{ item }} HEAD --exit-code --quiet
@@ -72,7 +79,7 @@
 
 - name: Build list of repos that were found/forked in the {{ organization | default('rackhd') }} organization
   set_fact:
-    repos_found_in_organization: "{{ r.results | selectattr('rc','equalto',0) | map(attribute='item') | list }}"
+    repos_found_in_organization: "{{ r.results | selectattr('rc','equalto',0) | map(attribute='item') | list }}"    
 - debug:
     msg: "{{ repos_found_in_organization }}"
 
@@ -87,26 +94,16 @@
     msg: "{{ repos_found_in_organization_with_branch_stdout }}"
 
 
-- name: Make a dictionary of branch names and repos to use
+- name: Populate dictionary with found repo info
   set_fact:
-    repo_branch_dictionary_for_repos_found_in_organization: "{{ repo_branch_dictionary_for_repos_found_in_organization | default([]) + [{'repo': item.item, 'branch': item.stdout }] }}"
+    repo_branch_organization_dictionary: "{{ repo_branch_organization_dictionary | default([]) + [{'repo': item.item, 'organization': organization | default('rackhd'), 'branch': item.stdout }] }}"
   with_items: "{{ repos_found_in_organization_with_branch_stdout.results }}"
 - debug:
-    msg: "{{repo_branch_dictionary_for_repos_found_in_organization}}"
-
-
-- name: Clone the dependent repos from the {{ organization | default('rackhd') }} organization
-  git: repo=https://github.com/{{ organization | default ('rackhd') }}/{{ item.repo }}
-       dest="{{ ansible_env.HOME }}/src/{{ item.repo }}"
-       accept_hostkey=true
-       version="{{item.branch}}"
-  with_items: "{{ repo_branch_dictionary_for_repos_found_in_organization }}"
-  when: "{{ repos_found_in_organization | count }} > 0"
+    msg: "{{repo_branch_organization_dictionary}}"
 
 
 # For repos that were NOT forked into the organization
 # Also determine the branch exists in the organization specified, fallback to master
-# pull down the source for the orgainzation and branch specified
 
 - name: Build list of repos that were NOT found/forked in the {{ organization | default('rackhd') }} organization
   set_fact:
@@ -124,26 +121,24 @@
     msg: "{{ repos_not_found_in_organization_with_branch_stdout }}"
  
 
-- name: Make a dictionary of branch names and repos to use
+- name: Make a dictionary of branch names and repos to use from repos not found in organization
   set_fact:
-    repo_branch_dictionary_for_repos_not_found_in_organization: "{{ repo_branch_dictionary_for_repos_not_found_in_organization | default([]) + [{'repo': item.item, 'branch': item.stdout }] }}"
+    repo_branch_organization_dictionary: "{{ repo_branch_organization_dictionary | default([]) + [{'repo': item.item, 'organization': 'rackhd', 'branch': item.stdout }] }}"
   with_items: "{{ repos_not_found_in_organization_with_branch_stdout.results }}"
 - debug:
-    msg: "{{ repos_not_found_in_organization }}"
+    msg: "{{ repo_branch_organization_dictionary }}"
 
 
-- name: Clone the dependent repos from the rackhd organization
-  git: repo=https://github.com/rackhd/{{ item.repo }}
+# Use the dictionary to clone down the repos
+- name: Clone down the dependent repos using dictionary data
+  git: repo=https://github.com/{{ item.organization }}/{{ item.repo }}
        dest="{{ ansible_env.HOME }}/src/{{ item.repo }}"
        accept_hostkey=true
        version="{{item.branch}}"
-  with_items: "{{ repo_branch_dictionary_for_repos_not_found_in_organization }}"
-  when: "{{ repos_not_found_in_organization | count }} > 0"
+  with_items: "{{ repo_branch_organization_dictionary }}"
 
 
 # Continue with the NPM installation of the repos
-#
-#
 
 - name: Npm install Repos
   npm: path="{{ ansible_env.HOME }}/src/{{ item }}"
@@ -181,4 +176,3 @@
 
 - name: set TFTP static directory for RackHD
   set_fact: tftp_static_directory="{{ ansible_env.HOME }}/src/on-tftp/static/tftp"
-
