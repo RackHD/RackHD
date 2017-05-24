@@ -6,7 +6,7 @@
 # Same is true for branches.  A developer may choose to make a branch on only one or more repos 
 # If the passed in branch is not found in the github repo, it will know to pull from the master branch
 
- 
+
 # Clone down the RackHD Repo (without submodules)
 # NOTE: fall back to default "rackhd" repo if it does not exist in the specified repo
 
@@ -139,6 +139,14 @@
 
 
 # Continue with the NPM installation of the repos
+
+- name: install dev libraries for NPM installs
+  apt: pkg={{ item }} state=installed
+  with_items:
+    - libkrb5-dev
+    - unzip
+  sudo: yes
+
 
 - name: Npm install Repos
   npm: path="{{ ansible_env.HOME }}/src/{{ item }}"
