@@ -1,46 +1,149 @@
 ---
-- name: install dev libraries for NPM installs
-  apt: pkg={{ item }} state=installed
-  with_items:
-    - libkrb5-dev
-    - unzip
-  sudo: yes
+# This role supports developers who want to pull code from one or more repositories that are forked into their github organization.
+# A developer does not have to fork all of the repos, just the one they want to work on.  
+# It will check if the repo exists in the passed in organization first, and if not found, will pull it from github.com/rackhd
+#
+# Same is true for branches.  A developer may choose to make a branch on only one or more repos 
+# If the passed in branch is not found in the github repo, it will know to pull from the master branch
 
-- name: Get RackHD from source
-  git: repo=https://github.com/rackhd/rackhd
+ 
+# Clone down the RackHD Repo (without submodules)
+# NOTE: fall back to default "rackhd" repo if it does not exist in the specified repo
+
+- name: Check if RackHD repo exists in the {{ organization | default('rackhd') }} organization
+  shell: GIT_ASKPASS=true git ls-remote http://github.com/{{ organization | default('rackhd') }}/rackhd HEAD --exit-code -quiet 
+  register: "rackhd_repo_check"
+  ignore_errors: true
+  changed_when: false
+
+
+- name: Set the name of the organization to use for cloning the base RackHD repo
+  set_fact: organization_for_rackhd_repo="{{ organization | default('rackhd') }}"
+  when: "{{ rackhd_repo_check.rc }} == 0"  
+
+
+- name: Check if the branch exists for the RackHD repo
+  shell: GIT_ASKPASS=true git ls-remote http://github.com/{{ organization_for_rackhd_repo | default('rackhd') }}/rackhd {{ branch | default('master') }} | wc -l
+  register: "rackhd_branch_check"
+  ignore_errors: true
+  changed_when: false
+
+
+- name: Set the name of the branch to use for cloning the base RackHD repo
+  set_fact: branch_for_rackhd_repo="{{ branch | default('rackhd') }}"
+  when: "{{ rackhd_branch_check.rc }} > 0"
+
+
+- name: Clone RackHD repo from {{ organization_for_rackhd_repo | default('rackhd') }} organization and branch {{ branch_for_rackhd_repo | default('master') }}
+  git: repo=https://github.com/{{ organization_for_rackhd_repo | default('rackhd') }}/rackhd
        dest="{{ ansible_env.HOME }}/src"
        accept_hostkey=true
-       version="{{ branch | default('master') }}"
+       version="{{ branch_for_rackhd_repo | default('master') }}"
+       recursive=false  
 
-- name: Update git repos with latest
-  shell: git fetch --all --prune
-  args:
-    chdir: "{{ ansible_env.HOME }}/src/{{ item }}"
-  with_items:
-    - on-http
-    - on-tftp
-    - on-dhcp-proxy
-    - on-taskgraph
-    - on-syslog
-    - on-wss
-    - on-tools
-    - ucs-service
+# Clone down the "Dependent" repos
+# NOTE: a developer might have cloned only one or more repos in the specified repo
+# so we fallback to the "rackhd" organization if they do not exist
 
-- name: Reset to the branch specified
-  shell: git reset --hard {{ branch }}
-  when: branch is defined
-  args:
-    chdir: "{{ ansible_env.HOME }}/src/{{ item }}"
-  with_items:
-    - on-http
-    - on-tftp
-    - on-dhcp-proxy
-    - on-taskgraph
-    - on-syslog
-    - on-wss
-    - on-tools
-    - on-imagebuilder
-    - ucs-service
+- name: Create a repo list that we want to pull source from
+  set_fact:
+    repos:
+    - 'on-http'
+    - 'on-tftp'
+    - 'on-dhcp-proxy'
+    - 'on-taskgraph'
+    - 'on-syslog'
+    - 'on-wss'
+    - 'on-tools'
+    - 'ucs-service'
+
+
+# Determine if the repo exists in the organization specified, fallback to rackhd
+# Also determine the branch exists in the organization specified, fallback to master
+# pull down the source for the orgainzation and branch specified
+
+- name: Determine if the repo exists in the {{ organization | default('rackhd') }} organization
+  shell: GIT_ASKPASS=true git ls-remote http://github.com/{{ organization | default('rackhd') }}/{{ item }} HEAD --exit-code --quiet
+  with_items: "{{ repos }}"
+  register: "r"
+  ignore_errors: true
+  changed_when: false
+
+
+- name: Build list of repos that were found/forked in the {{ organization | default('rackhd') }} organization
+  set_fact:
+    repos_found_in_organization: "{{ r.results | selectattr('rc','equalto',0) | map(attribute='item') | list }}"
+- debug:
+    msg: "{{ repos_found_in_organization }}"
+
+
+- name: Determine if branch from the ansible variable exists for the repos in the organization
+  shell: GIT_ASKPASS=true git ls-remote http://github.com/{{ organization | default('rackhd') }}//{{ item }} {{ branch | default('master') }} | wc -l | awk "/1/{print \"{{ branch | default('master') }}\"}/0/{print \"master\"}"
+  with_items: "{{ repos_found_in_organization }}"
+  register: "repos_found_in_organization_with_branch_stdout"
+  ignore_errors: true
+  changed_when: false
+- debug:
+    msg: "{{ repos_found_in_organization_with_branch_stdout }}"
+
+
+- name: Make a dictionary of branch names and repos to use
+  set_fact:
+    repo_branch_dictionary_for_repos_found_in_organization: "{{ repo_branch_dictionary_for_repos_found_in_organization | default([]) + [{'repo': item.item, 'branch': item.stdout }] }}"
+  with_items: "{{ repos_found_in_organization_with_branch_stdout.results }}"
+- debug:
+    msg: "{{repo_branch_dictionary_for_repos_found_in_organization}}"
+
+
+- name: Clone the dependent repos from the {{ organization | default('rackhd') }} organization
+  git: repo=https://github.com/{{ organization | default ('rackhd') }}/{{ item.repo }}
+       dest="{{ ansible_env.HOME }}/src/{{ item.repo }}"
+       accept_hostkey=true
+       version="{{item.branch}}"
+  with_items: "{{ repo_branch_dictionary_for_repos_found_in_organization }}"
+  when: "{{ repos_found_in_organization | count }} > 0"
+
+
+# For repos that were NOT forked into the organization
+# Also determine the branch exists in the organization specified, fallback to master
+# pull down the source for the orgainzation and branch specified
+
+- name: Build list of repos that were NOT found/forked in the {{ organization | default('rackhd') }} organization
+  set_fact:
+    repos_not_found_in_organization: "{{ r.results | selectattr('rc','equalto',128) | map(attribute='item') | list }}"  
+- debug:
+    msg: "{{ repos_not_found_in_organization }}"
+
+- name: Determine if branch from variable exists for the repos in the organization
+  shell: GIT_ASKPASS=true git ls-remote http://github.com/{{ organization | default('rackhd') }}//{{ item }} {{ branch | default('master') }} | wc -l | awk "/1/{print \"{{ branch | default('master') }}\"}/0/{print \"master\"}"
+  with_items: "{{ repos_not_found_in_organization }}"
+  register: "repos_not_found_in_organization_with_branch_stdout"
+  ignore_errors: true
+  changed_when: false
+- debug:
+    msg: "{{ repos_not_found_in_organization_with_branch_stdout }}"
+ 
+
+- name: Make a dictionary of branch names and repos to use
+  set_fact:
+    repo_branch_dictionary_for_repos_not_found_in_organization: "{{ repo_branch_dictionary_for_repos_not_found_in_organization | default([]) + [{'repo': item.item, 'branch': item.stdout }] }}"
+  with_items: "{{ repos_not_found_in_organization_with_branch_stdout.results }}"
+- debug:
+    msg: "{{ repos_not_found_in_organization }}"
+
+
+- name: Clone the dependent repos from the rackhd organization
+  git: repo=https://github.com/rackhd/{{ item.repo }}
+       dest="{{ ansible_env.HOME }}/src/{{ item.repo }}"
+       accept_hostkey=true
+       version="{{item.branch}}"
+  with_items: "{{ repo_branch_dictionary_for_repos_not_found_in_organization }}"
+  when: "{{ repos_not_found_in_organization | count }} > 0"
+
+
+# Continue with the NPM installation of the repos
+#
+#
 
 - name: Npm install Repos
   npm: path="{{ ansible_env.HOME }}/src/{{ item }}"
@@ -78,3 +181,4 @@
 
 - name: set TFTP static directory for RackHD
   set_fact: tftp_static_directory="{{ ansible_env.HOME }}/src/on-tftp/static/tftp"
+
