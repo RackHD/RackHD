@@ -12,12 +12,14 @@
   "vagrant":{
     "rackhd_host": "localhost",
     "type": "vagrant",
+    "ucsm_ip" : "172.31.128.252",
     "ucs_service_uri" : "https://localhost:7080",
     "ucsm_config_file" : "./tests/ucs/ucsm_config.xml"
   },
   "hop_stack":{
     "rackhd_host": "localhost",
     "type": "vagrant",
+    "ucsm_ip" : "10.240.19.70",
     "ucs_service_uri" : "https://localhost:7080"
   },
 
