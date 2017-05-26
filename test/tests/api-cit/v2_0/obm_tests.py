@@ -57,5 +57,5 @@ class OBMTests(fit_common.unittest.TestCase):
     @depends(after='test_setup_snmp_obm_api2')
     def test_check_snmp_obm_settings(self):
         # """ Checking SNMP OBM settings GET:/nodes """
-        self.assertNotEqual(len(obmSettings().check_nodes(service_type='snmp-obm-service')), 0,
-                            msg='There are missing SNMP OBM settings!')
+        self.assertEqual(len(obmSettings().check_nodes(service_type='snmp-obm-service')), 0,
+                         msg='There are missing SNMP OBM settings!')

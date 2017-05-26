@@ -23,9 +23,17 @@ from nose.plugins.attrib import attr
 logs = flogging.get_loggers()
 
 
-# @test(groups=['nodes_api2.tests'])
 @attr(regression=False, smoke=True, nodes_api2_tests=True)
 class NodesTests(fit_common.unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls._cls_client = config.api_client
+        cls.clear_nodes()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.clear_nodes()
 
     def setUp(self):
         self.__client = config.api_client
@@ -66,14 +74,6 @@ class NodesTests(fit_common.unittest.TestCase):
         ]
         self.__test_tags = {
             'tags': ['tag1', 'tag2']
-        }
-        self.__test_obm = {
-            'config': {
-                'host': '1.2.3.4',
-                'user': 'username',
-                'password': 'password'
-            },
-            'service': 'noop-obm-service'
         }
 
     def __get_data(self):
@@ -137,7 +137,6 @@ class NodesTests(fit_common.unittest.TestCase):
                     logs.info(' Failed to delete node %s - %s', uuid, name)
         return len(codes)
 
-    # @test(groups=['nodes.api2.discovery.test'])
     def test_nodes_discovery(self):
         # API 2.0 Testing Graph.Discovery completion
         count = defaults.get('RACKHD_NODE_COUNT', '')
@@ -190,7 +189,6 @@ class NodesTests(fit_common.unittest.TestCase):
             self.__task.running = False
             self.__discovered = 0
 
-    # @test(groups=['test-nodes-api2'], depends_on_groups=['nodes.api2.discovery.test'])
     @depends(after='test_nodes_discovery')
     def test_nodes(self):
         # Testing GET:/api/2.0/nodes
@@ -201,7 +199,6 @@ class NodesTests(fit_common.unittest.TestCase):
             logs.info(" Node: %s %s %s", node.get('id'), node.get('type'), node.get('name'))
         self.assertNotEqual(0, len(nodes), msg='Node list was empty!')
 
-    # @test(groups=['test-node-id-api2'], depends_on_groups=['test-nodes-api2'])
     @depends(after='test_nodes')
     def test_node_id(self):
         # Testing GET:/api/2.0/nodes/:id
@@ -222,7 +219,6 @@ class NodesTests(fit_common.unittest.TestCase):
             self.assertEqual(200, c.status, msg=c.reason)
         self.assertRaises(ApiException, Api().nodes_get_by_id, 'fooey')
 
-    # @test(groups=['create-node-api2'], depends_on_groups=['test-node-id-api2'])
     @depends(after='test_node_id')
     def test_node_create(self):
         # Testing POST:/api/2.0/nodes/
@@ -233,7 +229,6 @@ class NodesTests(fit_common.unittest.TestCase):
             rsp = self.__client.last_response
             self.assertEqual(201, rsp.status, msg=rsp.reason)
 
-    # @test(groups=['patch-node-api2'], depends_on_groups=['test-node-id-api2'])
     @depends(after='test_node_create')
     def test_node_patch(self):
         # Testing PATCH:/api/2.0/nodes/:id
@@ -261,7 +256,6 @@ class NodesTests(fit_common.unittest.TestCase):
             self.assertEqual(200, c.status, msg=c.reason)
         self.assertRaises(ApiException, Api().nodes_patch_by_id, 'fooey', data)
 
-    # @test(groups=['delete-node-api2'], depends_on_groups=['patch-node-api2'])
     @depends(after='test_node_patch')
     def test_node_delete(self):
         # Testing DELETE:/api/2.0/nodes/:id
@@ -282,7 +276,6 @@ class NodesTests(fit_common.unittest.TestCase):
             self.assertEqual(204, c.status, msg=c.reason)
         self.assertRaises(ApiException, Api().nodes_del_by_id, 'fooey')
 
-    # @test(groups=['catalog_nodes-api2'], depends_on_groups=['delete-node-api2'])
     @depends(after='test_node_delete')
     def test_node_catalogs(self):
         # Testing GET:/api/2.0/nodes/:id/catalogs
@@ -297,7 +290,6 @@ class NodesTests(fit_common.unittest.TestCase):
             self.assertNotEqual(0, len(resp), msg='Node catalog is empty!')
         self.assertRaises(ApiException, Api().nodes_get_catalog_by_id, 'fooey')
 
-    # @test(groups=['catalog_source-api2'], depends_on_groups=['catalog_nodes-api2'])
     @depends(after='test_node_catalogs')
     def test_node_catalogs_bysource(self):
         # Testing GET:/api/2.0/nodes/:id/catalogs/source
@@ -312,7 +304,6 @@ class NodesTests(fit_common.unittest.TestCase):
             self.assertEqual(200, resp.status, msg=resp.reason)
         self.assertRaises(ApiException, Api().nodes_get_catalog_source_by_id, 'fooey', 'bmc')
 
-    # @test(groups=['node_workflows-api2'], depends_on_groups=['catalog_source-api2'])
     @depends(after='test_node_catalogs_bysource')
     def test_node_workflows_get(self):
         # Testing GET:/api/2.0/nodes/:id/workflows
@@ -326,8 +317,6 @@ class NodesTests(fit_common.unittest.TestCase):
         for resp in resps:
             self.assertNotEqual(0, len(resp), msg='No Workflows found for Node')
 
-    # @test(groups=['node_tags_patch'], depends_on_groups=['node_workflows_del_active-api2'])
-    # @depends(after='test_workflows_action')
     @depends(after='test_node_workflows_get')
     def test_node_tags_patch(self):
         # Testing PATCH:/api/2.0/nodes/:id/tags
@@ -347,7 +336,6 @@ class NodesTests(fit_common.unittest.TestCase):
             self.assertEqual(200, c.status, msg=c.reason)
         self.assertRaises(ApiException, Api().nodes_patch_tag_by_id, 'fooey', body=self.__test_tags)
 
-    # @test(groups=['node_tags_get'], depends_on_groups=['node_tags_patch'])
     @depends(after='test_node_tags_patch')
     def test_node_tags_get(self):
         # Testing GET:api/2.0/nodes/:id/tags
@@ -367,7 +355,6 @@ class NodesTests(fit_common.unittest.TestCase):
             self.assertEqual(200, c.status, msg=c.reason)
         self.assertRaises(ApiException, Api().nodes_patch_tag_by_id, 'fooey', body=self.__test_tags)
 
-    # @test(groups=['node_tags_delete'], depends_on_groups=['node_tags_get'])
     @depends(after='test_node_tags_get')
     def test_node_tags_del(self):
         # Testing DELETE:api/2.0/nodes/:id/tags/:tagName
@@ -396,7 +383,6 @@ class NodesTests(fit_common.unittest.TestCase):
             self.assertEqual(204, c.status, msg=c.reason)
         self.assertRaises(ApiException, Api().nodes_del_tag_by_id, 'fooey', tag_name=['tag'])
 
-    # @test(groups=['nodes_tag_masterDelete'], depends_on_groups=['node_tags_delete'])
     @depends(after='test_node_tags_del')
     def test_node_tags_masterDel(self):
         # Testing DELETE:api/2.0/nodes/tags/:tagName
@@ -418,7 +404,6 @@ class NodesTests(fit_common.unittest.TestCase):
         for c in codes:
             self.assertEqual(204, c.status, msg=c.reason)
 
-    # @test(groups=['node_put_obm_by_node_id'], depends_on_groups=['nodes_tag_masterDelete'])
     @depends(after='test_node_tags_masterDel')
     def test_node_put_obm_by_node_id(self):
         # Testing PUT:/api/2.0/nodes/:id/obm
@@ -427,24 +412,27 @@ class NodesTests(fit_common.unittest.TestCase):
         rsp = self.__client.last_response
         nodes = loads(rsp.data)
         self.assertEqual(200, rsp.status, msg=rsp.status)
+        test_obm = {
+            'config': {
+                'host': '1.2.3.4',
+                'user': 'username',
+                'password': 'password'
+            },
+            'service': 'noop-obm-service'
+        }
         for n in nodes:
             if n.get('name') == 'test_compute_node':
                 logs.info(" Node to put obm: %s %s ", n.get('id'), n.get('name'))
-                self.__test_obm["nodeId"] = str(n.get('id'))
+                test_obm["nodeId"] = str(n.get('id'))
                 logs.debug(json.dumps(n, indent=4))
-                Api().nodes_put_obms_by_node_id(identifier=n.get('id'), body=self.__test_obm)
-                logs.info(' Creating obm: %s ', str(self.__test_obm))
+                Api().nodes_put_obms_by_node_id(identifier=n.get('id'), body=test_obm)
+                logs.info(' Creating obm: %s ', str(test_obm))
                 rsp = self.__client.last_response
                 self.assertEqual(201, rsp.status, msg=rsp.status)
 
-    # @test(groups=['node_get_obm_by_node_id'], depends_on_groups=['node_put_obm_by_node_id'])
     @depends(after='test_node_put_obm_by_node_id')
     def test_node_get_obm_by_node_id(self):
         # Testing GET:/api/2.0/:id/obm
-        # FIX ME 12/21/16: This test deletes all OBM settings on the nodes
-        # If run before any other testing that relies on OBMs being set, you've messed
-        # up your test bed.  Restore the OBMS when this set is done or run against __test_nodes
-        # Or check somehow if we are only running against virtual nodes
         Api().nodes_get_all()
         rsp = self.__client.last_response
         nodes = loads(rsp.data)
@@ -464,39 +452,63 @@ class NodesTests(fit_common.unittest.TestCase):
                     rsp = self.__client.last_response
                     self.assertEqual(204, rsp.status, msg=rsp.status)
 
-    # @test(groups=['node_put_obm_invalid'], depends_on_groups=['node_get_obm_by_node_id'])
     @depends(after='test_node_get_obm_by_node_id')
     def test_node_put_obm_invalid_node_id(self):
         # Testing that PUT:/api/2.0/:id/obm returns 404 with invalid node ID
+        found_node = False
         Api().nodes_get_all()
         rsp = self.__client.last_response
         nodes = loads(rsp.data)
         self.assertEqual(200, rsp.status, msg=rsp.status)
+        test_obm = {
+            'config': {
+                'host': '1.2.3.4',
+                'user': 'username',
+                'password': 'password'
+            },
+            'service': 'noop-obm-service'
+        }
+        # get the first test compute node id, to get a 404, we need the payload data set up
+        # with a valid node id. Otherwise, a 400 will be returned if bad payload.
         for n in nodes:
             if n.get('name') == 'test_compute_node':
-                try:
-                    Api().nodes_put_obms_by_node_id(identifier='invalid_ID', body=self.__test_obm)
-                    self.fail(msg='did not raise exception')
-                except ApiException as e:
-                    self.assertEqual(404, e.status, msg='unexpected response {0}, expected 404'.format(e.status))
+                test_obm["nodeId"] = str(n.get('id'))
+                found_node = True
+                break
+        if found_node:
+            try:
+                Api().nodes_put_obms_by_node_id(identifier='invalid_ID', body=test_obm)
+                self.fail(msg='did not raise exception')
+            except ApiException as e:
+                self.assertEqual(404, e.status, msg='unexpected response {0}, expected 404'.format(e.status))
+        else:
+            self.fail(msg='No test compute node available for try invalid_ID')
 
-    # @test(groups=['node_get_obm_invalid'], depends_on_groups=['node_put_obm_invalid'])
     @depends(after='test_node_put_obm_invalid_node_id')
     def test_node_get_obm_invalid_node_id(self):
         # Testing that PUT:/api/2.0/:id/obm returns 404 with invalid node ID
-        Api().nodes_get_all()
-        rsp = self.__client.last_response
-        nodes = loads(rsp.data)
-        self.assertEqual(200, rsp.status, msg=rsp.status)
-        for n in nodes:
-            if n.get('name') == 'test_compute_node':
-                try:
-                    Api().nodes_get_obms_by_node_id(identifier='invalid_ID')
-                    self.fail(msg='did not raise exception')
-                except ApiException as e:
-                    self.assertEqual(404, e.status, msg='unexpected response {0}, expected 404'.format(e.status))
+        try:
+            Api().nodes_get_obms_by_node_id(identifier='invalid_ID')
+            self.fail(msg='did not raise exception')
+        except ApiException as e:
+            self.assertEqual(404, e.status, msg='unexpected response {0}, expected 404'.format(e.status))
 
     @depends(after='test_node_get_obm_invalid_node_id')
     def test_clean_up_test_nodes(self):
         # Clean up the added test nodes
         self.assertEqual(0, self.delete_temp_nodes(), msg="Failed to clean up test nodes from script")
+
+    @classmethod
+    def clear_nodes(self):
+        # """ Clear the temp created nodes if any exist """
+        Api().nodes_get_all()
+        nodes = loads(self._cls_client.last_response.data)
+        for n in nodes:
+            name = n.get('name')
+            if "test_" in name:
+                uuid = n.get('id')
+                logs.info(' Deleting node %s (name=%s)', uuid, name)
+                Api().nodes_del_by_id(identifier=uuid)
+                rsp = self._cls_client.last_response
+                if rsp.status != 204:
+                    logs.info(' Failed to delete test node %s - %s', uuid, name)

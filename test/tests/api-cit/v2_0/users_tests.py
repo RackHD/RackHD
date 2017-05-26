@@ -18,7 +18,7 @@ from nosedep import depends
 logs = flogging.get_loggers()
 
 
-@attr(regression=False, smoke=False, users_api2_tests=True)
+@attr(regression=False, smoke=True, users_api2_tests=True)
 class UsersTests(fit_common.unittest.TestCase):
 
     @classmethod

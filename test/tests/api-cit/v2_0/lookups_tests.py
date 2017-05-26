@@ -28,14 +28,14 @@ class LookupsTests(fit_common.unittest.TestCase):
             "macAddress": "ae:aa:aa:aa:aa:aa",
             "node": "456"
         }
-        cls.id = ""
+        cls.lookup_id = ""
         cls.patchedNode = {"node": "666"}
 
     def test_check_lookups(self):
         # """ Testing GET:/lookups """
         Api().lookups_get()
         rsp = self.__client.last_response
-        logs.debug("Lookup list: %s", dumps(rsp.data, indent=4))
+        # logs.debug("Lookup list: %s", dumps(rsp.data, indent=4))
         self.assertEqual(200, rsp.status, msg=rsp.reason)
         self.assertNotEqual(0, len(rsp.data))
 
@@ -72,8 +72,8 @@ class LookupsTests(fit_common.unittest.TestCase):
         for obm in obms:
             host = obm.get('config').get('host')
             Api().lookups_get(q=host)
-            list = loads(self.__client.last_response.data)
-            entries.append(list)
+            hlist = loads(self.__client.last_response.data)
+            entries.append(hlist)
 
         self.assertNotEqual(0, len(entries), msg='No lookup entries found!')
         for entry in entries:
@@ -99,12 +99,12 @@ class LookupsTests(fit_common.unittest.TestCase):
         Api().lookups_post(self.lookup)
         rsp = self.__client.last_response
         self.assertEqual(201, rsp.status, msg=rsp.reason)
-        self.id = str(loads(rsp.data).get('id'))
-        logs.debug("ID is %s", self.id)
+        self.lookup_id = str(loads(rsp.data).get('id'))
+        logs.debug("ID is %s", self.lookup_id)
 
         # other tests depend on the value
-        self.__class__.id = self.id
-        logs.info(" The lookup ID from post: %s", self.id)
+        self.__class__.lookup_id = self.lookup_id
+        logs.info(" The lookup ID from post: %s", self.lookup_id)
 
         # Validate the content
         Api().lookups_get(q=self.lookup.get("macAddress"))
@@ -117,7 +117,7 @@ class LookupsTests(fit_common.unittest.TestCase):
     def test_post_lookup_negativeTesting(self):
         # """ Negative Testing POST / """
         # Validate that a POST for a lookup with same id as an existing one gets rejected
-        logs.info(" The lookup ID to be re-posted is %s", self.id)
+        logs.info(" The lookup ID to be re-posted is %s", self.lookup_id)
         try:
             Api().lookups_post(self.lookup)
         except ApiException as e:
@@ -128,8 +128,8 @@ class LookupsTests(fit_common.unittest.TestCase):
     @depends(after='test_post_lookup')
     def test_patch_lookup(self):
         # """ Testing PATCH /:id"""
-        logs.info(" The lookup ID to be patched is %s", self.id)
-        Api().lookups_patch_by_id(self.id, self.patchedNode)
+        logs.info(" The lookup ID to be patched is %s", self.lookup_id)
+        Api().lookups_patch_by_id(self.lookup_id, self.patchedNode)
 
         # validate that the node element has been updated
         Api().lookups_get(q=self.lookup.get("macAddress"))
@@ -140,19 +140,19 @@ class LookupsTests(fit_common.unittest.TestCase):
     def test_delete_lookup(self):
         # """ Testing DELETE /:id """
         # Validate that the lookup is there before it is deleted
-        Api().lookups_get_by_id(self.id)
+        Api().lookups_get_by_id(self.lookup_id)
         rsp = self.__client.last_response
         self.assertEqual(200, rsp.status, msg=rsp.reason)
 
         # delete the lookup
-        logs.info(" The lookup ID to be deleted is %s", self.id)
-        Api().lookups_del_by_id(self.id)
+        logs.info(" The lookup ID to be deleted is %s", self.lookup_id)
+        Api().lookups_del_by_id(self.lookup_id)
         rsp = self.__client.last_response
         self.assertEqual(204, rsp.status, msg=rsp.reason)
 
         # Validate that the lookup has been deleted and the returned value is an empty list
         try:
-            Api().lookups_get_by_id(self.id)
+            Api().lookups_get_by_id(self.lookup_id)
         except ApiException as e:
             self.assertEqual(404, e.status, msg='Expected 404 status, received {}'.format(e.status))
         except (TypeError, ValueError) as e:
