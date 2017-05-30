@@ -1,15 +1,15 @@
 '''
-Copyright 2016, EMC, Inc.
-
+Copyright (c) 2016-2017 Dell Inc. or its subsidiaries. All Rights Reserved.
 '''
 
 import fit_path  # NOQA: unused import
-from nosedep import depends
 import random
 import time
 import flogging
 from nose.plugins.attrib import attr
 from common import fit_common
+from json import dumps
+from nosedep import depends
 
 # set up the logging
 log = flogging.get_loggers()
@@ -58,10 +58,10 @@ class rackhd20_api_workflows(fit_common.unittest.TestCase):
                 return False
             if result['json']['status'] in ['running', 'pending']:
                 log.info_5("{} workflow status: {}".format(result['json']['injectableName'], result['json']['status']))
-                fit_common.time.sleep(cycle)
+                time.sleep(cycle)
             elif result['json']['status'] == 'succeeded':
                 log.info_5("{} workflow status: {}".format(result['json']['injectableName'], result['json']['status']))
-                log.info_5(" Workflow completed at time: " + str(fit_common.time.time()))
+                log.info_5(" Workflow completed at time: " + str(time.time()))
                 return True
             else:
                 log.error(" Workflow failed: status: %s text: %s", result['json']['status'], result['text'])
@@ -69,7 +69,6 @@ class rackhd20_api_workflows(fit_common.unittest.TestCase):
         log.error(" Workflow Timeout: " + result['text'])
         return False
 
-    # @depends(after=test01_node_check)
     def test01_decommission_node(self):
         # launch workflow
         workflowid = None
@@ -80,12 +79,12 @@ class rackhd20_api_workflows(fit_common.unittest.TestCase):
         if result['status'] == 201:
             # workflow running
             log.info_5(" InstanceID: " + result['json']['instanceId'])
-            log.info_5(" Payload: " + fit_common.json.dumps(DECOMMISSION_PAYLOAD))
+            log.info_5(" Payload: " + dumps(DECOMMISSION_PAYLOAD))
             workflowid = result['json']['instanceId']
         else:
             # workflow failed with response code
             log.error(" InstanceID: " + result['text'])
-            log.error(" Payload: " + fit_common.json.dumps(DECOMMISSION_PAYLOAD))
+            log.error(" Payload: " + dumps(DECOMMISSION_PAYLOAD))
             self.fail("Workflow failed with response code: " + result['status'])
         self.assertTrue(self.__wait_for_workflow_complete(workflowid, time.time()),
                         "Decommission Node workflow failed, see logs.")
@@ -101,13 +100,13 @@ class rackhd20_api_workflows(fit_common.unittest.TestCase):
         if result['status'] == 201:
             # workflow running
             log.info_5(" InstanceID: " + result['json']['instanceId'])
-            log.info_5(" Payload: " + fit_common.json.dumps(VALIDATE_PAYLOAD))
+            log.info_5(" Payload: " + dumps(VALIDATE_PAYLOAD))
             workflowid = result['json']['instanceId']
         else:
             # workflow failed with response code
             log.error(" InstanceID: " + result['text'])
-            log.error(" Payload: " + fit_common.json.dumps(VALIDATE_PAYLOAD))
-            self.fail("Workflow failed with response code: " + result['status'])
+            log.error(" Payload: " + dumps(VALIDATE_PAYLOAD))
+            self.fail("Workflow failed with response code: {}".format(result['status']))
         self.assertTrue(self.__wait_for_workflow_complete(workflowid, time.time()),
                         "Validation Decommissioned Node workflow failed, see logs.")
 
