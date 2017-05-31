@@ -51,7 +51,7 @@ if config:
 
 
 # this routine polls a workflow task ID for completion
-def wait_for_workflow_complete(instanceid, start_time, waittime=900, cycle=30):
+def wait_for_workflow_complete(instanceid, start_time, waittime=1800, cycle=30):
     log.info_5(" Workflow started at time: " + str(start_time))
     while time.time() - start_time < waittime:  # limit test to waittime seconds
         result = fit_common.rackhdapi("/api/2.0/workflows/" + instanceid)
