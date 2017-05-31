@@ -1,0 +1,11 @@
+{"bootstrap-payload":
+    {"name": "Graph.InstallESXi",
+        "options": {"defaults": {
+        "version": "6",
+        "repo": "http://172.31.128.1:9080/repo/esxi/6.0",
+        "rootPassword": "1234567",
+        "hostname": "rackhdnode",
+        "users": [{"name": "rackhduser",
+                   "password": "RackHDRocks!",
+                   "uid": 1010}]}}}
+}
