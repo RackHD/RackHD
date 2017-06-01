@@ -9,138 +9,117 @@ Ths test will choose a node and reset it.  After the system start reset. It will
 run into discover workflow. AMQP and webhook are lunched before that in separate working thread to monitor the messages.
 '''
 
+from sm_plugin import smp_get_stream_monitor
 from time import sleep
-import Queue
+import gevent
+import gevent.queue
 import random
-import socket
 import flogging
-import logging
-import pika
 import unittest
 import json
-import threading
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 import fit_common
+import env_ip_helpers
 import test_api_utils
 from nose.plugins.attrib import attr
+from nosedep import depends
+
 logs = flogging.get_loggers()
-amqp_queue = Queue.Queue(maxsize=0)
-webhook_port = 9889
-nodefound_id = ""
-webhook_received = False
-webhook_body = ""
-
-
-class AmqpWorker(threading.Thread):
-    '''
-    This AMQP worker Class will creat another thread when initialized and runs asynchronously.
-    The external_callback is the callback function entrance for user.
-    The callback function will be call when AMQP message is received.
-    Each test case can define its own callback and pass the function name to the AMQP class.
-    The timeout parameter specify how long the AMQP daemon will run. self.panic is called when timeout.
-    eg:
-    def callback(self, ch, method, properties, body):
-        logs.debug(" [x] %r:%r" % (method.routing_key, body))
-        logs.debug(" [x] %r:%r" % (method.routing_key, body))
-
-    td = fit_amqp.AMQP_worker("node.added.#", callback)
-    td.setDaemon(True)
-    td.start()
-
-    TODO:
-    The common AMQP related test module of FIT is being refactoring. This AMQP test class is only for temporary use.
-    It will be obsolete and replaced by a common AMQP test module.
-    '''
-
-    def __init__(self, exchange_name, topic_routing_key, external_callback, timeout=10):
-        threading.Thread.__init__(self)
-        pika_logger = logging.getLogger('pika')
-        if fit_common.VERBOSITY >= 8:
-            pika_logger.setLevel(logging.DEBUG)
-        elif fit_common.VERBOSITY >= 4:
-            pika_logger.setLevel(logging.WARNING)
-        else:
-            pika_logger.setLevel(logging.ERROR)
-        amqp_port = fit_common.fitports()['amqp_ssl']
-        self.connection = pika.BlockingConnection(
-            pika.ConnectionParameters(host=fit_common.fitargs()["rackhd_host"], port=amqp_port))
-        self.channel = self.connection.channel()
-        result = self.channel.queue_declare(exclusive=True)
-        queue_name = result.method.queue
-        self.channel.queue_bind(exchange=exchange_name, queue=queue_name, routing_key=topic_routing_key)
-        self.channel.basic_consume(external_callback, queue=queue_name)
-        self.connection.add_timeout(timeout, self.dispose)
-
-    def dispose(self):
-        logs.debug_7('Pika connection timeout')
-        if self.connection.is_closed is False:
-            self.channel.stop_consuming()
-            self.connection.close()
-        self.thread_stop = True
-
-    def run(self):
-        logs.debug_7('start consuming')
-        self.channel.start_consuming()
+WEBHOOK_PORT = 9889
 
 
 class RequestHandler(BaseHTTPRequestHandler):
     def do_POST(self):
+        logs.debug('POST came in on test-http-server')
         request_headers = self.headers
         content_length = request_headers.getheaders('content-length')
-        length = int(content_length[0]) if content_length else 0
-        global webhook_received, webhook_body
-        webhook_received = True
+        if content_length:
+            length = int(content_length[0])
+        else:
+            length = 0
+
         webhook_body = str(self.rfile.read(length))
-        logs.debug(webhook_body)
+        logs.tdl.debug('body is: %s', webhook_body)
         self.send_response(200)
+        self.server.do_post_queue.put(webhook_body)
 
 
-class HttpWorker(threading.Thread):
+class HttpWorker(gevent.Greenlet):
     def __init__(self, port, timeout=10):
-        threading.Thread.__init__(self)
-        self.server = HTTPServer(('', port), RequestHandler)
-        self.server.timeout = timeout
+        super(HttpWorker, self).__init__()
+        self.__server = HTTPServer(('', port), RequestHandler)
+        self.__server.timeout = timeout
+        self.__server.do_post_queue = gevent.queue.Queue()
+        testhost_ipv4 = env_ip_helpers.get_testhost_ip()
+        self.ipv4_address = testhost_ipv4
+        self.ipv4_port = port
+
+    @property
+    def do_post_queue(self):
+        return self.__server.do_post_queue
 
     def dispose(self):
         logs.debug('http service shutdown')
-        self.thread_stop = True
 
-    def run(self):
-        self.server.handle_request()
-        self.dispose()
+    def _run(self):
+        self.__server.handle_request()
 
 
 @attr(all=True, regression=False, smoke=False)
 class test_node_rediscover_amqp_message(unittest.TestCase):
-    def setup(self):
-        logs.debug_3('start rediscover')
+    @classmethod
+    def setUpClass(cls):
+        # Get the stream-monitor plugin for AMQP
+        cls._amqp_sp = smp_get_stream_monitor('amqp')
+        # Create the "all events" tracker
+        cls._on_events_tracker = cls._amqp_sp.create_tracker('on-events-all', 'on.events', '#')
+        # We have context information that needs to be passed from test-to-test. Set up the template
+        # space.
+        cls._run_context = {
+            'start_nodeid': None,
+            'start_node_uuid': None,
+            'reboot_graphid': None,
+            'rediscovered_nodeid': None
+        }
 
-    def teardown(self):
-        logs.debug_3('finished rediscover')
+        # Set up the web-serverlet to get the callback from the hooks part
+        # of the api. We do this here so thee server stays up for the required
+        # tests!
+        cls._serverworker = HttpWorker(WEBHOOK_PORT, 300)
+        cls._serverworker.start()
 
-    def _wait_for_discover(self, node_uuid):
-        # start amqp thread
-        timecount = 0
-        while timecount < 600:
-            if amqp_queue.empty() is False:
-                check_message = amqp_queue.get()
-                if check_message[0][0:10] == "node.added":
-                    if self._wait_for_uuid(node_uuid):
-                        self._process_message(
-                            "added", check_message[1], check_message[1], "node", check_message)
-                        global nodefound_id
-                        nodefound_id = check_message[1]
-                        return True
-            sleep(1)
-            timecount = timecount + 1
-        logs.debug_2("Wait to rediscover Timeout!")
-        return False
+    @classmethod
+    def tearDownClass(cls):
+        cls._serverworker.dispose()
 
-    def _set_web_hook(self, ip, port):
+    def setUp(self):
+        # attach a processor to the on-events-tracker amqp tracker. Then we can
+        # attach indiviual match-clauses to this in each test-case.
+        self.__qproc = self._amqp_sp.get_tracker_queue_processor(self._on_events_tracker)
+
+    def __set_run_context(self, key, value):
+        assert key in self._run_context, \
+            '{} not a run-context variable'.format(key)
+        assert self._run_context[key] is None, \
+            'attempt to set existing run-context for {} to {}, was already {}'.format(
+                key, value, self._run_context[key])
+        self._run_context[key] = value
+
+    def __get_run_context(self, key):
+        assert key in self._run_context, \
+            '{} not a run-context variable'.format(key)
+        assert self._run_context[key] is not None, \
+            'attempt to get unset run-context for {}'.format(key)
+        return self._run_context[key]
+
+    def __set_web_hook(self):
         mondata = fit_common.rackhdapi('/api/current/hooks')
         self.assertTrue(
             mondata['status'] < 209,
             'Incorrect HTTP return code, could not check hooks. expected<209, got:' + str(mondata['status']))
+        ip = self._serverworker.ipv4_address
+        # ip = '172.31.110.34'
+        port = self._serverworker.ipv4_port
         hookurl = "http://" + str(ip) + ":" + str(port)
         for hooks in mondata['json']:
             if hooks['url'] == hookurl:
@@ -158,8 +137,8 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
             response['status'] < 209,
             'Incorrect HTTP return code, expected<209, got:' + str(response['status']))
 
-    def _apply_obmsetting_to_node(self, nodeid):
-        # usr = ''
+    def __apply_obmsetting_to_node(self, nodeid):
+        usr = None
         # pwd = ''
         response = fit_common.rackhdapi(
             '/api/2.0/nodes/' + nodeid + '/catalogs/bmc')
@@ -173,7 +152,7 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
                 pwd = creds['password']
                 break
         # Put the credential to OBM settings
-        if usr != "":
+        if usr is not None:
             payload = {
                 "service": "ipmi-obm-service",
                 "config": {
@@ -186,77 +165,14 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
                 return True
         return False
 
-    def _node_registration_validate(self, amqp_body):
-        try:
-            amqp_body_json = json.loads(amqp_body)
-        except ValueError:
-            self.fail("FAILURE - The message body is not json format!")
-        self.assertIn("nodeId", amqp_body_json["data"], "nodeId is not contained in the discover message")
-        self.assertNotEquals(
-            amqp_body_json["data"]["nodeId"], "", "nodeId generated in discovery doesn't include valid data ")
-        self.assertIn(
-            "ipMacAddresses", amqp_body_json["data"], "ipMacAddresses is not contained in the discover message")
-        self.assertNotEquals(
-            amqp_body_json["data"]["ipMacAddresses"], "",
-            "ipMacAddresses generated during node discovery doesn't include valid data ")
-
-    def _wait_for_uuid(self, node_uuid):
-        for dummy in range(0, 20):
-            sleep(30)
-            rest_data = fit_common.rackhdapi('/redfish/v1/Systems/')
-            if rest_data['json']['Members@odata.count'] == 0:
-                continue
-            node_collection = rest_data['json']['Members']
-            for computenode in node_collection:
-                nodeidurl = computenode['@odata.id']
-                api_data = fit_common.rackhdapi(nodeidurl)
-                if api_data['status'] > 399:
-                    break
-                if node_uuid == api_data['json']['UUID']:
-                    return True
-        logs.debug_3("Time out to find the node with uuid!")
-        return False
-
-    def _wait_amqp_message(self, timeout):
-        timecount = 0
-        while amqp_queue.empty() is True and timecount < timeout:
-            sleep(1)
-            timecount = timecount + 1
-        self.assertNotEquals(
-            timecount,
-            timeout,
-            "AMQP message receive timeout")
-
-    def amqp_callback(self, ch, method, properties, body):
-        logs.debug_3("Routing Key {0}:".format(method.routing_key))
-        logs.data_log.debug_3(body.__str__())
-        global amqp_queue, nodefound_id
-        amqp_queue.put(
-            [method.routing_key, fit_common.json.loads(body)["nodeId"], body])
-        nodefound_id = fit_common.json.loads(body)["nodeId"]
-
-    def _check_skupack(self):
+    def __check_skupack(self):
         sku_installed = fit_common.rackhdapi('/api/2.0/skus')['json']
         if len(sku_installed) < 2:
             return False
         else:
             return True
 
-    def _get_tester_ip(self):
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        ip = fit_common.fitargs()['rackhd_host']
-        logs.debug("pinging " + ip)
-        s.connect((ip, 0))
-        logs.debug('My IP address is: ' + s.getsockname()[0])
-        return str(s.getsockname()[0])
-
-    def _process_web_message(self, timeout):
-        global webhook_received, webhook_body
-        timecount = 0
-        while webhook_received is False and timecount < timeout:
-            sleep(1)
-            timecount = timecount + 1
-        self.assertNotEquals(timecount, timeout, "Web hook message receive timeout")
+    def __process_web_message(self, webhook_body):
         try:
             webhook_body_json = json.loads(webhook_body)
         except ValueError:
@@ -277,185 +193,203 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
             webhook_body_json["data"]["ipMacAddresses"], "",
             "ipMacAddresses generated during node discovery doesn't include valid data ")
 
-    def _process_message(self, action, typeid, nodeid, messagetype, amqp_message_body):
-        expected_key = messagetype + "." + action + ".information." + typeid + "." + nodeid
+    def __build_info_vblock(self, message_type, action, typeid, nodeid):
         expected_payload = {
-            "type": messagetype,
+            "type": message_type,
             "action": action,
             "typeId": typeid,
             "nodeId": nodeid,
             "severity": "information",
-            "version": "1.0"}
-        self._compare_message(amqp_message_body, expected_key, expected_payload)
+            "createdAt": "<<present>>",
+            "data": "<<present>>",
+            "version": "1.0"
+        }
+        expected_rk = "{}.{}.information.{}.{}".format(message_type, action, typeid, nodeid)
+        ex = {
+            'body': expected_payload,
+            'routing_key': expected_rk
+        }
+        return ex
 
-    def _compare_message(self, amqpmessage, expected_key, expected_payload):
-        routing_key = amqpmessage[0]
-        amqp_body = amqpmessage[2]
-        self.assertEquals(
-            routing_key, expected_key, "Routing key is not expected! expect {0}, get {1}"
-            .format(expected_key, routing_key))
-        try:
-            amqp_body_json = fit_common.json.loads(amqp_body)
-        except ValueError:
-            self.fail("FAILURE - The message body is not json format!")
-        try:
-            self.assertEquals(
-                amqp_body_json['version'], expected_payload['version'],
-                "version field not correct! expect {0}, get {1}"
-                .format(expected_payload['version'], amqp_body_json['version']))
-            self.assertEquals(
-                amqp_body_json['typeId'], expected_payload['typeId'],
-                "typeId field not correct!  expect {0}, get {1}"
-                .format(expected_payload['typeId'], amqp_body_json['typeId']))
-            self.assertEquals(
-                amqp_body_json['action'], expected_payload['action'],
-                "action field not correct!  expect {0}, get {1}"
-                .format(expected_payload['action'], amqp_body_json['action']))
-            self.assertEquals(
-                amqp_body_json['severity'], expected_payload['severity'],
-                "serverity field not correct!" .format(expected_payload['severity'], amqp_body_json['severity']))
-            self.assertNotEquals(amqp_body_json['createdAt'], "", "createdAt field is empty!")
-            self.assertNotEquals(amqp_body_json['data'], {}, "data field is empty!")
-        except ValueError as e:
-            self.fail("FAILURE - expected key is missing in the AMQP message!{0}".format(e))
+    def __build_simple_graph_vblock(self, action, graphid, status):
+        ex = {
+            'body': {
+                'status': status
+            },
+            'routing_key': 'graph.{}.{}'.format(action, graphid)
+        }
+        return ex
 
-    def _select_node(self):
+    def __wait_for_uuid(self):
+        node_uuid = self.__get_run_context('start_node_uuid')
+        logs.debug('Begining wait for uuid %s to reappear', node_uuid)
+        for dummy in range(0, 20):
+            sleep(30)
+            rest_data = fit_common.rackhdapi('/redfish/v1/Systems/')
+            if rest_data['json']['Members@odata.count'] == 0:
+                continue
+            node_collection = rest_data['json']['Members']
+            for computenode in node_collection:
+                nodeidurl = computenode['@odata.id']
+                api_data = fit_common.rackhdapi(nodeidurl)
+                if api_data['status'] > 399:
+                    break
+                if node_uuid == api_data['json']['UUID']:
+                    return True
+        logs.debug("Time out to find the node with uuid!")
+        return False
+
+    def __check_added_node_CB(self, other_event):
+        body = other_event.body
+        if "nodeId" not in body:
+            return False
+        new_nodid = body["nodeId"]
+        if self.__wait_for_uuid():
+            self.__set_run_context('rediscovered_nodeid', new_nodid)
+            logs.debug('Located node again with id=%s', new_nodid)
+            return True
+        return False
+
+    def __node_discover(self, node_uuid):
+        logs.debug('Validate node discovery registration web hook Message')
+        self._process_web_message(30)
+
+    def test_rediscover_pick_node(self):
         node_collection = test_api_utils.get_node_list_by_type("compute")
         self.assertNotEquals(node_collection, [], "No compute node found!")
         for dummy in node_collection:
             nodeid = node_collection[random.randint(0, len(node_collection) - 1)]
             if fit_common.rackhdapi('/api/2.0/nodes/' + nodeid)['json']['name'] != "Management Server":
                 break
-        return nodeid
+        self.__set_run_context('start_nodeid', nodeid)
+        node_uuid = fit_common.rackhdapi('/redfish/v1/Systems/' + nodeid)['json']['UUID']
+        logs.debug('UUID of selected Node is %s', node_uuid)
+        self.__set_run_context('start_node_uuid', node_uuid)
 
-    def _node_reboot(self, nodeid):
-        # Reboot the node to begin rediscover.
-        logs.debug_3('Running rediscover, resetting system node...')
-        logs.debug('launch AMQP thread')
-        reset_worker = AmqpWorker(
-            exchange_name="on.events", topic_routing_key="graph.#." + nodeid,
-            external_callback=self.amqp_callback, timeout=100)
-        reset_worker.setDaemon(True)
-        reset_worker.start()
+    @depends(after='test_rediscover_pick_node')
+    def test_rediscover_check_obm(self):
+        nodeid = self.__get_run_context('start_nodeid')
+        node_obm = fit_common.rackhdapi('/api/2.0/nodes/' + nodeid)['json']['obms']
+        if node_obm == []:
+            logs.trl.debug('Picked node does not have OBM settings. Trying to add them')
+            applied = self.__apply_obmsetting_to_node(self.__get_run_context('start_nodeid'))
+            self.assertTrue(applied, 'Failed to apply obm settings')
 
-        # Reboot the node, wait reboot workflow start message.
+    @depends(after='test_rediscover_check_obm')
+    def test_rediscover_reboot_kickoff(self):
+        nodeid = self.__get_run_context('start_nodeid')
+        # first setup the web-hook to monitor (see test_rediscover_rackd_discover_hook) for
+        # rackhd hook messages.
+        self.__set_web_hook()
+        # now give the node a kick
         response = fit_common.rackhdapi(
             '/redfish/v1/Systems/' + nodeid + '/Actions/ComputerSystem.Reset', action='post',
             payload={"reset_type": "ForceRestart"})
         self.assertTrue(
             response['status'] < 209, 'Incorrect HTTP return code, expected<209, got:' + str(response['status']))
         graphid = response['json']["@odata.id"].split('/redfish/v1/TaskService/Tasks/')[1]
+        self.__set_run_context('reboot_graphid', graphid)
 
-        # wait for workflow started message.
-        self._wait_amqp_message(10)
-        workflow_amqp = amqp_queue.get()
-        if workflow_amqp[0][0:14] == "started":
-            self._process_message("started", graphid, nodeid, "graph", workflow_amqp)
-        else:
-            self._process_message("progress.updated", graphid, nodeid, "graph", workflow_amqp)
+    @depends(after='test_rediscover_reboot_kickoff', before='test_rediscover_node_delete')
+    def test_rediscover_reboot_graph_ampq_flow(self):
+        nodeid = self.__get_run_context('start_nodeid')
+        graphid = self.__get_run_context('reboot_graphid')
+        # Push a new match-group onto this processor. Ordered=true makes it so the the matchers
+        # in it need to occur in order.
+        self.__qproc.open_group(ordered=True)
+        self.__qproc.match_on_routekey('basic-start', routing_key='graph.started.{}'.format(graphid),
+                                       validation_block=self.__build_simple_graph_vblock('started', graphid, 'running'))
+        self.__qproc.match_on_routekey('info-start', routing_key='graph.started.information.{}.#'.format(graphid),
+                                       validation_block=self.__build_info_vblock('graph', 'started', graphid, nodeid))
+        # note: the (3,4) bounding here is actually there because of a flaw in the and-group matcher.
+        #  it's a sticky enough thing to fix, so I'm letting it go for now. Basically, what
+        #  happens is we get 3 progress messages, the basic-finish, and one more progress. But
+        #  if we call out the 4th one as its own matcher (and put 3,3 here), this
+        #  one overmatches.
+        self.__qproc.match_on_routekey('graph-task-progress',
+                                       routing_key='graph.progress.updated.information.{}.#'.format(graphid),
+                                       min=3, max=4,
+                                       validation_block=self.__build_info_vblock('graph', 'progress.updated', graphid, nodeid))
 
-        # wait for progress update finish message.
-        self._wait_amqp_message(10)
-        workflow_amqp = amqp_queue.get()
-        self._process_message("progress.updated", graphid, nodeid, "graph", workflow_amqp)
+        self.__qproc.match_on_routekey(description='basic-finish', routing_key='graph.finished.{}'.format(graphid),
+                                       validation_block=self.__build_simple_graph_vblock('finished', graphid, 'succeeded'))
+        self.__qproc.match_on_routekey(description='info-finish', routing_key='graph.finished.information.{}.#'.format(graphid),
+                                       validation_block=self.__build_info_vblock('graph', 'finished', graphid, nodeid))
+        self.__qproc.close_group()
 
-        # wait for progress finish message.
-        retry_count = 0
-        while retry_count < 10:
-            self._wait_amqp_message(60)
-            workflow_amqp = amqp_queue.get()
-            if workflow_amqp[0][0:14] == "graph.finished":
-                self._process_message("finished", graphid, nodeid, "graph", workflow_amqp)
-                break
-            retry_count = retry_count + 1
-        self.assertNotEquals(retry_count, 10, "No AMQP workflow finished message received")
-        reset_worker.dispose()
+        results = self._amqp_sp.finish(timeout=30)
+        results[0].assert_errors(self)
 
-    def _node_delete(self, nodeid):
-        logs.debug('launch node delete AMQP thread')
-        td = AmqpWorker(
-            exchange_name="on.events", topic_routing_key="node.#.information." + nodeid + ".#",
-            external_callback=self.amqp_callback, timeout=30)
-        td.setDaemon(True)
-        td.start()
+    @depends(after='test_rediscover_reboot_kickoff')
+    def test_rediscover_node_delete(self):
+        nodeid = self.__get_run_context('start_nodeid')
         result = fit_common.rackhdapi('/api/2.0/nodes/' + nodeid, action='delete')
         self.assertTrue(result['status'] < 209, 'Was expecting response code < 209. Got ' + str(result['status']))
-        self._wait_amqp_message(10)
-        amqp_message = amqp_queue.get()
-        self._process_message("removed", nodeid, nodeid, "node", amqp_message)
-        td.dispose()
+        self.__qproc.match_on_routekey('node-removed-information',
+                                       routing_key='node.removed.information.{}.#'.format(nodeid),
+                                       validation_block=self.__build_info_vblock('node', 'removed', nodeid, nodeid))
 
-    def _node_discover(self, node_uuid):
-        # start discovery
-        logs.debug_2("Waiting node reboot and boot into microkernel........")
-        myip = self._get_tester_ip()
-        self._set_web_hook(myip, webhook_port)
-        logs.debug('Listening on localhost:%s' % webhook_port)
-        global webhook_received
-        webhook_received = False
-        serverworker = HttpWorker(webhook_port, 300)
-        serverworker.setDaemon(True)
-        serverworker.start()
+        results = self._amqp_sp.finish(timeout=30)
+        results[0].assert_errors(self)
 
-        # clear the amqp message queue
-        while amqp_queue.empty is False:
-            amqp_queue.get()
+    @depends(after='test_rediscover_node_delete')
+    def test_rediscover_node_discover_rebooted_node(self):
+        # look for node-adds until one happens that has the same uuid as the old deleted node
+        self.__qproc.match_on_routekey('node-added', routing_key='node.added.#', match_CB=self.__check_added_node_CB)
+        results = self._amqp_sp.finish(timeout=300)
+        results[0].assert_errors(self)
 
-        logs.debug('launch AMQP thread for discovery')
-        discover_worker = AmqpWorker(
-            exchange_name="on.events", topic_routing_key="node.#.information.#", external_callback=self.amqp_callback,
-            timeout=600)
-        discover_worker.setDaemon(True)
-        discover_worker.start()
+    @depends(after='test_rediscover_node_discover_rebooted_node', before='test_rediscover_node_registration')
+    def test_rediscover_node_discover_sku_assign(self):
+        nodeid = self.__get_run_context('rediscovered_nodeid')
+        skupack_intalled = self.__check_skupack()
+        if not skupack_intalled:
+            raise unittest.SkipTest('skupack is not installed, skipping sku assigned message check')
 
-        logs.debug('Wait for node added')
-        # use the original node's UUID to verify the node discovered is the one we just deleted.
-        self.assertTrue(self._wait_for_discover(node_uuid), "Fail to find the orignial node after reboot!")
-        logs.debug_2("Found the original node. It is rediscovered successfully!")
+        self.__qproc.match_on_routekey('sku-assigned', routing_key='node.sku.assigned.information.{}.#'.format(nodeid),
+                                       validation_block=self.__build_info_vblock('node', 'sku.assigned', nodeid, nodeid))
+        results = self._amqp_sp.finish(timeout=300)
+        results[0].assert_errors(self)
 
-        logs.debug('Wait for node discovery')
-        self._wait_amqp_message(60)
-        amqp_message_discover = amqp_queue.get()
-        self._process_message("discovered", nodefound_id, nodefound_id, "node", amqp_message_discover)
+    @depends(after='test_rediscover_node_discover_rebooted_node')
+    def test_rediscover_node_registration(self):
+        nodeid = self.__get_run_context('rediscovered_nodeid')
+        self.__qproc.match_on_routekey('node-discovered-information',
+                                       routing_key='node.discovered.information.{}.#'.format(nodeid),
+                                       validation_block=self.__build_info_vblock('node', 'discovered', nodeid, nodeid))
+        results = self._amqp_sp.finish(timeout=300)
+        results[0].assert_errors(self)
 
-        logs.debug('Validate node discovery registration AMQP Message')
-        self._node_registration_validate(amqp_message_discover[2])
-        logs.debug('Validate node discovery registration web hook Message')
-        self._process_web_message(30)
+    @depends(after='test_rediscover_node_registration')
+    def test_rediscover_rackd_discover_hook(self):
+        found_msgs = []
+        while True:
+            try:
+                m = self._serverworker.do_post_queue.get(timeout=0.1)
+            except gevent.queue.Empty:
+                m = None
+            if m is None:
+                break
+            self.__process_web_message(m)
+            found_msgs.append(m)
 
-        # skip sku.assigned message if no skupack is installed on RackHD
-        skupack_intalled = self._check_skupack()
-        if skupack_intalled:
-            logs.debug_2("wait for skupack assign!")
-            self._wait_amqp_message(50)
-            amqp_message_discover = amqp_queue.get()
-            self._process_message("sku.assigned", nodefound_id, nodefound_id, "node", amqp_message_discover)
-        else:
-            logs.warning("skupack is not installed, skip sku assigned message check!")
-        logs.debug_3("wait for obm assign!")
+        found_count = len(found_msgs)
+        self.assertNotEqual(found_count, 0, 'No discovery message was posted back via the webhook')
+        self.assertEqual(found_count, 1, 'Received more than one posted webhook: {}'.format(found_msgs))
 
-        # re-apply obm setting to the node to generate obm.assigned message
-        self.assertTrue(self._apply_obmsetting_to_node(nodefound_id), "Fail to apply obm setting!")
-        self._wait_amqp_message(50)
-        amqp_message_discover = amqp_queue.get()
-        self._process_message("obms.assigned", nodefound_id, nodefound_id, "node", amqp_message_discover)
-        logs.debug_3("wait for accessible!")
-        self._wait_amqp_message(100)
-        amqp_message_discover = amqp_queue.get()
-        self._process_message("accessible", nodefound_id, nodefound_id, "node", amqp_message_discover)
-        discover_worker.dispose()
+    @depends(after='test_rediscover_node_registration')
+    def test_rediscover_node_discover_obm_settings(self):
+        nodeid = self.__get_run_context('rediscovered_nodeid')
+        applied = self.__apply_obmsetting_to_node(nodeid)
+        self.assertTrue(applied, 'failed to apply obm settings to rediscovered node {}'.format(nodeid))
 
-    def test_rediscover(self):
-        nodeid = self._select_node()
-        logs.debug_2('Checking OBM setting...')
-        node_obm = fit_common.rackhdapi('/api/2.0/nodes/' + nodeid)['json']['obms']
-        if node_obm == []:
-            self.assertTrue(self._apply_obmsetting_to_node(nodeid), "Fail to apply obm setting!")
-        node_uuid = fit_common.rackhdapi('/redfish/v1/Systems/' + nodeid)['json']['UUID']
-        logs.debug_3('UUID of selected Node is:{}'.format(node_uuid))
-        self._node_reboot(nodeid)
-        self._node_delete(nodeid)
-        self._node_discover(node_uuid)
+        self.__qproc.match_on_routekey('obm-assigned', routing_key='node.obms.assigned.information.{}.#'.format(nodeid),
+                                       validation_block=self.__build_info_vblock('node', 'obms.assigned', nodeid, nodeid))
+        self.__qproc.match_on_routekey('node-accessible', routing_key='node.accessible.information.{}.#'.format(nodeid),
+                                       validation_block=self.__build_info_vblock('node', 'accessible', nodeid, nodeid))
+
+        results = self._amqp_sp.finish(timeout=300)
+        results[0].assert_errors(self)
 
 
 if __name__ == '__main__':

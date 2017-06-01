@@ -94,6 +94,8 @@ class TestMatcherGroups(plugin_test_helper.resolve_no_verify_helper_class()):
 
     def __assert_basic_results(self, ok, oks=1, errs=0):
         iresult = self.__get_inner_results()
+        if ok:
+            iresult.assert_errors(self)
         self.assertEqual(iresult.is_ok, ok,
                          'is_ok was {0} not expected {1}'.format(iresult.is_ok, ok))
         self.assertEqual(
@@ -133,7 +135,7 @@ class TestMatcherGroups(plugin_test_helper.resolve_no_verify_helper_class()):
         self.assertListEqual(events, found_events, 'events expected != found')
 
         # And finally look for the 'Match result type' lines show up in the expected order
-        mrtre = re.compile('''Match result type '(?P<result_type>.*?)',''')
+        mrtre = re.compile('''\sMatch result type '(?P<result_type>.*?)',''')
         found_mrt = []
         for match in mrtre.finditer(tes):
             found_mrt.append(match.group('result_type'))
@@ -184,6 +186,11 @@ class TestMatcherGroups(plugin_test_helper.resolve_no_verify_helper_class()):
             ires, fails=3, matchers=3,
             events=['m2', 'm1', 'finish'],
             match_results=['MatcherOrderedMissMatch', 'MatcherOrderedMissMatch', 'MatcherUnderMatch'])
+
+    def test_ordered_full_miss(self):
+        """test in-order group with full-miss set ignores an unmatched event"""
+        ires = self.__assert_basic_results(ok=True, oks=2, errs=0)
+        ires.assert_errors(self)    # should have none
 
     def makeSuite(self):
         class TC(unittest.TestCase):
@@ -241,7 +248,7 @@ class TestMatcherGroups(plugin_test_helper.resolve_no_verify_helper_class()):
 
             def test_any_order_first_first(self):
                 self.__stsm.match_single('m1', 'will match first')
-                self.__stsm.match_single('m2', 'will matcd second')
+                self.__stsm.match_single('m2', 'will match second')
                 self.__stsm.inject('m1')
                 self.__stsm.inject('m2')
                 results = self.__stsm.finish()
@@ -249,38 +256,49 @@ class TestMatcherGroups(plugin_test_helper.resolve_no_verify_helper_class()):
 
             def test_any_order_2nd_first(self):
                 self.__stsm.match_single('m1', 'will match first')
-                self.__stsm.match_single('m2', 'will matcd second')
+                self.__stsm.match_single('m2', 'will match second')
                 self.__stsm.inject('m2')
                 self.__stsm.inject('m1')
                 results = self.__stsm.finish()
                 return results
 
             def test_ordered_works_single(self):
-                self.__stsm.push_group(ordered=True)
+                self.__stsm.open_group(ordered=True)
                 self.__stsm.match_single('m1', 'will match first')
                 self.__stsm.inject('m1')
-                self.__stsm.pop_group()
+                self.__stsm.close_group()
                 results = self.__stsm.finish()
                 return results
 
             def test_ordered_works_double(self):
-                self.__stsm.push_group(ordered=True)
+                self.__stsm.open_group(ordered=True)
                 self.__stsm.match_single('m1', 'will match first')
                 self.__stsm.match_single('m2', 'will match second')
                 self.__stsm.inject('m1')
                 self.__stsm.inject('m2')
-                self.__stsm.pop_group()
+                self.__stsm.close_group()
                 results = self.__stsm.finish()
                 return results
 
             def test_ordered_out_of_order_double(self):
-                self.__stsm.push_group(ordered=True)
+                self.__stsm.open_group(ordered=True)
                 self.__stsm.match_single('m1', 'will match first')
                 self.__stsm.match_single('m2', 'will match second')
                 self.__stsm.inject('m2')
                 self.__stsm.inject('m1')
-                self.__stsm.pop_group()
+                self.__stsm.close_group()
                 results = self.__stsm.finish()
+                return results
+
+            def test_ordered_full_miss(self):
+                self.__stsm.open_group(ordered=True)
+                self.__stsm.match_single('m1', 'will match first')
+                self.__stsm.match_single('m2', 'will match second')
+                self.__stsm.inject('m1')
+                self.__stsm.inject('allowed_miss')
+                self.__stsm.inject('m2')
+                self.__stsm.close_group()
+                results = self.__stsm.finish(allow_complete_miss=True)
                 return results
 
             def runTests(self):
