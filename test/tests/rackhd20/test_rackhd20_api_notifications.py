@@ -25,14 +25,14 @@ amqp_queue = Queue.Queue(maxsize=0)
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 
-
-AMQP_PORT = fit_common.fitports()['amqp_ssl']
-MONGO_PORT = fit_common.fitports()['mongo_port']
-HTTP_PORT = fit_common.fitports()['http']
+# Check the running test environment
 if fit_common.fitargs()['stack'] in ['vagrant_guest', 'vagrant']:
     env_vagrant = True
 else:
     env_vagrant = False
+AMQP_PORT = fit_common.fitports()['amqp_ssl']
+MONGO_PORT = fit_common.fitports()['mongo_port']
+HTTP_PORT = fit_common.fitports()['http']
 
 
 class AmqpWorker(threading.Thread):
@@ -82,7 +82,6 @@ class test_alert_notification(unittest.TestCase):
         else:
             logs.info(" Not running in a vagrant environment, skipping tests")
             return
-        
         logs.debug_1("MONGO_PORT: {0}, AMQP_PORT: {1}, HTTP_PORT:{2}".format(MONGO_PORT, AMQP_PORT, HTTP_PORT))
         self.CLIENT = MongoClient('localhost', MONGO_PORT)
         self.db = self.CLIENT.pxe
