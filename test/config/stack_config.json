@@ -16,13 +16,19 @@
     "ucs_service_uri" : "https://localhost:7080",
     "ucsm_config_file" : "./tests/ucs/ucsm_config.xml"
   },
+  "vagrant_ucs":{
+    "rackhd_host": "localhost",
+    "type": "vagrant",
+    "ucsm_ip" : "172.31.128.252",
+    "ucs_service_uri" : "https://localhost:7080",
+    "ucsm_config_file" : "./tests/ucs/ucsm_config.xml"
+  },
   "hop_stack":{
     "rackhd_host": "localhost",
     "type": "vagrant",
     "ucsm_ip" : "10.240.19.70",
     "ucs_service_uri" : "https://localhost:7080"
   },
-
   "vagrant_remote": {
     "rackhd_host": "127.0.0.1",
     "type": "vagrant",
@@ -42,6 +48,38 @@
         "https": 8443,
         "amqp_ssl": 5672,
         "amqp_nossl": 5671
+      }
+    }
+  },
+  "docker": {
+    "rackhd_host": "localhost",
+    "ucsm_ip" : "172.31.128.252",
+    "ucs_service_uri" : "https://localhost:7080",
+    "ucsm_config_file" : "./tests/ucs/ucsm_config.xml",
+    "install-config": {
+      "ports": {
+        "mongo_port": 37017,
+        "http": 9090,
+        "https": 9093,
+        "amqp_ssl": 9091,
+        "amqp_nossl": 5671,
+        "ssh": 2222
+      }
+    }
+  },
+  "ova": {
+    "rackhd_host": "localhost",
+    "ucsm_ip" : "172.31.128.252",
+    "ucs_service_uri" : "https://localhost:7080",
+    "ucsm_config_file" : "./tests/ucs/ucsm_config.xml",
+    "install-config": {
+      "ports": {
+        "mongo_port": 37017,
+        "http": 9090,
+        "https": 9093,
+        "amqp_ssl": 9091,
+        "amqp_nossl": 5671,
+        "ssh": 2222
       }
     }
   }
