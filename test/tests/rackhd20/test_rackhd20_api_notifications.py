@@ -77,7 +77,7 @@ class test_alert_notification(unittest.TestCase):
     def setUpClass(self):
         if fit_common.fitargs()['stack'] == 'vagrant_guest':
             IP = "127.0.0.1"
-        elif fit_common.fitargs()['stack'] == 'vagrant':
+        elif fit_common.fitargs()['stack'] in ['vagrant', 'vagrant_ucs']:
             IP = "10.0.2.2"
         else:
             logs.info(" Not running in a vagrant environment, skipping tests")
