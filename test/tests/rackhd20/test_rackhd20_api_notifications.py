@@ -26,7 +26,7 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 
 # Check the running test environment
-if fit_common.fitargs()['stack'] in ['vagrant_guest', 'vagrant']:
+if fit_common.fitargs()['stack'] in ['vagrant_guest', 'vagrant', 'vagrant_ucs']:
     env_vagrant = True
 else:
     env_vagrant = False
