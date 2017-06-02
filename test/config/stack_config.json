@@ -11,7 +11,7 @@
   },
   "vagrant":{
     "rackhd_host": "localhost",
-    "type": "vagrant",
+    "type": "vagrant"
   },
   "vagrant_ucs":{
     "rackhd_host": "localhost",
