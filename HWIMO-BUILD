@@ -12,7 +12,7 @@ git clone . packagebuild
 pushd packagebuild
 cp -r ../debian .
 
-wget https://raw.githubusercontent.com/RackHD/RackHD/master/packer/ansible/roles/monorail/files/config.json  -O config.json
+wget --no-check-certificate https://raw.githubusercontent.com/RackHD/RackHD/master/packer/ansible/roles/monorail/files/config.json   -O config.json
 
 # If PKG_VERSION is not set as an environment variable
 # compute it as below:
