@@ -913,6 +913,18 @@ def node_select():
     return nodelist
 
 
+def is_dell_node(node_id):
+    node_entry = rackhdapi('/api/2.0/nodes/{0}'.format(node_id))
+    if node_entry['status'] != 200:
+        print '**** Unable to retrieve node list via API.\n'
+        sys.exit(255)
+
+    for identifier in node_entry['json']['identifiers']:
+        if re.match('^[0-9|A-Z]{7}$', identifier) is not None:
+            return True
+    return False
+
+
 def list_skus():
     # return list of installed SKU names
     skunames = []
