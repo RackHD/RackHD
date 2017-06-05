@@ -61,14 +61,17 @@ class _KeyedConsumerHandler(object):
         self.__event_callbacks.append(event_cb)
 
     def __message_cb(self, body, msg):
+        skip = False
         if self.__ignore_some_stuff:
             if "heartbeat" in msg.delivery_info['routing_key']:
-                msg.ack()
-                return
+                skip = True
             if msg.delivery_info['routing_key'].startswith('http'):
-                msg.ack()
-                return
+                skip = True
             if msg.delivery_info['routing_key'].startswith('polleralert'):
+                skip = True
+
+            if skip:
+                self.__logs.idl.debug('AMQP-SKIP=%s', msg.delivery_info['routing_key'])
                 msg.ack()
                 return
 
