@@ -540,8 +540,9 @@ def scp_file_to_host(src_file_name, vmnum=1):
     '''
     logfile_redirect = file('/dev/null', 'w')
     just_fname = os.path.basename(src_file_name)
+    port = fitports()['ssh']
     # if localhost just copy to home dir
-    if fitargs()['rackhd_host'] == 'localhost':
+    if fitargs()['rackhd_host'] == 'localhost' and port == 22:
         remote_shell('cp ' + src_file_name + ' ~/' + src_file_name)
         return src_file_name
 
@@ -552,7 +553,8 @@ def scp_file_to_host(src_file_name, vmnum=1):
 
     scp_target = fitcreds()['rackhd_host'][0]['username'] + '@{0}:'.format(rackhd_hostname)
 
-    cmd = 'scp -o StrictHostKeyChecking=no {0} {1}'.format(src_file_name, scp_target)
+    cmd = 'scp -P {0} -o StrictHostKeyChecking=no {1} {2}'.format(
+        port, src_file_name, scp_target)
     if VERBOSITY >= 4:
         print "scp_file_to_host: '{0}'".format(cmd)
 
