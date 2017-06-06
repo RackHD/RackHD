@@ -11,6 +11,7 @@ import os
 import sys
 import subprocess
 import fit_common
+from time import sleep
 
 
 # Local methods
@@ -68,6 +69,151 @@ class rackhd20_api_workflows(fit_common.unittest.TestCase):
         self.assertEqual(api_data['status'], 201, 'Incorrect HTTP return code, expected 201, got:' + str(api_data['status']))
         api_data = fit_common.rackhdapi("/api/2.0/workflows/graphs/" + 'Graph.Obm.Ipmi.CreateSettings.Test')
         self.assertEqual(api_data['status'], 200, 'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
+
+    def test_api_20_workflows_waitOn_anyOf(self):
+        """
+        This is a function that tests the key waitOn.anyOf in workflow engine.
+
+        The anyOf key will be considered fulfilled when any of the
+        dependent tasks under it is fulfilled, and will be considered
+        fail when all the tasks under it are failed.
+        """
+        data_payload = {
+            "friendlyName": "Multi-REST-call",
+            "injectableName": "Graph.REST.call",
+            "tasks": [
+                {
+                    "label": "REST-call-good",
+                    "taskDefinition": {
+                        "friendlyName": "good REST call",
+                        "injectableName": "Task.Rest.GET",
+                        "implementsTask": "Task.Base.Rest",
+                        "options": {
+                            "url": "http://localhost:8080/api/2.0/nodes",
+                            "method": "GET"
+                        },
+                        "properties": {}
+                    }
+                },
+                {
+                    "label": "REST-call-2",
+                    "taskDefinition": {
+                        "friendlyName": "2nd REST call",
+                        "injectableName": "Task.Rest.GET",
+                        "implementsTask": "Task.Base.Rest",
+                        "options": {
+                            "url": "http://localhost:8080/api/2.0/nodes",
+                            "method": "GET"
+                        },
+                        "properties": {}
+                    }
+                },
+                {
+                    "label": "REST-call-bad",
+                    "taskDefinition": {
+                        "friendlyName": "bad REST call",
+                        "injectableName": "Task.Rest.GET",
+                        "implementsTask": "Task.Base.Rest",
+                        "options": {
+                            "url": "http://localhost:8080/api/never/happen",
+                            "method": "GET"
+                        },
+                        "properties": {}
+                    }
+                },
+                {
+                    "label": "REST-call-final-good",
+                    "taskDefinition": {
+                        "friendlyName": "final REST call",
+                        "injectableName": "Task.Rest.GET",
+                        "implementsTask": "Task.Base.Rest",
+                        "options": {
+                            "url": "http://localhost:8080/api/2.0/nodes",
+                            "method": "GET"
+                        },
+                        "properties": {}
+                    },
+                    "waitOn": {
+                        "anyOf": {
+                            "REST-call-good": "succeeded",
+                            "REST-call-bad": "succeeded"
+                        },
+                        "REST-call-2": "succeeded"
+                    }
+                },
+                {
+                    "label": "REST-call-final-pending",
+                    "taskDefinition": {
+                        "friendlyName": "final REST call",
+                        "injectableName": "Task.Rest.GET",
+                        "implementsTask": "Task.Base.Rest",
+                        "options": {
+                            "url": "http://localhost:8080/api/2.0/nodes",
+                            "method": "GET"
+                        },
+                        "properties": {}
+                    },
+                    "waitOn": {
+                        "anyOf": {
+                            "REST-call-good": "failed",
+                            "REST-call-bad": "failed"
+                        }
+                    }
+                },
+                {
+                    "label": "REST-call-final-succeeded-2",
+                    "taskDefinition": {
+                        "friendlyName": "final REST call",
+                        "injectableName": "Task.Rest.GET",
+                        "implementsTask": "Task.Base.Rest",
+                        "options": {
+                            "url": "http://localhost:8080/api/2.0/nodes",
+                            "method": "GET"
+                        },
+                        "properties": {}
+                    },
+                    "waitOn": {
+                        "anyOf": {
+                            "REST-call-good": "failed",
+                            "REST-call-bad": "succeeded"
+                        }
+                    }
+                }
+            ]
+        }
+
+        node_id = NODECATALOG[0]
+        if not node_id:
+            self.fail("Cannot find any NODE connected with this RackHD server")
+
+        # Assume previous test will make sure this will success
+        setup_return = fit_common.rackhdapi("/api/2.0/workflows/graphs", action="put", payload=data_payload)
+
+        graph_query = {}
+        graph_query["name"] = data_payload["injectableName"]
+        run_return = fit_common.rackhdapi("/api/2.0/nodes/{0}/workflows"
+                .format(node_id), action="post", payload=graph_query)
+        graph_id = run_return['json']['instanceId']
+
+        sleep(5)  # Need some time to make sure the workflow is executed successfully
+
+        result_return = fit_common.rackhdapi("/api/2.0/workflows/{0}".format(graph_id), action="get")
+        running_result = result_return['json']['tasks']
+        for task in running_result:
+            if task['label'] == "REST-call-final-pending":
+                self.assertEqual(task['state'], 'pending',
+                    "When all the conditions under anyOf are failed," +
+                    " task should be marked unreachable, but got " + task['state'])
+
+            if task['label'] == "REST-call-final-succeeded-2":
+                self.assertEqual(task['state'], 'succeeded',
+                    "When one of the conditions under anyOf is failed but other fufilled," +
+                    " task should be reachable and executed, but got " + task['state'])
+
+            if task['label'] == "REST-call-final-good":
+                self.assertEqual(task['state'], 'succeeded',
+                    "When all of the conditions under anyOf is fulfilled," +
+                    " task should be reachable and executed, but got " + task['state'])
 
 if __name__ == '__main__':
     fit_common.unittest.main()
