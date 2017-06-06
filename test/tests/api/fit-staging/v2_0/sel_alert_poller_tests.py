@@ -28,7 +28,7 @@ SKU_ATTACH_WAIT_TIME = 15
 TEST_SKU_PACK_NAME = 'SKUPACK_SEL_POLLER_TEST'
 
 
-@attr(regression=False, smoke=False, workflows_tasks_api2_tests=True)
+@attr(regression=False, smoke=True, workflows_tasks_api2_tests=True)
 class SELPollerAlertTests(fit_common.unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -40,14 +40,14 @@ class SELPollerAlertTests(fit_common.unittest.TestCase):
         # We have context information that needs to be passed from test-to-test. Set up the template
         # space.
         cls._run_context = {
-           'node_id': None,
-           'bmc_ip': None,
-           'sku_id': None,
-           'original_sku_id': None,
-           'available_sel_entries': None,
-           'sku_pack_number': None,
-           'poller_id': None,
-           'bmc_creds': get_bmc_cred()
+            'node_id': None,
+            'bmc_ip': None,
+            'sku_id': None,
+            'original_sku_id': None,
+            'available_sel_entries': None,
+            'sku_pack_number': None,
+            'poller_id': None,
+            'bmc_creds': get_bmc_cred()
         }
         cls.__rootDir = "/tmp/tarball/"
         cls.__skuPackTarball = cls.__rootDir + "mytest.tar.gz"
@@ -165,7 +165,7 @@ class SELPollerAlertTests(fit_common.unittest.TestCase):
                     res = requests.post(URL, files=self.__file)
                     sku_id = loads(res.text).get('id')
                     break
-                except requests.ConnectionError, e:
+                except requests.ConnectionError as e:
                     logs.info("Request Error {0}: ".format(e))
 
             self.assertIsNotNone(res, msg='Connection could not be established')
@@ -225,8 +225,12 @@ class SELPollerAlertTests(fit_common.unittest.TestCase):
         # }}
 
         self.__qproc.match_on_routekey('polleralert-sel-update',
-                                       routing_key='polleralert.sel.updated.#.{}.{}'.format(poller_id, node_id),
-                                       validation_block=self.__build_info_vblock('polleralert', 'sel.updated', poller_id, node_id))
+                                       routing_key='polleralert.sel.updated.#.{}.{}'.format(poller_id,
+                                                                                            node_id),
+                                       validation_block=self.__build_info_vblock('polleralert',
+                                                                                 'sel.updated',
+                                                                                 poller_id,
+                                                                                 node_id))
 
         # Inject a single SEL entry after clearing the sel
         self.__run_impitool_command(bmc_ip, "sel clear")
