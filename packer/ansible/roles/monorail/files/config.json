@@ -14,7 +14,7 @@
             "httpsEnabled": false,
             "proxiesEnabled": true,
             "authEnabled": true,
-            "yamlName": ["monorail-2.0.yaml", "redfish.yaml"]
+            "routers": "northbound-api-router"
         },
         {
             "address": "0.0.0.0",
@@ -22,7 +22,7 @@
             "httpsEnabled": true,
             "proxiesEnabled": true,
             "authEnabled": true,
-            "yamlName": ["monorail-2.0.yaml", "redfish.yaml"]
+            "routers": "northbound-api-router"
         },
         {
             "address": "172.31.128.1",
@@ -30,7 +30,7 @@
             "httpsEnabled": false,
             "proxiesEnabled": true,
             "authEnabled": false,
-            "yamlName": ["monorail-2.0-sb.yaml"]
+            "routers": "southbound-api-router"
         },
         {
             "address": "0.0.0.0",
@@ -38,7 +38,7 @@
             "httpsEnabled": false,
             "proxiesEnabled": true,
             "authEnabled": false,
-            "yamlName": ["monorail-2.0-sb.yaml"]
+            "routers": "southbound-api-router"
         }
     ],
     "httpDocsRoot": "./build/apidoc",
