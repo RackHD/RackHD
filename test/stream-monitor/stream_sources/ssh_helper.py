@@ -4,7 +4,11 @@ Copyright (c) 2017 Dell Inc. or its subsidiaries. All Rights Reserved.
 import optparse
 import re
 from pexpect.pxssh import pxssh
-
+import socket
+import subprocess
+#from pexpect import spawn
+import pexpect
+ 
 
 class StreamToLogger(object):
     def __init__(self, logger, prefix):
@@ -53,15 +57,21 @@ class SSHHelper(pxssh):
             kwargs['logfile'] = stream_to_log
             self.__stream_to_log = stream_to_log
 
+        host = self._parser_options.sm_dut_ssh_host
+        port = self._parser_options.sm_dut_ssh_port
+        user = self._parser_options.sm_dut_ssh_user
+        password = self._parser_options.sm_dut_ssh_password
+
+        self.__logs.info("Before setup_ssh")
+        rt = self.setup_ssh_connection( host, port, user, password)
+        self.__logs.info("After: %s ", rt)
+
         super(SSHHelper, self).__init__(*args, **kwargs)
         assert device == 'dut', \
             'multiple targets not supported yet'
         assert self._parser_options is not None, \
             'attempt to create ssh helper before nose-plugin-begin step called'
-        host = self._parser_options.sm_dut_ssh_host
-        port = self._parser_options.sm_dut_ssh_port
-        user = self._parser_options.sm_dut_ssh_user
-        password = self._parser_options.sm_dut_ssh_password
+
         self.login(host, user, password, port=port)
         self.sendline('sudo su -')
         index = self.expect(['assword', '#'])
@@ -127,3 +137,46 @@ class SSHHelper(pxssh):
     @classmethod
     def set_options(cls, parser_options):
         cls._parser_options = parser_options
+
+    def setup_ssh_connection(self, ip, port, user, pw):
+        '''
+        This function will clear the stored ssh keys and check the connection to the host specified.
+        If there is an issue connecting to the host the program will exit.
+        :param args: all command line arguments
+        '''
+
+        self.__logs.info("inside setup_ssh")
+        self.__logs.info("ip %s", ip)
+        self.__logs.info("port %s", port)
+        self.__logs.info("user %s", user)
+        self.__logs.info("pw %s", pw)
+
+        subprocess.call(["touch ~/.ssh/known_hosts;ssh-keygen -R " + ip +
+                         " -f ~/.ssh/known_hosts > /dev/null 2>&1"], shell=True)
+        # if ip parameter is a hostname clear key associated with the ip as well as name
+        try:
+            self.__logs.info("try touch 2")
+            subprocess.call(["touch ~/.ssh/known_hosts;ssh-keygen -R " +
+                             socket.gethostbyname(ip) + " -f ~/.ssh/known_hosts > /dev/null 2>&1"], shell=True)
+            self.__logs.info("try touch after")
+        except:
+            self.__logs.info("pass")
+            pass
+
+        command = 'ssh -t -p {0} {1}@{2} "echo connected"'.format(port, user, ip)
+        child = pexpect.spawn(command)
+        self.__logs.info("spawned command %s", command)
+        child.timeout = 5
+        while True:
+            i = child.expect(['yes/no', 'assword:', 'Permission denied', "connected",
+                              'Could not resolve', 'no route', 'Invalid', pexpect.EOF, pexpect.TIMEOUT])
+            self.__logs.info("while %s", i)
+            if i == 0:     # Continue with new ssh key
+                child.sendline('yes')
+            elif i == 1:   # Asking for password
+                child.sendline(pw)
+            elif i == 3:   # Connected to the host
+                break
+            else:
+                return False
+        return True 
