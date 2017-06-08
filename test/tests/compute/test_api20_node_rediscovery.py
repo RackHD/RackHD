@@ -10,15 +10,20 @@ python run_tests.py -stack 4 -test tests/compute/test_api20_node_rediscovery.py
 '''
 
 import fit_path  # NOQA: unused import
-from nose.plugins.attrib import attr
 import fit_common
 import flogging
 import random
 import test_api_utils
+import time
 import unittest
 
-import time
+from json import loads, dumps
 from nosedep import depends
+from nose.plugins.attrib import attr
+from config.api2_0_config import config
+from on_http_api2_0 import ApiApi as Api
+from on_http_api2_0.rest import ApiException
+
 log = flogging.get_loggers()
 
 # default base payload
@@ -51,9 +56,9 @@ PAYLOAD =  {
 }
 
 # if an external payload file is specified, use that
-config = fit_common.fitcfg().get('bootstrap-payload', None)
-if config:
-    PAYLOAD = config
+#payload = fit_common.fitcfg().get('bootstrap-payload', None)
+#if payload:
+#    PAYLOAD = payload
 
 
 # this routine polls a workflow task ID for completion
@@ -85,9 +90,15 @@ def wait_for_workflow_complete(instanceid, start_time, waittime=2700, cycle=30):
 @attr(all=False, regression=False, smoke=False) # TODO add attr refresh= True
 class api20_node_rediscovery(fit_common.unittest.TestCase):
     @classmethod
-    def setUp(self):
+    def setUpClass(self):
+        # class method is run once per script
+        # usually not required in the script
+        self.__client = config.api_client
+        self.__dmi_catalog = {}
+        self.__bmc_catalog = {}
+
         # Get the list of nodes
-        self.nodelist = []
+        nodelist = []
 
         api_data = fit_common.rackhdapi('/api/2.0/nodes')
 
@@ -102,15 +113,15 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
                 nodename = test_api_utils.get_rackhd_nodetype(nodeid)
                 if not nodename == "Unidentified-Compute":
                     print nodename
-                    self.nodelist.append(nodeid)
+                    nodelist.append(nodeid)
 
         # TODO: FIXME
-        assert (len(self.nodelist) !=0) , "No valid nodes discovered"
+        assert (len(nodelist) !=0) , "No valid nodes discovered"
 
         # Select one node at random
-        self.__NODE = self.nodelist[random.randint(0, len(self.nodelist) - 1)]
+        self.__NODE = nodelist[random.randint(0, len(nodelist) - 1)]
 
-        print "self.__NODE"
+        print "****** self.__NODE"
         print self.__NODE
 
         # delete active workflows for specified node
@@ -119,7 +130,7 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
     def test01_node_check(self):
         # Log node data
 
-        print "self.__NODE 2"
+        print "****** self.__NODE 2"
         print self.__NODE
 
         nodeinfo = fit_common.rackhdapi('/api/2.0/nodes/' + self.__NODE)['json']
@@ -130,33 +141,70 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
 
         # Ensure the compute node is powered on and reachable
         result = fit_common.rackhdapi('/api/2.0/nodes/' +
-                                      self.__class__.__NODE +
+                                      self.__NODE +
                                       '/workflows',
                                       action='post', payload={"name": "Graph.PowerOn.Node"})
         self.assertEqual(result['status'], 201, "Node Power on workflow API failed, see logs.")
         self.assertTrue(wait_for_workflow_complete(result['json']['instanceId'], time.time(), 50, 5),
                         "Node Power on workflow failed, see logs.")
 
-#    @depends(after=test01_node_check)
-#    def test02_os_install(self):
+    @depends(after=test01_node_check)
+    def test02_get_catalogs(self):
+
+
+        print "****** self.__NODE 3"
+        print self.__NODE
+
+        # get the dmi catalog for node and fill in mock sku
+        Api().nodes_get_catalog_source_by_id(identifier=self.__NODE, source='dmi')
+        self.__dmi_catalog = loads(self.__client.last_response.data)
+        self.assertGreater(len(self.__dmi_catalog), 0, msg=("Node %s dmi catalog has zero length" % self.__NODE))
+        print "**** Node Catalog DMI ****"
+        print self.__dmi_catalog
+
+        # get the bmc catalog for node and fill in mock sku
+        Api().nodes_get_catalog_source_by_id(identifier=self.__NODE, source='bmc')
+        self.__bmc_catalog = loads(self.__client.last_response.data)
+        self.assertGreater(len(self.__bmc_catalog), 0, msg=("Node %s bmc catalog has zero length" % self.__NODE))
+        print "**** Node Catalog BMC ****"
+        print self.__bmc_catalog
+
+
+    @depends(after=test02_get_catalogs)
+    def test03_refresh_immediate(self):
+
+        global PAYLOAD
+
+        print "****** self.__NODE 4"
+        print self.__NODE
+
+
+        payload_string = dumps(PAYLOAD)
+        PAYLOAD =  loads(payload_string.replace("NODEID", self.__NODE))
+        print PAYLOAD
+
+        
+
+
+
 #        # launch workflow
 #        workflowid = None
 #        result = fit_common.rackhdapi('/api/2.0/nodes/' +
-#                                      self.__class__.__NODE +
+#                                      self.__NODE +
 #                                      '/workflows',
 #                                      action='post', payload=PAYLOAD)
-#        if result['status'] == 201:
-#            # workflow running
-#            log.info_5(" InstanceID: " + result['json']['instanceId'])
-#            log.info_5(" Payload: " + fit_common.json.dumps(PAYLOAD))
-#            workflowid = result['json']['instanceId']
-#        else:
-#            # workflow failed with response code
-#            log.error(" InstanceID: " + result['text'])
-#            log.error(" Payload: " + fit_common.json.dumps(PAYLOAD))
-#            self.fail("Workflow failed with response code: " + result['status'])
-#        self.assertTrue(wait_for_workflow_complete(workflowid, time.time()), "OS Install workflow failed, see logs.")
-
+#       if result['status'] == 201:
+#           # workflow running
+#           log.info_5(" InstanceID: " + result['json']['instanceId'])
+#           log.info_5(" Payload: " + fit_common.json.dumps(PAYLOAD))
+#           workflowid = result['json']['instanceId']
+#       else:
+#           # workflow failed with response code
+#           log.error(" InstanceID: " + result['text'])
+#           log.error(" Payload: " + fit_common.json.dumps(PAYLOAD))
+#           self.fail("Workflow failed with response code: " + result['status'])
+#       self.assertTrue(wait_for_workflow_complete(workflowid, time.time()), "OS Install workflow failed, see logs.")
+#
 
 if __name__ == '__main__':
     fit_common.unittest.main()
