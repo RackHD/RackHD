@@ -196,7 +196,6 @@ class rackhd_ucs_api(unittest.TestCase):
 
         return len(api_data["json"]["ServiceProfile"]["members"])
 
-
     def wait_utility(self, id, counter, name):
         """
         Recursevily wait for the ucs discovery workflow to finish
@@ -224,15 +223,21 @@ class rackhd_ucs_api(unittest.TestCase):
 
     def get_ucs_node_list(self):
         nodeList = []
-
         api_data = fit_common.rackhdapi('/api/2.0/nodes')
         self.assertEqual(api_data['status'], 200,
                          'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
         for node in api_data['json']:
             if node["obms"] != [] and node["obms"][0]["service"] == "ucs-obm-service":
                 nodeList.append(node)
-
         return (nodeList)
+
+    def get_ucs_encl_id_list(self):
+        enclIdList = []
+        nodeList = self.get_ucs_node_list()
+        for node in nodeList:
+            if node["type"] == 'enclosure':
+                enclIdList.append(node['id'])
+        return (enclIdList)
 
     @unittest.skipUnless("ucsm_ip" in fit_common.fitcfg(), "")
     def test_check_ucs_params(self):
@@ -397,6 +402,29 @@ class rackhd_ucs_api(unittest.TestCase):
 
         self.assertEqual(len(errNodes), 0, errNodes)
         self.assertEqual(len(errGraphs), 0, errGraphs)
+
+    @depends(after=[test_api_20_ucs_discovery])
+    def test_api_redfish_chassis(self):
+        """
+        Tests the redfish/chassis routes with UCS nodes
+        :return:
+        """
+        ucsEnclList = self.get_ucs_encl_id_list()
+        errUrls = ''
+
+        api_data = fit_common.rackhdapi('/redfish/v1/Chassis')
+        self.assertEqual(api_data['status'], 200,
+                         'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
+        for chassis in api_data['json']['Members']:
+            url = chassis['@odata.id']
+            id = url[len('/redfish/v1/Chassis/'):]
+            if id in ucsEnclList:
+                ucsEnclList.remove(id)
+                api_data = fit_common.rackhdapi(url)
+                if api_data['status'] != 200:
+                    errUrls += url + ' returned status ' + str(api_data['status']) + ',\n'
+        self.assertEqual(len(ucsEnclList), 0, 'not all UCS chassis were listed under /chassis')
+        self.assertEqual(len(errUrls), 0, errUrls)
 
     @depends(after=[test_api_20_ucs_catalog])
     def test_api_20_ucs_discover_and_catalog_all(self):
