@@ -94,8 +94,10 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
         # class method is run once per script
         # usually not required in the script
         self.__client = config.api_client
-        self.__dmi_catalog = {}
-        self.__bmc_catalog = {}
+        self.__pre_dmi_catalog = {}
+        self.__pre_bmc_catalog = {}
+        self.__post_dmi_catalog = {}
+        self.__post_bmc_catalog = {}
 
         # Get the list of nodes
         nodelist = []
@@ -149,28 +151,24 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
                         "Node Power on workflow failed, see logs.")
 
     @depends(after=test01_node_check)
-    def test02_get_catalogs(self):
-
-
-        print "****** self.__NODE 3"
-        print self.__NODE
+    def test02_get_pre_catalogs(self):
 
         # get the dmi catalog for node and fill in mock sku
         Api().nodes_get_catalog_source_by_id(identifier=self.__NODE, source='dmi')
-        self.__dmi_catalog = loads(self.__client.last_response.data)
-        self.assertGreater(len(self.__dmi_catalog), 0, msg=("Node %s dmi catalog has zero length" % self.__NODE))
+        self.__pre_dmi_catalog = loads(self.__client.last_response.data)
+        self.assertGreater(len(self.__pre_dmi_catalog), 0, msg=("Node %s pre dmi catalog has zero length" % self.__NODE))
         print "**** Node Catalog DMI ****"
-        print self.__dmi_catalog
+        print self.__pre_dmi_catalog
 
         # get the bmc catalog for node and fill in mock sku
         Api().nodes_get_catalog_source_by_id(identifier=self.__NODE, source='bmc')
-        self.__bmc_catalog = loads(self.__client.last_response.data)
-        self.assertGreater(len(self.__bmc_catalog), 0, msg=("Node %s bmc catalog has zero length" % self.__NODE))
+        self.__pre_bmc_catalog = loads(self.__client.last_response.data)
+        self.assertGreater(len(self.__pre_bmc_catalog), 0, msg=("Node %s pre bmc catalog has zero length" % self.__NODE))
         print "**** Node Catalog BMC ****"
-        print self.__bmc_catalog
+        print self.__pre_bmc_catalog
 
 
-    @depends(after=test02_get_catalogs)
+    @depends(after=test02_get_pre_catalogs)
     def test03_refresh_immediate(self):
 
         global PAYLOAD
@@ -213,6 +211,25 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
 
         self.assertEqual(result['json']['status'], 'succeeded',
                          'Was expecting succeeded. Got ' + result['json']['status'])
+
+    @depends(after=test03_refresh_immediate)
+    def test04_get_post_catalogs(self):
+
+
+        # get the dmi catalog for node and fill in mock sku
+        Api().nodes_get_catalog_source_by_id(identifier=self.__NODE, source='dmi')
+        self.__post_dmi_catalog = loads(self.__client.last_response.data)
+        self.assertGreater(len(self.__post_dmi_catalog), 0, msg=("Node %s post dmi catalog has zero length" % self.__NODE))
+        print "**** Node Catalog DMI ****"
+        print self.__post_dmi_catalog
+
+        # get the bmc catalog for node and fill in mock sku
+        Api().nodes_get_catalog_source_by_id(identifier=self.__NODE, source='bmc')
+        self.__post_bmc_catalog = loads(self.__client.last_response.data)
+        self.assertGreater(len(self.__post_bmc_catalog), 0, msg=("Node %s post bmc catalog has zero length" % self.__NODE))
+        print "**** Node Catalog BMC ****"
+        print self.__post_bmc_catalog
+
 
 
 
