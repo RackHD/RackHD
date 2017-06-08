@@ -183,7 +183,36 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
         PAYLOAD =  loads(payload_string.replace("NODEID", self.__NODE))
         print PAYLOAD
 
+        result = fit_common.rackhdapi('/api/2.0/workflows', action='post', payload=PAYLOAD)
+
+        self.assertEqual(result['status'], 201,
+                         'Was expecting code 201. Got ' + str(result['status']))
+
+        graphId = result['json']['context']['graphId']
         
+        retries = 240
+        for dummy in range(0, retries):
+            result = fit_common.rackhdapi('/api/2.0/workflows/' + graphId, action='get')
+            if result['json']['status'] == 'running' or result['json']['status'] == 'Running':
+                if fit_common.VERBOSITY >= 2:
+                    # Add print out of workflow
+                    #print 'Graph name="{0}"; Graph state="{1}"'.format(result['json']['tasks'][0]['label'], result['json']['status'])
+                    print 'GraphID ="{0}"; Status="{1}"'.format(graphId, result['json']['status'])
+                fit_common.time.sleep(10)
+            elif result['json']['status'] == 'succeeded':
+                if fit_common.VERBOSITY >= 2:
+                    print "Workflow state: {}".format(result['json']['status'])
+                break
+            else:
+                if fit_common.VERBOSITY >= 2:
+                    print "Workflow state (unknown): {}".format(result['json']['status'])
+                break
+
+        print "Graph finished  with the following state: " + result['json']['status']
+
+
+        self.assertEqual(result['json']['status'], 'succeeded',
+                         'Was expecting succeeded. Got ' + result['json']['status'])
 
 
 
