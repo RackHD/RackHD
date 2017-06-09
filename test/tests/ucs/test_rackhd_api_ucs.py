@@ -404,6 +404,7 @@ class rackhd_ucs_api(unittest.TestCase):
         self.assertEqual(len(errGraphs), 0, errGraphs)
 
     @depends(after=[test_api_20_ucs_discovery])
+    @unittest.skip("Skipping 'test_api_redfish_chassis' bug RAC-5358")
     def test_api_redfish_chassis(self):
         """
         Tests the redfish/chassis routes with UCS nodes
