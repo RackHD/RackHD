@@ -21,6 +21,7 @@ Depends: ${misc:Depends},
          on-taskgraph,
          on-tftp,
          on-imagebuilder,
-         rabbitmq-server
+         rabbitmq-server,
+         ucs-service
 Description: base package for all of RackHD
  uber package for all rackhd installation

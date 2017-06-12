@@ -83,6 +83,12 @@ if [ ! -f "ansible/${ANSIBLE_PLAYBOOK}.yml" ]; then
     echo "${ERROR_HEADER} The target ansible playbook(ansible/${ANSIBLE_PLAYBOOK}.yml) does not exist. Aborting..."
     exit 3
 fi
+
+### For OVA Build, option is to build OVA directlly from VMX, or build a VMX (which includes all RackHD Prerequisite)
+if  [ ! -n "${BUILD_STAGE}" ];  then
+    BUILD_STAGE="BUILD_ALL"
+fi
+
 if [ "$BUILD_STAGE" == "BUILD_ALL" ] ; then
     echo "${INFO_HEADER} Full Build:  Install RackHD with (1) ansible playbook rackhd_prepare.yml, (2) ansible playbook ${ANSIBLE_PLAYBOOK}_mini.yml "
 else
@@ -92,7 +98,7 @@ else
         if [ "$BUILD_STAGE" == "BUILD_TEMPLATE" ] ; then
             echo "${INFO_HEADER} First Half Build: Prepare RackHD dependency with ansible :  rackhd_prepare.yml "
         else
-            echo "${ERROR_HEADER} Unrecongnized parameter BUILD_STAGE=$BUILD_STAGE. Abort ! "
+            echo "${ERROR_HEADER} Unrecongnized parameter BUILD_STAGE=$BUILD_STAGE,  Abort ! "
             exit 2
         fi
     fi
@@ -129,10 +135,6 @@ then
     fi
 fi
 
-### For OVA Build, option is to build OVA directlly from VMX, or build a VMX (which includes all RackHD Prerequisite)
-if  [ ! -n "${BUILD_STAGE}" ];  then
-    BUILD_STAGE="BUILD_ALL"
-fi
 
 
 
@@ -235,8 +237,8 @@ else
 
     else
          #Build from scratch, vmware: iso-->vmx-->ova, virtualbox: iso-->ovf-->box
-         $PACKER build --force --only=${BUILD_TYPE}-${temp_src_format}  --var-file=$CFG_FILE  --var "playbook=rackhd_prepare" ${PACKER_TEMP}   | tee packer-install.log            && \
-         $PACKER build --force --only=${BUILD_TYPE}-vmx  --var-file=$CFG_FILE  --var "playbook=${ANSIBLE_PLAYBOOK}_mini" ${PACKER_TEMP}    | tee packer-install.log
+         $PACKER build --force --only=${BUILD_TYPE}-iso  --var-file=$CFG_FILE  ${PACKER_TEMP}  | tee packer-install.log && \
+         $PACKER build --force --only=${BUILD_TYPE}-${temp_src_format}  --var-file=$CFG_FILE  --var "playbook=${ANSIBLE_PLAYBOOK}_mini" ${PACKER_TEMP}   | tee packer-install.log
     fi
 fi
 

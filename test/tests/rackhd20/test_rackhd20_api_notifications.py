@@ -25,11 +25,14 @@ amqp_queue = Queue.Queue(maxsize=0)
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 
-
+# Check the running test environment
+if fit_common.fitargs()['stack'] in ['vagrant_guest', 'vagrant', 'vagrant_ucs']:
+    env_vagrant = True
+else:
+    env_vagrant = False
 AMQP_PORT = fit_common.fitports()['amqp_ssl']
 MONGO_PORT = fit_common.fitports()['mongo_port']
 HTTP_PORT = fit_common.fitports()['http']
-env_vagrant = True
 
 
 class AmqpWorker(threading.Thread):
@@ -72,7 +75,13 @@ class test_alert_notification(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        global env_vagrant
+        if fit_common.fitargs()['stack'] == 'vagrant_guest':
+            IP = "127.0.0.1"
+        elif fit_common.fitargs()['stack'] in ['vagrant', 'vagrant_ucs']:
+            IP = "10.0.2.2"
+        else:
+            logs.info(" Not running in a vagrant environment, skipping tests")
+            return
         logs.debug_1("MONGO_PORT: {0}, AMQP_PORT: {1}, HTTP_PORT:{2}".format(MONGO_PORT, AMQP_PORT, HTTP_PORT))
         self.CLIENT = MongoClient('localhost', MONGO_PORT)
         self.db = self.CLIENT.pxe
@@ -83,13 +92,6 @@ class test_alert_notification(unittest.TestCase):
             "tags": [],
             "type": "compute"
         }
-        if fit_common.fitargs()['stack'] == 'vagrant_guest':
-            IP = "127.0.0.1"
-        elif fit_common.fitargs()['stack'] == 'vagrant':
-            IP = "10.0.2.2"
-        else:
-            env_vagrant = False # NOQA
-            return
         self.CLIENT = MongoClient('localhost', MONGO_PORT)
         self.db = self.CLIENT.pxe
         self.node = {
@@ -176,6 +178,12 @@ class test_alert_notification(unittest.TestCase):
     @classmethod
     def tearDownClass(self):
         global NODES_COUNT, CATALOGS_COUNT, OBMS_COUNT
+        global env_vagrant
+
+        # Skip the tear down if not in vagrant environment
+        if env_vagrant is False:
+            return
+
         logs.debug_3('finished redfish alert')
         self.db.obms.remove({"node": self.nodeID})
         self.db.catalogs.remove({"node": self.nodeID})
@@ -246,7 +254,7 @@ class test_alert_notification(unittest.TestCase):
         logs.debug_1("Received AMQP message: {0}".format(type(receivedMsg)))
         self.assertNotEquals(receivedMsg["data"], expectedMsg, "unexpected AMQP message ")
 
-    @unittest.skipUnless(env_vagrant is True, "")
+    @unittest.skipUnless(env_vagrant is True, "Tests limited to running in vagrant test beds.")
     def test_post_alert_withIP(self):
         self.updateDb()
         sel_worker = AmqpWorker(

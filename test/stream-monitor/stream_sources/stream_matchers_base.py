@@ -3,7 +3,6 @@ Copyright 2017, EMC, Inc.
 
 This is the base for the various stream matchers.
 """
-import logging
 from .stream_matchers_results import MatcherResult, MatcherUnderMatch, MatcherOverMatch, MatcherCleanHitResult
 from .stream_matchers_results import MatcherOrderedMissMatch
 import sys
@@ -12,8 +11,6 @@ try:
 except ImportError:
     from StringIO import StringIO as _StringIO
 from pprint import PrettyPrinter
-
-log = logging.getLogger('nose.plugins.stream_monitor.matchers')
 
 
 class _IndentedPrettyPrinter(PrettyPrinter):
@@ -52,20 +49,24 @@ class _MatcherBatcher(object):
         self.__saved_event_data = event_data
         self.__results_seen = []
 
-    def add_result(self, matcher, result):
+    def add_result(self, matcher, results):
         """
         Adds a matcher (the object capable of trying to match the event) and the
         result of that attempt to this batch.
 
         Note that a 'result' can be another _MatcherBatcher when the matcher is a sub-group (like
-        a an ordered-group inside of unordered-group).
+        a an ordered-group inside of unordered-group). It can also be a list thanks to
+        the validation additions.
         """
-        if result is not None:
-            assert isinstance(result, MatcherResult) or isinstance(result, _MatcherBatcher), \
-                'result was {0}, not a required {1} or {2}'.format(
-                result, MatcherResult, _MatcherBatcher)
+        if not isinstance(results, (list, tuple)):
+            results = [results]
+        for result in results:
+            if result is not None:
+                assert isinstance(result, MatcherResult) or isinstance(result, _MatcherBatcher), \
+                    'result was {0}, not a required {1} or {2}'.format(
+                    result, MatcherResult, _MatcherBatcher)
 
-        self.__results_seen.append((matcher, result))
+            self.__results_seen.append((matcher, result))
 
     def __get_a_result_status(self, result):
         """
@@ -94,9 +95,18 @@ class _MatcherBatcher(object):
     @property
     def is_empty(self):
         """
-        True if there are no results in batch
+        True if there are no results in the batch. More exactly, we return true
+        if there are no -none-empty- results, since an the combined results of
+        say an ordered-group is another _MatcherBatcher that may be empty.
         """
-        return len(self.__results_seen) == 0
+        for _, res in self.__results_seen:
+            if not isinstance(res, _MatcherBatcher):
+                # There is a solid result in there, so not empty
+                return False
+            if not res.is_empty:
+                # It's a matcher-batcher, but IT isn't empty.
+                return False
+        return True
 
     @property
     def has_error(self):
@@ -173,7 +183,8 @@ class StreamMatchBase(object):
     3) Still technically legal to match, but in overmatch. This last one is still a bit fuzzy
        and is more of a conceptual rather than literal state.
     """
-    def __init__(self, description, min=1, max=1):
+    def __init__(self, logs, description, min=1, max=1):
+        self._logs = logs
         self.__min = min
         self.__max = max
         self.__match_count = 0
@@ -207,6 +218,17 @@ class StreamMatchBase(object):
         print >>ofile, "{0} still_matchable={1}, still_requires_match={2}".format(
             ins, self.is_still_matchable, self.still_requires_match)
 
+    def __str__(self):
+        sf = _StringIO()
+        self.dump(sf)
+        rs = sf.getvalue()
+        # turn into single line for this (yes, cheesy, but it kind of works out)
+        fl = []
+        for line in rs.split('\n'):
+            fl.append(line.strip())
+        ft = ' '.join(fl)
+        return ft
+
     @property
     def is_still_matchable(self):
         """
@@ -237,20 +259,32 @@ class StreamMatchBase(object):
     def _match(self, other_thing):
         raise NotImplemented('subclass must implement this')
 
-    def check_event(self, event_data, break_on_miss=False):
+    def _validate(self, other_thing):
+        return []
+
+    def check_only_for_match(self, event_data):
+        """
+        Used to scan for if there -would- be a match (not about errors, just if)
+        """
+        return self._match(event_data)
+
+    def check_event(self, event_data, clevel, allow_complete_miss=False, break_on_miss=False):
         """
         Method that does the grunt work of checking an event against this matcher
         and deals with all the possible error conditions.
         """
         # Step 1: see if the matcher even matches the event data!
+        self._logs.irl.debug('%02d%s: MATCHER %s, allow_miss=%s, break_on_miss=%s, event_data=%s',
+                             clevel, clevel * ' ', self, allow_complete_miss, break_on_miss, event_data)
         low_level_matched = self._match(event_data)
+        validation_res = []
         if low_level_matched:
             # It did, so bump the match count
             self.__match_count += 1
             if self.__missmatch is not None:
                 # We are already in a state where we are part of an ordered
                 # set, and we matched something _beyond_ this one in that set.
-                # (see break_on_miss below). We bump the count in the mismatch result
+                # (see allow_complete_miss below). We bump the count in the mismatch result
                 # for diagnostic output.
                 self.__missmatch.bump_matched()
                 res = self.__missmatch
@@ -268,11 +302,11 @@ class StreamMatchBase(object):
                 # Yay! It's a match! Set the 'is_terminal' on it to "consume" the event (stops
                 # further matching attempts)
                 res = MatcherCleanHitResult(self.description, is_terminal=True)
+            validation_res = self._validate(event_data)
         else:
             # So, it wasn't a match....
             if break_on_miss:
-                # break_on_miss means we are part of an ordered set and we HAD to match. If
-                # we were already broken, just bump the count otherwise create the mismatch instance.
+                # Break-on-miss means failing to match can cause a misorder (used in ordered grous)
                 if self.__missmatch is None:
                     self.__missmatch = MatcherOrderedMissMatch(
                         self.description, self.__min, self.__max, self.__match_count)
@@ -282,7 +316,16 @@ class StreamMatchBase(object):
             else:
                 # We return None to indicate no match.
                 res = None
-        return res
+
+        # note: validation_res can only be set for a low-level-match AND res will always be
+        #  set when a low-level match occured. I.E., return (None, Something) is not
+        #  possible.
+        if len(validation_res) == 0:
+            return res
+        else:
+            rl = [res]
+            rl.extend(validation_res)
+            return rl
 
 
 class _StreamGroupsBase(object):
@@ -293,11 +336,12 @@ class _StreamGroupsBase(object):
     Right now the matching system is limited to -during- the test
     itself.
     """
-    def __init__(self, group_type):
+    def __init__(self, logs, group_type):
         """
         param group_type is a string used to help show whats going on
         when dumping on errors.
         """
+        self._logs = logs
         self._in_test_matchers = []
         self.__group_type = group_type
 
@@ -316,11 +360,25 @@ class _StreamGroupsBase(object):
             else:
                 assert False, 'matcher in list that is neither matcher or group {0}'.format(m)
 
-        print >>ofile, "{0}{1} group of {2} matchers ({3} direct-matchers, {4} sub-groups) is_still_matchable={5})".format(
-            ins, self.__group_type, len(self._in_test_matchers), mcount, gcount, self.is_still_matchable)
+        print >>ofile, "{0}{1}".format(ins, str(self))
         indent += 2
         for m in self._in_test_matchers:
             m.dump(ofile, indent)
+
+    def __str__(self):
+        mcount = 0
+        gcount = 0
+        for m in self._in_test_matchers:
+            if isinstance(m, StreamMatchBase):
+                mcount += 1
+            elif isinstance(m, _StreamGroupsBase):
+                gcount += 1
+            else:
+                assert False, 'matcher in list that is neither matcher or group {0}'.format(m)
+
+        res = "{} group of {} matchers ({} direct-matchers, {} sub-groups) is_still_matchable={})".format(
+            self.__group_type, len(self._in_test_matchers), mcount, gcount, self.is_still_matchable)
+        return res
 
     def handle_start_test(self, test):
         """
@@ -358,11 +416,14 @@ class _StreamGroupsBase(object):
         """
         Called by stream-monitor at end-of-test
         """
+        self._logs.irl.debug('--starting check_ending operation on %s', self)
         match_batch = _MatcherBatcher('finish')
         for matcher in self._in_test_matchers:
             res = matcher.check_ending()
+            self._logs.irl.debug('  check_ending matcher=%s, res=%s', matcher, res)
             if res is not None:
                 match_batch.add_result(matcher, res)
+        self._logs.irl.debug('--ending check_ending operation on %s', self)
         return match_batch
 
 
@@ -370,15 +431,14 @@ class StreamGroupsOrdered(_StreamGroupsBase):
     """
     Ordered set of matchers.
     """
-    def __init__(self):
-        super(StreamGroupsOrdered, self).__init__('ordered/sequence')
+    def __init__(self, logs):
+        super(StreamGroupsOrdered, self).__init__(logs, 'ordered/sequence')
 
-    def check_event(self, event_data):
+    def check_event(self, event_data, clevel=0, allow_complete_miss=False):
         """
         Implement the event-check logic for an ordered group. "Ordered" means that each matcher added
         has to be hit in sequence. For example, we can create a group that says "A then B",
         and if we see event-type B before A, we will error.
-
         This gets a little more tricky when we set up something like "between 1 and 4 A, then B", since
         the following scenarios exist:
         * AB, AAB, AAAB, AAAAB -> all valid
@@ -387,17 +447,32 @@ class StreamGroupsOrdered(_StreamGroupsBase):
             hitting the 'B', the 'A' matcher has to be disabled.
         """
         match_batch = _MatcherBatcher(event_data)
+        self._logs.irl.debug('%02d%s: ORDERED-GRP %s, allow_miss=%s, event_data=%s',
+                             clevel, clevel * ' ', self, allow_complete_miss, event_data)
+
+        if allow_complete_miss:
+            found_any = False
+            c = 0
+            for matcher in self._in_test_matchers:
+                if matcher.check_only_for_match(event_data):
+                    found_any = True
+                    break
+                c += 1
+            if not found_any:
+                self._logs.irl.debug('  %s in allow-complete-miss and no matchers would hit, returning None')
+                return None
+
         for matcher in self._in_test_matchers:
             if matcher.still_requires_match:
-                # MUST match
-                res = matcher.check_event(event_data, break_on_miss=True)
+                # MUST match unless we are in allow_complete_miss mode.
+                res = matcher.check_event(event_data, clevel + 1, allow_complete_miss=False, break_on_miss=True)
                 match_batch.add_result(matcher, res)
                 return match_batch
             elif matcher.is_still_matchable:
                 # CAN match, but it's ok if it doesn't.
                 # todo: need to add 'lock' once something -past- this point
                 #  matches.
-                res = matcher.check_event(event_data)
+                res = matcher.check_event(event_data, clevel + 1)
                 if res is not None:
                     match_batch.add_result(matcher, res)
                     return match_batch
@@ -409,21 +484,30 @@ class StreamGroupsUnordered(_StreamGroupsBase):
     """
     Unordered set of matchers.
     """
-    def __init__(self):
-        super(StreamGroupsUnordered, self).__init__('unordered')
+    def __init__(self, logs):
+        super(StreamGroupsUnordered, self).__init__(logs, 'unordered')
 
-    def check_event(self, event_data):
+    def check_event(self, event_data, clevel=0, allow_complete_miss=False):
         """
         Implement the event-check logic for an unordered group. "Unordered" means that
         while each matcher is tried in order they were added until one matches.
         """
         match_batch = _MatcherBatcher(event_data)
+        self._logs.irl.debug('%02d%s: UNORDERED-GRP %s, allow_miss=%s, event_data=%s',
+                             clevel, clevel * ' ', self, allow_complete_miss, event_data)
+
         for matcher in self._in_test_matchers:
+            self._logs.irl.debug('  %s: going to call matcher=%s', clevel * ' ', matcher)
             if matcher.is_still_matchable:
-                res = matcher.check_event(event_data)
+                res = matcher.check_event(event_data, clevel + 1, allow_complete_miss=allow_complete_miss)
+                self._logs.irl.debug('  %s: <---result=%s', clevel * ' ', res)
                 match_batch.add_result(matcher, res)
-                if res is not None and res.is_terminal:
-                    return match_batch
+                if res is not None:
+                    if not isinstance(res, (list, tuple)):
+                        res = [res]
+                    for r in res:
+                        if r.is_terminal:
+                            return match_batch
 
         return match_batch
 

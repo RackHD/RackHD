@@ -336,6 +336,8 @@ def mkargs(in_args=None):
     arg_parser.add_argument("-sku", default="all",
                             help="node SKU name, example: Quanta-T41, default=all")
     group = arg_parser.add_mutually_exclusive_group(required=False)
+    group.add_argument("-nodeindex", default="all",
+                       help="node index, integer 0 or greater")
     group.add_argument("-obmmac", default="all",
                        help="node OBM MAC address, example:00:1e:67:b1:d5:64")
     group.add_argument("-nodeid", default="None",
@@ -473,19 +475,22 @@ def remote_shell(shell_cmd, expect_receive="", expect_send="", timeout=300,
         user = fitcreds()['rackhd_host'][0]['username']
     if not password:
         password = fitcreds()['rackhd_host'][0]['password']
+    port = fitports()['ssh']
 
     logfile_redirect = None
     if VERBOSITY >= 4:
         print "VM number: ", vmnum
+        print "remote_shell: User =", user
         print "remote_shell: Host =", address
+        print "remote_shell: Port =", port
         print "remote_shell: Command =", shell_cmd
 
     if VERBOSITY >= 9:
         print "remote_shell: STDOUT =\n"
         logfile_redirect = sys.stdout
 
-    # if localhost just run the command local
-    if fitargs()['rackhd_host'] == 'localhost':
+    # if localhost and not on a portfoward port just run the command local
+    if fitargs()['rackhd_host'] == 'localhost' and port == 22:
         (command_output, exitstatus) = \
             pexpect.run("sudo bash -c \"" + shell_cmd + "\"",
                         withexitstatus=1,
@@ -501,14 +506,14 @@ def remote_shell(shell_cmd, expect_receive="", expect_send="", timeout=300,
     if expect_receive == "" or expect_send == "":
         (command_output, exitstatus) = \
             pexpect.run("ssh -q -o StrictHostKeyChecking=no -t " + user + "@" +
-                        address + " sudo bash -c \\\"" + shell_cmd + "\\\"",
+                        address + " -p " + str(port) + " sudo bash -c \\\"" + shell_cmd + "\\\"",
                         withexitstatus=1,
                         events={"assword": password + "\n"},
                         timeout=timeout, logfile=logfile_redirect)
     else:
         (command_output, exitstatus) = \
             pexpect.run("ssh -q -o StrictHostKeyChecking=no -t " + user + "@" +
-                        address + " sudo bash -c \\\"" + shell_cmd + "\\\"",
+                        address + " -p " + str(port) + " sudo bash -c \\\"" + shell_cmd + "\\\"",
                         withexitstatus=1,
                         events={"assword": password + "\n",
                                 expect_receive: expect_send + "\n"},
@@ -867,8 +872,8 @@ def node_select():
             if str(fitargs()['sku']) in json.dumps(skuentry):
                 skuid = skuentry['id']
         # Collect node IDs
-        catalog = rackhdapi('/api/2.0/nodes')
-        if skumap['status'] != 200:
+        catalog = rackhdapi('/api/2.0/nodes?type=compute')
+        if catalog['status'] != 200:
             print '**** Unable to retrieve node list via API.\n'
             sys.exit(255)
         # Select node by SKU
@@ -889,12 +894,35 @@ def node_select():
                 if fitargs()["obmmac"] in json.dumps(nodeentry['json']):
                     nodelist = [member]
                     break
+        # select node by index number
+        if fitargs()["nodeindex"] != 'all':
+            idlist = sorted(nodelist)
+            nodelist = []
+            try:
+                idlist[int(fitargs()["nodeindex"])]
+            except:
+                print '**** Invalid node index ' + fitargs()["nodeindex"] + '.\n'
+                sys.exit(255)
+            else:
+                nodelist.append(idlist[int(fitargs()["nodeindex"])])
     if VERBOSITY >= 6:
         print "Node List:"
         print nodelist, '\n'
     if len(nodelist) == 0:
         print '**** Empty node list.\n'
     return nodelist
+
+
+def is_dell_node(node_id):
+    node_entry = rackhdapi('/api/2.0/nodes/{0}'.format(node_id))
+    if node_entry['status'] != 200:
+        print '**** Unable to retrieve node list via API.\n'
+        sys.exit(255)
+
+    for identifier in node_entry['json']['identifiers']:
+        if re.match('^[0-9|A-Z]{7}$', identifier) is not None:
+            return True
+    return False
 
 
 def list_skus():

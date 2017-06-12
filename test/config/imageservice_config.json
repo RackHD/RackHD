@@ -18,7 +18,7 @@
     "pwd": "onrack",
     "control_port":7070,
     "imageserver":"localhost",
-    "file_port":9090,
+    "file_port":8060,
     "filetocompare": 100
   }
 }

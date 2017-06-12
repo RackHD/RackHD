@@ -111,7 +111,7 @@
         "format": "ovf",
         "output_directory": "output-virtualbox-iso",
         "vm_name": "{{user `vm_name`}}",
-        "boot_wait": "20s",
+        "boot_wait": "60s",
         "headless": true,
         "disk_size": 40960,
         "headless": true,
@@ -135,7 +135,7 @@
         "type": "virtualbox-ovf",
         "source_path": "output-virtualbox-iso/rackhd-ubuntu-14.04.ovf",
         "vm_name": "{{user `vm_name`}}",
-        "boot_wait": "20s",
+        "boot_wait": "60s",
         "headless": true,
         "headless": true,
         "http_directory": "http",
@@ -156,7 +156,7 @@
         "type": "vmware-vmx",
         "vm_name": "{{user `vm_name`}}",
         "output_directory": "output-vmware-vmx",
-        "boot_wait": "20s",
+        "boot_wait": "60s",
         "headless": true,
         "http_directory": "http",
         "source_path": "output-vmware-iso/rackhd-ubuntu-14.04.vmx",
@@ -166,7 +166,7 @@
         "ssh_wait_timeout": "10000s",
         "shutdown_command": "echo 'shutdown -P now' > /tmp/shutdown.sh; echo 'vagrant'|sudo -S sh '/tmp/shutdown.sh'",
         "vmx_data": {
-            "memsize": "1024",
+            "memsize": "4096",
             "numvcpus": "2",
             "ethernet0.networkName": "NAT",
 
@@ -177,7 +177,7 @@
         },
         "vmx_data_post":
         {
-            "memsize": "1024",
+            "memsize": "4096",
             "numvcpus": "2",
             "cpuid.coresPerSocket": "1",
 
@@ -237,7 +237,7 @@
           "<enter><wait>"
         ],
         "output_directory": "output-vmware-iso",
-        "boot_wait": "20s",
+        "boot_wait": "60s",
         "headless": true,
         "disk_size": 40960,
         "guest_os_type": "ubuntu-64",
