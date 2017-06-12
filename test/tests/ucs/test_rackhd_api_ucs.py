@@ -196,7 +196,7 @@ class rackhd_ucs_api(unittest.TestCase):
 
         return len(api_data["json"]["ServiceProfile"]["members"])
 
-    def wait_utility(self, id, counter, name):
+    def wait_utility(self, id, counter, name, max_wait=MAX_WAIT):
         """
         Recursevily wait for the ucs discovery workflow to finish
         :param id:  Graph ID
@@ -206,15 +206,15 @@ class rackhd_ucs_api(unittest.TestCase):
         """
         api_data = fit_common.rackhdapi('/api/2.0/workflows/' + str(id))
         status = api_data["json"]["status"]
-        if status == "running" and counter < self.MAX_WAIT:
+        if status == "running" and counter < max_wait:
             time.sleep(1)
             logs.info_1("In the wait_utility: Workflow status is {0} for the {1}'s run. ID: {2}, name: {3}"
                         .format(status, counter, id, name))
             counter += 1
-            return self.wait_utility(id, counter, name)
-        elif status == "running" and counter >= self.MAX_WAIT:
+            return self.wait_utility(id, counter, name, max_wait)
+        elif status == "running" and counter >= max_wait:
             logs.info_1("In the wait_utility: Timed out after trying {0} times. ID: {1}, name: {2}"
-                        .format(self.MAX_WAIT, id, name))
+                        .format(max_wait, id, name))
             return 'timeout'
         else:
             logs.info_1("In the wait_utility: Waiting for workflow {0}. The status is: {1} for run: {2}. ID: {3}"
@@ -469,7 +469,7 @@ class rackhd_ucs_api(unittest.TestCase):
         id = api_data["json"]["context"]["graphId"]
         self.assertEqual(api_data['status'], 201,
                          'Incorrect HTTP return code, expected 201, got:' + str(api_data['status']))
-        status = self.wait_utility(str(id), 0, "Discovery")
+        status = self.wait_utility(str(id), 0, "Discovery", 240)
         self.assertEqual(status, 'succeeded', 'Discovery graph returned status {}'.format(status))
 
         newNodeCount = len(self.get_ucs_node_list())
