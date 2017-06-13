@@ -35,7 +35,7 @@ class LookupsTests(fit_common.unittest.TestCase):
         # """ Testing GET:/lookups """
         Api().lookups_get()
         rsp = self.__client.last_response
-        # logs.debug("Lookup list: %s", dumps(rsp.data, indent=4))
+        logs.debug_7("Lookup list: %s", dumps(rsp.data, indent=4))
         self.assertEqual(200, rsp.status, msg=rsp.reason)
         self.assertNotEqual(0, len(rsp.data))
 
@@ -100,7 +100,7 @@ class LookupsTests(fit_common.unittest.TestCase):
         rsp = self.__client.last_response
         self.assertEqual(201, rsp.status, msg=rsp.reason)
         self.lookup_id = str(loads(rsp.data).get('id'))
-        logs.debug("ID is %s", self.lookup_id)
+        logs.debug_5("Lookup ID is %s", self.lookup_id)
 
         # other tests depend on the value
         self.__class__.lookup_id = self.lookup_id
