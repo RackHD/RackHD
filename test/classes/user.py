@@ -5,8 +5,8 @@ Copyright 2017 Dell Inc. or its subsidiaries. All Rights Reserved.
    Filename: user.py
 Create Date: 04/09/2017
 Description: Defines a RackHD User account base class and its methods. All account role types (Administrator, Operator, and
-             ReadOnly) inherit from this class. An instance of this class allows for user account creation and maintenance e.g.,
-             account password change etc.
+             ReadOnly) inherit from this class. An instance of this class allows for user account creation and maintenance
+             e.g., account password change etc.
 '''
 
 import fit_common
@@ -103,7 +103,7 @@ class User:
         try:
             r = requests.post(url, headers=headers, data=json.dumps(payload), timeout=User.timeout, verify=False)
         except requests.exceptions.RequestException as e:
-            print 'error, {0}'.format(e)
+            logs.debug_3("error, %s", e)
             return None
         if r.status_code != 200:
             logs.info_4("error status code {0}, unable to set user rackhd token".format(r.status_code))
@@ -124,7 +124,7 @@ class User:
         try:
             r = requests.post(url, headers=headers, data=json.dumps(payload), timeout=User.timeout, verify=False)
         except requests.exceptions.RequestException as e:
-            print 'error, {0}'.format(e)
+            logs.debug_3("error, %s", e)
             return None
         if r.status_code != 200:
             logs.info("error status code {0}, unable to set redfish token", r.status_code)
