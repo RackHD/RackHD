@@ -232,28 +232,44 @@ def get_compute_node_username(node_id):
             print "Error in getting response with url\n\t" + monorail_url
         return 1
 
-    username = rest_res['json']['obmSettings'][0]['config'].get('user')
-    if username:
-        user = unicodedata.normalize('NFKD', rest_res['json']['obmSettings'][0]['config']['user']).encode('ascii', 'ignore')
-    else:
-        if fit_common.VERBOSITY >= 2:
-            print "Unable to obtain the user name from node id given"
-        return 2
+    node_info = rest_res['json']
 
-    if user:
-        password = guess_the_password(user)
-    else:
-        if fit_common.VERBOSITY >= 2:
-            print "Unable to obtain the user name from test host and node id"
-        return 2
+    try:
+        obm_list = node_info['obms']
+        obm_url = obm_list[0]['ref']
+        obm_data = fit_common.rackhdapi(obm_url, action="get")
+        if obm_data['status'] != 200:
+            if fit_common.VERBOSITY >= 2:
+                print "Error in getting response with obm data\n\t" + obm_url
+            return 1
 
-    if password == 0:
-        if fit_common.VERBOSITY >= 2:
-            print "Unable to obtain the password from test host and node id"
-        return 3
+        username = obm_data['json']['config'].get('user')
+        if username:
+            user = unicodedata.normalize('NFKD', username).encode('ascii', 'ignore')
+        else:
+            if fit_common.VERBOSITY >= 2:
+                print "Unable to obtain the user name from node id given"
+            return 2
 
-    ret_dict_cred = {"user": user, "password": password}
-    return ret_dict_cred
+        if user:
+            password = guess_the_password(user)
+        else:
+            if fit_common.VERBOSITY >= 2:
+                print "Unable to obtain the user name from test host and node id"
+            return 2
+
+        if password is None:
+            if fit_common.VERBOSITY >= 2:
+                print "Unable to obtain the password from test host and node id"
+            return 3
+
+        ret_dict_cred = {"user": user, "password": password}
+        return ret_dict_cred
+
+    except:
+        if fit_common.VERBOSITY >= 2:
+            print "ERROR: Get compute node credentials failed"
+        return 4
 
 
 def get_relations_for_node(node_id):
@@ -292,7 +308,7 @@ def guess_the_password(str_username):
             and (dict_cheat_sheet[str_username] != ""):
         return dict_cheat_sheet[str_username]
     else:
-        return 1
+        return None
 
 
 def run_ipmi_command(node_ip, str_command, dict_credential):

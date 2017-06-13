@@ -115,6 +115,17 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
         # delete active workflows for specified node
         fit_common.cancel_active_workflows(self.__NODE)
 
+    @classmethod
+    def tearDownClass(self):
+        print "Tearing Down!!!!!"
+        result = test_api_utils.run_ipmi_command_to_node(self.__NODE, "user set name 3 LarryDean")
+        print "**** create node user result "
+        print result
+#        self.assertEqual(result['exitcode'], 0, "Error clearing node username")
+        # TODO: FIXME
+        assert (result['exitcode']==0) , "Error clearing node username"
+        
+
     def test01_node_check(self):
         # Log node data
 
@@ -144,22 +155,15 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
         print self.__pre_catalog
 
     @depends(after=test02_get_pre_catalog)
-    def test03_get_obm_credential(self):
-        log.info("**** Get OBM credential")
-        usr = ""
-        pwd = ""
+    def test03_create_node_user(self):
+        result = test_api_utils.run_ipmi_command_to_node(self.__NODE, "user set name 3 Manfred")
+        # TODO: FIXME
+        assert (result['exitcode']==0) , "Error setting node username"
+        print "**** create node user result "
+        print result
 
-        # find correct BMC passwords from credentials list
-        for creds in fit_common.fitcreds()['bmc']:
-            print "****** Creds*******"
-            print creds
-            if fit_common.remote_shell('ipmitool -I lanplus -H ' + fit_common.fitcfg()['bmc'] +
-                                       ' -U ' + creds['username'] + ' -P ' +
-                                       creds['password'] + ' fru')['exitcode'] == 0:
-                usr = creds['username']
-                pwd = creds['password'] 
 
-    @depends(after=test03_get_obm_credential)
+    @depends(after=test03_create_node_user)
     def test04_refresh_immediate(self):
 
         global PAYLOAD
