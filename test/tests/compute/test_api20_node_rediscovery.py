@@ -212,8 +212,16 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
         self.assertGreater(len(self.__post_catalog), 0, msg=("Node %s post ipmi user catalog has zero length" % self.__NODE))
         print "**** Post Node Catalog IMPI User ****"
         print self.__post_catalog
+       
+        print "***** data"
+        print self.__post_catalog['data']
+
+        print "***** 3"
+        print self.__post_catalog['data']['3']
 
 
+        print "***** user"
+        print self.__post_catalog['data']['3']['']
 
 
 if __name__ == '__main__':
