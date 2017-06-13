@@ -55,12 +55,6 @@ PAYLOAD =  {
    } 
 }
 
-# if an external payload file is specified, use that
-#payload = fit_common.fitcfg().get('bootstrap-payload', None)
-#if payload:
-#    PAYLOAD = payload
-
-
 # this routine polls a workflow task ID for completion
 def wait_for_workflow_complete(instanceid, start_time, waittime=2700, cycle=30):
     log.info(" Workflow started at time: " + str(start_time))
@@ -87,36 +81,28 @@ def wait_for_workflow_complete(instanceid, start_time, waittime=2700, cycle=30):
 
 
 #@attr(all=False)
-@attr(all=False, regression=False, smoke=False) # TODO add attr refresh= True
+@attr(all=False, regression=False, smoke=False, refresh_group=True)
 class api20_node_rediscovery(fit_common.unittest.TestCase):
     @classmethod
     def setUpClass(self):
         # class method is run once per script
         # usually not required in the script
         self.__client = config.api_client
-        self.__pre_dmi_catalog = {}
-        self.__pre_bmc_catalog = {}
-        self.__post_dmi_catalog = {}
-        self.__post_bmc_catalog = {}
+        self.__pre_catalog = {}
+        self.__post_catalog = {}
 
         # Get the list of nodes
-        nodelist = []
+        nodelist = fit_common.node_select(no_unknown_nodes=True)
+        print "**** nodelist  = " 
+        print  nodelist
 
-        api_data = fit_common.rackhdapi('/api/2.0/nodes')
-
-        try:
-            nodes = api_data.get('json')
-        except:
-            self.fail("No Json data in repsonse")
-        for node in nodes:
-            nodetype = node['type']
-            if nodetype == "compute":
-                nodeid = node['id']
-                nodename = test_api_utils.get_rackhd_nodetype(nodeid)
-                if not nodename == "Unidentified-Compute":
-                    print nodename
-                    nodelist.append(nodeid)
-
+        for nodeid in nodelist:
+            print "**** nodeid  = " 
+            print  nodeid
+            node_data = fit_common.rackhdapi('/api/2.0/nodes/' + nodeid)
+            print "**** node data  = " 
+            print  node_data
+            
         # TODO: FIXME
         assert (len(nodelist) !=0) , "No valid nodes discovered"
 
@@ -131,9 +117,6 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
 
     def test01_node_check(self):
         # Log node data
-
-        print "****** self.__NODE 2"
-        print self.__NODE
 
         nodeinfo = fit_common.rackhdapi('/api/2.0/nodes/' + self.__NODE)['json']
         nodesku = fit_common.rackhdapi(nodeinfo.get('sku'))['json']['name']
@@ -151,31 +134,35 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
                         "Node Power on workflow failed, see logs.")
 
     @depends(after=test01_node_check)
-    def test02_get_pre_catalogs(self):
+    def test02_get_pre_catalog(self):
 
-        # get the dmi catalog for node and fill in mock sku
-        Api().nodes_get_catalog_source_by_id(identifier=self.__NODE, source='dmi')
-        self.__pre_dmi_catalog = loads(self.__client.last_response.data)
-        self.assertGreater(len(self.__pre_dmi_catalog), 0, msg=("Node %s pre dmi catalog has zero length" % self.__NODE))
-        print "**** Node Catalog DMI ****"
-        print self.__pre_dmi_catalog
+        # get the IPMI user catalog for node 
+        Api().nodes_get_catalog_source_by_id(identifier=self.__NODE, source='ipmi-user-list-1')
+        self.__pre_catalog = loads(self.__client.last_response.data)
+        self.assertGreater(len(self.__pre_catalog), 0, msg=("Node %s pre IPMI user catalog has zero length" % self.__NODE))
+        print "**** Pre Node Catalog IPMI user ****"
+        print self.__pre_catalog
 
-        # get the bmc catalog for node and fill in mock sku
-        Api().nodes_get_catalog_source_by_id(identifier=self.__NODE, source='bmc')
-        self.__pre_bmc_catalog = loads(self.__client.last_response.data)
-        self.assertGreater(len(self.__pre_bmc_catalog), 0, msg=("Node %s pre bmc catalog has zero length" % self.__NODE))
-        print "**** Node Catalog BMC ****"
-        print self.__pre_bmc_catalog
+    @depends(after=test02_get_pre_catalog)
+    def test03_get_obm_credential(self):
+        log.info("**** Get OBM credential")
+        usr = ""
+        pwd = ""
 
+        # find correct BMC passwords from credentials list
+        for creds in fit_common.fitcreds()['bmc']:
+            print "****** Creds*******"
+            print creds
+            if fit_common.remote_shell('ipmitool -I lanplus -H ' + fit_common.fitcfg()['bmc'] +
+                                       ' -U ' + creds['username'] + ' -P ' +
+                                       creds['password'] + ' fru')['exitcode'] == 0:
+                usr = creds['username']
+                pwd = creds['password'] 
 
-    @depends(after=test02_get_pre_catalogs)
-    def test03_refresh_immediate(self):
+    @depends(after=test03_get_obm_credential)
+    def test04_refresh_immediate(self):
 
         global PAYLOAD
-
-        print "****** self.__NODE 4"
-        print self.__NODE
-
 
         payload_string = dumps(PAYLOAD)
         PAYLOAD =  loads(payload_string.replace("NODEID", self.__NODE))
@@ -212,45 +199,18 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
         self.assertEqual(result['json']['status'], 'succeeded',
                          'Was expecting succeeded. Got ' + result['json']['status'])
 
-    @depends(after=test03_refresh_immediate)
-    def test04_get_post_catalogs(self):
+    @depends(after=test04_refresh_immediate)
+    def test05_get_post_catalog(self):
 
-
-        # get the dmi catalog for node and fill in mock sku
-        Api().nodes_get_catalog_source_by_id(identifier=self.__NODE, source='dmi')
-        self.__post_dmi_catalog = loads(self.__client.last_response.data)
-        self.assertGreater(len(self.__post_dmi_catalog), 0, msg=("Node %s post dmi catalog has zero length" % self.__NODE))
-        print "**** Node Catalog DMI ****"
-        print self.__post_dmi_catalog
-
-        # get the bmc catalog for node and fill in mock sku
-        Api().nodes_get_catalog_source_by_id(identifier=self.__NODE, source='bmc')
-        self.__post_bmc_catalog = loads(self.__client.last_response.data)
-        self.assertGreater(len(self.__post_bmc_catalog), 0, msg=("Node %s post bmc catalog has zero length" % self.__NODE))
-        print "**** Node Catalog BMC ****"
-        print self.__post_bmc_catalog
+        # get the Ipmi user catalog for node 
+        Api().nodes_get_catalog_source_by_id(identifier=self.__NODE, source='ipmi-user-list-1')
+        self.__post_catalog = loads(self.__client.last_response.data)
+        self.assertGreater(len(self.__post_catalog), 0, msg=("Node %s post ipmi user catalog has zero length" % self.__NODE))
+        print "**** Post Node Catalog IMPI User ****"
+        print self.__post_catalog
 
 
 
-
-#        # launch workflow
-#        workflowid = None
-#        result = fit_common.rackhdapi('/api/2.0/nodes/' +
-#                                      self.__NODE +
-#                                      '/workflows',
-#                                      action='post', payload=PAYLOAD)
-#       if result['status'] == 201:
-#           # workflow running
-#           log.info_5(" InstanceID: " + result['json']['instanceId'])
-#           log.info_5(" Payload: " + fit_common.json.dumps(PAYLOAD))
-#           workflowid = result['json']['instanceId']
-#       else:
-#           # workflow failed with response code
-#           log.error(" InstanceID: " + result['text'])
-#           log.error(" Payload: " + fit_common.json.dumps(PAYLOAD))
-#           self.fail("Workflow failed with response code: " + result['status'])
-#       self.assertTrue(wait_for_workflow_complete(workflowid, time.time()), "OS Install workflow failed, see logs.")
-#
 
 if __name__ == '__main__':
     fit_common.unittest.main()

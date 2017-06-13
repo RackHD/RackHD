@@ -107,13 +107,6 @@ class rackhd_stack_init(unittest.TestCase):
             break
         self.assertEqual(error_message, "", error_message)
 
-    def test03_preload_default_sku(self):
-        # Load default SKU for unidentified compute nodes
-        payload = {"name": "Unidentified-Compute", "rules": [{"path": "bmc.IP Address"}]}
-        api_data = fit_common.rackhdapi("/api/2.0/skus", action='post', payload=payload)
-        self.assertIn(api_data['status'], [201, 409],
-                      'Incorrect HTTP return code, expecting 201 or 409, got ' + str(api_data['status']))
-
     def test04_power_on_nodes(self):
         # This powers on nodes via PDU or, if no PDU, power cycles nodes via IPMI to start discovery
         # ServerTech PDU case
