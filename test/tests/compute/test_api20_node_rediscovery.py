@@ -13,6 +13,7 @@ import fit_path  # NOQA: unused import
 import fit_common
 import flogging
 import random
+import string
 import test_api_utils
 import time
 import unittest
@@ -25,6 +26,16 @@ from on_http_api2_0 import ApiApi as Api
 from on_http_api2_0.rest import ApiException
 
 log = flogging.get_loggers()
+
+pre_catalog_user = None
+post_catalog_user = None
+
+def random_user_generator(pre_user):
+    random_user = ''.join(random.choice(string.lowercase) for i in range(10))
+    while (random_user == pre_user):
+        random_user = ''.join(random.choice(string.lowercase) for i in range(10))
+    return random_user 
+    
 
 # default base payload
 PAYLOAD =  {
@@ -88,8 +99,6 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
         # class method is run once per script
         # usually not required in the script
         self.__client = config.api_client
-        self.__pre_catalog = {}
-        self.__post_catalog = {}
 
         # Get the list of nodes
         nodelist = fit_common.node_select(no_unknown_nodes=True)
@@ -115,15 +124,15 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
         # delete active workflows for specified node
         fit_common.cancel_active_workflows(self.__NODE)
 
-    @classmethod
-    def tearDownClass(self):
-        print "Tearing Down!!!!!"
-        result = test_api_utils.run_ipmi_command_to_node(self.__NODE, "user set name 3 LarryDean")
-        print "**** create node user result "
-        print result
-#        self.assertEqual(result['exitcode'], 0, "Error clearing node username")
-        # TODO: FIXME
-        assert (result['exitcode']==0) , "Error clearing node username"
+#    @classmethod
+#    def tearDownClass(self):
+#        print "Tearing Down!!!!!"
+#        command = "user set name 3 " + random_user_generator(pre_catalog_user)
+#        result = test_api_utils.run_ipmi_command_to_node(self.__NODE, command)
+#        print "**** create node user result "
+#        print result
+#        # TODO: FIXME
+#        assert (result['exitcode']==0) , "Error clearing node username"
         
 
     def test01_node_check(self):
@@ -147,16 +156,24 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
     @depends(after=test01_node_check)
     def test02_get_pre_catalog(self):
 
+        global pre_catalog_user
+
         # get the IPMI user catalog for node 
         Api().nodes_get_catalog_source_by_id(identifier=self.__NODE, source='ipmi-user-list-1')
-        self.__pre_catalog = loads(self.__client.last_response.data)
-        self.assertGreater(len(self.__pre_catalog), 0, msg=("Node %s pre IPMI user catalog has zero length" % self.__NODE))
+        catalog = loads(self.__client.last_response.data)
+        self.assertGreater(len(catalog), 0, msg=("Node %s pre IPMI user catalog has zero length" % self.__NODE))
+        pre_catalog_user = catalog['data']['3']['']
         print "**** Pre Node Catalog IPMI user ****"
-        print self.__pre_catalog
+        print pre_catalog_user
 
     @depends(after=test02_get_pre_catalog)
     def test03_create_node_user(self):
-        result = test_api_utils.run_ipmi_command_to_node(self.__NODE, "user set name 3 Manfred")
+        global pre_catalog_user
+
+        command = "user set name 3 " + random_user_generator(pre_catalog_user)
+        print "**** new random user command"
+        print command
+        result = test_api_utils.run_ipmi_command_to_node(self.__NODE, command)
         # TODO: FIXME
         assert (result['exitcode']==0) , "Error setting node username"
         print "**** create node user result "
@@ -206,22 +223,26 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
     @depends(after=test04_refresh_immediate)
     def test05_get_post_catalog(self):
 
+        global pre_catalog_user
+        global post_catalog_user
+
         # get the Ipmi user catalog for node 
         Api().nodes_get_catalog_source_by_id(identifier=self.__NODE, source='ipmi-user-list-1')
-        self.__post_catalog = loads(self.__client.last_response.data)
-        self.assertGreater(len(self.__post_catalog), 0, msg=("Node %s post ipmi user catalog has zero length" % self.__NODE))
-        print "**** Post Node Catalog IMPI User ****"
-        print self.__post_catalog
-       
-        print "***** data"
-        print self.__post_catalog['data']
+        catalog = loads(self.__client.last_response.data)
+        self.assertGreater(len(catalog), 0, msg=("Node %s post ipmi user catalog has zero length" % self.__NODE))
 
-        print "***** 3"
-        print self.__post_catalog['data']['3']
+        post_catalog_user = catalog['data']['3']['']
+
+        print "***** post user"
+        print post_catalog_user
 
 
-        print "***** user"
-        print self.__post_catalog['data']['3']['']
+        print "***** pre user"
+        print pre_catalog_user
+
+
+        self.assertNotEqual(post_catalog_user, pre_catalog_user, "BMC user didn't change")
+
 
 
 if __name__ == '__main__':
