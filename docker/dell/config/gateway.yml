@@ -1,4 +1,7 @@
 zuul:
+  host:
+    connect-timeout-millis: 100000
+    socket-timeout-millis: 100000
   routes:
     virtualnetwork:
       path: /api/1.0/networks/**
@@ -235,29 +238,35 @@ smi:
           name: "chassisSummary"
           url: "/api/1.0/chassis/inventory/summary"
         -
+          name: "logs"
+          url: "/api/1.0/server/inventory/logs/get/{type}"
+        -
           name: "serverCallback"
           url: "/api/1.0/server/inventory/callback"
         -
           name: "chassisCallback"
           url: "/api/1.0/chassis/inventory/callback"
+        -
+          name: "compellentCallback"
+          url: "/api/1.0/storage/inventory/compellent/callback"
       name: "inventory"
     -
       endpoint:
         -
           name: "power"
-          url: "/api/1.0/server/action/power"
+          url: "/api/1.0/server/action/power/{action}"
         -
           name: "blinkLED"
-          url: "/api/1.0/server/action/blinkLED"
+          url: "/api/1.0/server/action/blinkLED/{duration}"
       name: "action"
     -
       endpoint:
         -
           name: "configureTraps"
-          url: "/api/1.0/server/configuration/trap/configureTraps"
+          url: "/api/1.0/server/configuration/trap/configureTraps/{trapDestination}"
         -
           name: "updateTrapFormat"
-          url: "/api/1.0/server/configuration/trap/updateTrapFormat"
+          url: "/api/1.0/server/configuration/trap/updateTrapFormat/{trapFormat}"
         -
           name: "export"
           url: "/api/1.0/server/configuration/export"
