@@ -102,15 +102,9 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
 
         # Get the list of nodes
         nodelist = fit_common.node_select(no_unknown_nodes=True)
-        print "**** nodelist  = " 
-        print  nodelist
 
         for nodeid in nodelist:
-            print "**** nodeid  = " 
-            print  nodeid
             node_data = fit_common.rackhdapi('/api/2.0/nodes/' + nodeid)
-            print "**** node data  = " 
-            print  node_data
             
         # TODO: FIXME
         assert (len(nodelist) !=0) , "No valid nodes discovered"
@@ -118,22 +112,8 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
         # Select one node at random
         self.__NODE = nodelist[random.randint(0, len(nodelist) - 1)]
 
-        print "****** self.__NODE"
-        print self.__NODE
-
         # delete active workflows for specified node
         fit_common.cancel_active_workflows(self.__NODE)
-
-#    @classmethod
-#    def tearDownClass(self):
-#        print "Tearing Down!!!!!"
-#        command = "user set name 3 " + random_user_generator(pre_catalog_user)
-#        result = test_api_utils.run_ipmi_command_to_node(self.__NODE, command)
-#        print "**** create node user result "
-#        print result
-#        # TODO: FIXME
-#        assert (result['exitcode']==0) , "Error clearing node username"
-        
 
     def test01_node_check(self):
         # Log node data
@@ -162,22 +142,21 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
         Api().nodes_get_catalog_source_by_id(identifier=self.__NODE, source='ipmi-user-list-1')
         catalog = loads(self.__client.last_response.data)
         self.assertGreater(len(catalog), 0, msg=("Node %s pre IPMI user catalog has zero length" % self.__NODE))
-        pre_catalog_user = catalog['data']['3']['']
-        print "**** Pre Node Catalog IPMI user ****"
-        print pre_catalog_user
+
+        try:
+            pre_catalog_user = catalog['data']['3']['']
+        except KeyError:
+            pre_catalog_user = None
+
 
     @depends(after=test02_get_pre_catalog)
     def test03_create_node_user(self):
         global pre_catalog_user
 
         command = "user set name 3 " + random_user_generator(pre_catalog_user)
-        print "**** new random user command"
-        print command
         result = test_api_utils.run_ipmi_command_to_node(self.__NODE, command)
         # TODO: FIXME
         assert (result['exitcode']==0) , "Error setting node username"
-        print "**** create node user result "
-        print result
 
 
     @depends(after=test03_create_node_user)
@@ -201,10 +180,8 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
             result = fit_common.rackhdapi('/api/2.0/workflows/' + graphId, action='get')
             if result['json']['status'] == 'running' or result['json']['status'] == 'Running':
                 if fit_common.VERBOSITY >= 2:
-                    # Add print out of workflow
-                    #print 'Graph name="{0}"; Graph state="{1}"'.format(result['json']['tasks'][0]['label'], result['json']['status'])
                     print 'GraphID ="{0}"; Status="{1}"'.format(graphId, result['json']['status'])
-                fit_common.time.sleep(10)
+                fit_common.time.sleep(20)
             elif result['json']['status'] == 'succeeded':
                 if fit_common.VERBOSITY >= 2:
                     print "Workflow state: {}".format(result['json']['status'])
@@ -221,7 +198,7 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
                          'Was expecting succeeded. Got ' + result['json']['status'])
 
     @depends(after=test04_refresh_immediate)
-    def test05_get_post_catalog(self):
+    def test05_verify_rediscovery(self):
 
         global pre_catalog_user
         global post_catalog_user
@@ -233,16 +210,7 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
 
         post_catalog_user = catalog['data']['3']['']
 
-        print "***** post user"
-        print post_catalog_user
-
-
-        print "***** pre user"
-        print pre_catalog_user
-
-
         self.assertNotEqual(post_catalog_user, pre_catalog_user, "BMC user didn't change")
-
 
 
 if __name__ == '__main__':
