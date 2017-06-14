@@ -9,10 +9,10 @@
       }
     ],
     "microkernel": [
-      "scp:///var/renasar/on-http/static/http/common/vmlinuz-3.16.0-25-generic",
-      "scp:///var/renasar/on-http/static/http/common/discovery.overlay.cpio.gz",
-      "scp:///var/renasar/on-http/static/http/common/initrd.img-3.16.0-25-generic",
-      "scp:///var/renasar/on-http/static/http/common/base.trusty.3.16.0-25-generic.squashfs.img"
+      "scp:///home/vagrant/src/on-http/static/http/common/vmlinuz-3.16.0-25-generic",
+      "scp:///home/vagrant/src/on-http/static/http/common/discovery.overlay.cpio.gz",
+      "scp:///home/vagrant/src/on-http/static/http/common/initrd.img-3.16.0-25-generic",
+      "scp:///home/vagrant/src/on-http/static/http/common/base.trusty.3.16.0-25-generic.squashfs.img"
     ],
     "usr": "onrack",
     "pwd": "onrack",
