@@ -140,10 +140,6 @@ class NodesTests(fit_common.unittest.TestCase):
     # @test(groups=['nodes.api2.discovery.test'])
     def test_nodes_discovery(self):
         # API 2.0 Testing Graph.Discovery completion
-        count = defaults.get('RACKHD_NODE_COUNT', '')
-        if (count.isdigit() and self.check_compute_count() == int(count)) or self.check_compute_count():
-            logs.warning('Nodes already discovered!')
-            return
         self.__discovery_duration = datetime.now()
         logs.info(' Wait start time: %s', str(self.__discovery_duration))
         self.__task = WorkerThread(AMQPWorker(queue=QUEUE_GRAPH_FINISH,

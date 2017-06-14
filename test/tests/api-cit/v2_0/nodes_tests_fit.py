@@ -128,11 +128,6 @@ class NodesTests(unittest.TestCase):
     #@test(groups=['nodes.api2.discovery.test'])
     def test_01_nodes_discovery(self):
         # API 2.0 Testing Graph.Discovery completion 
-        count = defaults.get('RACKHD_NODE_COUNT', '')
-        if (count.isdigit() and self.check_compute_count() == int(count)) or self.check_compute_count():
-            LOG.warning('Nodes already discovered!')
-            print('Nodes already discovered!')
-            return
         self.__discovery_duration = datetime.now()
         LOG.info('Wait start time: {0}'.format(self.__discovery_duration))
         if fit_common.VERBOSITY >= 2:
