@@ -27,8 +27,7 @@ from on_http_api2_0.rest import ApiException
 
 log = flogging.get_loggers()
 
-pre_catalog_user = None
-post_catalog_user = None
+previous_ipmi_user = None
 
 def random_user_generator(pre_user):
     random_user = ''.join(random.choice(string.lowercase) for i in range(10))
@@ -136,27 +135,27 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
     @depends(after=test01_node_check)
     def test02_get_pre_catalog(self):
 
-        global pre_catalog_user
+        global previous_ipmi_user
 
         # get the IPMI user catalog for node 
         Api().nodes_get_catalog_source_by_id(identifier=self.__nodeid, source='ipmi-user-list-1')
         catalog = loads(self.__client.last_response.data)
-        self.assertGreater(len(catalog), 0, msg=("Node %s pre IPMI user catalog has zero length" % self.__nodeid))
+        self.assertGreater(len(catalog), 0, msg=("Node %s previous IPMI user catalog has zero length" % self.__nodeid))
 
         try:
-            pre_catalog_user = catalog['data']['6']['']
+            previous_ipmi_user = catalog['data']['6']['']
         except KeyError:
             try:
-                pre_catalog_user = catalog['data']['6']['admin']
+                previous_ipmi_user = catalog['data']['6']['admin']
             except KeyError:
-                pre_catalog_user = None
+                previous_ipmi_user = None
 
 
     @depends(after=test02_get_pre_catalog)
     def test03_create_node_user(self):
-        global pre_catalog_user
+        global previous_ipmi_user
 
-        command = "user set name 6 " + random_user_generator(pre_catalog_user)
+        command = "user set name 6 " + random_user_generator(previous_ipmi_user)
         result = test_api_utils.run_ipmi_command_to_node(self.__nodeid, command)
 
         self.assertEqual (result['exitcode'], 0, msg="Error setting node username")
@@ -183,23 +182,22 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
     @depends(after=test04_refresh_immediate)
     def test05_verify_rediscovery(self):
 
-        global pre_catalog_user
-        global post_catalog_user
+        global previous_ipmi_user
 
         # get the Ipmi user catalog for node 
         Api().nodes_get_catalog_source_by_id(identifier=self.__nodeid, source='ipmi-user-list-1')
         catalog = loads(self.__client.last_response.data)
-        self.assertGreater(len(catalog), 0, msg=("Node %s post ipmi user catalog has zero length" % self.__nodeid))
+        self.assertGreater(len(catalog), 0, msg=("Node %s new IPMI user catalog has zero length" % self.__nodeid))
 
         try:
-            post_catalog_user = catalog['data']['6']['']
+            new_ipmi_user = catalog['data']['6']['']
         except KeyError:
             try:
-                post_catalog_user = catalog['data']['6']['admin']
+                new_ipmi_user = catalog['data']['6']['admin']
             except KeyError:
-                post_catalog_user = None
+                new_ipmi_user = None
 
-        self.assertNotEqual(post_catalog_user, pre_catalog_user, msg="BMC user didn't change")
+        self.assertNotEqual(new_ipmi_user, previous_ipmi_user, msg="BMC user didn't change")
 
 
 if __name__ == '__main__':
