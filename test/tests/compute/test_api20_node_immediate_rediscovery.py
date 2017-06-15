@@ -1,11 +1,11 @@
 '''
 Copyright 2017 Dell Inc. or its subsidiaries. All Rights Reserved.
 
-This script tests node rediscovery.
+This script tests node immediate rediscovery.
 This test takes TBD minutes to run.
 
 
-python run_tests.py -stack 4 -test tests/compute/test_api20_node_rediscovery.py
+python run_tests.py -stack 4 -test tests/compute/test_api20_node_immediate_rediscovery.py [-nodeid <nodeid>]
 
 '''
 
@@ -26,8 +26,6 @@ from on_http_api2_0 import ApiApi as Api
 from on_http_api2_0.rest import ApiException
 
 log = flogging.get_loggers()
-
-previous_ipmi_user = None
 
 def random_user_generator(pre_user):
     random_user = ''.join(random.choice(string.lowercase) for i in range(10))
@@ -86,6 +84,30 @@ def wait_for_workflow_complete(instanceid, start_time, waittime=2700, cycle=30):
     log.error(" Workflow Timeout: " + result['text'])
     return False
 
+# Get IPMI user
+def get_ipmi_user(self, nodeid):
+
+    # get the previous IPMI user for node
+    result = fit_common.rackhdapi('/api/2.0/nodes/' +
+                                  nodeid +
+                                  '/catalogs/ipmi-user-list-1',
+                                  action='get')
+    self.assertEqual(result['status'], 200, msg="IPMI user list catalog could not be retrieved.")
+    catalog = result['json']
+
+    self.assertGreater(len(catalog), 0, msg=("Node %s previous IPMI user catalog has zero length" % nodeid))
+
+    try:
+        ipmi_user = catalog['data']['6']['']
+    except KeyError:
+        try:
+            ipmi_user = catalog['data']['6']['admin']
+        except KeyError:
+            ipmi_user = None
+
+    return ipmi_user
+
+
 
 # ------------------------ Tests -------------------------------------
 
@@ -110,13 +132,17 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
         # delete active workflows for specified node
         fit_common.cancel_active_workflows(cls.__nodeid)
 
+        cls.__previous_ipmi_user = None
+
+
     def setUp(self):
         self.__nodeid = self.__class__.__nodeid
         self.__client = self.__class__.__client 
+        self.__previous_ipmi_user = self.__class__.__previous_ipmi_user
 
     def test01_node_check(self):
-        # Log node data
 
+        # Log node data
         nodeinfo = fit_common.rackhdapi('/api/2.0/nodes/' + self.__nodeid)['json']
         nodesku = fit_common.rackhdapi(nodeinfo.get('sku'))['json']['name']
         log.info(" Node ID: " + self.__nodeid)
@@ -133,31 +159,14 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
                         msg="Node Power on workflow failed, see logs.")
 
     @depends(after=test01_node_check)
-    def test02_get_pre_catalog(self):
+    def test02_get_previous_ipmi_user(self):
+        # Get previous IPMI user
+        self.__previous_ipmi_user = get_ipmi_user(self, self.__nodeid)
 
-        global previous_ipmi_user
-
-        # get the IPMI user catalog for node 
-        Api().nodes_get_catalog_source_by_id(identifier=self.__nodeid, source='ipmi-user-list-1')
-        catalog = loads(self.__client.last_response.data)
-        self.assertGreater(len(catalog), 0, msg=("Node %s previous IPMI user catalog has zero length" % self.__nodeid))
-
-        try:
-            previous_ipmi_user = catalog['data']['6']['']
-        except KeyError:
-            try:
-                previous_ipmi_user = catalog['data']['6']['admin']
-            except KeyError:
-                previous_ipmi_user = None
-
-
-    @depends(after=test02_get_pre_catalog)
+    @depends(after=test02_get_previous_ipmi_user)
     def test03_create_node_user(self):
-        global previous_ipmi_user
-
-        command = "user set name 6 " + random_user_generator(previous_ipmi_user)
+        command = "user set name 6 " + random_user_generator(self.__previous_ipmi_user)
         result = test_api_utils.run_ipmi_command_to_node(self.__nodeid, command)
-
         self.assertEqual (result['exitcode'], 0, msg="Error setting node username")
 
 
@@ -182,22 +191,11 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
     @depends(after=test04_refresh_immediate)
     def test05_verify_rediscovery(self):
 
-        global previous_ipmi_user
-
         # get the Ipmi user catalog for node 
-        Api().nodes_get_catalog_source_by_id(identifier=self.__nodeid, source='ipmi-user-list-1')
-        catalog = loads(self.__client.last_response.data)
-        self.assertGreater(len(catalog), 0, msg=("Node %s new IPMI user catalog has zero length" % self.__nodeid))
+        new_ipmi_user = get_ipmi_user(self, self.__nodeid)
 
-        try:
-            new_ipmi_user = catalog['data']['6']['']
-        except KeyError:
-            try:
-                new_ipmi_user = catalog['data']['6']['admin']
-            except KeyError:
-                new_ipmi_user = None
-
-        self.assertNotEqual(new_ipmi_user, previous_ipmi_user, msg="BMC user didn't change")
+        self.assertNotEqual(new_ipmi_user, None, msg="IPMI user didn't get created or cataloged correctly")
+        self.assertNotEqual(new_ipmi_user, self.__previous_ipmi_user, msg="IPMI user didn't change")
 
 
 if __name__ == '__main__':
