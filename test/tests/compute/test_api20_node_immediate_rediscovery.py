@@ -159,25 +159,24 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
                         msg="Node Power on workflow failed, see logs.")
 
     @depends(after=test01_node_check)
-    def test02_get_previous_ipmi_user(self):
-        # Get previous IPMI user
+    def test02_create_node_user(self):
+        # Get previous IPMI user from RackHD node catalog
         self.__previous_ipmi_user = get_ipmi_user(self, self.__nodeid)
 
-    @depends(after=test02_get_previous_ipmi_user)
-    def test03_create_node_user(self):
+        # Set new IPMI user on node
         command = "user set name 6 " + random_user_generator(self.__previous_ipmi_user)
         result = test_api_utils.run_ipmi_command_to_node(self.__nodeid, command)
         self.assertEqual (result['exitcode'], 0, msg="Error setting node username")
 
 
-    @depends(after=test03_create_node_user)
-    def test04_refresh_immediate(self):
+    @depends(after=test02_create_node_user)
+    def test03_refresh_immediate(self):
+        # Execute immediate rediscovery which refreshes the node catalog
 
         global PAYLOAD
 
-        payload_string = dumps(PAYLOAD)
-        PAYLOAD =  loads(payload_string.replace("NODEID", self.__nodeid))
-        print PAYLOAD
+        temp_payload = dumps(PAYLOAD)
+        PAYLOAD =  loads(temp_payload.replace("NODEID", self.__nodeid))
 
         result = fit_common.rackhdapi('/api/2.0/workflows', action='post', payload=PAYLOAD)
 
@@ -188,8 +187,8 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
 
         self.assertTrue(wait_for_workflow_complete(graphId, time.time()), "Immediate rediscovery workflow failed")
 
-    @depends(after=test04_refresh_immediate)
-    def test05_verify_rediscovery(self):
+    @depends(after=test03_refresh_immediate)
+    def test04_verify_rediscovery(self):
 
         # get the Ipmi user catalog for node 
         new_ipmi_user = get_ipmi_user(self, self.__nodeid)
