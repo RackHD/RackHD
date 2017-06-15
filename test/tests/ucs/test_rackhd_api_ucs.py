@@ -18,6 +18,9 @@ from nosedep import depends
 import flogging
 from nose.plugins.attrib import attr
 from config.settings import get_ucs_cred
+from ucsmsdk import ucshandle
+from ucsmsdk.utils.ucsbackup import import_ucs_backup
+import os
 
 logs = flogging.get_loggers()
 
@@ -130,10 +133,40 @@ def restore_obms_utility():
     return True
 
 
+def load_ucs_manager_config():
+        """
+        loads the test configuration into the UCS Manger
+        """
+        logs.info_1('Loading UCSPE emulator from {0}'.format(fit_common.fitcfg()['ucsm_config_file']))
+
+        try:
+            handle = ucshandle.UcsHandle(UCSM_IP, UCSM_USER, UCSM_PASS)
+            if not handle.login():
+                logs.error('Failed to log into UCS Manger!')
+                return False
+        except Exception as e:
+            logs.info_1("error trying to log into UCS Manger!")
+            logs.info_1(str(e))
+            return False
+
+        # now try to update the UCSPE config, if this fails we can still continue
+        try:
+            path, file = os.path.split(fit_common.fitcfg()['ucsm_config_file'])
+            import_ucs_backup(handle, file_dir=path, file_name=file)
+        except Exception as e:
+            logs.info_1("error trying to configure UCSPE, continuing to test")
+            logs.info_1(str(e))
+            # log the error but do not return a failure, we can still run some tests with the default config
+
+        if not handle.logout():
+            logs.error('Failed to log out of UCS Manger during exit!')
+            return False
+
+        return True
 @attr(all=True, regression=True, smoke=True, ucs_rackhd=True)
 class rackhd_ucs_api(unittest.TestCase):
 
-    MAX_WAIT = 180
+    MAX_WAIT = 240
     INITIAL_CATALOGS = {}
     UCS_NODES = []
     UCS_COMPUTE_NODES = []
@@ -165,15 +198,17 @@ class rackhd_ucs_api(unittest.TestCase):
                    "ucs-host": UCSM_IP}
 
         api_data = fit_common.restful(url, rest_headers=headers)
-        self.assertEqual(api_data['status'], 200,
-                         'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
+        if api_data['status'] != 200:
+            logs.error('Incorrect HTTP return code, expected 200, got: {0}'.format(api_data['status']))
+            return 0
 
         count = len(api_data["json"])
 
         url = UCS_SERVICE_URI + "/chassis"
         api_data = fit_common.restful(url, rest_headers=headers)
-        self.assertEqual(api_data['status'], 200,
-                         'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
+        if api_data['status'] != 200:
+            logs.error('Incorrect HTTP return code, expected 200, got: {0}'.format(api_data['status']))
+            return 0
 
         count += len(api_data["json"])
         for element in api_data["json"]:
@@ -191,14 +226,16 @@ class rackhd_ucs_api(unittest.TestCase):
                    "ucs-host": UCSM_IP}
 
         api_data = fit_common.restful(url, rest_headers=headers)
-        self.assertEqual(api_data['status'], 200,
-                         'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
+        if api_data['status'] != 200:
+            logs.error('Incorrect HTTP return code, expected 200, got: {0}'.format(api_data['status']))
+            return 0
+
 
         return len(api_data["json"]["ServiceProfile"]["members"])
 
     def wait_utility(self, id, counter, name, max_wait=MAX_WAIT):
         """
-        Recursevily wait for the ucs discovery workflow to finish
+        Wait for the specified graph to finish
         :param id:  Graph ID
         :param counter: Safeguard for the number of times we can check the status of the graph
         :param name: Description of graph we are waiting for
@@ -206,19 +243,21 @@ class rackhd_ucs_api(unittest.TestCase):
         """
         api_data = fit_common.rackhdapi('/api/2.0/workflows/' + str(id))
         status = api_data["json"]["status"]
-        if status == "running" and counter < max_wait:
+        logs.info_1("Waiting up to {0} seconds for {1} Workflow, ID: {2}"
+                    .format(max_wait, name, id))
+        while (status == 'running' and counter < max_wait):
             time.sleep(1)
-            logs.info_1("In the wait_utility: Workflow status is {0} for the {1}'s run. ID: {2}, name: {3}"
-                        .format(status, counter, id, name))
             counter += 1
-            return self.wait_utility(id, counter, name, max_wait)
-        elif status == "running" and counter >= max_wait:
-            logs.info_1("In the wait_utility: Timed out after trying {0} times. ID: {1}, name: {2}"
-                        .format(max_wait, id, name))
+            api_data = fit_common.rackhdapi('/api/2.0/workflows/' + str(id))
+            status = api_data["json"]["status"]
+
+        if counter >= max_wait:
+            logs.info_1("wait_utility() timed out after {0} attemps. status: {1}, ID: {2}, name: {3}"
+                        .format(counter, id, name))
             return 'timeout'
         else:
-            logs.info_1("In the wait_utility: Waiting for workflow {0}. The status is: {1} for run: {2}. ID: {3}"
-                        .format(name, status, counter, id))
+            logs.info_1("wait_utility() copleted with status: {0} for run: {1}. ID: {2}, name: {3}"
+                        .format(status, counter, id, name))
             return status
 
     def get_ucs_node_list(self):
@@ -246,6 +285,25 @@ class rackhd_ucs_api(unittest.TestCase):
         self.assertNotEqual(UCS_SERVICE_URI, None,
                             "Expected value for UCS_SERVICE_URI other then None and found {0}"
                             .format(UCS_SERVICE_URI))
+
+        if "ucsm_config_file" in fit_common.fitcfg():
+            # configure the UCSPE emulator
+            if not load_ucs_manager_config():
+                # error configureing UCSPE emulaotr, skip all tests
+                raise unittest.SkipTest("Error Configuring UCSPE emulator, skipping all UCS tests")
+
+            # wait up to 2 min for config to be valid
+            timeout = 120
+            ucsCount = self.get_physical_server_count()
+            while (ucsCount) != self.EXPECTED_UCS_PHYSICAL_NODES:
+                if timeout <= 0:
+                    raise unittest.SkipTest("Only found {0} of {1} nodes, skipping all UCS tests"
+                                            .format(ucsCount, self.EXPECTED_UCS_PHYSICAL_NODES))
+                logs.info_1("Only found {0} of {1} ucs nodes, retrying in 30 seconds"
+                            .format(ucsCount, self.EXPECTED_UCS_PHYSICAL_NODES))
+                timeout -= 5
+                time.sleep(5)
+                ucsCount = self.get_physical_server_count()
 
     @depends(after=test_check_ucs_params)
     def test_api_20_ucs_discovery(self):

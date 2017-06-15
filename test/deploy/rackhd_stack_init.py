@@ -25,9 +25,6 @@ import unittest
 import fit_common
 import pdu_lib
 import flogging
-from ucsmsdk import ucshandle
-from ucsmsdk.utils.ucsbackup import import_ucs_backup
-from config.settings import get_ucs_cred
 
 log = flogging.get_loggers()
 
@@ -306,26 +303,6 @@ class rackhd_stack_init(unittest.TestCase):
         if poller_list != []:
             log.error("Poller IDs with error or no data: {}".format(json.dumps(poller_list, indent=4)))
         return False
-
-    # Optionally configure UCS Manager if present
-    @unittest.skipUnless("ucsm_ip" in fit_common.fitcfg() and "ucsm_config_file" in fit_common.fitcfg(),
-                         "Skipping UCSM config")
-    def test13_load_ucs_manager_config(self):
-        """
-        loads the test configuration into the UCS Manger
-        """
-        UCSM_USER, UCSM_PASS = get_ucs_cred()
-        UCSM_IP = fit_common.fitcfg().get('ucsm_ip')
-
-        handle = ucshandle.UcsHandle(UCSM_IP, UCSM_USER, UCSM_PASS)
-        self.assertTrue(handle.login(), 'Failed to log in to UCS Manager!')
-        path, file = os.path.split(fit_common.fitcfg()['ucsm_config_file'])
-        try:
-            import_ucs_backup(handle, file_dir=path, file_name=file)
-        except Exception as e:
-            log.info_5("error trying to configure UCSPE, continue testing")
-            log.info_5(str(e))
-        self.assertTrue(handle.logout(), 'Failed to log out from UCS Manager!')
 
 if __name__ == '__main__':
     unittest.main()
