@@ -95,43 +95,43 @@ def wait_for_workflow_complete(instanceid, start_time, waittime=2700, cycle=30):
 @attr(all=False, regression=False, smoke=False, refresh_group=True)
 class api20_node_rediscovery(fit_common.unittest.TestCase):
     @classmethod
-    def setUpClass(self):
+    def setUpClass(cls):
         # class method is run once per script
         # usually not required in the script
-        self.__client = config.api_client
+        cls.__client = config.api_client
 
         # Get the list of nodes
         nodelist = fit_common.node_select(no_unknown_nodes=True)
 
-        for nodeid in nodelist:
-            node_data = fit_common.rackhdapi('/api/2.0/nodes/' + nodeid)
-            
-        # TODO: FIXME
-        assert (len(nodelist) !=0) , "No valid nodes discovered"
+        assert ((len(nodelist) !=0) , "No valid nodes discovered")
 
         # Select one node at random
-        self.__NODE = nodelist[random.randint(0, len(nodelist) - 1)]
+        cls.__nodeid = nodelist[random.randint(0, len(nodelist) - 1)]
 
         # delete active workflows for specified node
-        fit_common.cancel_active_workflows(self.__NODE)
+        fit_common.cancel_active_workflows(cls.__nodeid)
+
+    def setUp(self):
+        self.__nodeid = self.__class__.__nodeid
+        self.__client = self.__class__.__client 
 
     def test01_node_check(self):
         # Log node data
 
-        nodeinfo = fit_common.rackhdapi('/api/2.0/nodes/' + self.__NODE)['json']
+        nodeinfo = fit_common.rackhdapi('/api/2.0/nodes/' + self.__nodeid)['json']
         nodesku = fit_common.rackhdapi(nodeinfo.get('sku'))['json']['name']
-        log.info(" Node ID: " + self.__NODE)
+        log.info(" Node ID: " + self.__nodeid)
         log.info(" Node SKU: " + nodesku)
         log.info(" Graph Name: " + PAYLOAD['name'])
 
         # Ensure the compute node is powered on and reachable
         result = fit_common.rackhdapi('/api/2.0/nodes/' +
-                                      self.__NODE +
+                                      self.__nodeid +
                                       '/workflows',
                                       action='post', payload={"name": "Graph.PowerOn.Node"})
-        self.assertEqual(result['status'], 201, "Node Power on workflow API failed, see logs.")
+        self.assertEqual(result['status'], 201, msg="Node Power on workflow API failed, see logs.")
         self.assertTrue(wait_for_workflow_complete(result['json']['instanceId'], time.time(), 50, 5),
-                        "Node Power on workflow failed, see logs.")
+                        msg="Node Power on workflow failed, see logs.")
 
     @depends(after=test01_node_check)
     def test02_get_pre_catalog(self):
@@ -139,9 +139,9 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
         global pre_catalog_user
 
         # get the IPMI user catalog for node 
-        Api().nodes_get_catalog_source_by_id(identifier=self.__NODE, source='ipmi-user-list-1')
+        Api().nodes_get_catalog_source_by_id(identifier=self.__nodeid, source='ipmi-user-list-1')
         catalog = loads(self.__client.last_response.data)
-        self.assertGreater(len(catalog), 0, msg=("Node %s pre IPMI user catalog has zero length" % self.__NODE))
+        self.assertGreater(len(catalog), 0, msg=("Node %s pre IPMI user catalog has zero length" % self.__nodeid))
 
         try:
             pre_catalog_user = catalog['data']['6']['']
@@ -157,9 +157,9 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
         global pre_catalog_user
 
         command = "user set name 6 " + random_user_generator(pre_catalog_user)
-        result = test_api_utils.run_ipmi_command_to_node(self.__NODE, command)
-        # TODO: FIXME
-        assert (result['exitcode']==0) , "Error setting node username"
+        result = test_api_utils.run_ipmi_command_to_node(self.__nodeid, command)
+
+        self.assertEqual (result['exitcode'], 0, msg="Error setting node username")
 
 
     @depends(after=test03_create_node_user)
@@ -168,37 +168,17 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
         global PAYLOAD
 
         payload_string = dumps(PAYLOAD)
-        PAYLOAD =  loads(payload_string.replace("NODEID", self.__NODE))
+        PAYLOAD =  loads(payload_string.replace("NODEID", self.__nodeid))
         print PAYLOAD
 
         result = fit_common.rackhdapi('/api/2.0/workflows', action='post', payload=PAYLOAD)
 
         self.assertEqual(result['status'], 201,
-                         'Was expecting code 201. Got ' + str(result['status']))
+                         msg='Was expecting code 201. Got ' + str(result['status']))
 
         graphId = result['json']['context']['graphId']
-        
-        retries = 240
-        for dummy in range(0, retries):
-            result = fit_common.rackhdapi('/api/2.0/workflows/' + graphId, action='get')
-            if result['json']['status'] == 'running' or result['json']['status'] == 'Running':
-                if fit_common.VERBOSITY >= 2:
-                    print 'GraphID ="{0}"; Status="{1}"'.format(graphId, result['json']['status'])
-                fit_common.time.sleep(20)
-            elif result['json']['status'] == 'succeeded':
-                if fit_common.VERBOSITY >= 2:
-                    print "Workflow state: {}".format(result['json']['status'])
-                break
-            else:
-                if fit_common.VERBOSITY >= 2:
-                    print "Workflow state (unknown): {}".format(result['json']['status'])
-                break
 
-        print "Graph finished  with the following state: " + result['json']['status']
-
-
-        self.assertEqual(result['json']['status'], 'succeeded',
-                         'Was expecting succeeded. Got ' + result['json']['status'])
+        self.assertTrue(wait_for_workflow_complete(graphId, time.time()), "Immediate rediscovery workflow failed")
 
     @depends(after=test04_refresh_immediate)
     def test05_verify_rediscovery(self):
@@ -207,9 +187,9 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
         global post_catalog_user
 
         # get the Ipmi user catalog for node 
-        Api().nodes_get_catalog_source_by_id(identifier=self.__NODE, source='ipmi-user-list-1')
+        Api().nodes_get_catalog_source_by_id(identifier=self.__nodeid, source='ipmi-user-list-1')
         catalog = loads(self.__client.last_response.data)
-        self.assertGreater(len(catalog), 0, msg=("Node %s post ipmi user catalog has zero length" % self.__NODE))
+        self.assertGreater(len(catalog), 0, msg=("Node %s post ipmi user catalog has zero length" % self.__nodeid))
 
         try:
             post_catalog_user = catalog['data']['6']['']
@@ -219,9 +199,7 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
             except KeyError:
                 post_catalog_user = None
 
-
-
-        self.assertNotEqual(post_catalog_user, pre_catalog_user, "BMC user didn't change")
+        self.assertNotEqual(post_catalog_user, pre_catalog_user, msg="BMC user didn't change")
 
 
 if __name__ == '__main__':
