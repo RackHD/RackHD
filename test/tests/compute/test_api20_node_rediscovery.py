@@ -144,16 +144,19 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
         self.assertGreater(len(catalog), 0, msg=("Node %s pre IPMI user catalog has zero length" % self.__NODE))
 
         try:
-            pre_catalog_user = catalog['data']['3']['']
+            pre_catalog_user = catalog['data']['6']['']
         except KeyError:
-            pre_catalog_user = None
+            try:
+                pre_catalog_user = catalog['data']['6']['admin']
+            except KeyError:
+                pre_catalog_user = None
 
 
     @depends(after=test02_get_pre_catalog)
     def test03_create_node_user(self):
         global pre_catalog_user
 
-        command = "user set name 3 " + random_user_generator(pre_catalog_user)
+        command = "user set name 6 " + random_user_generator(pre_catalog_user)
         result = test_api_utils.run_ipmi_command_to_node(self.__NODE, command)
         # TODO: FIXME
         assert (result['exitcode']==0) , "Error setting node username"
@@ -208,7 +211,15 @@ class api20_node_rediscovery(fit_common.unittest.TestCase):
         catalog = loads(self.__client.last_response.data)
         self.assertGreater(len(catalog), 0, msg=("Node %s post ipmi user catalog has zero length" % self.__NODE))
 
-        post_catalog_user = catalog['data']['3']['']
+        try:
+            post_catalog_user = catalog['data']['6']['']
+        except KeyError:
+            try:
+                post_catalog_user = catalog['data']['6']['admin']
+            except KeyError:
+                post_catalog_user = None
+
+
 
         self.assertNotEqual(post_catalog_user, pre_catalog_user, "BMC user didn't change")
 
