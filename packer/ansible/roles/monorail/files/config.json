@@ -33,7 +33,7 @@
             "yamlName": ["monorail-2.0-sb.yaml"]
         },
         {
-            "address": "0.0.0.0",
+            "address": "172.31.128.1",
             "port": 9988,
             "httpsEnabled": false,
             "proxiesEnabled": true,
