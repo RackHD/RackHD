@@ -8,9 +8,6 @@ import json
 import fit_common
 import flogging
 
-from config.amqp import QUEUE_GRAPH_FINISH, defaults
-from modules.amqp import AMQPWorker
-from modules.worker import WorkerThread, WorkerTasks
 from on_http_api2_0 import ApiApi as Api
 from on_http_api2_0.rest import ApiException
 from config.api2_0_config import config
@@ -99,16 +96,6 @@ class NodesTests(fit_common.unittest.TestCase):
             timeout -= 1
         return timeout
 
-    def check_compute_count(self):
-        Api().nodes_get_all()
-        nodes = self.__get_data()
-        count = 0
-        for n in nodes:
-            type = n.get('type')
-            if type == 'compute':
-                count += 1
-        return count
-
     def create_temp_nodes(self):
         # utility to create a set of test nodes
         for n in self.__test_nodes:
@@ -137,67 +124,22 @@ class NodesTests(fit_common.unittest.TestCase):
                     logs.info(' Failed to delete node %s - %s', uuid, name)
         return len(codes)
 
-    def test_nodes_discovery(self):
-        # API 2.0 Testing Graph.Discovery completion
-        count = defaults.get('RACKHD_NODE_COUNT', '')
-        if (count.isdigit() and self.check_compute_count() == int(count)) or self.check_compute_count():
-            logs.warning('Nodes already discovered!')
-            return
-        self.__discovery_duration = datetime.now()
-        logs.info(' Wait start time: %s', str(self.__discovery_duration))
-        self.__task = WorkerThread(AMQPWorker(queue=QUEUE_GRAPH_FINISH,
-                                              callbacks=[self.handle_graph_finish]), 'discovery')
 
-        def start(worker, id):
-            worker.start()
-
-        tasks = WorkerTasks(tasks=[self.__task], func=start)
-        tasks.run()
-        tasks.wait_for_completion(timeout_sec=1200)
-        self.assertFalse(self.__task.timeout,
-                         msg=('timeout waiting for task %s', self.__task.id))
-
-    def handle_graph_finish(self, body, message):
-        routeId = message.delivery_info.get('routing_key').split('graph.finished.')[1]
-        Api().workflows_get()
-        workflows = self.__get_data()
-        for w in workflows:
-            injectableName = w.get('injectableName')
-            if injectableName == 'Graph.SKU.Discovery':
-                graphId = w.get('context', {}).get('graphId', {})
-                if graphId == routeId:
-                    message.ack()
-                    status = body.get('status')
-                    if status == 'succeeded' or status == 'failed':
-                        duration = datetime.now() - self.__discovery_duration
-                        msg = {
-                            'graph_name': injectableName,
-                            'status': status,
-                            'route_id': routeId,
-                            'duration': str(duration)
-                        }
-                        if status == 'failed':
-                            msg['active_task'] = w.get('tasks', {})
-                            logs.error(json.dumps(msg, indent=4))
-                        else:
-                            logs.info(json.dumps(msg, indent=4))
-                            self.__discovered += 1
-                        break
-        check = self.check_compute_count()
-        if check and check == self.__discovered:
-            self.__task.worker.stop()
-            self.__task.running = False
-            self.__discovered = 0
-
-    @depends(after='test_nodes_discovery')
     def test_nodes(self):
         # Testing GET:/api/2.0/nodes
+        found = False
         Api().nodes_get_all()
         nodes = self.__get_data()
+        self.assertNotEqual(0, len(nodes), msg='Node list was empty!')
+
         logs.debug(json.dumps(nodes, indent=4))
         for node in nodes:
-            logs.info(" Node: %s %s %s", node.get('id'), node.get('type'), node.get('name'))
-        self.assertNotEqual(0, len(nodes), msg='Node list was empty!')
+            if node.get('type') == 'compute':
+                logs.info(" Node: %s %s %s", node.get('id'), node.get('type'), node.get('name'))
+                if node.get('sku') and node.get('obms'):
+                    found = True
+
+        self.assertTrue(found, msg='No node with both sku and OBM settingd found!')
 
     @depends(after='test_nodes')
     def test_node_id(self):
