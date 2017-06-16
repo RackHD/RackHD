@@ -45,6 +45,7 @@ class SSHHelper(pxssh):
     def __init__(self, device='dut', why='ssh:', *args, **kwargs):
         # differed import of flogging since we are inside the plugin
         # structure:
+
         from flogging import get_loggers
         self.__logs = get_loggers()
         self.__stream_to_log = None
@@ -58,10 +59,17 @@ class SSHHelper(pxssh):
             'multiple targets not supported yet'
         assert self._parser_options is not None, \
             'attempt to create ssh helper before nose-plugin-begin step called'
+
         host = self._parser_options.sm_dut_ssh_host
         port = self._parser_options.sm_dut_ssh_port
         user = self._parser_options.sm_dut_ssh_user
         password = self._parser_options.sm_dut_ssh_password
+
+        self.SSH_OPTS = (self.SSH_OPTS +
+                         " -o 'StrictHostKeyChecking=no'" +
+                         " -o 'UserKnownHostsFile=/dev/null' ")
+
+        self.force_password = True
         self.login(host, user, password, port=port)
         self.sendline('sudo su -')
         index = self.expect(['assword', '#'])
