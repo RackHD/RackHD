@@ -1,8 +1,0 @@
----
-- name: Create directory for SMI config file
-  file: path=/opt/monorail/ state=directory mode=0777
-  sudo: yes
-
-- name: Load SMI conf onto guest
-  copy: src=wsmanConfig.json dest=/opt/monorail/smiConfig.json
-  sudo: yes
