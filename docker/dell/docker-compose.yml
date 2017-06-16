@@ -42,7 +42,7 @@ services:
 
   device-discovery:
     container_name: device-discovery
-    image: rackhd/device-discovery:latest
+    image: rackhd/device-discovery:${TAG}
     depends_on:
     - consul
     network_mode: "host"
@@ -60,7 +60,7 @@ services:
 
   dell-server-action:
     container_name: dell-server-action
-    image: rackhd/dell-server-action:latest
+    image: rackhd/dell-server-action:${TAG}
     depends_on:
     - consul
     network_mode: "host"
@@ -78,7 +78,7 @@ services:
 
   dell-chassis-inventory:
     container_name: dell-chassis-inventory
-    image: rackhd/dell-chassis-inventory:latest
+    image: rackhd/dell-chassis-inventory:${TAG}
     depends_on:
     - consul
     network_mode: "host"
@@ -96,7 +96,7 @@ services:
 
   dell-server-inventory:
     container_name: dell-server-inventory
-    image: rackhd/dell-server-inventory:latest
+    image: rackhd/dell-server-inventory:${TAG}
     depends_on:
     - consul
     network_mode: "host"
@@ -114,7 +114,7 @@ services:
 
   dell-server-configuration-profile:
     container_name: dell-server-configuration-profile
-    image: rackhd/dell-server-configuration-profile:latest
+    image: rackhd/dell-server-configuration-profile:${TAG}
     depends_on:
     - consul
     network_mode: "host"
@@ -133,7 +133,7 @@ services:
 
   dell-server-firmwareupdate:
     container_name: dell-server-firmwareupdate
-    image: rackhd/dell-server-firmwareupdate:latest
+    image: rackhd/dell-server-firmwareupdate:${TAG}
     depends_on:
     - consul
     network_mode: "host"
@@ -151,7 +151,7 @@ services:
 
   virtualnetwork:
     container_name: virtualnetwork
-    image: rackhd/virtualnetwork:latest
+    image: rackhd/virtualnetwork:${TAG}
     depends_on:
     - consul
     - postgresql
@@ -170,7 +170,7 @@ services:
 
   virtualidentity:
     container_name: virtualidentity
-    image: rackhd/virtualidentity:latest
+    image: rackhd/virtualidentity:${TAG}
     depends_on:
     - consul
     - postgresql
@@ -189,7 +189,7 @@ services:
 
   dell-powerthermal-monitoring:
     container_name: dell-powerthermal-monitoring
-    image: rackhd/dell-powerthermal-monitoring:latest
+    image: rackhd/dell-powerthermal-monitoring:${TAG}
     depends_on:
     - consul
     network_mode: "host"
