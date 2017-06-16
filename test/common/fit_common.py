@@ -475,19 +475,22 @@ def remote_shell(shell_cmd, expect_receive="", expect_send="", timeout=300,
         user = fitcreds()['rackhd_host'][0]['username']
     if not password:
         password = fitcreds()['rackhd_host'][0]['password']
+    port = fitports()['ssh']
 
     logfile_redirect = None
     if VERBOSITY >= 4:
         print "VM number: ", vmnum
+        print "remote_shell: User =", user
         print "remote_shell: Host =", address
+        print "remote_shell: Port =", port
         print "remote_shell: Command =", shell_cmd
 
     if VERBOSITY >= 9:
         print "remote_shell: STDOUT =\n"
         logfile_redirect = sys.stdout
 
-    # if localhost just run the command local
-    if fitargs()['rackhd_host'] == 'localhost':
+    # if localhost and not on a portfoward port just run the command local
+    if fitargs()['rackhd_host'] == 'localhost' and port == 22:
         (command_output, exitstatus) = \
             pexpect.run("sudo bash -c \"" + shell_cmd + "\"",
                         withexitstatus=1,
@@ -502,15 +505,15 @@ def remote_shell(shell_cmd, expect_receive="", expect_send="", timeout=300,
     shell_cmd.replace("'", "\\\'")
     if expect_receive == "" or expect_send == "":
         (command_output, exitstatus) = \
-            pexpect.run("ssh -q -o StrictHostKeyChecking=no -t " + user + "@" +
-                        address + " sudo bash -c \\\"" + shell_cmd + "\\\"",
+            pexpect.run("ssh -q -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -t " + user + "@" +
+                        address + " -p " + str(port) + " sudo bash -c \\\"" + shell_cmd + "\\\"",
                         withexitstatus=1,
                         events={"assword": password + "\n"},
                         timeout=timeout, logfile=logfile_redirect)
     else:
         (command_output, exitstatus) = \
-            pexpect.run("ssh -q -o StrictHostKeyChecking=no -t " + user + "@" +
-                        address + " sudo bash -c \\\"" + shell_cmd + "\\\"",
+            pexpect.run("ssh -q -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -t " + user + "@" +
+                        address + " -p " + str(port) + " sudo bash -c \\\"" + shell_cmd + "\\\"",
                         withexitstatus=1,
                         events={"assword": password + "\n",
                                 expect_receive: expect_send + "\n"},
@@ -537,8 +540,9 @@ def scp_file_to_host(src_file_name, vmnum=1):
     '''
     logfile_redirect = file('/dev/null', 'w')
     just_fname = os.path.basename(src_file_name)
+    port = fitports()['ssh']
     # if localhost just copy to home dir
-    if fitargs()['rackhd_host'] == 'localhost':
+    if fitargs()['rackhd_host'] == 'localhost' and port == 22:
         remote_shell('cp ' + src_file_name + ' ~/' + src_file_name)
         return src_file_name
 
@@ -549,7 +553,8 @@ def scp_file_to_host(src_file_name, vmnum=1):
 
     scp_target = fitcreds()['rackhd_host'][0]['username'] + '@{0}:'.format(rackhd_hostname)
 
-    cmd = 'scp -o StrictHostKeyChecking=no {0} {1}'.format(src_file_name, scp_target)
+    cmd = 'scp -P {0} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {1} {2}'.format(
+        port, src_file_name, scp_target)
     if VERBOSITY >= 4:
         print "scp_file_to_host: '{0}'".format(cmd)
 
@@ -908,6 +913,18 @@ def node_select():
     if len(nodelist) == 0:
         print '**** Empty node list.\n'
     return nodelist
+
+
+def is_dell_node(node_id):
+    node_entry = rackhdapi('/api/2.0/nodes/{0}'.format(node_id))
+    if node_entry['status'] != 200:
+        print '**** Unable to retrieve node list via API.\n'
+        sys.exit(255)
+
+    for identifier in node_entry['json']['identifiers']:
+        if re.match('^[0-9|A-Z]{7}$', identifier) is not None:
+            return True
+    return False
 
 
 def list_skus():

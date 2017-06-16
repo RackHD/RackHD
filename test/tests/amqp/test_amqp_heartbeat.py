@@ -30,7 +30,7 @@ class TestAMQPHeartbeat(unittest.TestCase):
 
     def __common_on_x_heartbeat(self, service_name):
         rk = 'heartbeat.updated.information.#.{}'.format(service_name)
-        self.__proc.match_on_routekey(routing_key=rk, max=3)
+        self.__proc.match_on_routekey('all-heartbeats', routing_key=rk, max=3)
         results = self._amqp_sp.finish(timeout=20)
         results[0].assert_errors(self)
         first_event = self.__proc.get_raw_tracker_events()[0]

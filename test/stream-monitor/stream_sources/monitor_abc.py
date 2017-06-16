@@ -33,14 +33,14 @@ class StreamMonitorBaseClass(object):
     def handle_begin(self):
         """
         called at stream-monitor plugin begin. We create a matchgroup and
-        group stacks. (See 'push_group' for info on groups)
+        group stacks. (See 'open_group' for info on groups)
 
         At this time, we only support "seeing" things _during_ a test. The
         '__in_test' state was put in here to help me think about how to possibly
         structure things when/if phasing gets added.
         """
         self._logs.debug('handle_begin pluggin progression for %s', self)
-        self._match_groups = StreamGroupsRoot()
+        self._match_groups = StreamGroupsRoot(self._logs)
         self.__group_stack = [self._match_groups]
         self.__in_test = None
 
@@ -92,7 +92,7 @@ class StreamMonitorBaseClass(object):
         else:
             self.__seen_before_test.put(event_data)
 
-    def push_group(self, ordered=False):
+    def open_group(self, ordered=False):
         """
         This is "take one" at groups of matchers. The root level group is an
         "unordered" group, and thus any matchers added to it can be matched in
@@ -103,21 +103,21 @@ class StreamMonitorBaseClass(object):
         The __group_stack property keeps track of our current depth.
         """
         if ordered:
-            ng = StreamGroupsOrdered()
+            ng = StreamGroupsOrdered(self._logs)
         else:
-            ng = StreamGroupsUnordered()
+            ng = StreamGroupsUnordered(self._logs)
 
         current = self.__group_stack[-1]
         current.add_group(ng)
         self.__group_stack.append(ng)
 
-    def pop_group(self):
+    def close_group(self):
         """
-        The pop method to go with push_group. Basically sanity checks depth and
+        The pop method to go with open_group. Basically sanity checks depth and
         handles moving "up" a level.
         """
         assert len(self.__group_stack) > 1, \
-            'attempted to pop root group!'
+            'attempted to close root group!'
         self.__group_stack = self.__group_stack[:-1]
 
     def test_helper_get_all_events(self, timeout=5, end_event=None, max_grab=None):
@@ -148,7 +148,7 @@ class StreamMonitorBaseClass(object):
         self._logs.irl.debug('return %d: %s', len(rl), rl)
         return rl
 
-    def finish(self, timeout=5):
+    def finish(self, timeout=5, allow_complete_miss=False):
         """
         Called when data injection is complete and the events should be
         checked vs the matchers. This is primarily for self-tests.
@@ -164,7 +164,8 @@ class StreamMonitorBaseClass(object):
         events = self.test_helper_get_all_events(timeout=timeout, end_event=end_event)
         self._logs.irl.debug('get %d (%s) events.', len(events), events)
         for event_data in events:
-            res = self._match_groups.check_event(event_data)
+            self._logs.irl.debug('---processing event %s---', event_data)
+            res = self._match_groups.check_event(event_data, allow_complete_miss=allow_complete_miss)
             results.add_result(res)
         res = self._match_groups.check_ending()
         results.add_result(res)

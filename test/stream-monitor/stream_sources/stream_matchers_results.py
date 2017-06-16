@@ -62,6 +62,18 @@ class StreamRunResults(object):
 
         testcase.fail(fs.getvalue())
 
+    def dump(self, ofile=sys.stdout, indent=0):
+        if ofile is None:
+            ofile = StringIO()
+            rstring = True
+        else:
+            rstring = False
+
+        for n in self.__all_res_list:
+            n.dump(ofile=ofile, indent=indent + 2)
+        if rstring:
+            return ofile.getvalue()
+
     def __str__(self):
         rs = 'results(ok={0},error={1})'.format(len(self.__ok_res_list),
                                                 len(self.__error_res_list))
@@ -102,6 +114,17 @@ class MatcherResult(object):
         print >>ofile, "{0} this match-result is used for {1}".format(ins, self.__used_for)
         print >>ofile, "{0} is_error={1}, is_terminal={2}, is_ok={3}".format(
             ins, str(self.is_error), str(self.is_terminal), str(self.is_ok))
+
+    def __str__(self):
+        sf = StringIO()
+        self.dump(sf)
+        rs = sf.getvalue()
+        # turn into single line for this (yes, cheesy, but it kind of works out)
+        fl = []
+        for line in rs.split('\n'):
+            fl.append(line.strip())
+        ft = ' '.join(fl)
+        return ft
 
 
 class MatcherCleanHitResult(MatcherResult):
@@ -211,3 +234,30 @@ class MatcherUnderMatch(MatcherResult):
         new_descr = "{0} undermatched (count={1}, min={2}, max={3})".format(
             self.__base_description, self.__count, self.__min, self.__max)
         self._update_description(new_descr)
+
+
+class MatcherValidation(MatcherResult):
+    """
+    Used for payload validation error marking. These don't disqualify a match, but
+    they do mean the match-set is in error. Currently only used in amqp-source,
+    though this might migrate out of here completely.
+    """
+    def __init__(self, description, used_for):
+        super(MatcherValidation, self).__init__(
+            description, used_for, is_error=True, is_terminal=True)
+
+
+class MatcherValidationMissmatch(MatcherValidation):
+    def __init__(self, description, field_name, expected_value, found_value):
+        d = "Field '{}' had value '{}' instead of expected value '{}' in {}".format(
+            field_name, found_value, expected_value, description)
+        super(MatcherValidationMissmatch, self).__init__(
+            d, "representing a validation failure where a given field's value did not match the expected one")
+
+
+class MatcherValidationMissingField(MatcherValidation):
+    def __init__(self, description, field_name, expected_value):
+        d = "Field '{}' was expected to have the value '{}' but did not exist in {}".format(
+            field_name, expected_value, description)
+        super(MatcherValidationMissingField, self).__init__(
+            d, "representing a validation failure where a given field was expected but was not found")
