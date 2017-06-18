@@ -535,7 +535,7 @@ def scp_file_to_host(src_file_name, vmnum=1):
 
     :param src_file_name: name of file to copy over. May include path
     :type src_file_name: basestring
-    :return: just name of file on target (no path)
+    :return: file path on target
     :rtype: basestring
     '''
     logfile_redirect = file('/dev/null', 'w')
@@ -543,8 +543,8 @@ def scp_file_to_host(src_file_name, vmnum=1):
     port = fitports()['ssh']
     # if localhost just copy to home dir
     if fitargs()['rackhd_host'] == 'localhost' and port == 22:
-        remote_shell('cp ' + src_file_name + ' ~/' + src_file_name)
-        return src_file_name
+        remote_shell('cp ' + src_file_name + ' ~/' + just_fname)
+        return '~/' + just_fname
 
     if (vmnum == 1):
         rackhd_hostname = fitargs()['rackhd_host']
@@ -570,7 +570,7 @@ def scp_file_to_host(src_file_name, vmnum=1):
 
     assert ecode == 0, \
         'failed "{0}" because {1}. Output={2}'.format(cmd, ecode, command_output)
-    return just_fname
+    return '~/' + just_fname
 
 
 def get_auth_token():

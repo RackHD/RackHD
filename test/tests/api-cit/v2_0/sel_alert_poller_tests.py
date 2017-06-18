@@ -268,9 +268,9 @@ class SELPollerAlertTests(fit_common.unittest.TestCase):
 
         sel_file = self.__create_selEntries_file(available_sel_entries)
         fit_common.remote_shell('ls')
-        fit_common.scp_file_to_host(sel_file)
+        sel_file_path = fit_common.scp_file_to_host(sel_file)
 
-        self.__run_ipmitool_command(bmc_ip, "sel add ~/selError.txt")
+        self.__run_ipmitool_command(bmc_ip, "sel add {0}".format(sel_file_path))
 
         # wait for the results
         results = self._amqp_sp.finish(timeout=360)
@@ -286,8 +286,7 @@ class SELPollerAlertTests(fit_common.unittest.TestCase):
         if ipmi_rsp_data['exitcode'] != 0:
             if 'Add SEL Entry failed: Out of space' not in ipmi_rsp_data['stdout']:
                 self.assertEqual(ipmi_rsp_data['exitcode'], 0,
-                                 'ipmitool command fail. exit code: %s',
-                                 ipmi_rsp_data['exitcode'])
+                                 'ipmitool command fail. exit code: {0}'.format(ipmi_rsp_data['exitcode']))
 
         ipmi_cmd_data = ipmi_rsp_data['stdout']
 
