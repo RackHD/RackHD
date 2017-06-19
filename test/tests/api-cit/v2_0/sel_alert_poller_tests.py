@@ -35,8 +35,13 @@ class SELPollerAlertTests(fit_common.unittest.TestCase):
         cls.__client = config.api_client
         # Get the stream-monitor plugin for AMQP
         cls._amqp_sp = smp_get_stream_monitor('amqp')
-        # Create the "all events" tracker
-        cls._on_events_tracker = cls._amqp_sp.create_tracker('on-events-all', 'on.events', 'polleralert.#')
+
+        if cls._amqp_sp and cls._amqp_sp.has_amqp_server:
+            # Create the "all events" tracker
+            cls._on_events_tracker = cls._amqp_sp.create_tracker('on-events-all', 'on.events', 'polleralert.#')
+        else:
+            cls._on_events_tracker = None
+
         # We have context information that needs to be passed from test-to-test. Set up the template
         # space.
         cls._run_context = {
@@ -54,23 +59,27 @@ class SELPollerAlertTests(fit_common.unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        # remove created sku pack (it may miss on various test failures, so ignore errors)
-        try:
-            Api().skus_id_delete(cls._run_context['sku_id'])
+        if cls._on_events_tracker:
+            # remove created sku pack (it may miss on various test failures, so ignore errors)
+            try:
+                Api().skus_id_delete(cls._run_context['sku_id'])
 
-        except ApiException:
-            pass
+            except ApiException:
+                pass
 
-        # Clearing out the full sel logs after test script runs
-        ip = cls._run_context['bmc_ip']
-        bmc_creds = cls._run_context['bmc_creds']
-        ipmitool_command = "ipmitool -I lanplus -H {0} -U {1} -P {2} {3}".format(
-            ip, bmc_creds[0], bmc_creds[1], "sel clear")
-        ipmi_rsp_data = fit_common.remote_shell(ipmitool_command)
-        if ipmi_rsp_data['exitcode'] != 0:
-            logs.info(" Warning: could not clear sel logs from node %s on script clean up", cls._run_context['node_id'])
+            # Clearing out the full sel logs after test script runs
+            ip = cls._run_context['bmc_ip']
+            bmc_creds = cls._run_context['bmc_creds']
+            ipmitool_command = "ipmitool -I lanplus -H {0} -U {1} -P {2} {3}".format(
+                ip, bmc_creds[0], bmc_creds[1], "sel clear")
+            ipmi_rsp_data = fit_common.remote_shell(ipmitool_command)
+            if ipmi_rsp_data['exitcode'] != 0:
+                logs.info(" Warning: could not clear sel logs from node %s on script clean up", cls._run_context['node_id'])
 
     def setUp(self):
+        if not self._on_events_tracker:
+            raise fit_common.unittest.SkipTest('Skipping AMQP test because no AMQP server defined')
+
         # attach a processor to the on-events-tracker amqp tracker. Then we can
         # attach indiviual match-clauses to this in each test-case.
         self.__qproc = self._amqp_sp.get_tracker_queue_processor(self._on_events_tracker, start_at='now')
