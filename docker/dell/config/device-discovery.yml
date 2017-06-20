@@ -1,346 +1,342 @@
 discoveryConfig:
-   discoveryDevice: 
+   deviceGroup: 
     -
-      discoveryDeviceType:
+      discoveryRule:
         -
-          discoveryDeviceName: "IDRAC7"
-          discoveryRules: 
-             protocol: "HTTPS"
-             command: "https://%s/cgi-bin/discover"
-             identifyBy: "REGULAR" 
-             identifier: 
-                -
-                  text: "<ENDPOINTTYPE>iDRAC7</ENDPOINTTYPE>"
-             deviceDefaultCredential: 
-               user: "root"
-               password: "calvin"
-        -
-          discoveryDeviceName: "IDRAC8"
-          discoveryRules: 
-             protocol: "HTTPS"
-             command: "https://%s/cgi-bin/discover"
-             identifyBy: "REGULAR"
-             identifier: 
-                -
-                  text: "<ENDPOINTTYPE>iDRAC8</ENDPOINTTYPE>"
-             deviceDefaultCredential: 
-               user: "root"
-               password: "calvin"
-      discoveryDeviceGroup: "SERVER"
+          protocol: "HTTPS"
+          command: "https://%s/cgi-bin/discover"
+          deviceType:
+             -
+               name: "IDRAC6"
+               identifyBy: "REGULAR" 
+               identifier: 
+                  -
+                    text: "<ENDPOINTTYPE>iDRAC6</ENDPOINTTYPE>"
+               deviceDefaultCredential: 
+                  username: "root"
+                  password: "calvin"
+               enabled: true
+             -
+               name: "IDRAC7"
+               identifyBy: "REGULAR" 
+               identifier: 
+                  -
+                    text: "<ENDPOINTTYPE>iDRAC7</ENDPOINTTYPE>"
+               deviceDefaultCredential: 
+                  username: "root"
+                  password: "calvin"
+               enabled: true
+             -
+               name: "IDRAC8"
+               identifyBy: "REGULAR" 
+               identifier: 
+                  -
+                    text: "<ENDPOINTTYPE>iDRAC8</ENDPOINTTYPE>"
+               deviceDefaultCredential: 
+                  username: "root"
+                  password: "calvin"
+               enabled: true
+             -
+               name: "IDRAC9"
+               identifyBy: "REGULAR" 
+               identifier: 
+                  -
+                    text: "<ENDPOINTTYPE>iDRAC9</ENDPOINTTYPE>"
+               deviceDefaultCredential: 
+                  username: "root"
+                  password: "calvin"
+               enabled: true     
+      groupName: "SERVER" 
     -
-      discoveryDeviceType:
+      discoveryRule:
         -
-          discoveryDeviceName: "CMC"
-          discoveryRules: 
-             protocol: "HTTPS"
-             identifyBy: "REGULAR"
-             command: "https://%s/cgi-bin/discover"
-             identifier: 
-                -
-                  text: "<ENDPOINTTYPE>CMC</ENDPOINTTYPE>"
-             deviceDefaultCredential: 
-               user: "root"
-               password: "calvin"
+          protocol: "HTTPS"
+          command: "https://%s/cgi-bin/discover"
+          deviceType:
+             -
+               name: "CMC_FX2"
+               identifyBy: "REGULAR" 
+               identifier: 
+                  -
+                    text: "<ENDPOINTTYPE>CMC</ENDPOINTTYPE>"
+                  -
+                    text: "<ENDPOINTVER>3.0</ENDPOINTVER>"
+               deviceDefaultCredential: 
+                  username: "root"
+                  password: "calvin"
+               enabled: true
+             -
+               name: "VRTX"
+               identifyBy: "REGULAR" 
+               identifier: 
+                 -
+                    text: "<ENDPOINTTYPE>CMC</ENDPOINTTYPE>"
+                 -
+                   text: "<ENDPOINTVER>2.0</ENDPOINTVER>"
+               deviceDefaultCredential: 
+                  username: "root"
+                  password: "calvin"
+               enabled: true
+             -
+               name: "CMC"
+               identifyBy: "REGULAR" 
+               identifier: 
+                  -
+                    text: "<ENDPOINTTYPE>CMC</ENDPOINTTYPE>"
+               deviceDefaultCredential: 
+                  username: "root"
+                  password: "calvin"
+               enabled: true
         -
-          discoveryDeviceName: "CMC_FX2"
-          discoveryRules: 
-             protocol: "HTTPS"
-             command: "https://%s/cgi-bin/discover"
-             identifyBy: "REGULAR"
-             identifier: 
-                -
-                  text: "<ENDPOINTTYPE>CMC</ENDPOINTTYPE>"
-                -
-                  text: "<ENDPOINTVER>3.0</ENDPOINTVER>"
-             deviceDefaultCredential: 
-               user: "root"
-               password: "calvin"
-        -
-          discoveryDeviceName: "VRTX"
-          discoveryRules: 
-             protocol: "HTTPS"
-             command: "https://%s/cgi-bin/discover"
-             identifyBy: "REGULAR"
-             identifier: 
-                -
-                  text: "<ENDPOINTTYPE>CMC</ENDPOINTTYPE>"
-                -
-                  text: "<ENDPOINTVER>2.0</ENDPOINTVER>"
-             deviceDefaultCredential: 
-               user: "root"
-               password: "calvin"
-        -
-          discoveryDeviceName: "CSERVER"
-          discoveryRules: 
-             protocol: "HTTPS"
-             command: "https://%s/login.html"
-             identifyBy: "REGULAR"
-             identifier: 
-                -
-                  text: "Dell Remote Management Controller"
-             deviceDefaultCredential: 
-               user: "root"
-               password: "calvin"
-      discoveryDeviceGroup: "CHASSIS"
+          protocol: "HTTPS"
+          command: "https://%s/login.html"
+          deviceType:
+             -
+               name: "CSERVER"
+               identifyBy: "REGULAR" 
+               identifier: 
+                  -
+                    text: "Dell Remote Management Controller"
+               deviceDefaultCredential: 
+                  username: "root"
+                  password: "calvin"     
+               enabled: true
+      groupName: "CHASSIS" 
     -
-      discoveryDeviceType:
+      discoveryRule:
         -
-          discoveryDeviceName: "VCENTER"
-          discoveryRules: 
-             protocol: "HTTPS"
-             command: "https://%s/en/welcomeRes.js"
-             identifyBy: "REGULAR"
-             identifier: 
-                -
-                  text: "var ID_VMWVC2 = \"VMware vSphere\";"
-             deviceDefaultCredential: 
-               user: "root"
-               password: "vmware"
-        -
-          discoveryDeviceName: "MYVM"
-          discoveryRules: 
-             protocol: "SSH"
-             command: "sudo docker\n"
-             identifyBy: "REGULAR"
-             identifier: 
-                -
-                  text: "A self-sufficient runtime for containers"
-                -
-                  text: "Print version information and quit"
-             deviceDefaultCredential: 
-               user: "devuser"
-               password: "Password123$"
-      discoveryDeviceGroup: "VM"
+          protocol: "HTTPS"
+          command: "https://%s/en/welcomeRes.js"
+          deviceType:
+             -
+               name: "VCENTER"
+               identifyBy: "REGULAR" 
+               identifier: 
+                  -
+                    text: "var ID_VMWVC2 = \"VMware vSphere\";"
+               deviceDefaultCredential: 
+                  username: "root"
+                  password: "vmware"     
+               enabled: false
+      groupName: "VM"
     -
-      discoveryDeviceType:
+      discoveryRule:
         -
-          discoveryDeviceName: "DELL_IOM_84"
-          discoveryRules: 
-             protocol: "HTTPS"
-             command: "http://%s/switchExplorer_installed.html"
-             identifyBy: "REGEX"
-             identifier: 
-                -
-                  text: "M5424|_FC_IOM"
-             deviceDefaultCredential: 
-               user: "admin"
-               password: "dell1234"
+          protocol: "SSH"
+          command: "show version\n"
+          deviceType:
+             -
+               name: "FX2_IOM"
+               identifyBy: "REGEX" 
+               identifier: 
+                  -
+                    text: "(Dell Force10|Dell Real Time Operating System Software)"
+                  -
+                    text: "IOA"
+               deviceDefaultCredential: 
+                  username: "admin"
+                  password: "password"
+               enabled: false
+             -
+               name: "FORCE10IOM"
+               identifyBy: "REGEX" 
+               identifier: 
+                  -
+                    text: "(Dell Force10|Dell Real Time Operating System Software)"
+                  -
+                    text: "(I/O-Aggregator|MXL)"
+               deviceDefaultCredential: 
+                  username: "admin"
+                  password: "password"
+               enabled: false
         -
-          discoveryDeviceName: "FX2_IOM"
-          discoveryRules: 
-             protocol: "SSH"
-             command: "show version\n"
-             identifyBy: "REGEX"
-             identifier: 
-                -
-                  text: "(Dell Force10|Dell Real Time Operating System Software)"
-                -
-                  text: "IOA"
-             deviceDefaultCredential: 
-               user: "admin"
-               password: "dell1234"
-        -
-          discoveryDeviceName: "FORCE10IOM"
-          discoveryRules: 
-             protocol: "SSH"
-             command: "show version\n"
-             identifyBy: "REGEX"
-             identifier: 
-                -
-                  text: "(Dell Force10|Dell Real Time Operating System Software)"
-                -
-                  text: "(I/O-Aggregator|MXL)"
-             deviceDefaultCredential: 
-               user: "admin"
-               password: "dell1234"
-      discoveryDeviceGroup: "IOM"
+          protocol: "HTTPS"
+          command: "http://%s/switchExplorer_installed.html"
+          deviceType:
+             -
+               name: "DELL_IOM_84"
+               identifyBy: "REGEX" 
+               identifier: 
+                  -
+                    text: "M5424|_FC_IOM"
+               deviceDefaultCredential: 
+                  username: "admin"
+                  password: "password"     
+               enabled: false
+      groupName: "IOM"
     -
-      discoveryDeviceType:
+      discoveryRule:
         -
-          discoveryDeviceName: "BROCADE"
-          discoveryRules: 
-             protocol: "HTTPS"
-             command: "http://%s/switchExplorer_installed.html"
-             identifyBy: "REGULAR"
-             identifier: 
-                -
-                  text: "com.brocade.web.switchview.SwitchExplorerApplet"
-             deviceDefaultCredential: 
-               user: "admin"
-               password: "password"
+          protocol: "SSH"
+          command: "show version\n"
+          deviceType:
+             -
+               name: "FORCE10_S4810"
+               identifyBy: "REGEX" 
+               identifier: 
+                  -
+                    text: "(Dell Force10|Dell Real Time Operating System Software)"
+                  -
+                    text: "S4810|S4820"
+               deviceDefaultCredential: 
+                  username: "admin"
+                  password: "password"
+               enabled: false
+             -
+               name: "FORCE10_S5000"
+               identifyBy: "REGEX" 
+               identifier: 
+                  -
+                    text: "(Dell Force10|Dell Real Time Operating System Software)"
+                  -
+                    text: "S5000"
+               deviceDefaultCredential: 
+                  username: "admin"
+                  password: "password"
+               enabled: false
+             -
+               name: "FORCE10_S6000"
+               identifyBy: "REGEX" 
+               identifier: 
+                  -
+                    text: "(Dell Force10|Dell Real Time Operating System Software)"
+                  -
+                    text: "S6000"
+               deviceDefaultCredential: 
+                  username: "admin"
+                  password: "password"
+               enabled: false
+             -
+               name: "FORCE10_S4048"
+               identifyBy: "REGEX" 
+               identifier: 
+                  -
+                    text: "(Dell Force10|Dell Real Time Operating System Software)"
+                  -
+                    text: "S4048"
+               deviceDefaultCredential: 
+                  username: "admin"
+                  password: "password"
+               enabled: false
+             -
+               name: "FORCE10_S55"
+               identifyBy: "REGEX" 
+               identifier: 
+                  -
+                    text: "(Dell Force10|Dell Real Time Operating System Software)"
+                  -
+                    text: "S55"
+               deviceDefaultCredential: 
+                  username: "admin"
+                  password: "password"
+               enabled: false
+             -
+               name: "CISCONEXUS"
+               identifyBy: "REGULAR" 
+               identifier: 
+                  -
+                    text: "Cisco Nexus"
+               deviceDefaultCredential: 
+                  username: "admin"
+                  password: "password"
+               enabled: false
         -
-          discoveryDeviceName: "FORCE10_S4810"
-          discoveryRules: 
-             protocol: "SSH"
-             command: "show version\n"
-             identifyBy: "REGEX"
-             identifier: 
-                -
-                  text: "(Dell Force10|Dell Real Time Operating System Software)"
-                -
-                  text: "S4810|S4820"
-             deviceDefaultCredential: 
-               user: "admin"
-               password: "dell1234"
+          protocol: "SSH"
+          command: "show system\n"
+          deviceType:   
+             -
+               name: "POWERCONNECT_N4000"
+               identifyBy: "REGEX" 
+               identifier: 
+                  -
+                    text: "Dell Networking"
+                  -
+                    text: "N4032|N4064"
+               deviceDefaultCredential: 
+                  username: "admin"
+                  password: "password" 
+               enabled: false
+             -
+               name: "POWERCONNECT_N3000"
+               identifyBy: "REGEX" 
+               identifier: 
+                  -
+                    text: "Dell Networking"
+                  -
+                    text: "N3024|N3048"
+               deviceDefaultCredential: 
+                  username: "admin"
+                  password: "password" 
+               enabled: false
+             -
+               name: "POWERCONNECT"
+               identifyBy: "REGEX" 
+               identifier: 
+                  -
+                    text: "Dell Networking"
+                  -
+                    text: "PowerConnect"
+               deviceDefaultCredential: 
+                  username: "admin"
+                  password: "password"  
+               enabled: false
         -
-          discoveryDeviceName: "FORCE10_S5000"
-          discoveryRules: 
-             protocol: "SSH"
-             command: "show version\n"
-             identifyBy: "REGEX"
-             identifier: 
-                -
-                  text: "(Dell Force10|Dell Real Time Operating System Software)"
-                -
-                  text: "S5000"
-             deviceDefaultCredential: 
-               user: "admin"
-               password: "dell1234"
-        -
-          discoveryDeviceName: "FORCE10_S6000"
-          discoveryRules: 
-             protocol: "SSH"
-             command: "show version\n"
-             identifyBy: "REGEX"
-             identifier: 
-                -
-                  text: "(Dell Force10|Dell Real Time Operating System Software)"
-                -
-                  text: "S6000"
-             deviceDefaultCredential: 
-               user: "admin"
-               password: "dell1234"
-        -
-          discoveryDeviceName: "FORCE10_S4048"
-          discoveryRules: 
-             protocol: "SSH"
-             command: "show version\n"
-             identifyBy: "REGEX"
-             identifier: 
-                -
-                  text: "(Dell Force10|Dell Real Time Operating System Software)"
-                -
-                  text: "S4048"
-             deviceDefaultCredential: 
-               user: "admin"
-               password: "dell1234"
-        -
-          discoveryDeviceName: "FORCE10_S55"
-          discoveryRules: 
-             protocol: "SSH"
-             command: "show version\n"
-             identifyBy: "REGEX"
-             identifier: 
-                -
-                  text: "(Dell Force10|Dell Real Time Operating System Software)"
-                -
-                  text: "S55"
-             deviceDefaultCredential: 
-               user: "admin"
-               password: "dell1234"
-        -
-          discoveryDeviceName: "POWERCONNECT"
-          discoveryRules: 
-             protocol: "SSH"
-             command: "show system\n"
-             identifyBy: "REGEX"
-             identifier: 
-                -
-                  text: "Dell Networking"
-                -
-                  text: "(PowerConnect|Dell Networking N)"
-             deviceDefaultCredential: 
-               user: "admin"
-               password: "dell1234"
-        -
-          discoveryDeviceName: "POWERCONNECT_N3000"
-          discoveryRules: 
-             protocol: "SSH"
-             command: "show system\n"
-             identifyBy: "REGEX"
-             identifier: 
-                -
-                  text: "Dell Networking"
-                -
-                  text: "N3024|N3048"
-             deviceDefaultCredential: 
-               user: "admin"
-               password: "dell1234"
-        -
-          discoveryDeviceName: "POWERCONNECT_N4000"
-          discoveryRules: 
-             protocol: "SSH"
-             command: "show system\n"
-             identifyBy: "REGEX"
-             identifier: 
-                -
-                  text: "Dell Networking"
-                -
-                  text: "N4032|N4064"
-             deviceDefaultCredential: 
-               user: "admin"
-               password: "dell1234"
-        -
-          discoveryDeviceName: "CISCONEXUS"
-          discoveryRules: 
-             protocol: "SSH"
-             command: "show version"
-             identifyBy: "REGULAR"
-             identifier: 
-                -
-                  text: "Cisco Nexus"
-             deviceDefaultCredential: 
-               user: "admin"
-               password: "dell1234"
-      discoveryDeviceGroup: "SWITCH"
+          protocol: "HTTPS"
+          command: "http://%s/switchExplorer_installed.html"
+          deviceType:
+             -
+               name: "BROCADE"
+               identifyBy: "REGULAR" 
+               identifier: 
+                  -
+                    text: "com.brocade.web.switchview.SwitchExplorerApplet"
+               deviceDefaultCredential: 
+                  username: "admin"
+                  password: "password"  
+               enabled: false
+      groupName: "SWITCH"
     -
-      discoveryDeviceType:
+      discoveryRule:
         -
-          discoveryDeviceName: "EQUALLOGIC_NODISCOVER"
-          discoveryRules: 
-             protocol: "HTTP"
-             command: "http://%s/groupmgr.html"
-             identifyBy: "REGULAR"
-             identifier: 
-                -
-                  text: ""
-             deviceDefaultCredential: 
-               user: "grpadmin"
-               password: "dell1234"
+          protocol: "HTTPS"
+          command: "https://%s/SystemExplorer.asp"
+          deviceType:
+             -
+               name: "COMPELLENT"
+               identifyBy: "REGULAR" 
+               identifier: 
+                  -
+                    text: "COMPELLENT"
+               deviceDefaultCredential: 
+                  username: "Admin"
+                  password: "password"     
+               enabled: false
         -
-          discoveryDeviceName: "EQUALLOGIC"
-          discoveryRules: 
-             protocol: "HTTP"
-             command: "http://%s/groupmgr.html"
-             identifyBy: "REGULAR"
-             identifier: 
-                -
-                  text: "Management-Ipaddress"
-             deviceDefaultCredential: 
-               user: "grpadmin"
-               password: "dell1234"
+          protocol: "HTTPS"
+          command: "https://%s:3033/em/EnterpriseManager"
+          deviceType:
+             -
+               name: "EM_COMPELLENT"
+               identifyBy: "REGULAR" 
+               identifier: 
+                  -
+                    text: "Enterprise Manager"
+               deviceDefaultCredential: 
+                  username: "Administrator"
+                  password: "password" 
+               enabled: false
         -
-          discoveryDeviceName: "EM_COMPELLENT"
-          discoveryRules: 
-             protocol: "HTTPS"
-             command: "https://%s:3033/em/EnterpriseManager"
-             identifyBy: "REGULAR"
-             identifier: 
-                -
-                  text: "Enterprise Manager"
-             deviceDefaultCredential: 
-               user: "Administrator"
-               password: "Dell1234"
-        -
-          discoveryDeviceName: "COMPELLENT"
-          discoveryRules: 
-             protocol: "HTTPS"
-             command: "https://%s/SystemExplorer.asp"
-             identifyBy: "REGULAR"
-             identifier: 
-                -
-                  text: "COMPELLENT"
-             deviceDefaultCredential: 
-               user: "Admin"
-               password: "Dell1234"
-      discoveryDeviceGroup: "STORAGE"
+          protocol: "HTTPS"
+          command: "http://%s/groupmgr.html"
+          deviceType:
+             -
+               name: "EQUALLOGIC"
+               identifyBy: "REGULAR" 
+               identifier: 
+                  -
+                    text: ""
+               deviceDefaultCredential: 
+                  username: "grpadmin"
+                  password: "password" 
+               enabled: false
+      groupName: "STORAGE"
