@@ -43,12 +43,12 @@ def random_user_generator(pre_user):
     return user
 
 
-def wait_for_workflow_complete(instanceid, startTime, waittime=2700, cycle=30):
+def wait_for_workflow_complete(instanceid, start_time, wait_time=2700, cycle=30):
     # This routine polls a workflow task ID for completion
 
     log.info(" Workflow started at time: %s", str(time.asctime()))
 
-    while time.time() - startTime < waittime:  # limit test to waittime seconds
+    while time.time() - start_time < wait_time:  # limit test to waittime seconds
         result = fit_common.rackhdapi("/api/2.0/workflows/" + instanceid)
         status = result['json']['status']
         injectableName = result['json']['injectableName']
