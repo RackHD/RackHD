@@ -29,6 +29,14 @@
           "proxiesEnabled": true,
           "authEnabled": false,
           "routers": "southbound-api-router"
+      },
+	  {
+          "address": "172.31.128.1",
+          "port": 9988,
+          "httpsEnabled": false,
+          "proxiesEnabled": true,
+          "authEnabled": false,
+          "routers": "southbound-api-router"
       }
     ],
     "httpFileServiceRoot": "./static/files",
