@@ -2,7 +2,7 @@
     {"name": "Graph.InstallSUSE",
         "options": {"defaults": {
         "version": "42.1",
-        "repo": "http://172.31.128.1:9080/repo/suse/42.1",
+        "repo": "http://172.31.128.1:8080/repo/suse/42.1",
         "rootPassword": "1234567",
         "hostname": "rackhdnode",
         "users": [{"name": "rackhduser",
