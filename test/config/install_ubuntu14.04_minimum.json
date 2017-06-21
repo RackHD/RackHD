@@ -2,9 +2,9 @@
     {"name": "Graph.InstallUbuntu",
         "options": {"defaults": {
         "version": "trusty",
-        "repo": "http://172.31.128.1:9080/repo/ubuntu",
+        "repo": "http://172.31.128.1:8080/repo/ubuntu",
         "baseUrl": "install/netboot/ubuntu-installer/amd64",
-        "kargs": {"live-installer/net-image": "http://172.31.128.1:9080/repo/ubuntu/ubuntu/install/filesystem.squashfs"},
+        "kargs": {"live-installer/net-image": "http://172.31.128.1:8080/repo/ubuntu/ubuntu/install/filesystem.squashfs"},
         "rootPassword": "1234567",
         "hostname": "rackhdnode",
         "users": [{"name": "rackhduser",

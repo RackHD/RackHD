@@ -2,7 +2,7 @@
     {"name": "Graph.InstallCoreOS",
         "options": {"defaults": {
         "version": "899.17.0",
-        "repo": "http://172.31.128.1:9080/repo/coreos",
+        "repo": "http://172.31.128.1:8080/repo/coreos",
         "rootPassword": "1234567",
         "hostname": "rackhdnode",
         "users": [{"name": "rackhduser",
