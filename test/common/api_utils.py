@@ -20,7 +20,7 @@ def __fitargs_get(key):
     return arg
 
 
-def api_node_select_from_config(node_type='compute', validate_obm=False):
+def api_node_select_from_config(node_type='compute', validate_obm=False, allow_unknown_nodes=False):
     """
     This routine produces a list of node Ids that satisfy the requested parameters.
     Nodes may be filtered by Node Id,  SKU name, OBM MAC address which are defined
@@ -28,13 +28,15 @@ def api_node_select_from_config(node_type='compute', validate_obm=False):
     :param  node_type: Node type (i.e. compute) (default= 'compute')
     :param  validate_obm: should the node have OBM settings (default=False)
     return: A list with node IDs that match node type, SKU, and possible valid OBM settings.
+    :param  allow_unknown_nodes: should nodes have a SKU assigned (default=False)
     """
     return api_node_select(config.api_client,
                            node_id=__fitargs_get("nodeid"),
                            sku_name=__fitargs_get("sku"),
                            obm_mac=__fitargs_get("obmmac"),
                            node_type=node_type,
-                           validate_obm=validate_obm
+                           validate_obm=validate_obm,
+                           allow_unknown_nodes=allow_unknown_nodes
                            )
 
 
@@ -43,7 +45,8 @@ def api_node_select(client,
                     sku_name=None,
                     obm_mac=None,
                     node_type='compute',
-                    validate_obm=False
+                    validate_obm=False,
+                    allow_unknown_nodes=False
                     ):
     """
     This routine produces a list of node Ids that satisfy the requested parameters.
@@ -56,6 +59,7 @@ def api_node_select(client,
     :param  obm_mac: OBM mac address (default='None')
     :param  node_type: Node type (i.e. compute) (default= 'compute')
     :param  validate_obm: should the node have OBM settings (default=False)
+    :param  allow_unknown_nodes: should nodes have a SKU assigned (default=False)
     return: A list with node IDs that match node type, SKU, and possible valid OBM settings.
     """
     node_id_list = list()
@@ -111,8 +115,9 @@ def api_node_select(client,
             if not sku_name:
                 # Select only managed compute nodes
                 if not node_type or node_entry['type'] == node_type:
-                    if not validate_obm or validate_obm_settings(client, node_entry['id']):
-                        node_id_list.append(node_entry['id'])
+                    if ('sku' in node_entry and node_entry['sku']) or allow_unknown_nodes:
+                        if not validate_obm or validate_obm_settings(client, node_entry['id']):
+                            node_id_list.append(node_entry['id'])
             else:
                 if sku_id and node_entry.get('sku') and sku_id in node_entry['sku']:
                     if not validate_obm or validate_obm_settings(client, node_entry['id']):

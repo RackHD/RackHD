@@ -852,7 +852,7 @@ def mongo_reset():
         return False
 
 
-def node_select():
+def node_select(allow_unknown_nodes=False):
 
     # returns a list with valid compute node IDs that match fitargs()["sku"] in 'Name' or 'Model' field
     # and matches node BMC MAC address in fitargs()["obmmac"] if specified
@@ -883,7 +883,8 @@ def node_select():
             if fitargs()["sku"] == 'all':
                 # Select only managed compute nodes
                 if nodeentry['type'] == 'compute':
-                    nodelist.append(nodeentry['id'])
+                    if ('sku' in nodeentry and nodeentry['sku']) or allow_unknown_nodes:
+                        nodelist.append(nodeentry['id'])
             else:
                 if 'sku' in nodeentry and skuid in json.dumps(nodeentry['sku']):
                     nodelist.append(nodeentry['id'])
