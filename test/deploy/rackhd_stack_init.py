@@ -107,7 +107,7 @@ class rackhd_stack_init(unittest.TestCase):
             break
         self.assertEqual(error_message, "", error_message)
 
-    def test04_power_on_nodes(self):
+    def test03_power_on_nodes(self):
         # This powers on nodes via PDU or, if no PDU, power cycles nodes via IPMI to start discovery
         # ServerTech PDU case
         if pdu_lib.check_pdu_type() != "Unknown":
@@ -127,7 +127,7 @@ class rackhd_stack_init(unittest.TestCase):
 
     # Optionally install control switch node if present
     @unittest.skipUnless("control" in fit_common.fitcfg(), "")
-    def test05_discover_control_switch_node(self):
+    def test04_discover_control_switch_node(self):
         log.info_5("**** Creating control switch node.")
         payload = {"type": "switch",
                    "name": "Control",
@@ -141,7 +141,7 @@ class rackhd_stack_init(unittest.TestCase):
 
     # Optionally install data switch node if present
     @unittest.skipUnless("data" in fit_common.fitcfg(), "")
-    def test06_discover_data_switch_node(self):
+    def test05_discover_data_switch_node(self):
         log.info_5("**** Creating data switch node.")
         payload = {"type": "switch",
                    "name": "Data",
@@ -155,7 +155,7 @@ class rackhd_stack_init(unittest.TestCase):
 
     # Optionally install PDU node if present
     @unittest.skipUnless("pdu" in fit_common.fitcfg(), "")
-    def test07_discover_pdu_node(self):
+    def test06_discover_pdu_node(self):
         log.info_5("**** Creating PDU node.")
         payload = {"type": "pdu",
                    "name": "PDU",
@@ -167,7 +167,7 @@ class rackhd_stack_init(unittest.TestCase):
         self.assertEqual(api_data['status'], 201, 'Incorrect HTTP return code, expecting 201, got ' +
                          str(api_data['status']))
 
-    def test08_check_compute_nodes(self):
+    def test07_check_compute_nodes(self):
         log.info_5("**** Waiting for compute nodes.")
         c_index = 0
         for c_index in range(0, MAX_CYCLES):
@@ -177,7 +177,7 @@ class rackhd_stack_init(unittest.TestCase):
                 time.sleep(30)
         self.assertLess(c_index, MAX_CYCLES - 1, "No compute nodes found.")
 
-    def test09_check_discovery(self):
+    def test08_check_discovery(self):
         log.info_5("**** Waiting for node Discovery to complete.\n",)
         # Determine if there are any active workflows. If returned value is true, obmSettings, SKUs
         # and active workflows are all either present or complete. If  the returned is false,
@@ -211,13 +211,13 @@ class rackhd_stack_init(unittest.TestCase):
                 time.sleep(10)
         return False
 
-    def test10_apply_obm_settings(self):
+    def test09_apply_obm_settings(self):
         log.info_5("**** Apply OBM setting to compute nodes.")
         self.assertTrue(fit_common.apply_obm_settings(), "OBM settings failed.")
 
     @unittest.skipUnless("bmc" in fit_common.fitcfg(), "")
     @unittest.skip("Skipping 'test10_add_management_server' bug RAC-4063")
-    def test11_add_management_server(self):
+    def test10_add_management_server(self):
         log.info_5("**** Creating management server.")
         usr = ""
         pwd = ""
@@ -243,7 +243,7 @@ class rackhd_stack_init(unittest.TestCase):
         else:
             self.fail("Unable to contact management server BMC, skipping MGMT node create")
 
-    def test12_check_pollers(self):
+    def test11_check_pollers(self):
         log.info_5("**** Waiting for pollers.")
         # Determine if there are any pollers present. If the return value is true, there are pollers
         # active. If the return value is false, pollers are not active.
@@ -303,7 +303,7 @@ class rackhd_stack_init(unittest.TestCase):
     # Optionally configure UCS Manager if present
     @unittest.skipUnless("ucsm_ip" in fit_common.fitcfg() and "ucsm_config_file" in fit_common.fitcfg(),
                          "Skipping UCSM config")
-    def test13_load_ucs_manager_config(self):
+    def test12_load_ucs_manager_config(self):
         """
         loads the test configuration into the UCS Manger
         """

@@ -221,6 +221,7 @@ def get_compute_node_username(node_id):
         1 on network error
         2 on parsing error
         3 on unable to obtain password from username
+        4 Get compute node credentials failure
         Otherwise
     """
     monorail_url = "/api/2.0/nodes/" + node_id
