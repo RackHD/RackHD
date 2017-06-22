@@ -43,8 +43,6 @@ class display_rackhd_node_list(fit_common.unittest.TestCase):
         result = mondata['status']
 
         if result == 200:
-            # print "result" + str(result)
-            # Display node info
             print "\nNumber of nodes found: " + str(len(nodes)) + "\n"
             i = 0
             for node in nodes:
@@ -112,17 +110,18 @@ class display_rackhd_node_list(fit_common.unittest.TestCase):
                     else:
                         # Check BMC IP vs OBM IP setting
                         try:
-                            obmlist = nodeinfo["obmSettings"]
+                            obmlist = nodeinfo["obms"]
                         except:
                             print "ERROR: Node has no OBM settings configured"
                         else:
                             try:
-                                obmhost = obmlist[0]["config"]["host"]
+                                obmurl = obmlist[0]['ref']
+                                obmdata = fit_common.rackhdapi(obmurl, action="get")
                             except:
                                 print "Invalid or empty OBM setting"
                             else:
-                                print obmhost,
-                                print "\t" + obmlist[0]["config"].get("user", "Error: No User defined!")
+                                print obmdata['json']["config"].get("host", "Error: No Host in obmdata"),
+                                print "\t" + obmdata['json']["config"].get("user", "Error: No User defined!")
         else:
             print "Cannot get RackHD nodes from stack, http response code: ", result
 

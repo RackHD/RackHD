@@ -1,8 +1,0 @@
----
-- name: Create directory for dell config file
-  file: path=/opt/dell/ state=directory mode=0777
-  sudo: yes
-
-- name: Load dell conf onto guest
-  copy: src=wsmanConfig.json dest=/opt/dell/wsmanConfig.json
-  sudo: yes

@@ -6,3 +6,7 @@
 - name: Load monorail conf onto guest
   copy: src=config.json dest=/opt/monorail/config.json
   sudo: yes
+
+- name: Load smi conf onto guest
+  copy: src=smiConfig.json dest=/opt/monorail/smiConfig.json
+  sudo: yes
