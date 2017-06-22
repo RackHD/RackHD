@@ -298,16 +298,6 @@ class rackhd_stack_init(unittest.TestCase):
             log.error("Poller IDs with error or no data: {}".format(json.dumps(poller_list, indent=4)))
         return False
 
-    # Optionally configure UCS Manager if present
-    @unittest.skipUnless("ucsm_ip" in fit_common.fitcfg() and "ucsm_config_file" in fit_common.fitcfg(),
-                         "Skipping UCSM config")
-    def test12_load_ucs_manager_config(self):
-        """
-        loads the test configuration into the UCS Manger
-        """
-        UCSM_USER, UCSM_PASS = get_ucs_cred()
-        UCSM_IP = fit_common.fitcfg().get('ucsm_ip')
-
     def test99_display_node_list_discovery_data(self):
         # This test displays a list of the nodes along with
         # the associated BMC, RMM, and OBM settings for the discovered compute nodes
