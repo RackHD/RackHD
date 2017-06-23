@@ -32,6 +32,7 @@ import fit_common
 import flogging
 import random
 import time
+import os
 from nosedep import depends
 log = flogging.get_loggers()
 

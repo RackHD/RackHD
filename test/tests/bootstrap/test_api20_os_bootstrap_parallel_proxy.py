@@ -66,6 +66,7 @@ from nose.plugins.attrib import attr
 import fit_common
 import flogging
 import sys
+import os
 log = flogging.get_loggers()
 
 # This gets the list of nodes
