@@ -32,6 +32,7 @@ import fit_common
 import flogging
 import random
 import time
+import os
 from nosedep import depends
 log = flogging.get_loggers()
 
@@ -104,7 +105,13 @@ class api20_bootstrap_esxi(fit_common.unittest.TestCase):
                         "Node Power on workflow failed, see logs.")
 
     @depends(after=test01_node_check)
-    def test02_os_install(self):
+    def test02_get_files(self):
+        # get files from server
+        log.info_5(" Downloading imgdb.tgz file took:")
+        os.system(" time wget http://10.240.19.193/repo/esxi/6.0/imgdb.tgz")
+
+    @depends(after=test02_get_files)
+    def test03_os_install(self):
         # launch workflow
         workflowid = None
         result = fit_common.rackhdapi('/api/2.0/nodes/' +
