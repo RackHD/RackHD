@@ -142,6 +142,10 @@ class redfish_bootstrap_base(fit_common.unittest.TestCase):
                                 "users": [{"name": "rackhd",
                                            "password": "R@ckHD1!",
                                            "uid": 1010}]}
+                # get files from server
+                log.info_5(" Downloading upgrade.img file took:")
+                os.system(" time wget http://10.240.19.193/repo/centos/7.0/images/pxeboot/upgrade.img -nv")
+  
                 result = fit_common.rackhdapi('/redfish/v1/Systems/' +
                                               NODECATALOG[nodeindex] +
                                               '/Actions/RackHD.BootImage',

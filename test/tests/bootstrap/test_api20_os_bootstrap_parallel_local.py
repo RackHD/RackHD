@@ -210,6 +210,10 @@ class api20_bootstrap_base(fit_common.unittest.TestCase):
                     payload_data["options"]["defaults"].pop('kvm', None)
                     payload_data["options"]["defaults"].pop('version', None)
 
+                # get files from server
+                log.info_5(" Downloading upgrade.img file took:")
+                os.system(" time wget http://10.240.19.193/repo/centos/7.0/images/pxeboot/upgrade.img -nv")
+
                 # run workflow
                 result = fit_common.rackhdapi('/api/2.0/nodes/' +
                                               NODECATALOG[nodeindex] +
