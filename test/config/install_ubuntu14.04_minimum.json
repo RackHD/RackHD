@@ -19,9 +19,11 @@
                 ],
                 "version": "trusty"
             },
-            "install-os": {
+            "install-ubuntu": {
                 "_taskTimeout": 7200000
-            }
+            },
+            "reboot": "ipmi-obm-service",
+            "set-boot-pxe": "ipmi-obm-service"
         }
     }
 }
