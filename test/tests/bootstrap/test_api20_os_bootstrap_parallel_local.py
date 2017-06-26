@@ -213,7 +213,7 @@ class api20_bootstrap_base(fit_common.unittest.TestCase):
 
                 # get files from server
                 log.info_5(" Downloading upgrade.img file took:")
-                os.system(" time wget http://172.31.128.1:9080/repo/centos/7.0/images/pxeboot/upgrade.img")
+                os.system(" time wget http://172.31.128.1:8080/repo/centos/7.0/images/pxeboot/upgrade.img")
 
                 # get files from server
                 log.info_5(" ***********  non proxy Downloading upgrade.img file took:")
