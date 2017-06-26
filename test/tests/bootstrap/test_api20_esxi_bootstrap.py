@@ -108,7 +108,7 @@ class api20_bootstrap_esxi(fit_common.unittest.TestCase):
     def test02_get_files(self):
         # get files from server
         log.info_5(" Downloading upgrade.img file took:")
-        os.system(" time wget http://10.240.19.193/repo/centos/7.0/images/pxeboot/upgrade.img -nv")
+        os.system(" time wget http://172.31.128.1/repo/centos/7.0/images/pxeboot/upgrade.img")
 
     @depends(after=test02_get_files)
     def test03_os_install(self):
