@@ -213,7 +213,7 @@ class api20_bootstrap_base(fit_common.unittest.TestCase):
 
                 # get files from server
                 log.info_5(" Downloading upgrade.img file took:")
-                os.system(" time wget http://172.31.128.1/repo/centos/7.0/images/pxeboot/upgrade.img")
+                os.system(" time wget http://172.31.128.1:9080/repo/centos/7.0/images/pxeboot/upgrade.img")
 
                 # run workflow
                 result = fit_common.rackhdapi('/api/2.0/nodes/' +
