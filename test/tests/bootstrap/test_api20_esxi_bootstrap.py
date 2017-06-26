@@ -107,8 +107,12 @@ class api20_bootstrap_esxi(fit_common.unittest.TestCase):
     @depends(after=test01_node_check)
     def test02_get_files(self):
         # get files from server
-        log.info_5(" Downloading upgrade.img file took:")
+        log.info_5("*********** proxy with port 8080 Downloading upgrade.img file took:")
         os.system(" time wget http://172.31.128.1:8080/repo/centos/7.0/images/pxeboot/upgrade.img")
+        
+        # get files from server
+        log.info_5("*********** proxy with port 9080 Downloading upgrade.img file took:")
+        os.system(" time wget http://172.31.128.1:9080/repo/centos/7.0/images/pxeboot/upgrade.img")
 
         # get files from server
         log.info_5(" ***********  non proxy Downloading upgrade.img file took:")
