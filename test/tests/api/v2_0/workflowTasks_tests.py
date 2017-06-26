@@ -69,10 +69,13 @@ class WorkflowTasksTests(object):
         assert_equal(workflowTasksAfter,workflowTasksBefore+1)
 
         #Validating the content is as expected
-        rawj=  json.loads(self.__client.last_response.data)
-        listLen =len(json.loads(self.__client.last_response.data))
-        readWorkflowTask= rawj[len(rawj)-1]
-        readFriendlyName= readWorkflowTask.get('friendlyName')
-        readInjectableName  = readWorkflowTask.get('injectableName')
-        assert_equal(readFriendlyName,self.workflowTaskDict.get('friendlyName'))
-        assert_equal(readInjectableName,self.workflowTaskDict.get('injectableName'))
+        rawj = json.loads(self.__client.last_response.data)
+        found = False
+        for i, val in enumerate(rawj):
+            if (self.workflowTaskDict.get('friendlyName') == str(rawj[i].get('friendlyName')) \
+            and self.workflowTaskDict.get('injectableName') == str(rawj[i].get('injectableName'))):
+                found = True
+                break
+
+        # Validating that the task has been added
+        assert_true(found, message='Could not find new workflow task!')
