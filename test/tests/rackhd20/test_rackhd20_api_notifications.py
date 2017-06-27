@@ -24,6 +24,7 @@ logs = flogging.get_loggers()
 amqp_queue = Queue.Queue(maxsize=0)
 from pymongo import MongoClient
 from bson.objectid import ObjectId
+import json
 
 # Check the running test environment
 if fit_common.fitargs()['stack'] in ['vagrant_guest', 'vagrant', 'vagrant_ucs']:
@@ -250,9 +251,11 @@ class test_alert_notification(unittest.TestCase):
         expectedMsg["ChassisName"] = self.ipmifruCatalog["data"]["Builtin FRU Device (ID 0)"]["Product Serial"],
         expectedMsg["serviceTag"] = self.ipmifruCatalog["data"]["Builtin FRU Device (ID 0)"]["Board Product"],
         expectedMsg["SN"] = self.ipmifruCatalog["data"]["Builtin FRU Device (ID 0)"]["Board Serial"]
+        expectedMsg["originOfConditionPartNumber"] = None
+        expectedMsg["originOfConditionSerialNumber"] = None
         logs.debug_1("Routing Key  {0}".format(RoutingKey))
         logs.debug_1("Received AMQP message: {0}".format(type(receivedMsg)))
-        self.assertNotEquals(receivedMsg["data"], expectedMsg, "unexpected AMQP message ")
+        self.assertNotEquals(json.dumps(receivedMsg["data"]), json.dumps(expectedMsg), "unexpected AMQP message ")
 
     @unittest.skipUnless(env_vagrant is True, "Tests limited to running in vagrant test beds.")
     def test_post_alert_withIP(self):
