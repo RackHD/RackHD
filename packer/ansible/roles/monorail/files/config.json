@@ -55,6 +55,7 @@
     "authPasswordSalt": "zlxkgxjvcFwm0M8sWaGojh25qNYO8tuNWUMN4xKPH93PidwkCAvaX2JItLA3p7BSCWIzkw4GwWuezoMvKf3UXg==",
     "authTokenSecret": "RackHDRocks!",
     "authTokenExpireIn": 86400,
+    "autoCreateObm": "true",
     "mongo": "mongodb://localhost/pxe",
     "sharedKey": "qxfO2D3tIJsZACu7UA6Fbw0avowo8r79ALzn+WeuC8M=",
     "statsd": "127.0.0.1:8125",
