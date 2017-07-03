@@ -31,6 +31,3 @@
 [submodule "on-wss"]
 	path = on-wss
 	url = https://github.com/RackHD/on-wss
-[submodule "ucs-service"]
-	path = ucs-service
-	url = https://github.com/RackHD/ucs-service.git

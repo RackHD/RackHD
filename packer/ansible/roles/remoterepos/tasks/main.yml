@@ -24,7 +24,6 @@
     - on-syslog
     - on-wss
     - on-tools
-    - ucs-service
 
 - name: Reset to the branch specified
   shell: git reset --hard {{ branch }}
@@ -40,7 +39,6 @@
     - on-wss
     - on-tools
     - on-imagebuilder
-    - ucs-service
 
 - name: Npm install Repos
   npm: path="{{ ansible_env.HOME }}/src/{{ item }}"
@@ -52,13 +50,6 @@
     - on-taskgraph
     - on-http
     - on-wss
-
-- name: Pip install Repos
-  sudo: yes
-  pip: 
-    requirements: "{{ ansible_env.HOME }}/src/{{ item }}/requirements.txt"
-  with_items:
-    - ucs-service
 
 - name: Make common static directory
   file: path="{{ ansible_env.HOME }}/src/on-http/static/http/common" state=directory

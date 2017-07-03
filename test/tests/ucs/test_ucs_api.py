@@ -25,7 +25,7 @@ UCS_SERVICE_URI = fit_common.fitcfg().get('ucs_service_uri')
 UCSM_USER, UCSM_PASS = get_ucs_cred()
 
 
-@attr(all=True, regression=True, smoke=True, ucs=True)
+@attr(all=True, regression=True, smoke=False, ucs=True)
 class ucs_api(unittest.TestCase):
 
     def ucs_url_factory(self, api, identifier=None):

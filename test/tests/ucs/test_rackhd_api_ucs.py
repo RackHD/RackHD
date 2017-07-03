@@ -163,7 +163,9 @@ def load_ucs_manager_config():
             return False
 
         return True
-@attr(all=True, regression=True, smoke=True, ucs_rackhd=True)
+
+
+@attr(all=True, regression=True, smoke=False, ucs_rackhd=True)
 class rackhd_ucs_api(unittest.TestCase):
 
     MAX_WAIT = 240
