@@ -1,4 +1,118 @@
 ---
+# This role supports developers who want to pull code from one or more repositories forked into their github organization.
+# A developer does not have to fork all of the repos, just the one they want to work on.  
+# It will check if the repo exists in the passed in organization first, and if not found, will pull it from github.com/rackhd
+#
+# Same is true for branches.  A developer may choose to make a branch on only one or more repos 
+# If the passed in branch is not found in the github repo, it will know to pull from the master branch
+
+
+# Step 1. Clone down the RackHD Repo (without submodules) into a folder called "src"
+# NOTE: fall back to default "rackhd" repo if it does not exist in the specified repo
+
+- name: Check if RackHD repo exists in the {{ organization | default('rackhd') }} organization
+  shell: GIT_ASKPASS=true git ls-remote http://github.com/{{ organization | default('rackhd') }}/rackhd HEAD --exit-code --quiet 
+  register: "rackhd_repo_check"
+  ignore_errors: true
+  changed_when: false
+
+
+- name: Set the name of the organization to use for cloning the base RackHD repo
+  set_fact: organization_for_rackhd_repo="{{ organization | default('rackhd') }}"
+  when: "{{ rackhd_repo_check.rc }} == 0"
+  changed_when: false
+
+
+- name: Check if the branch exists for the RackHD repo
+  shell: GIT_ASKPASS=true git ls-remote http://github.com/{{ organization_for_rackhd_repo | default('rackhd') }}/rackhd {{ branch | default('master') }} | wc -l
+  register: "rackhd_branch_check"
+  ignore_errors: true
+  changed_when: false
+
+
+- name: Set the name of the branch to use for cloning the base RackHD repo
+  set_fact: branch_for_rackhd_repo="{{ branch | default('rackhd') }}"
+  when: "{{ rackhd_branch_check.rc }} > 0"
+
+
+- name: Clone RackHD repo from {{ organization_for_rackhd_repo | default('rackhd') }} organization and branch {{ branch_for_rackhd_repo | default('master') }}
+  shell: git clone -q -b {{ branch_for_rackhd_repo | default('master') }}  --single-branch https://github.com/{{ organization_for_rackhd_repo | default('rackhd') }}/rackhd {{ ansible_env.HOME }}/src
+ 
+
+# Step 2. Clone down the "dependent" repos into subfolders under "src"
+# NOTE: a developer might have cloned only one or more repos in the specified repo
+# so we fallback to the "rackhd" organization if they do not exist
+
+- name: Create a repo list that we want to pull source from
+  set_fact:
+    repos:
+    - 'on-core'
+    - 'on-dhcp-proxy'
+    - 'on-http'
+    - 'on-imagebuilder'
+    - 'on-statsd'
+    - 'on-syslog'
+    - 'on-taskgraph'
+    - 'on-tasks'
+    - 'on-tftp'
+    - 'on-tools'
+    - 'on-wss'
+    - 'ucs-service'
+  changed_when: false
+
+    
+- name: Determine if the repo exists in the {{ organization | default('rackhd') }} organization and write results to stdout
+  shell: GIT_ASKPASS=true git ls-remote http://github.com/{{ organization | default('rackhd') }}/{{ item }} --exit-code --quiet; if [ $? -eq 0 ]; then echo {{ organization | default('rackhd') }}; else echo "rackhd"; fi  
+  with_items: "{{ repos }}"
+  register: "repo_organization_stdout"
+  ignore_errors: true
+  changed_when: false
+- debug:
+    msg: "{{repo_organization_stdout}}"
+
+
+- name: Build the repo_organization dictionary from stdout data
+  set_fact: 
+    repo_organization_dictionary: "{{ repo_organization_dictionary | default([]) }}"
+- set_fact:
+    repo_organization_dictionary: "{{ repo_organization_dictionary | default([]) + [{'repo': item.item, 'organization': item.stdout }] }}"
+  with_items: "{{ repo_organization_stdout.results }}"
+  changed_when: false
+- debug:
+    msg: "{{ repo_organization_dictionary }}"
+
+
+- name: Determine if branch from the ansible variable exists for the repos in the organization and write results to stdout
+  shell: GIT_ASKPASS=true git ls-remote http://github.com/{{ item.organization }}/{{ item.repo }} {{ branch | default('master') }} | wc -l | awk "/1/{print \"{{ branch | default('master') }}\"}/0/{print \"master\"}"
+  with_items: "{{ repo_organization_dictionary }}"
+  register: "repos_found_in_organization_with_branch_stdout"
+  ignore_errors: true
+  changed_when: false
+- debug:
+    msg: "{{ repos_found_in_organization_with_branch_stdout }}"
+
+
+- name: Build the repo_branch_organization dictionary from stdout data
+  set_fact: 
+    repo_branch_organization_dictionary: "{{ repo_branch_organization_dictionary | default([]) }}" 
+- set_fact:
+    repo_branch_organization_dictionary: "{{ repo_branch_organization_dictionary | default([]) + [{'repo': item.item.repo, 'organization': item.item.organization, 'branch': item.stdout }] }}"
+  with_items: "{{ repos_found_in_organization_with_branch_stdout.results }}"
+  changed_when: false
+- debug:
+    msg: "{{repo_branch_organization_dictionary}}"
+
+
+- name: Clone down the dependent repos using dictionary data
+  git: repo=https://github.com/{{ item.organization }}/{{ item.repo }}
+       dest="{{ ansible_env.HOME }}/src/{{ item.repo }}"
+       accept_hostkey=true
+       version="{{item.branch}}"
+  with_items: "{{ repo_branch_organization_dictionary }}"
+  
+
+# Continue with the NPM installation of the repos
+
 - name: install dev libraries for NPM installs
   apt: pkg={{ item }} state=installed
   with_items:
@@ -6,41 +120,6 @@
     - unzip
   sudo: yes
 
-- name: Get RackHD from source
-  git: repo=https://github.com/rackhd/rackhd
-       dest="{{ ansible_env.HOME }}/src"
-       accept_hostkey=true
-       version="{{ branch | default('master') }}"
-
-- name: Update git repos with latest
-  shell: git fetch --all --prune
-  args:
-    chdir: "{{ ansible_env.HOME }}/src/{{ item }}"
-  with_items:
-    - on-http
-    - on-tftp
-    - on-dhcp-proxy
-    - on-taskgraph
-    - on-syslog
-    - on-wss
-    - on-tools
-    - ucs-service
-
-- name: Reset to the branch specified
-  shell: git reset --hard {{ branch }}
-  when: branch is defined
-  args:
-    chdir: "{{ ansible_env.HOME }}/src/{{ item }}"
-  with_items:
-    - on-http
-    - on-tftp
-    - on-dhcp-proxy
-    - on-taskgraph
-    - on-syslog
-    - on-wss
-    - on-tools
-    - on-imagebuilder
-    - ucs-service
 
 - name: Npm install Repos
   npm: path="{{ ansible_env.HOME }}/src/{{ item }}"
