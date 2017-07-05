@@ -216,10 +216,6 @@ class rackhd_stack_init(unittest.TestCase):
                 time.sleep(10)
         return False
 
-    def test10_apply_obm_settings(self):
-        log.info_5("**** Apply OBM setting to compute nodes.")
-        self.assertTrue(fit_common.apply_obm_settings(), "OBM settings failed.")
-
     @unittest.skipUnless("bmc" in fit_common.fitcfg(), "")
     @unittest.skip("Skipping 'test10_add_management_server' bug RAC-4063")
     def test11_add_management_server(self):
