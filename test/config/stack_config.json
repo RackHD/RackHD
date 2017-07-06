@@ -50,9 +50,6 @@
   },
   "docker": {
     "rackhd_host": "localhost",
-    "ucsm_ip" : "172.31.128.252",
-    "ucs_service_uri" : "https://localhost:7080",
-    "ucsm_config_file" : "./tests/ucs/ucsm_config.xml",
     "install-config": {
       "ports": {
         "mongo_port": 37017,
@@ -67,9 +64,6 @@
   "docker_local_run":{
     "rackhd_host": "localhost",
     "type": "linux",
-    "ucsm_ip" : "172.31.128.252",
-    "ucs_service_uri" : "https://localhost:7080",
-    "ucsm_config_file" : "./tests/ucs/ucsm_config.xml",
     "install-config": {
       "ports": {
         "mongo_port": 27017,
@@ -83,9 +77,6 @@
   },
   "ova": {
     "rackhd_host": "localhost",
-    "ucsm_ip" : "172.31.128.252",
-    "ucs_service_uri" : "https://localhost:7080",
-    "ucsm_config_file" : "./tests/ucs/ucsm_config.xml",
     "install-config": {
       "ports": {
         "mongo_port": 37017,
