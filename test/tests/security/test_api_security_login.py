@@ -6,7 +6,7 @@ Copyright 2017 Dell Inc. or its subsidiaries. All Rights Reserved."
         Email: torrey.cuthbert@dell.com
   Create Date: 04/09/2017
 
-      Purpose: This script consists of cases intended to test RackHD login functions.
+      Purpose: This script consists of tests intended to test RackHD login functions.
                As of date, there are three user account roles (Administrator, Operator, and ReadOnly).
                We will first test the RackHD endpoint's ability to create an account for each of these
                roles for both RackHD and Redfish interfaces (redfish=False).  We will then test the
