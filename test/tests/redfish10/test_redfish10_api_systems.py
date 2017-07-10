@@ -227,7 +227,8 @@ class redfish10_api_systems(fit_common.unittest.TestCase):
                     if fit_common.VERBOSITY >= 3:
                         print ("\t {0}".format(nodeid[item]))
                     if len(nodeid[item]) == 0 and item == 'Message':
-                        log.info_5("Message field empty for SEL SensorType:" + nodeid['SensorType'] + " SensorNumber:" + str(nodeid['SensorNumber']))
+                        log.info_5("Message field empty for SEL SensorType:" + nodeid['SensorType'] +
+                                   " SensorNumber:" + str(nodeid['SensorNumber']))
                     else:
                         self.assertGreater(len(nodeid[item]), 0, item + ' field empty')
                 for link in [ 'OriginOfCondition' ]:
@@ -268,7 +269,8 @@ class redfish10_api_systems(fit_common.unittest.TestCase):
                     if fit_common.VERBOSITY >= 3:
                         print ("\t {0}".format(seldata['json'][item]))
                     if len(seldata['json'][item]) == 0 and item == 'Message':
-                        log.info_5("Message field empty for SEL SensorType:" + seldata['json']['SensorType'] + " SensorNumber:" + str(seldata['json']['SensorNumber']))
+                        log.info_5("Message field empty for SEL SensorType:" + seldata['json']['SensorType'] +
+                                   " SensorNumber:" + str(seldata['json']['SensorNumber']))
                     else:
                         self.assertGreater(len(seldata['json'][item]), 0, item + ' field empty')
 
