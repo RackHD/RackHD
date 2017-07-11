@@ -11,6 +11,8 @@ import os
 import sys
 import subprocess
 import fit_common
+import flogging
+log = flogging.get_loggers()
 
 
 # Local methods
@@ -224,7 +226,11 @@ class redfish10_api_systems(fit_common.unittest.TestCase):
                     self.assertIn(item, nodeid, item + ' field not present')
                     if fit_common.VERBOSITY >= 3:
                         print ("\t {0}".format(nodeid[item]))
-                    self.assertGreater(len(nodeid[item]), 0, item + ' field empty')
+                    if len(nodeid[item]) == 0 and item == 'Message':
+                        log.info_5("Message field empty for SEL SensorType:" + nodeid['SensorType'] +
+                                   " SensorNumber:" + str(nodeid['SensorNumber']))
+                    else:
+                        self.assertGreater(len(nodeid[item]), 0, item + ' field empty')
                 for link in [ 'OriginOfCondition' ]:
 
                     if fit_common.VERBOSITY >= 2:
@@ -262,7 +268,11 @@ class redfish10_api_systems(fit_common.unittest.TestCase):
                     self.assertIn(item, seldata['json'], item + ' field not present')
                     if fit_common.VERBOSITY >= 3:
                         print ("\t {0}".format(seldata['json'][item]))
-                    self.assertGreater(len(seldata['json'][item]), 0, item + ' field empty')
+                    if len(seldata['json'][item]) == 0 and item == 'Message':
+                        log.info_5("Message field empty for SEL SensorType:" + seldata['json']['SensorType'] +
+                                   " SensorNumber:" + str(seldata['json']['SensorNumber']))
+                    else:
+                        self.assertGreater(len(seldata['json'][item]), 0, item + ' field empty')
 
                 for link in [ 'OriginOfCondition' ]:
                     if fit_common.VERBOSITY >= 2:
