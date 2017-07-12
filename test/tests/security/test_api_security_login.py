@@ -41,7 +41,6 @@ def createUsername():
 class TestCase01_RackHDAPI_account_creation(fit_common.unittest.TestCase):
 
     def setUp(self):
-        logs.info("Running test: %s", self._testMethodName)
         global admin, readonly, operator
         admin = Administrator(createUsername(), 'passwd', 'Administrator', redfish=False)
         readonly = ReadOnly(createUsername(), 'passwd', 'ReadOnly', redfish=False)
@@ -80,7 +79,6 @@ class TestCase01_RackHDAPI_account_creation(fit_common.unittest.TestCase):
 class TestCase02_RedfishAPI_account_creation(fit_common.unittest.TestCase):
 
     def setUp(self):
-        logs.info("Running test: %s", self._testMethodName)
         global admin, readonly, operator
         admin = Administrator(createUsername(), 'passwd', 'Administrator', redfish=True)
         readonly = ReadOnly(createUsername(), 'passwd', 'ReadOnly', redfish=True)
