@@ -158,6 +158,19 @@ services:
     volumes:
       - "./monorail:/opt/monorail"
 
+  web-ui: # 3000
+    build: "../on-web-ui"
+    depends_on:
+      - http
+      - wss
+      - elasticsearch
+    image: rackhd/on-web-ui:${TAG}
+    network_mode: "host"
+    privileged: true
+    volumes:
+      - "./monorail/custom.json:/RackHD/on-web-ui/src/config/custom.json"
+
+
   # ELK services
 
   elasticsearch: # 9200, 9300

@@ -4,10 +4,10 @@
 
 set -e
 
-SERVICES=("on-http" "on-taskgraph" "on-dhcp-proxy" "on-tftp" "on-syslog" "rackhd")
+SERVICES=("on-http" "on-taskgraph" "on-dhcp-proxy" "on-tftp" "on-syslog" "rackhd" "on-web-ui")
 
 #############################################
-# Enable services: on-http, on-dhcp-proxy, on-tftp, on-syslog, on-taskgraph
+# Enable services: on-http, on-dhcp-proxy, on-tftp, on-syslog, on-taskgraph, on-web-ui
 #############################################
 enable_services(){
     for i in ${SERVICES[@]}; do
