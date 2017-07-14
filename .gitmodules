@@ -31,3 +31,6 @@
 [submodule "on-wss"]
 	path = on-wss
 	url = https://github.com/RackHD/on-wss
+[submodule "on-web-ui"]
+	path = on-web-ui
+	url = https://github.com/rackhd/on-web-ui
