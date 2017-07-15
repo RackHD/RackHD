@@ -113,6 +113,11 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
                                     "uid": 1010,
                                 }]
                        }
+
+        # get files from server
+        log.info_5(" Downloading upgrade.img file took:")
+        os.system(" time wget http://10.240.19.193/repo/centos/7.0/images/pxeboot/upgrade.img -nv")
+
         result = fit_common.rackhdapi('/redfish/v1/Systems/'
                                             + NODE
                                             + '/Actions/RackHD.BootImage',
@@ -141,6 +146,11 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
                                     "uid": 1010,
                                 }]
                        }
+        
+        # get files from server
+        log.info_5(" Downloading upgrade.img file took:")
+        os.system(" time wget http://10.240.19.193/repo/centos/7.0/images/pxeboot/upgrade.img -nv")
+
         result = fit_common.rackhdapi('/redfish/v1/Systems/'
                                             + NODE
                                             + '/Actions/RackHD.BootImage',
@@ -169,6 +179,11 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
                                     "uid": 1010,
                                 }]
                        }
+        
+        # get files from server
+        log.info_5(" Downloading upgrade.img file took:")
+        os.system(" time wget http://10.240.19.193/repo/centos/7.0/images/pxeboot/upgrade.img -nv")
+
         result = fit_common.rackhdapi('/redfish/v1/Systems/'
                                             + NODE
                                             + '/Actions/RackHD.BootImage',
@@ -198,6 +213,11 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
                                 }],
 
                        }
+
+        # get files from server
+        log.info_5(" Downloading upgrade.img file took:")
+        os.system(" time wget http://10.240.19.193/repo/centos/7.0/images/pxeboot/upgrade.img -nv")
+
         result = fit_common.rackhdapi('/redfish/v1/Systems/'
                                             + NODE
                                             + '/Actions/RackHD.BootImage',
@@ -226,6 +246,11 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
                                     "uid": 1010,
                                 }]
                        }
+
+        # get files from server
+        log.info_5(" Downloading upgrade.img file took:")
+        os.system(" time wget http://10.240.19.193/repo/centos/7.0/images/pxeboot/upgrade.img -nv")
+
         result = fit_common.rackhdapi('/redfish/v1/Systems/'
                                             + NODE
                                             + '/Actions/RackHD.BootImage',
@@ -255,6 +280,11 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
                                 }],
 
                        }
+
+        # get files from server
+        log.info_5(" Downloading upgrade.img file took:")
+        os.system(" time wget http://10.240.19.193/repo/centos/7.0/images/pxeboot/upgrade.img -nv")
+
         result = fit_common.rackhdapi('/redfish/v1/Systems/'
                                             + NODE
                                             + '/Actions/RackHD.BootImage',

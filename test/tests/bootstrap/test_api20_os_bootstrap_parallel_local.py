@@ -106,6 +106,7 @@ from nose.plugins.attrib import attr
 import fit_common
 import flogging
 import sys
+import os
 log = flogging.get_loggers()
 
 # This gets the list of nodes
@@ -209,6 +210,18 @@ class api20_bootstrap_base(fit_common.unittest.TestCase):
                     payload_data["options"]["defaults"].pop('users', None)
                     payload_data["options"]["defaults"].pop('kvm', None)
                     payload_data["options"]["defaults"].pop('version', None)
+
+                # get files from server
+                log.info_5(" ********** proxy with port 8080 Downloading upgrade.img file took:")
+                os.system(" time wget http://172.31.128.1:8080/repo/centos/7.0/images/pxeboot/upgrade.img")
+
+                # get files from server
+                log.info_5(" ********** proxy with port 9080 Downloading upgrade.img file took:")
+                os.system(" time wget http://172.31.128.1:9080/repo/centos/7.0/images/pxeboot/upgrade.img")
+
+                # get files from server
+                log.info_5(" ***********  non proxy Downloading upgrade.img file took:")
+                os.system(" time wget http://10.240.19.193/repo/centos/7.0/images/pxeboot/upgrade.img")
 
                 # run workflow
                 result = fit_common.rackhdapi('/api/2.0/nodes/' +

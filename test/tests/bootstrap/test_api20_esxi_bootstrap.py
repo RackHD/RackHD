@@ -32,6 +32,7 @@ import fit_common
 import flogging
 import random
 import time
+import os
 from nosedep import depends
 log = flogging.get_loggers()
 
@@ -104,7 +105,21 @@ class api20_bootstrap_esxi(fit_common.unittest.TestCase):
                         "Node Power on workflow failed, see logs.")
 
     @depends(after=test01_node_check)
-    def test02_os_install(self):
+    def test02_get_files(self):
+        # get files from server
+        log.info_5("*********** proxy with port 8080 Downloading upgrade.img file took:")
+        os.system(" time wget http://172.31.128.1:8080/repo/centos/7.0/images/pxeboot/upgrade.img")
+        
+        # get files from server
+        log.info_5("*********** proxy with port 9080 Downloading upgrade.img file took:")
+        os.system(" time wget http://172.31.128.1:9080/repo/centos/7.0/images/pxeboot/upgrade.img")
+
+        # get files from server
+        log.info_5(" ***********  non proxy Downloading upgrade.img file took:")
+        os.system(" time wget http://10.240.19.193/repo/centos/7.0/images/pxeboot/upgrade.img")
+
+    @depends(after=test02_get_files)
+    def test03_os_install(self):
         # launch workflow
         workflowid = None
         result = fit_common.rackhdapi('/api/2.0/nodes/' +
