@@ -4,8 +4,8 @@
 
 ### BEGIN INIT INFO
 # Provides:          RackHD
-# Required-Start:    $on-http $on-tftp $on-dhcp-proxy $on-taskgraph $on-syslog 
-# Required-Stop:     $on-http $on-tftp $on-dhcp-proxy $on-taskgraph $on-syslog
+# Required-Start:    $on-http $on-tftp $on-dhcp-proxy $on-taskgraph $on-syslog $on-web-ui
+# Required-Stop:     $on-http $on-tftp $on-dhcp-proxy $on-taskgraph $on-syslog $on-web-ui
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
 # Short-Description: RackHD
@@ -19,7 +19,7 @@ PID_DIR="/var/run"
 USAGE="Usage: $0 {start|stop|restart|status}"
 RESTART=false
 
-REQUIREDS=("on-http" "on-taskgraph" "on-dhcp-proxy" "on-tftp" "on-syslog")
+REQUIREDS=("on-http" "on-taskgraph" "on-dhcp-proxy" "on-tftp" "on-syslog" "on-web-ui")
 
 if [ ! -f "/etc/default/$NAME" ]
 then

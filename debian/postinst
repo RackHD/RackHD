@@ -3,7 +3,7 @@
 # Copyright 2016, DELL EMC, Inc.
 
 set -e
-SERVICES=("on-http" "on-taskgraph" "on-dhcp-proxy" "on-tftp" "on-syslog")
+SERVICES=("on-http" "on-taskgraph" "on-dhcp-proxy" "on-tftp" "on-syslog" "on-web-ui")
 
 #############################################
 # Stop on-xxx 
