@@ -37,9 +37,12 @@ class redfish10_api_managers(fit_common.unittest.TestCase):
                     self.assertEqual(fit_common.remote_shell('ping -c 1 ' + item["Address"])['exitcode'], 0, "Manager IP address not found.")
 
     def test_redfish_v1_managers_rackhd_serialinterfaces(self):
-        # not yet implemented
-        api_data = fit_common.rackhdapi('/redfish/v1/Managers/RackHD/SerialInterfaces/0')
-        self.assertIn(api_data['status'], [200, 501], "Was expecting code 501. Got " + str(api_data['status']))
+        api_data = fit_common.rackhdapi('/redfish/v1/Managers/RackHD/SerialInterfaces')
+        self.assertEqual(api_data['status'], 200, "Was expecting code 200. Got " + str(api_data['status']))
+        #iterate through member links
+        for item in api_data['json']['Members']:
+            manager_data = fit_common.rackhdapi(item['@odata.id'])
+            self.assertEqual(manager_data['status'], 200, "Was expecting code 200. Got " + str(manager_data['status']))
 
     def test_redfish_v1_managers_rackhd_virtualmedia(self):
         # not yet implemented
