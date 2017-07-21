@@ -88,87 +88,12 @@ if [ $? -ne 0 ]; then
 fi
 
 #
-#  elasticsearch: # 9200, 9300
-#    command: elasticsearch -Des.network.host=0.0.0.0
-#    depends_on:
-#      - rabbitmq
-#    image: elasticsearch:latest
-#    network_mode: "host"
-#    privileged: true
-#
-echo "    elasticsearch..."
-docker run --privileged=true --net="host" --name docker_elasticsearch_1 -d elasticsearch:latest elasticsearch -Des.network.host=0.0.0.0 > /dev/null
-if [ $? -ne 0 ]; then
-	echo "Failed"
-	exit
-fi
-
-#
-#  kibana: # 5601
-#    depends_on:
-#      - elasticsearch
-#    image: kibana:latest
-#    network_mode: "host"
-#    privileged: true
-#    volumes:
-#      - "./kibana/config:/etc/kibana"
-#
-echo "    kibana..."
-docker run --privileged=true --net="host" --name docker_kibana_1 -d -v /RackHD/docker/kibana/config:/etc/kibana kibana:latest > /dev/null
-if [ $? -ne 0 ]; then
-	echo "Failed"
-	exit
-fi
-
-#
-#  logstash: # 5000
-#    command: logstash -f /etc/logstash/conf.d/logstash.conf
-#    depends_on:
-#      - elasticsearch
-#      - rabbitmq
-#    image: logstash:latest
-#    network_mode: "host"
-#    privileged: true
-#    volumes:
-#      - "./logstash/config:/etc/logstash/conf.d"
-#
-echo "    logstash..."
-docker run --privileged=true --net="host" --name docker_logstash_1 -d -v /RackHD/docker/logstash/config:/etc/logstash/conf.d logstash:latest logstash -f /etc/logstash/conf.d/logstash.conf > /dev/null
-if [ $? -ne 0 ]; then
-	echo "Failed"
-	exit
-fi
-
-#
-#  statsd: # 8125/udp
-#    build: "../on-statsd"
-#    depends_on:
-#      - elasticsearch
-#      - logstash
-#      - mongo
-#      - rabbitmq
-#    image: rackhd/on-statsd:latest
-#    network_mode: "host"
-#    privileged: true
-#    volumes:
-#      - "./monorail:/opt/monorail"
-#
-echo "    on-statsd..."
-docker run --privileged=true --net="host" --name docker_on-statsd_1 -d -v /RackHD/docker/monorail:/opt/monorail rackhd/on-statsd > /dev/null
-if [ $? -ne 0 ]; then
-	echo "Failed"
-	exit
-fi
-
-#
 #  http: # 9090, 9080
 #    build: "../on-http"
 #    depends_on:
 #      - files
-#      - logstash
 #      - mongo
 #      - rabbitmq
-#      - statsd
 #    image: rackhd/on-http:latest
 #    network_mode: "host"
 #    privileged: true
@@ -188,10 +113,8 @@ fi
 #    build: "../on-dhcp-proxy"
 #    depends_on:
 #      - dhcp
-#      - logstash
 #      - mongo
 #      - rabbitmq
-#      - statsd
 #    image: rackhd/on-dhcp-proxy:latest
 #    network_mode: "host"
 #    privileged: true
@@ -210,9 +133,7 @@ fi
 #    build: "../on-syslog"
 #    depends_on:
 #      - mongo
-#      - logstash
 #      - rabbitmq
-#      - statsd
 #    image: rackhd/on-syslog:latest
 #    network_mode: "host"
 #    privileged: true
@@ -231,10 +152,8 @@ fi
 #    build: "../on-tftp"
 #    depends_on:
 #      - files
-#      - logstash
 #      - mongo
 #      - rabbitmq
-#      - statsd
 #      - syslog
 #    image: rackhd/on-tftp:latest
 #    network_mode: "host"
@@ -255,11 +174,9 @@ fi
 #    build: "../on-taskgraph"
 #    depends_on:
 #      - dhcp
-#      - logstash
 #      - mongo
 #      - rabbitmq
 #      - syslog
-#      - statsd
 #    image: rackhd/on-taskgraph:latest
 #    network_mode: "host"
 #    privileged: true
@@ -275,3 +192,4 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "Done."
+

@@ -127,10 +127,10 @@ Open http://127.0.0.1:5601 in a web browser, you can see kibana's website.
 For convenience there are alternative scripts you can use instead of `docker-compose`.
 
 ```
-$ ./scripts/compose_services.bash    # Run all RackHD/ELK docker containers.
-$ ./scripts/follow_services.bash     # Follow all RackHD/ELK logs.
-$ ./scripts/restart_services.bash    # Restart all RackHD/ELK docker containers.
-$ ./scripts/stop_services.bash       # Stop all RackHD/ELK docker containers.
-$ ./scripts/remove_services.bash     # Remove all RackHD/ELK docker containers
+$ ./scripts/compose_services.bash    # Run all RackHD docker containers.
+$ ./scripts/follow_services.bash     # Follow all RackHD logs.
+$ ./scripts/restart_services.bash    # Restart all RackHD docker containers.
+$ ./scripts/stop_services.bash       # Stop all RackHD docker containers.
+$ ./scripts/remove_services.bash     # Remove all RackHD docker containers
 ```
 
