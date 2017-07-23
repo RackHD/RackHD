@@ -2,3 +2,7 @@ network.host: 0.0.0.0
 
 http.cors.enabled: true
 http.cors.allow-origin: "*"
+
+path:
+  logs: /data/log
+  data: /data/data
