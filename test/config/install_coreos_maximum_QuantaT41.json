@@ -36,6 +36,9 @@
                         "device": "ens20f0"
                     },
                     {
+                        "device": "ens20f1"
+                    },
+                    {
                         "device": "ens10f1",
                         "ipv4": {
                             "ipAddr": "192.168.101.61",

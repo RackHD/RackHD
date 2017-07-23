@@ -26,9 +26,10 @@
             "ntpServers": ["0.vmware.pool.ntp.org", "1.vmware.pool.ntp.org"],
             "networkDevices": [
                 {
-                    "device": "vmnic2",
+                    "device": "vmnic3",
                     "esxSwitchName": "vSwitch0"
                 },
+
                 {
                     "device": "vmnic1",
                     "ipv4": {
@@ -52,7 +53,7 @@
             "switchDevices": [
                 {
                     "switchName": "vSwitch0",
-                    "uplinks": ["vmnic2"]
+                    "uplinks": ["vmnic3"]
                 },
                 {
                     "switchName": "vSwitch1",
