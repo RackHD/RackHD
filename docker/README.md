@@ -14,7 +14,7 @@ $ vagrant up                  # Create and provision Docker VM.
 $ . export_docker_host.bash   # Point docker host to Docker VM.
 $ vagrant ssh                 # SSH into Docker VM.
 $ cd /RackHD/docker           # Go to RackHD/docker.
-$ docker-compose up           # Run RackHD and ELK.
+$ docker-compose up           # Run RackHD.
 ```
 
 ## On a Linux host.
@@ -28,10 +28,10 @@ $ docker-compose up           # Run RackHD and ELK.
 ```
 $ cd RackHD/docker                            # TAG can be a release version, if not set default: latest
 $ sudo TAG=${TAG} docker-compose pull         # Download prebuilt docker images.
-$ sudo TAG=${TAG} docker-compose up           # Create containers and Run RackHD and ELK.
+$ sudo TAG=${TAG} docker-compose up           # Create containers and Run RackHD.
 ```
 
-## Once RackHD and ELK are running.
+## Once RackHD is running.
 
 Open http://127.0.0.1:9090 in a web browser.
 
@@ -44,7 +44,7 @@ You can actually edit this file and refresh your browser to see your changes.
 Simply edit the `RackHD/docker/monorail/config.json` file and restart your containers.
 
 ```
-docker-compose restart        # Restart RackHD and ELK.
+docker-compose restart        # Restart RackHD.
 ```
 
 ## Rebuild RackHD images for development.
@@ -54,10 +54,10 @@ It is recommended that you uncomment the `core` RackHD service before developing
 ```
 $ ../scripts/reset_submodules.bash  # Fetch latest submodules.
 $ docker-compose build              # Build RackHD Docker images.
-$ docker-compose kill               # Force stop running RackHD/ELK containers.
-$ docker-compose rm -f              # Remove previous RackHD/ELK containers.
-$ docker-compose create             # Create new RackHD/ELK containers.
-$ docker-compose start              # Run RackHD and ELK.
+$ docker-compose kill               # Force stop running RackHD containers.
+$ docker-compose rm -f              # Remove previous RackHD containers.
+$ docker-compose create             # Create new RackHD containers.
+$ docker-compose start              # Run RackHD.
 $ docker-compose logs               # Show docker logs.
 ```
 
@@ -112,15 +112,14 @@ Now start `pxe-1` from VirtualBox. You should see it boot and auto automatically
     * By default the Vagrant Docker VM exposes all related ports. Some of which are only necessary for development and debugging. You can disable any ports you do not wish to use, or change the which port on the host they map too.
     * Ensure you have the right version of Vagrant for VirtualBox. Later versions of VirtualBox require a more recent version of Vagrant.
 
-## Run a minimal set of RackHD containers (without ELK).
-For who doesn't need ELK running along with RackHD, due to system performance restriction or docker-pull network bandwidth restriction: an alternative docker-compose file can be used by "-f" option:
+## Run RackHD containers (with ELK).
+For who need ELK running along with RackHD, due to system performance restriction or docker-pull network bandwidth restriction: an alternative docker-compose file can be used by "-f" option:
 
 ```
-$ TAG=${TAG} docker-compose -f docker-compose-mini.yml pull
-$ TAG=${TAG} docker-compose -f docker-compose-mini.yml up
+$ TAG=${TAG} docker-compose -f docker-compose-elk.yml pull
+$ TAG=${TAG} docker-compose -f docker-compose-elk.yml up
 ```
-
-
+Open http://127.0.0.1:5601 in a web browser, you can see kibana's website.
 
 
 ## Running this example without `docker-compose`.
@@ -128,9 +127,10 @@ $ TAG=${TAG} docker-compose -f docker-compose-mini.yml up
 For convenience there are alternative scripts you can use instead of `docker-compose`.
 
 ```
-$ ./scripts/compose_services.bash    # Run all RackHD/ELK docker containers.
-$ ./scripts/follow_services.bash     # Follow all RackHD/ELK logs.
-$ ./scripts/restart_services.bash    # Restart all RackHD/ELK docker containers.
-$ ./scripts/stop_services.bash       # Stop all RackHD/ELK docker containers.
-$ ./scripts/remove_services.bash     # Remove all RackHD/ELK docker containers
+$ ./scripts/compose_services.bash    # Run all RackHD docker containers.
+$ ./scripts/follow_services.bash     # Follow all RackHD logs.
+$ ./scripts/restart_services.bash    # Restart all RackHD docker containers.
+$ ./scripts/stop_services.bash       # Stop all RackHD docker containers.
+$ ./scripts/remove_services.bash     # Remove all RackHD docker containers
 ```
+
