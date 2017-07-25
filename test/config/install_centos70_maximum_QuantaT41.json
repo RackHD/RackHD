@@ -58,18 +58,7 @@
                     }
                 },
                 {
-                    "device": "ens20f1",
-                    "ipv4": {
-                        "ipAddr": "192.168.101.58",
-                        "gateway": "192.168.101.1",
-                        "netmask": "255.255.255.0"
-                    },
-                    "ipv6": {
-                        "ipAddr": "fec0:6ab4:0:5efe:159:45:14:13",
-                        "gateway": "fec0:6ab4:0:5efe:157:60:14:1",
-                        "netmask": "ffff:ffff:ffff:ffff:0:0:0:0",
-                        "vlanIds": [106, 108]
-                    }
+                    "device": "ens20f1"
                 }
             ],
             "kvm": true,
