@@ -16,6 +16,7 @@ import requests
 import fit_common
 import pexpect
 import unittest
+import subprocess
 from nose.plugins.attrib import attr
 logs = flogging.get_loggers()
 
@@ -23,7 +24,7 @@ logs = flogging.get_loggers()
 @attr(all=False, regression=False, smoke=False, imageservice=True)
 class test_os_image_service(fit_common.unittest.TestCase):
     def setUp(self):
-        self.test_delete_all_images()
+        self._delete_all_images()
 
     def _get_serverip(self):
         args = fit_common.fitargs()['unhandled_arguments']
@@ -36,11 +37,11 @@ class test_os_image_service(fit_common.unittest.TestCase):
     def _mount_local_os_repo(self, file_name, mountpoint):
         try:
             if os.path.exists(mountpoint) is False:
-                command = "mkdir " + mountpoint
-                os.popen(command)
+                command = "mkdir " + mountpoint,
+                subprocess.check_output(command,shell=True)
             # use fuseiso tool to mount without root privilege. user need install fuseiso before the test.
             command = "fuseiso " + file_name + " " + mountpoint
-            os.popen(command)
+            subprocess.check_output(command,shell=True)
             return True
         except OSError:
             return False
@@ -77,17 +78,17 @@ class test_os_image_service(fit_common.unittest.TestCase):
         try:
             # use fusermount to umount the iso loaded by fuseiso without root privilege. User need intall it first.
             logs.debug("fusermount -u" + mountpoint)
-            os.system("fusermount -u " + mountpoint)
+            subprocess.check_output("fusermount -u " + mountpoint, shell=True)
             logs.debug("rm -d " + mountpoint)
-            os.system("rm -d " + mountpoint)
+            subprocess.check_output("rm -d " + mountpoint, shell=True)
             logs.debug("rm " + file_name)
-            os.system("rm " + file_name)
+            subprocess.check_output("rm " + file_name, shell=True)
             return True
         except OSError:
             return False
 
     def _download_file(self, url):
-        logs.debug_3("downloading url= %s" % url)
+        logs.debug_3("downloading url=%s" % url)
         file_name = url.split('/')[-1]
         if os.path.exists(file_name) is False:
             u = urllib2.urlopen(url)
@@ -96,13 +97,13 @@ class test_os_image_service(fit_common.unittest.TestCase):
             file_size = int(meta.getheaders("Content-Length")[0])
             logs.debug_3("Downloading: %s Bytes: %s" % (file_name, file_size))
             file_size_dl = 0
-            block_sz = 8192
+            block_sz = 2097152
             while True:
-                buffer = u.read(block_sz)
-                if not buffer:
+                file_buffer = u.read(block_sz)
+                if not file_buffer:
                     break
-                file_size_dl += len(buffer)
-                f.write(buffer)
+                file_size_dl += len(file_buffer)
+                f.write(file_buffer)
                 # logs dose not have ability to draw digital in original place. use print instead.
                 if fit_common.VERBOSITY >= 9:
                     status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
@@ -298,7 +299,6 @@ class test_os_image_service(fit_common.unittest.TestCase):
             self.assertTrue(self._mount_local_os_repo(file_name, osrepo["osname"]), "Could not mount ISO")
             self.assertTrue(self._compare_repo(osrepo["osname"], osrepo["version"]), "Fileserver compare failed!")
             self._release(file_name, osrepo["osname"])
-        self.test_delete_all_images()
 
     def test_create_os_repo_from_http(self):
         for osrepo in fit_common.fitcfg()["image_service"]["os_image"]:
@@ -312,7 +312,6 @@ class test_os_image_service(fit_common.unittest.TestCase):
                 self.assertTrue(self._mount_local_os_repo(file_name, os_name), "Could not mount ISO")
                 self.assertTrue(self._compare_repo(os_name, os_version), "Fileserver compare failed!")
                 self._release(file_name, os_name)
-        self.test_delete_all_images()
 
     def test_create_os_repo_from_ftp(self):
         for osrepo in fit_common.fitcfg()["image_service"]["os_image"]:
@@ -326,7 +325,6 @@ class test_os_image_service(fit_common.unittest.TestCase):
                 self.assertTrue(self._mount_local_os_repo(file_name, os_name), "Could not mount ISO")
                 self.assertTrue(self._compare_repo(os_name, os_version), "Fileserver compare failed!")
                 self._release(file_name, os_name)
-        self.test_delete_all_images()
 
     def test_create_os_repo_from_store(self):
         for osrepo in fit_common.fitcfg()["image_service"]["os_image"]:
@@ -340,8 +338,8 @@ class test_os_image_service(fit_common.unittest.TestCase):
             self.assertTrue(self._mount_local_os_repo(file_name, os_name), "Could not mount ISO")
             self.assertTrue(self._compare_repo(os_name, os_version), "Fileserver compare failed!")
             self._release(file_name, os_name)
-        self.test_delete_all_images()
 
+    """
     def test_create_os_repo_from_local(self):
         for osrepo in fit_common.fitcfg()["image_service"]["os_image"]:
             os_name = osrepo["osname"]
@@ -359,7 +357,7 @@ class test_os_image_service(fit_common.unittest.TestCase):
             self.assertTrue(self._mount_local_os_repo(file_name, os_name), "Could not mount ISO")
             self.assertTrue(self._compare_repo(os_name, os_version), "Fileserver compare failed!")
             self._release(file_name, os_name)
-        self.test_delete_all_images()
+        self._delete_all_images()
 
     def test_list_images(self):
         os_id_list = []
@@ -380,8 +378,8 @@ class test_os_image_service(fit_common.unittest.TestCase):
                     break
             self.assertTrue(found_flag, "image with id " + osid + " not found!")
         logs.error("Found all os, list is correct!")
-
-    def test_delete_all_images(self):
+    """
+    def _delete_all_images(self):
         os_image_list = self._list_os_image()
         serverip = self._get_serverip()
         for image_repo in os_image_list:
