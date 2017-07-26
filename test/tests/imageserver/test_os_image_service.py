@@ -38,10 +38,10 @@ class test_os_image_service(fit_common.unittest.TestCase):
         try:
             if os.path.exists(mountpoint) is False:
                 command = "mkdir " + mountpoint,
-                subprocess.check_output(command,shell=True)
+                subprocess.check_output(command, shell=True)
             # use fuseiso tool to mount without root privilege. user need install fuseiso before the test.
             command = "fuseiso " + file_name + " " + mountpoint
-            subprocess.check_output(command,shell=True)
+            subprocess.check_output(command, shell=True)
             return True
         except OSError:
             return False
