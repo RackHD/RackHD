@@ -17,6 +17,7 @@ import fit_common
 import urllib2
 import pexpect
 import unittest
+import subprocess
 import test_api_utils
 from nose.plugins.attrib import attr
 logs = flogging.get_loggers()
@@ -212,7 +213,7 @@ class test_image_service_system(fit_common.unittest.TestCase):
             file_size = int(meta.getheaders("Content-Length")[0])
             logs.debug_3("Downloading: %s Bytes: %s" % (file_name, file_size))
             file_size_dl = 0
-            block_sz = 8192
+            block_sz = 2097152
             while True:
                 file_buffer = u.read(block_sz)
                 if not file_buffer:
@@ -227,6 +228,7 @@ class test_image_service_system(fit_common.unittest.TestCase):
             f.close()
         return file_name
 
+
     def _upload_all_microkernels(self):
         for microkernelrepo in fit_common.fitcfg()["image_service"]["microkernel"]:
             if microkernelrepo[:3] == "scp":
@@ -239,7 +241,7 @@ class test_image_service_system(fit_common.unittest.TestCase):
     def _release(self, file_name):
         try:
             logs.debug_3("rm " + file_name)
-            os.system("rm " + file_name)
+            subprocess.check_output("rm " + file_name, shell=True)
             return True
         except OSError:
             return False

@@ -15,6 +15,7 @@ import flogging
 import pexpect
 import fit_common
 import unittest
+import subprocess
 from nose.plugins.attrib import attr
 logs = flogging.get_loggers()
 
@@ -38,7 +39,7 @@ class static_microkernel_image_service(fit_common.unittest.TestCase):
     def _release(self, file_name):
         try:
             logs.debug_3("rm " + file_name)
-            os.system("rm " + file_name)
+            subprocess.check_output("rm " + file_name, shell=True)
             return True
         except OSError:
             return False
@@ -53,7 +54,7 @@ class static_microkernel_image_service(fit_common.unittest.TestCase):
             file_size = int(meta.getheaders("Content-Length")[0])
             logs.debug_3("Downloading: %s Bytes: %s" % (file_name, file_size))
             file_size_dl = 0
-            block_sz = 8192
+            block_sz = 2097152
             while True:
                 file_buffer = u.read(block_sz)
                 if not file_buffer:
