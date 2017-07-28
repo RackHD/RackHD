@@ -22,11 +22,9 @@ START_TIME = fit_common.time.time()
 
 # OS install info
 
-OSLIST =  [
-        {"workflow": "Graph.InstallESXi", "version": "6.0", "path": "/repo/esxi/6.0", "kvm": False},
-        {"workflow": "Graph.InstallUbuntu", "version": "trusty", "path": "/repo/ubuntu", "kvm": False},
-        {"workflow": "Graph.InstallCentOS", "version": "6.5", "path": "/repo/centos/6.5", "kvm": False},
-      ]
+OSLIST = [{"workflow": "Graph.InstallESXi", "version": "6.0", "path": "/repo/esxi/6.0", "kvm": False},
+          {"workflow": "Graph.InstallUbuntu", "version": "trusty", "path": "/repo/ubuntu", "kvm": False},
+          {"workflow": "Graph.InstallCentOS", "version": "6.5", "path": "/repo/centos/6.5", "kvm": False}]
 
 # download RackHD config from host
 rackhdresult = fit_common.rackhdapi('/api/2.0/config')
@@ -70,6 +68,7 @@ def node_taskid(workflow, version, kvm):
             return NODE_STATUS[entry]['id']
     return ""
 
+
 # helper routine to dispaly task status info to the user at the end of each test
 def display_workflow_info(taskid):
     for node in NODE_STATUS:
@@ -78,9 +77,10 @@ def display_workflow_info(taskid):
             if result['status'] != 200:
                 log.error(" HTTP error: %s, cannot print results", result['text'])
                 return
-            NODE_STATUS[node]['EndTime'] = fit_common.time.time() 
-            log.info( " Node: %s", fit_common.json.dumps(NODE_STATUS[node], indent=4))
-            print("Node info {}".format(fit_common.json.dumps(NODE_STATUS[node], indent=4))) 
+            NODE_STATUS[node]['EndTime'] = fit_common.time.time()
+            log.info(" Node: %s", fit_common.json.dumps(NODE_STATUS[node], indent=4))
+            print("Node info {}".format(fit_common.json.dumps(NODE_STATUS[node], indent=4)))
+
 
 # Match up tests to node IDs to feed skip decorators
 index = 0  # node index
@@ -119,7 +119,9 @@ class api20_bootstrap_base(fit_common.unittest.TestCase):
                 # OS specific payload requirements
                 if item['workflow'] == "Graph.InstallUbuntu":
                     payload_data["options"]["defaults"]["baseUrl"] = "install/netboot/ubuntu-installer/amd64"
-                    payload_data["options"]["defaults"]["kargs"] = {"live-installer/net-image": rackhdhost + item['path'] + "/ubuntu/install/filesystem.squashfs"}
+                    payload_data["options"]["defaults"]["kargs"] = {"live-installer/net-image": rackhdhost +
+                                                                    item['path'] +
+                                                                    "/ubuntu/install/filesystem.squashfs"}
                 # run workflow
                 result = fit_common.rackhdapi('/api/2.0/nodes/' +
                                               NODECATALOG[nodeindex] +
@@ -153,23 +155,19 @@ class api20_bootstrap_base(fit_common.unittest.TestCase):
                 # increment node index to run next bootstrap
                 nodeindex += 1
 
-    
     def test01_api20_bootstrap_ubuntu14(self):
-        #self.assertTrue(wait_for_workflow_complete(node_taskid("Graph.InstallUbuntu", "trusty", False)), "Ubuntu 14 failed.")
         taskid = node_taskid("Graph.InstallUbuntu", "trusty", False)
         wf_status = wait_for_workflow_complete(taskid)
         display_workflow_info(taskid)
         self.assertTrue(wf_status, "Ubuntu 14 failed.")
 
     def test02_api20_bootstrap_centos65(self):
-        # self.assertTrue(wait_for_workflow_complete(node_taskid("Graph.InstallCentOS", "6.5", False)), "Centos 6.5 failed.")
         taskid = node_taskid("Graph.InstallCentOS", "6.5", False)
         wf_status = wait_for_workflow_complete(taskid)
         display_workflow_info(taskid)
         self.assertTrue(wf_status, "Centos 6.5 failed.")
 
     def test03_api20_bootstrap_esxi6(self):
-        # self.assertTrue(wait_for_workflow_complete(node_taskid("Graph.InstallESXi", "6.", False)), "ESXi6.0 failed.")
         taskid = node_taskid("Graph.InstallESXi", "6.", False)
         wf_status = wait_for_workflow_complete(taskid)
         display_workflow_info(taskid)
