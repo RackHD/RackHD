@@ -1,7 +1,9 @@
 ## System Management Integration (SMI) Microservices
 
 ### Introduction
-Not all the microservices need to run.  You have the option of starting only the ones needed.
+The SMI Microservices are additional add-on services that are used by rackhd workflows and tasks, primarily focused on adding value for the managmenet of Dell servers.   These services use a Zuul gateway and Consul Registry service to present a unified API.   Documentation for each service is avialiable on Github in repositories that begin with "smi-service" or on dockerhub page for the service.
+
+Note: Not all the microservices need to run.  You have the option of starting only the ones needed, or manually editing the docker-compose.yml file.
 
 ### How to start
 
@@ -24,31 +26,31 @@ Optionally, if you wish to have available the PDF generation feature of the swag
 ~~~
 sudo docker-compose up -d consul
 ~~~
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TYou can view the consul UI by navigating to http://<your_HOST_IP_address>:8500
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;You can view the consul UI by navigating to http://<your_HOST_IP_address>:8500
 
 6. Post in microservice key/value properties into consul
 ~~~
 ./set_config.sh
 ~~~
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TYou can view the key/value data in consul by clicking on the Key/Value tab.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;You can view the key/value data in consul by clicking on the Key/Value tab.
 
 7. Start remaining containers (or just the ones you want to start) in detached mode
 ~~~
 sudo docker-compose up -d
 ~~~
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TIt takes about 2 minutes for the services to come up. To start just the containers you want, specify the names of the containers to start at the end of the command seperated by a space.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;It takes about 2 minutes for the services to come up. To start just the containers you want, specify the names of the containers to start at the end of the command seperated by a space.
 
 8. Verify your services are online
 ~~~
 sudo docker ps -a
 ~~~
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TYou can also look for your services to register in the consul UI
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;You can also look for your services to register in the consul UI
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TYou can examine the logs by typing:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;You can examine the logs by typing:
 ~~~
 sudo docker logs <name of the service>
 ~~~ 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TYou can navigate to the swagger UI in a browser using the port for the service.. example 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;You can navigate to the swagger UI in a browser using the port for the service.. example 
 ~~~
 http://<<your ip>>:<port>/swagger-ui.html
 ~~~
