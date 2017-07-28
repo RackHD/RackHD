@@ -197,13 +197,30 @@ services:
     - 46019:46019
     extra_hosts:
     - "service-registry:${REGISTRY_IP}"
-    volumes:
-    - /var/log/dell/:/var/log/dell/
-    - /etc/ssl/:/etc/ssl
+    #volumes:
+    #- /var/log/dell/:/var/log/dell/
+    #- /etc/ssl/:/etc/ssl
     mem_limit: 768m
     environment:
     - "SPRING_PROFILES_ACTIVE=consul"
     - _JAVA_OPTIONS=-Xmx128m -Xss256k
+
+  swagger-aggregator:
+    container_name: swagger-aggregator
+    image: rackhd/swagger-aggregator:latest
+    #command: --add-host localhost -h service-resources
+    depends_on:
+    - consul
+    network_mode: "host"
+    ports:
+    - 46021:46021
+    extra_hosts:
+    - "service-registry:${REGISTRY_IP}"
+    mem_limit: 1024m
+    environment:
+    - "SPRING_PROFILES_ACTIVE=consul"
+    - "SWAGGER_HOST=http://${HOST_IP}"
+    - _JAVA_OPTIONS=-Xmx512m -Xss256k
 
   postgresql:
     container_name: postgresql
