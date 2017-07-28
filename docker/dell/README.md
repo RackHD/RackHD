@@ -1,4 +1,4 @@
-Dell Microservices
+## System Management Integration (SMI) Microservices
 
 ### Introduction
 Not all the microservices need to run.  You have the option of starting only the ones needed.
