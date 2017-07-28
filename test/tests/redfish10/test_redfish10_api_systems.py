@@ -146,7 +146,7 @@ class redfish10_api_systems(fit_common.unittest.TestCase):
                     self.assertNotEqual(item, "", 'Empty JSON Field')
 
     def test_redfish_v1_systems_id_ethernetinterfaces(self):
-        # Only works for Dell servers with microservices
+        # Will produce a list of available Ethernet interfaces
         for nodeid in NODECATALOG:
             api_data = fit_common.rackhdapi('/redfish/v1/Systems/' + nodeid + '/EthernetInterfaces')
             self.assertIn(api_data['status'], [200], 'Expected 200, got:' + str(api_data['status']))
