@@ -14,7 +14,9 @@ Copyright 2015, DellEMC LLC
                In both cases, all user roles will have established accounts in both endpoints and
                will possess tokens for role base access and permission.
 
-           EX: python run_tests.py -stack 2 -config dellemc-test/config-mn/ -test tests/security/test_api_security_passwd_resets.py
+           EX: python run_tests.py -stack 2
+                                   -config dellemc-test/config-mn/
+                                   -test tests/security/test_api_security_passwd_resets.py
                python run_tests.py -stack vagrant -test tests/security/test_api_security_passwd_resets.py
 '''
 
@@ -31,9 +33,11 @@ from classes.operator import Operator
 # Globals
 logs = flogging.get_loggers()
 
+
 # Helper functions
 def createUsername():
     return exrex.getone('[a-zA-Z]{1}[a-zA-Z0-9._\-]{1,}')
+
 
 @attr(regression=False, smoke=True, security=True)
 class TestCase01(fit_common.unittest.TestCase):
