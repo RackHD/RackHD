@@ -41,7 +41,7 @@ def get_task_srv_tasklist():
     if on_data['status'] == 200:
         members = on_data['json']["Members"]
         for member in members:
-            tasklist.append(member['Id'])
+            tasklist.append(member['@odata.id'].split('/')[-1])
     else:
         if fit_common.VERBOSITY >= 2:
             print "Error in API command. Task Service command returned error."
@@ -64,7 +64,7 @@ def get_node_tasklist(nodeid):
     if on_data['status'] == 200:
         members = on_data['json']["Members"]
         for member in members:
-            tasklist.append(member['Id'])
+            tasklist.append(member['@odata.id'].split('/')[-1])
     else:
         if fit_common.VERBOSITY >= 2:
             print "Error in API command. TaskService/Oem/Tasks/" + nodeid + " returned error."
@@ -158,7 +158,7 @@ class redfish10_api_task_suite(fit_common.unittest.TestCase):
             print("\tTaskIDs: ")
         members = on_data['json']["Members"]
         for member in members:
-            taskid = member['Id']
+            taskid = member['@odata.id'].split('/')[-1]
             tasklist.append(taskid)
             if fit_common.VERBOSITY >= 2:
                 print(taskid)
@@ -212,7 +212,7 @@ class redfish10_api_task_suite(fit_common.unittest.TestCase):
             if on_data['status'] == 200:
                 members = on_data['json']["Members"]
                 for member in members:
-                    taskid = member['Id']
+                    taskid = member['@odata.id'].split('/')[-1]
                     tasklist.append(taskid)
             taskcount = int(on_data['json']['Members@odata.count'])
             listcount = len(tasklist)
