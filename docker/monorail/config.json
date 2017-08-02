@@ -23,14 +23,6 @@
           "authEnabled": false,
           "routers": "northbound-api-router"
       },
-      {
-          "address": "172.31.128.1",
-          "port": 9080,
-          "httpsEnabled": false,
-          "proxiesEnabled": true,
-          "authEnabled": false,
-          "routers": "southbound-api-router"
-      },
 	  {
           "address": "172.31.128.1",
           "port": 9988,
@@ -40,6 +32,13 @@
           "routers": "southbound-api-router"
       }
     ],
+    "taskGraphEndpoint": {
+    "address": "0.0.0.0",
+    "port": 9080
+    },
+    "fileServerAddress": "172.31.128.1",
+    "fileServerPort": 8080,
+    "fileServerPath": "/",
     "httpFileServiceRoot": "./static/files",
     "httpFileServiceType": "FileSystem",
     "httpProxies": [
