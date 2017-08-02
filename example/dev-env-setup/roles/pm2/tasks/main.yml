@@ -1,0 +1,8 @@
+---
+- name: install pm2
+  shell: npm install -g pm2
+
+- name: restart mongodb
+  service: name=mongodb state=started
+  sudo: yes
+

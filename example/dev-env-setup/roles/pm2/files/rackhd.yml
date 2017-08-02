@@ -1,0 +1,21 @@
+apps:
+  - script: index.js
+    name: on-taskgraph
+    cwd: /home/vagrant/src/on-taskgraph
+    autorestart: false
+  - script: index.js
+    name: on-http
+    cwd: /home/vagrant/src/on-http
+    autorestart: false
+  - script: index.js
+    name: on-dhcp-proxy
+    cwd: /home/vagrant/src/on-dhcp-proxy
+    autorestart: false
+  - script: index.js
+    name: on-syslog
+    cwd: /home/vagrant/src/on-syslog
+    autorestart: false
+  - script: index.js
+    name: on-tftp
+    cwd: /home/vagrant/src/on-tftp
+    autorestart: false

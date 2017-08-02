@@ -1,0 +1,9 @@
+---
+- name: install v4 nodejs
+  shell: curl -sL https://deb.nodesource.com/setup_4.x | sudo -E bash -
+
+- name: Install node v4
+  apt: pkg={{ item }} state=installed
+  with_items:
+    - nodejs
+  sudo: yes

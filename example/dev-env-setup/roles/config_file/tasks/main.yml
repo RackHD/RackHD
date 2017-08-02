@@ -1,0 +1,6 @@
+---
+- name: create dir /opt/monorail
+  file: path=/opt/monorail state=directory
+
+- name: copy config.json to /opt/monorail
+  copy: src=config.json dest=/opt/monorail

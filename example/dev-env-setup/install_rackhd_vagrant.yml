@@ -1,0 +1,14 @@
+---
+
+- name: install rackhd
+  hosts: localhost
+  sudo: yes
+  vars:
+   github_account: "rackhd"
+   code_version: "release/2.1.0"
+  roles:
+    - build
+    - cloneCode
+    - dependency
+    - static_files
+    - pm2

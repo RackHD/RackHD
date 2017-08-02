@@ -1,0 +1,25 @@
+---
+- name: config network
+  copy: src=interfaces dest=/etc/network
+
+- name: restart network
+  shell: ifdown eth1 && ifup eth1
+
+- name: config dhcp-server
+  copy: src=dhcpd.conf dest=/etc/dhcp
+
+- name: restart dhcp-server
+  service: name=isc-dhcp-server state=started
+  #shell: service isc-dhcp-server restart
+  sudo: yes
+
+- name: open ports in firewall
+  shell: ufw allow {{item}}
+  with_items:
+    - 4011
+    - 8080
+    - 67
+    - 8443
+    - 69
+    - 9080
+  sudo: yes
