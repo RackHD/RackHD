@@ -1,0 +1,10 @@
+---
+- name: install build tools
+  apt: pkg={{item}} state=installed
+  with_items:
+   - git
+   - build-essential
+   - g++
+   - libkrb5-dev
+   - unzip
+  sudo: yes

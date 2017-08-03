@@ -1,0 +1,48 @@
+---
+- name: create dir /home/vagrant/src/
+  file: path=/home/vagrant/src/ state=directory
+
+
+- name: Get RackHD from source
+  git: repo=https://github.com/{{ github_account }}/{{ item }}.git
+       dest=/home/vagrant/src/{{ item }}
+       version={{code_version}}
+  with_items:
+    - on-core
+    - on-tasks
+    - on-taskgraph
+    - on-http
+    - on-dhcp-proxy
+    - on-tftp
+    - on-syslog   
+
+- name: set upstream to RackHD official repo
+  shell: git remote add upstream https://github.com/RackHD/{{item}}.git
+  args:
+   chdir: /home/vagrant/src/{{item}}
+  with_items:
+   - on-core
+   - on-tasks
+   - on-taskgraph
+   - on-http
+   - on-dhcp-proxy
+   - on-tftp
+   - on-syslog
+
+- name: sync up the latest change of upstream into origin
+  shell: git fetch upstream && git rebase upstream/master
+  args:
+   chdir: /home/vagrant/src/{{item}}
+  with_items:
+   - on-core
+   - on-tasks
+   - on-taskgraph
+   - on-http
+   - on-dhcp-proxy
+   - on-tftp
+   - on-syslog
+
+- name: solve the problem that on-http cannot start
+  shell: cd /home/vagrant/src/on-http/ && /bin/bash install-swagger-ui.sh
+
+
