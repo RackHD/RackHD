@@ -1,6 +1,0 @@
-- name: copy rackhd.yml to /home/vagrant
-  copy: src=rackhd.yml dest=/home/vagrant
-
-- name: start rackhd services
-  shell: pm2 start /home/vagrant/rackhd.yml
-  sudo: yes

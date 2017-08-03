@@ -11,4 +11,5 @@
     - cloneCode
     - dependency
     - static_files
+    - mongodb
     - pm2

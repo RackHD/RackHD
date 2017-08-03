@@ -1,3 +1,0 @@
----
-- name: install ipmitool 
-  apt: pkg=ipmitool state=installed

@@ -1,3 +1,0 @@
----
-- name: install snmp
-  apt: pkg=snmp state=installed

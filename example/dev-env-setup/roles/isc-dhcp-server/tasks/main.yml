@@ -1,5 +1,0 @@
----
-- name: install isc-dhcp-server
-  apt: pkg=isc-dhcp-server state=installed
-
-
