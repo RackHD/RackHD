@@ -16,7 +16,7 @@
   args:
    chdir: /home/vagrant/src/on-tftp/static/tftp
 
-- name: creare dir /home/vagrant/src/on-http/static/http/common
+- name: create dir /home/vagrant/src/on-http/static/http/common
   file: path=/home/vagrant/src/on-http/static/http/common state=directory
 
 - name: download binary support files to  /home/vagrant/src/on-http/static/http/common
