@@ -12,7 +12,7 @@ zuul:
       serviceId: virtualidentity
       stripPrefix: false
     SERVER-INVENTORY:
-      path: /api/1.0/server/inventory/**
+      path: /api/**
       serviceId: SERVER-INVENTORY
       stripPrefix: false
     CHASSIS-INVENTORY:
@@ -219,6 +219,9 @@ smi:
         -
           name: "software"
           url: "/api/1.0/server/inventory/software"
+        -
+          name: "manager"
+          url: "/api/2.0/server/inventory/manager"
         -
           name: "nics"
           url: "/api/1.0/server/inventory/nics"
