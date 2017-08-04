@@ -1,6 +1,4 @@
 amqp==1.4.8
-ansible==1.8.4
-anyjson==0.3.3
 docker-py==1.10.6
 flake8==3.3.0
 gevent==1.1.2
@@ -16,7 +14,6 @@ on-http_api2_0>=1.0.2
 on_http_redfish_1_0>=1.0.0
 pexpect==3.3
 pika==0.10.0
-proboscis==1.2.6.0
 pymongo==3.4.0
 requests==2.9.0
 # there are problems with the 34.0.x setuptools and nosedeps. Pin for now.
