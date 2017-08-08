@@ -81,12 +81,12 @@ class api20_bootstrap_esxi(fit_common.unittest.TestCase):
     def setUpClass(cls):
         # Get the list of nodes
         NODECATALOG = fit_common.node_select()
-        assert (len(NODECATALOG) != 0), "There are no nodes currently discovered"
+        assert (len(NODECATALOG) == 10), "There are no nodes currently discovered"
 
         # Select one node at random
         cls.__NODE = NODECATALOG[random.randint(0, len(NODECATALOG) - 1)]
 
-        # Print node Id, node BMC mac ,node type 
+        # Print node Id, node BMC mac ,node type
         nodeinfo = fit_common.rackhdapi('/api/2.0/nodes/' + cls.__NODE)['json']
         nodesku = fit_common.rackhdapi(nodeinfo.get('sku'))['json']['name']
         monurl = "/api/2.0/nodes/" + cls.__NODE + "/catalogs/bmc"
@@ -133,7 +133,7 @@ class api20_bootstrap_esxi(fit_common.unittest.TestCase):
                                       self.__class__.__NODE +
                                       '/workflows',
                                       action='post', payload=PAYLOAD)
-        # TODO : Print out the instance ID, payload and workflow id 
+        # TODO : Print out the instance ID, payload and workflow id
         if result['status'] == 201:
             # workflow running
             log.info_5(" InstanceID: " + result['json']['instanceId'])
