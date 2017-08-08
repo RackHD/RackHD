@@ -14,6 +14,7 @@ from on_http_redfish_1_0 import rest
 from json import loads, dumps
 from nosedep import depends
 from nose.plugins.attrib import attr
+import string as str
 
 logs = flogging.get_loggers()
 
@@ -177,7 +178,7 @@ class SystemsTests(unittest.TestCase):
             sel = self.__get_data()
             logs.debug(dumps(sel, indent=4))
             selId = sel.get('@odata.id')
-            self.assertEqual(dataId, selId)
+            self.assertEqual(str.lower(dataId), str.lower(selId))
 
     # @test(groups=['redfish.get_sel_log_service_entries'],\
     #        depends_on_groups=['redfish.list_system_log_services'])

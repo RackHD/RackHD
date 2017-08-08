@@ -192,7 +192,7 @@ class redfish10_api_systems(fit_common.unittest.TestCase):
     def test_redfish_v1_systems_id_logservices_sel(self):
         # iterate through node IDs
         for nodeid in NODECATALOG:
-            api_data = fit_common.rackhdapi("/redfish/v1/Systems/" + nodeid + "/LogServices/sel")
+            api_data = fit_common.rackhdapi("/redfish/v1/Systems/" + nodeid + "/LogServices/SEL")
             if fit_common.VERBOSITY >= 2:
                 print ("nodeid: {0}".format(nodeid))
             self.assertEqual(api_data['status'], 200, 'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
@@ -206,7 +206,7 @@ class redfish10_api_systems(fit_common.unittest.TestCase):
     def test_redfish_v1_systems_id_logservices_sel_entries(self):
         # iterate through node IDs
         for nodeid in NODECATALOG:
-            api_data = fit_common.rackhdapi("/redfish/v1/Systems/" + nodeid + "/LogServices/sel/Entries")
+            api_data = fit_common.rackhdapi("/redfish/v1/Systems/" + nodeid + "/LogServices/SEL/Entries")
             if fit_common.VERBOSITY >= 2:
                 print ("nodeid: {0}".format(nodeid))
             self.assertEqual(api_data['status'], 200, 'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
@@ -239,7 +239,7 @@ class redfish10_api_systems(fit_common.unittest.TestCase):
     def test_redfish_v1_systems_id_logservices_sel_entries_id(self):
         # iterate through node IDs
         for nodeid in NODECATALOG:
-            api_data = fit_common.rackhdapi("/redfish/v1/Systems/" + nodeid + "/LogServices/sel/Entries")
+            api_data = fit_common.rackhdapi("/redfish/v1/Systems/" + nodeid + "/LogServices/SEL/Entries")
             if fit_common.VERBOSITY >= 2:
                 print ("nodeid: {0}".format(nodeid))
             self.assertEqual(api_data['status'], 200, 'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
@@ -256,7 +256,7 @@ class redfish10_api_systems(fit_common.unittest.TestCase):
                     print ("SEL Entry: {0}".format(selid))
 
                 #retrieve the data for the specific SEL entry and iterate through individual fields
-                seldata = fit_common.rackhdapi("/redfish/v1/Systems/" + nodeid + "/LogServices/sel/Entries/" + selid)
+                seldata = fit_common.rackhdapi("/redfish/v1/Systems/" + nodeid + "/LogServices/SEL/Entries/" + selid)
                 self.assertEqual(seldata['status'], 200, 'Incorrect HTTP return code, expected 200, got:' + str(seldata['status']))
 
                 for item in [ 'Id', 'Created', 'EntryCode', 'EntryType', 'SensorType', 'Name', 'Message' ]:
