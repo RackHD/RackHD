@@ -81,7 +81,6 @@ class api20_bootstrap_esxi(fit_common.unittest.TestCase):
     def setUpClass(cls):
         # Get the list of nodes
         NODECATALOG = fit_common.node_select()
-        assert False, "We meant this to fail (WIP)"
         assert (len(NODECATALOG) != 0), "There are no nodes currently discovered"
 
         # Select one node at random
