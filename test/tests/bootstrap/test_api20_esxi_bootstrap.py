@@ -81,7 +81,8 @@ class api20_bootstrap_esxi(fit_common.unittest.TestCase):
     def setUpClass(cls):
         # Get the list of nodes
         NODECATALOG = fit_common.node_select()
-        assert (len(NODECATALOG) == 10), "There are no nodes currently discovered"
+        assert False, "We meant this to fail (WIP)"
+        assert (len(NODECATALOG) != 0), "There are no nodes currently discovered"
 
         # Select one node at random
         cls.__NODE = NODECATALOG[random.randint(0, len(NODECATALOG) - 1)]
@@ -94,11 +95,11 @@ class api20_bootstrap_esxi(fit_common.unittest.TestCase):
         catalog = mondata['json']
         bmcresult = mondata['status']
         if bmcresult != 200:
-            log.info_5(" Node ID: " + cls.__NODE)
-            log.info_5(" Error on catalog/bmc command")
+            log.info_1(" Node ID: " + cls.__NODE)
+            log.info_1(" Error on catalog/bmc command")
         else:
-            log.info_5(" Node ID: " + cls.__NODE)
-            log.info_5(" Node SKU: " + nodesku)
+            log.info_1(" Node ID: " + cls.__NODE)
+            log.info_1(" Node SKU: " + nodesku)
             log.info_1(" Node BMC Mac: %s", catalog.get('data')['MAC Address'])
             log.info_1(" Node BMC IP Addr: %s", catalog.get('data')['IP Address'])
             log.info_1(" Node BMC IP Addr Src: %s", catalog.get('data')['IP Address Source'])
@@ -111,10 +112,9 @@ class api20_bootstrap_esxi(fit_common.unittest.TestCase):
         # Log node data
         nodeinfo = fit_common.rackhdapi('/api/2.0/nodes/' + self.__class__.__NODE)['json']
         nodesku = fit_common.rackhdapi(nodeinfo.get('sku'))['json']['name']
-        log.info_5(" Node ID: " + self.__class__.__NODE)
-        log.info_5(" Node SKU: " + nodesku)
-        # TODO : make sure to print the correct workflow name
-        log.info_5(" Graph Name: " + PAYLOAD['name'])
+        log.info_1(" Node ID: " + self.__class__.__NODE)
+        log.info_1(" Node SKU: " + nodesku)
+        log.info_1(" Graph Name: Graph.PowerOn.Node")
 
         # Ensure the compute node is powered on and reachable
         result = fit_common.rackhdapi('/api/2.0/nodes/' +
@@ -133,15 +133,15 @@ class api20_bootstrap_esxi(fit_common.unittest.TestCase):
                                       self.__class__.__NODE +
                                       '/workflows',
                                       action='post', payload=PAYLOAD)
-        # TODO : Print out the instance ID, payload and workflow id
         if result['status'] == 201:
             # workflow running
-            log.info_5(" InstanceID: " + result['json']['instanceId'])
-            log.info_5(" Payload: " + fit_common.json.dumps(PAYLOAD))
+            log.info_1(" InstanceID: " + result['json']['instanceId'])
+            log.info_1(" Payload: " + fit_common.json.dumps(PAYLOAD))
             workflowid = result['json']['instanceId']
         else:
             # workflow failed with response code
             log.error(" InstanceID: " + result['text'])
+            # TODO: Pretty print the result
             log.error(" Payload: " + fit_common.json.dumps(PAYLOAD))
             self.fail("Workflow failed with response code: " + result['status'])
         self.assertTrue(wait_for_workflow_complete(workflowid, time.time()), "OS Install workflow failed, see logs.")
