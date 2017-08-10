@@ -979,11 +979,11 @@ def check_active_workflows(nodeid):
 
 def cancel_active_workflows(nodeid):
     # cancel all active workflows on node
-    exitstatus = True
+    exitstatus = False
     apistatus = rackhdapi('/api/2.0/nodes/' + nodeid + '/workflows/action',
                           action='put', payload={"command": "cancel"})['status']
-    if apistatus != 202:
-        exitstatus = False
+    if apistatus == 202 or apistatus == 404:
+        exitstatus = True
     return exitstatus
 
 
