@@ -11,8 +11,12 @@ zuul:
       path: /api/1.0/virtualIdentities/**
       serviceId: virtualidentity
       stripPrefix: false
+    SERVER-INVENTORY-v2:
+      path: /api/2.0/server/inventory/**
+      serviceId: SERVER-INVENTORY
+      stripPrefix: false
     SERVER-INVENTORY:
-      path: /api/**
+      path: /api/1.0/server/inventory/**
       serviceId: SERVER-INVENTORY
       stripPrefix: false
     CHASSIS-INVENTORY:
@@ -96,6 +100,18 @@ SERVER-INVENTORY:
     MaxAutoRetriesNextServer: 2
     OkToRetryOnAllOperations: true
     #listOfServers: 
+    ServerListRefreshInterval: 2000
+    ConnectTimeout: 60000
+    ReadTimeout: 480000
+    eureka:
+      enabled: false
+
+SERVER-INVENTORY-v2:
+  ribbon:
+    MaxAutoRetries: 2
+    MaxAutoRetriesNextServer: 2
+    OkToRetryOnAllOperations: true
+    #listOfServers:
     ServerListRefreshInterval: 2000
     ConnectTimeout: 60000
     ReadTimeout: 480000
