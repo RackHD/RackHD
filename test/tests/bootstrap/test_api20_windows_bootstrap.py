@@ -39,8 +39,10 @@ from nose.plugins.attrib import attr
 import fit_common
 import flogging
 import random
+import json
 import time
 from nosedep import depends
+from datetime import datetime
 log = flogging.get_loggers()
 
 # sample default base payload
@@ -59,25 +61,54 @@ if config:
     PAYLOAD = config
 
 
+# function to return the value of a field from the workflow response
+def findall(obj, key):
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if k == key:
+                log.error(" workflow error: %s", v)
+            findall(v, key)
+    elif isinstance(obj, list):
+        for item in obj:
+            findall(item, key)
+    else:
+        pass
+
+
 # this routine polls a workflow task ID for completion
 def wait_for_workflow_complete(instanceid, start_time, waittime=3200, cycle=30):
-    log.info_5(" Workflow started at time: %s ", str(start_time))
+    log.info_1(" Workflow started at time: " + str(datetime.fromtimestamp(start_time)))
     while time.time() - start_time < waittime:  # limit test to waittime seconds
         result = fit_common.rackhdapi("/api/2.0/workflows/" + instanceid)
         if result['status'] != 200:
-            log.error(" HTTP error: %s ", result['text'])
+            log.error(" HTTP error: " + result['text'])
             return False
         if result['json']['status'] in ['running', 'pending']:
             log.info_5("{} workflow status: {}".format(result['json']['injectableName'], result['json']['status']))
             fit_common.time.sleep(cycle)
         elif result['json']['status'] == 'succeeded':
-            log.info_5("{} workflow status: {}".format(result['json']['injectableName'], result['json']['status']))
-            log.info_5(" Workflow completed at time: %s ", str(time.time()))
+            log.info_1("{} workflow status: {}".format(result['json']['injectableName'], result['json']['status']))
+            end_time = time.time()
+            log.info_1(" Workflow completed at time: " + str(datetime.fromtimestamp(end_time)))
+            log.info_1(" Workflow duration: " + str(end_time - start_time))
             return True
         else:
-            log.error(" Workflow failed: status: %s text: %s", result['json']['status'], result['text'])
+            end_time = time.time()
+            log.info_1(" Workflow failed at time: " + str(datetime.fromtimestamp(end_time)))
+            log.info_1(" Workflow duration: " + str(end_time - start_time))
+            try:
+                res = json.loads(result['text'])
+                findall(res, "error")
+            except:
+                res = result['text']
+            log.error(" Workflow failed: status: %s", result['json']['status'])
+            log.error(" Data: %s", json.dumps(res, indent=4, separators=(',', ':')))
             return False
-    log.error(" Workflow Timeout: %s ", result['text'])
+    try:
+        res = json.loads(result['text'])
+    except:
+        res = result['text']
+    log.error(" Workflow Timeout: " + json.dumps(res, indent=4, separators=(',', ':')))
     return False
 
 
@@ -90,18 +121,39 @@ class api20_bootstrap_windows(fit_common.unittest.TestCase):
     def setUpClass(cls):
         # Get the list of nodes
         NODECATALOG = fit_common.node_select()
+        assert (len(NODECATALOG) != 0), "There are no nodes currently discovered"
+
         # Select one node at random
         cls.__NODE = NODECATALOG[random.randint(0, len(NODECATALOG) - 1)]
+
+        # Print node Id, node BMC mac ,node type
+        nodeinfo = fit_common.rackhdapi('/api/2.0/nodes/' + cls.__NODE)['json']
+        nodesku = fit_common.rackhdapi(nodeinfo.get('sku'))['json']['name']
+        monurl = "/api/2.0/nodes/" + cls.__NODE + "/catalogs/bmc"
+        mondata = fit_common.rackhdapi(monurl, action="get")
+        catalog = mondata['json']
+        bmcresult = mondata['status']
+        if bmcresult != 200:
+            log.info_1(" Node ID: " + cls.__NODE)
+            log.info_1(" Error on catalog/bmc command")
+        else:
+            log.info_1(" Node ID: " + cls.__NODE)
+            log.info_1(" Node SKU: " + nodesku)
+            log.info_1(" Node BMC Mac: %s", catalog.get('data')['MAC Address'])
+            log.info_1(" Node BMC IP Addr: %s", catalog.get('data')['IP Address'])
+            log.info_1(" Node BMC IP Addr Src: %s", catalog.get('data')['IP Address Source'])
+
         # delete active workflows for specified node
-        fit_common.cancel_active_workflows(cls.__NODE)
+        result = fit_common.cancel_active_workflows(cls.__NODE)
+        assert (result is True), "There are still some active workflows running against the node"
 
     def test01_node_check(self):
         # Log node data
         nodeinfo = fit_common.rackhdapi('/api/2.0/nodes/' + self.__class__.__NODE)['json']
         nodesku = fit_common.rackhdapi(nodeinfo.get('sku'))['json']['name']
-        log.info_5(" Node ID: %s ", self.__class__.__NODE)
-        log.info_5(" Node SKU: %s ", nodesku)
-        log.info_5(" Graph Name: %s ", PAYLOAD['name'])
+        log.info_1(" Node ID: %s ", self.__class__.__NODE)
+        log.info_1(" Node SKU: %s ", nodesku)
+        log.info_1(" Graph Name: Graph.PowerOn.Node")
 
         # Ensure the compute node is powered on and reachable
         result = fit_common.rackhdapi('/api/2.0/nodes/' +
@@ -114,6 +166,14 @@ class api20_bootstrap_windows(fit_common.unittest.TestCase):
 
     @depends(after=test01_node_check)
     def test02_os_install(self):
+        # Log node data
+        nodeinfo = fit_common.rackhdapi('/api/2.0/nodes/' + self.__class__.__NODE)['json']
+        nodesku = fit_common.rackhdapi(nodeinfo.get('sku'))['json']['name']
+        log.info_1(" Node ID: " + self.__class__.__NODE)
+        log.info_1(" Node SKU: " + nodesku)
+        log.info_1(" Graph Name: Graph.InstallWindowsServer")
+        log.info_1(" Payload: " + fit_common.json.dumps(PAYLOAD))
+
         # launch workflow
         workflowid = None
         result = fit_common.rackhdapi('/api/2.0/nodes/' +
@@ -122,15 +182,13 @@ class api20_bootstrap_windows(fit_common.unittest.TestCase):
                                       action='post', payload=PAYLOAD)
         if result['status'] == 201:
             # workflow running
-            log.info_5(" InstanceID: %s ", result['json']['instanceId'])
-            log.info_5(" Payload: %s ", fit_common.json.dumps(PAYLOAD))
+            log.info_1(" InstanceID: " + result['json']['instanceId'])
             workflowid = result['json']['instanceId']
         else:
             # workflow failed with response code
-            log.error(" InstanceID: %s ", result['text'])
-            log.error(" Payload: %s ", fit_common.json.dumps(PAYLOAD))
+            log.error(" InstanceID: " + result['text'])
             self.fail("Workflow failed with response code: " + result['status'])
-        self.assertTrue(wait_for_workflow_complete(workflowid, time.time()), "Windows OS Install workflow failed, see logs.")
+        self.assertTrue(wait_for_workflow_complete(workflowid, time.time()), "OS Install workflow failed, see logs.")
 
 
 if __name__ == '__main__':
