@@ -121,7 +121,3 @@
 
     - name: Copy database data-collection daemon to /tmp
       copy: src=files/db_disk.sh dest=/tmp/ mode=0755
-
-    - name: Disable firewall for host port
-      command: ufw allow {{ host_port }}
-      sudo: yes

@@ -269,77 +269,34 @@ For OS installer related tests, optional HTTP proxies for accessing remote OS im
     <enter BMC username and password>
 
 
+# Footprint Benchmark Overview
 
-## Running footprint benchmark test
-
-
-
-Footprint benchmark collects system data when running poller, node discovery and bootstrap.
-
+Footprint benchmark collects system data and draw diagrams to compare with previous runs.
 Details can be found in WIKI page:
-
 [proposal-footprint-benchmarks](https://github.com/RackHD/RackHD/wiki/proposal-footprint-benchmarks)
+The benchmark data collection process can start/stop independently and users can get the footprint info about any
+operation they carry out during this period of time.
 
-The benchmark data collection process can also start/stop independently without binding to any test case,
-thus users can get the footprint info about any operations they carry out during this period of time.
-
-###Precondition
-
-
+## Precondition
 
 The machine running RackHD can use apt-get to install packages, which means it must have accessible sources.list
 
-In RackHD, compute nodes have been discovered, and pollers are running
+## Setup
 
+NOTE: virtualenv version used 1.11.4 (Ubuntu). Using virtualenv is optional here but suggested.
 
+    virtualenv .venv
+    source .venv/bin/activate
+    sudo pip install -r requirements.txt
 
-No external AMQP queue with the name "graph.finished" is listening RackHD
+## Settings
 
+Following parameters are required at the first time user issuing the test, and stored in .ansible_config
 
+    localhost username and password: information of the machine running the data collection
+    rackhd ip, ssh port, username and password: information of the machine running rackhd
 
-Make sure the AMQP port in RackHD machine can be accessed by the test machine.
-
-If you are not using Vagrant, you can tunnel the port by the following command in RackHD
-
-
-
-    sudo socat -d -d TCP4-LISTEN:55672,reuseaddr,fork TCP4:localhost:5672
-
-
-
-###Settings
-
-
-
-Aside from Optional settings in the section above,
-
-following parameters are also required at the first time user issuing the test,
-
-and stored in .passwd
-
-
-
-    localhost username and password: username and password that can run "apt-get install"
-    in the machine running the test
-
-
-###Running the tests
-
-
-
-Run poller|discovery|bootstrap tests
-
-
-    python benchmark.py --group=poller|discovery|bootstrap
-
-
-Run all benchmark tests
-
-
-
-    python benchmark.py
-
-
+## Running the benchmark data collection
 
 Start|Stop benchmark data collection
 
@@ -349,28 +306,13 @@ Get the directory of the latest log data
 
     python benchmark.py --getdir
 
-###Getting result
+## Getting result
 
-
-
-Footprint report is in ~/benchmark/(timestamp)/(case)/report.
-
-
-
-Report in html format can display its full function by
-
-
+Footprint report is in ~/benchmark/(timestamp)/(case)/report of the test machine.
+Report in html format can display its full function by the following command to open the browser
+and drag the summary.html to it.
 
     chrome.exe --user-data-dir="C:/Chrome dev session" --allow-file-access-from-files
 
-
-
-to open the browser and drag the summary.html to it.
-
-
-
-Data summary and graph is shown by process and footprint matrix.
-
-
-
-Data in different time and cases can be selected to compare with the current one.
+Data summary and graph is shown by process and footprint matrix. Data collected in previous runs
+can be selected to compare with the current one.

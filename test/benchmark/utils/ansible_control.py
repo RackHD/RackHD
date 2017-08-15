@@ -27,7 +27,6 @@ class ansibleControl(object):
         self.__config_case_name = 'test_case_name'
         self.__config_interval = 'data_interval'
 
-        self.__set_host_port()
         self.__hosts = self.__get_hosts()
 
     def __set_data_path(self):
@@ -43,9 +42,6 @@ class ansibleControl(object):
 
         # Write back to json file
         return self.__render_varfile_variable({self.__config_data_path:path})
-
-    def __set_host_port(self):
-        return self.__render_varfile_variable({"host_port":HOST_PORT})
 
     def __get_hosts(self):
         # Overwrite remote temp file incase ansible doesn't have right to default path
@@ -76,16 +72,16 @@ class ansibleControl(object):
             rackhd
         """
 
-        local_usr, local_pw = get_ansible_auth()
+        local_usr, local_pw, rackhd_ip, ssh_port, ssh_user, ssh_pwd = get_ansible_auth()
 
         inventory_template = jinja2.Template(inventory)
         rendered_inventory = inventory_template.render({
             'local_pwd': local_pw,
-            'rackhd_ip_address': HOST_IP,
-            'rackhd_ssh_port': SSH_PORT,
-            'rackhd_ssh_user': SSH_USER,
-            'rackhd_ssh_pwd': SSH_PASSWORD,
-            'rackhd_sudo_pwd': SSH_PASSWORD
+            'rackhd_ip_address': rackhd_ip,
+            'rackhd_ssh_port': ssh_port,
+            'rackhd_ssh_user': ssh_user,
+            'rackhd_ssh_pwd': ssh_pwd,
+            'rackhd_sudo_pwd': ssh_pwd
         })
 
         # Create a temporary file and write the template string to it
