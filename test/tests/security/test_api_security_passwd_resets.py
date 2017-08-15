@@ -1,5 +1,5 @@
 '''
-Copyright 2015, DellEMC LLC
+Copyright 2017 Dell Inc. or its subsidiaries. All Rights Reserved."
 
    ScriptName: test_api_security_passwd_resets.py
        Author: Torrey Cuthbert
@@ -39,7 +39,7 @@ def createUsername():
     return exrex.getone('[a-zA-Z]{1}[a-zA-Z0-9._\-]{1,}')
 
 
-@attr(regression=False, smoke=True, security=True)
+@attr(regression=True, smoke=True, security=True)
 class TestCase01(fit_common.unittest.TestCase):
 
     def setUp(self):
