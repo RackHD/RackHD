@@ -163,3 +163,22 @@ class User:
         if r.status_code != 204:
             logs.info("error status code {0}, unable to delete Redfish user '{1}'", r.status_code, self.username)
             return None
+
+    def changeRackHDPasswd(self, passwd, token):
+        headers = {
+            'content-type': 'application/json',
+            'accept': 'application/json',
+            'authorization': token
+        }
+        payload = {'role': self.role, 'password': passwd}
+        url = "https://{0}:{1}/api/2.0/users/{2}".format(fit_common.fitargs()['rackhd_host'],
+                                                         str(fit_common.fitports()['https']),
+                                                         self.username)
+        try:
+            r = requests.patch(url, headers=headers, data=json.dumps(payload), timeout=User.timeout, verify=False)
+        except requests.exceptions.RequestException as e:
+            logs.info("error, {0}".format(e))
+            return None
+        if r.status_code != 200:
+            logs.info("error status code {0}, unable to change user password".format(r.status_code))
+        return r.status_code

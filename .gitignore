@@ -35,3 +35,4 @@ pip-delete-this-directory.txt
 .passwdc
 
 .DS_Store
+test/dellemc-test
