@@ -77,6 +77,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
         target.vm.provision "shell", inline: <<-SHELL
           sudo service isc-dhcp-server start
+          sudo apt-get install -y jq
         #   service rsyslog stop
         #   echo manual | sudo tee /etc/init/rsyslog.override
         SHELL
