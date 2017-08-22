@@ -84,6 +84,7 @@ services:
     volumes:
       - "./files/mount/common:/RackHD/on-http/static/http/common"
       - "./monorail:/opt/monorail"
+      - "./data:/RackHD/on-http/data"
 
   statsd: # 8125/udp
     build: "../on-statsd"
@@ -121,11 +122,13 @@ services:
       - syslog
       - statsd
       - tasks
+      - http
     image: rackhd/on-taskgraph:${TAG}
     network_mode: "host"
     privileged: true
     volumes:
       - "./monorail:/opt/monorail"
+      - "./data:/RackHD/on-http/data"
 
   tftp: # 69/udp
     build: "../on-tftp"

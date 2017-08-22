@@ -44,6 +44,8 @@ services:
     volumes:
       - "./files/mount/common:/RackHD/on-http/static/http/common"
       - "./monorail:/opt/monorail"
+      - "./data:/RackHD/on-http/data"
+
 
   syslog: # 514/udp
     build: "../on-syslog"
@@ -60,11 +62,13 @@ services:
     depends_on:
       - mongo
       - syslog
+      - http
     image: rackhd/on-taskgraph:${TAG}
     network_mode: "host"
     privileged: true
     volumes:
       - "./monorail:/opt/monorail"
+      - "./data:/RackHD/on-http/data"
 
   tftp: # 69/udp
     build: "../on-tftp"
