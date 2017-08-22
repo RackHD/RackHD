@@ -817,6 +817,7 @@ def power_control_all_nodes(state):
 
     # Send power on/off to all of them
     for bmc in BMC_LIST:
+        print "Power " + state + " node: " + bmc['ip']
         return_code = remote_shell('ipmitool -I lanplus -H ' + bmc['ip'] +
                                    ' -U ' + bmc['user'] + ' -P ' +
                                    bmc['pw'] + ' -R 4 -N 3 chassis power ' + state)
