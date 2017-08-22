@@ -60,7 +60,7 @@ NODE_STATUS = {}
 
 # download RackHD config from host
 rackhdconfig = fit_common.rackhdapi('/api/2.0/config')['json']
-rackhdhost = "http://" + str(rackhdconfig['apiServerAddress']) + ":" + str(rackhdconfig['apiServerPort'])
+statichost = "http://" + str(rackhdconfig['fileServerAddress']) + ":" + str(rackhdconfig['fileServerPort'])
 
 
 # this routine polls a task ID for completion
@@ -135,7 +135,7 @@ class redfish_bootstrap_base(fit_common.unittest.TestCase):
                 payload_data = {"osName": item['os'],
                                 "version": item['version'],
                                 "kvm": item['kvm'],
-                                "repo": rackhdhost + proxy_select(item['path']),
+                                "repo": statichost + proxy_select(item['path']),
                                 "rootPassword": "1234567",
                                 "hostname": "rackhdnode",
                                 "dnsServers": [rackhdconfig['apiServerAddress']],

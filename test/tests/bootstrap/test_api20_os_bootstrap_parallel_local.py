@@ -126,7 +126,8 @@ if rackhdresult['status'] != 200:
     log.error(" Unable to contact host, exiting. ")
     sys.exit(255)
 rackhdconfig = rackhdresult['json']
-rackhdhost = "http://" + str(rackhdconfig['apiServerAddress']) + ":" + str(rackhdconfig['apiServerPort'])
+statichost = "http://" + str(rackhdconfig['fileServerAddress']) + ":" + str(rackhdconfig['fileServerPort'])
+
 
 
 # this routine polls a workflow task ID for completion
@@ -186,7 +187,7 @@ class api20_bootstrap_base(fit_common.unittest.TestCase):
                 payload_data = {"options": {"defaults": {
                                 "version": item['version'],
                                 "kvm": item['kvm'],
-                                "repo": rackhdhost + item['path'],
+                                "repo": statichost + item['path'],
                                 "rootPassword": "1234567",
                                 "hostname": "rackhdnode",
                                 "users": [{"name": "rackhduser",
@@ -195,7 +196,7 @@ class api20_bootstrap_base(fit_common.unittest.TestCase):
                 # OS specific payload requirements
                 if item['workflow'] == "Graph.InstallUbuntu":
                     payload_data["options"]["defaults"]["baseUrl"] = "install/netboot/ubuntu-installer/amd64"
-                    payload_data["options"]["defaults"]["kargs"] = {"live-installer/net-image": rackhdhost +
+                    payload_data["options"]["defaults"]["kargs"] = {"live-installer/net-image": statichost +
                                                                     item['path'] + "/ubuntu/install/filesystem.squashfs"}
                 if item['workflow'] == "Graph.InstallWindowsServer":
                     payload_data["options"]["defaults"]["productkey"] = item['productkey']

@@ -77,7 +77,7 @@ def wait_for_task_complete(taskid, retries=60):
 # download RackHD config from host
 rackhdconfig = fit_common.rackhdapi('/api/2.0/config')['json']
 httpProxies = rackhdconfig['httpProxies']
-rackhdhost = "http://" + str(rackhdconfig['apiServerAddress']) + ":" + str(rackhdconfig['apiServerPort'])
+statichost = "http://" + str(rackhdconfig['fileServerAddress']) + ":" + str(rackhdconfig['fileServerPort'])
 
 # helper routine for selecting OS image path by matching proxy path
 def proxySelect(tag):
@@ -102,7 +102,7 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
         payload_data = {
                         "osName": "ESXi",
                         "version": "5.5",
-                        "repo": rackhdhost + proxySelect('ESXi/5.5'),
+                        "repo": statichost + proxySelect('ESXi/5.5'),
                         "rootPassword": "1234567",
                         "hostname": nodehostname,
                         "domain": "rackhd.local",
@@ -130,7 +130,7 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
         nodehostname = 'esxi60'
         payload_data = {"osName": "ESXi",
                         "version": "6.0",
-                        "repo": rackhdhost + proxySelect('ESXi/6.0'),
+                        "repo": statichost + proxySelect('ESXi/6.0'),
                         "rootPassword": "1234567",
                         "hostname": nodehostname,
                         "domain": "rackhd.local",
@@ -158,7 +158,7 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
         nodehostname = 'centos65'
         payload_data = {"osName": "CentOS",
                         "version": "6.5",
-                        "repo": rackhdhost + proxySelect('CentOS/6.5'),
+                        "repo": statichost + proxySelect('CentOS/6.5'),
                         "rootPassword": "1234567",
                         "hostname": nodehostname,
                         "domain": "rackhd.local",
@@ -186,7 +186,7 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
         nodehostname = 'centos70'
         payload_data = {"osName": "CentOS",
                         "version": "7",
-                        "repo": rackhdhost + proxySelect('CentOS/7.0'),
+                        "repo": statichost + proxySelect('CentOS/7.0'),
                         "rootPassword": "1234567",
                         "hostname": nodehostname,
                         "domain": "rackhd.local",
@@ -215,7 +215,7 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
         nodehostname = 'centos65'
         payload_data = {"osName": "CentOS+KVM",
                         "version": "6.5",
-                        "repo": rackhdhost + proxySelect('CentOS/6.5'),
+                        "repo": statichost + proxySelect('CentOS/6.5'),
                         "rootPassword": "1234567",
                         "hostname": nodehostname,
                         "domain": "rackhd.local",
@@ -243,7 +243,7 @@ class os_bootstrap_base(fit_common.unittest.TestCase):
         nodehostname = 'rhel70'
         payload_data = {"osName": "RHEL+KVM",
                         "version": "7",
-                        "repo": rackhdhost + proxySelect('RHEL/7.0'),
+                        "repo": statichost + proxySelect('RHEL/7.0'),
                         "rootPassword": "1234567",
                         "hostname": nodehostname,
                         "domain": "rackhd.local",
