@@ -226,6 +226,9 @@ class redfish10_api_systems(fit_common.unittest.TestCase):
                     if len(nodeid[item]) == 0 and item == 'Message':
                         log.info_5("Message field empty for SEL SensorType:" + nodeid['SensorType'] +
                                    " SensorNumber:" + str(nodeid['SensorNumber']))
+                    elif len(nodeid[item]) == 0 and item == 'Created':
+                        log.info_5("Created field empty for SEL SensorType:" + nodeid['SensorType'] +
+                                   " SensorNumber:" + str(nodeid['SensorNumber']))
                     else:
                         self.assertGreater(len(nodeid[item]), 0, item + ' field empty')
                 for link in [ 'OriginOfCondition' ]:
@@ -262,14 +265,21 @@ class redfish10_api_systems(fit_common.unittest.TestCase):
                 for item in [ 'Id', 'Created', 'EntryCode', 'EntryType', 'SensorType', 'Name', 'Message' ]:
                     if fit_common.VERBOSITY >= 2:
                         print ("Checking: {0}".format(item))
-                    self.assertIn(item, seldata['json'], item + ' field not present')
-                    if fit_common.VERBOSITY >= 3:
-                        print ("\t {0}".format(seldata['json'][item]))
-                    if len(seldata['json'][item]) == 0 and item == 'Message':
-                        log.info_5("Message field empty for SEL SensorType:" + seldata['json']['SensorType'] +
+                    if item == 'Created' and item not in seldata['json']:
+                        log.info_5("Created field does not exist for SEL Sensor Type:" + seldata['json']['SensorType'] +
                                    " SensorNumber:" + str(seldata['json']['SensorNumber']))
                     else:
-                        self.assertGreater(len(seldata['json'][item]), 0, item + ' field empty')
+                        self.assertIn(item, seldata['json'], item + ' field not present')
+                        if fit_common.VERBOSITY >= 3:
+                            print("\t {0}".format(seldata['json'][item]))
+                        if len(seldata['json'][item]) == 0 and item == 'Message':
+                            log.info_5("Message field empty for SEL SensorType:" + seldata['json']['SensorType'] +
+                                       " SensorNumber:" + str(seldata['json']['SensorNumber']))
+                        elif len(seldata['json'][item]) == 0 and item == 'Created':
+                            log.info_5("Created field empty for SEL SensorType:" + seldata['json']['SensorType'] +
+                                       " SensorNumber:" + str(seldata['json']['SensorNumber']))
+                        else:
+                            self.assertGreater(len(seldata['json'][item]), 0, item + ' field empty')
 
                 for link in [ 'OriginOfCondition' ]:
                     if fit_common.VERBOSITY >= 2:
