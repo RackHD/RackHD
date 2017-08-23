@@ -51,17 +51,9 @@ deactivateVirtualEnv(){
 ##################################
 setupTestsConfig(){
     echo "SetupTestsConfig ...replace the 172.31.128.1 IP in test configs with actual DHCP port IP"
-    RACKHD_DHCP_HOST_IP=$(ifconfig | awk '/inet addr/{print substr($2,6)}' |grep 172.31.128)
-    if [ "$RACKHD_DHCP_HOST_IP" == "" ]; then
-         echo "[Error] There should be a NIC with 172.31.128.xxx IP in your OS."
-         exit -2
-    fi
     pushd ${RACKHD_TEST_DIR}/config
     sed -i "s/\"username\": \"vagrant\"/\"username\": \"${USER}\"/g" credentials_default.json
     sed -i "s/\"password\": \"vagrant\"/\"password\": \"${PASSWORD}\"/g" credentials_default.json
-    popd
-    pushd ${RACKHD_TEST_DIR}
-    find ./ -type f -exec sed -i -e "s/172.31.128.1/${RACKHD_DHCP_HOST_IP}/g" {} \;
     popd
 }
 
