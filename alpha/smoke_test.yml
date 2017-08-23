@@ -1,0 +1,16 @@
+---
+platform: linux
+
+inputs:
+- name: RackHD-VMS
+- name: RackHD
+run:
+  path: bash
+  args:
+  - -exc
+  - |
+    curl -X POST -H  "Content-Type: application/json" -d @RackHD-VMS/metadata -o RackHD/test/config/stack_config.json $TEMPLATES_SERVER/templates/stack_config.json
+    cd RackHD/test
+    pip install -U pip
+    pip install -r requirements.txt
+    python run_tests.py -test tests -group smoke -stack docker_local_run -xunit --sm-amqp-use-user guest

@@ -1,0 +1,23 @@
+---
+platform: linux
+
+inputs:
+- name: RackHD-VMS
+- name: RackHD
+- name: on-taskgraph-docker
+- name: on-dhcp-proxy-docker
+- name: on-tftp-docker
+- name: on-syslog-docker
+- name: on-http-docker
+run:
+  path: bash
+  args:
+  - -exc
+  - |
+    export TASKGRAPH_TAG=$(<on-taskgraph-docker/digest)
+    export DHCP_TAG=$(<on-dhcp-proxy-docker/digest)
+    export SYSLOG_TAG=$(<on-syslog-docker/digest)
+    export TFTP_TAG=$(<on-tftp-docker/digest)
+    export HTTP_TAG=$(<on-http-docker/digest)
+    bash <(curl -X POST -H  "Content-Type: application/json" $TEMPLATES_SERVER/templates/deploy_dock_rackhd.sh -d @RackHD-VMS/metadata)
+

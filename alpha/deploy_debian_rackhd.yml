@@ -1,0 +1,23 @@
+---
+platform: linux
+
+inputs:
+- name: on-taskgraph-artifactory
+  path: on-taskgraph
+- name: on-dhcp-proxy-artifactory
+  path: on-dhcp
+- name: on-http-artifactory
+  path: on-http
+- name: on-tftp-artifactory
+  path: on-tftp
+- name: on-syslog-artifactory
+  path: on-syslog
+- name: RackHD-VMS
+- name: RackHD
+run:
+  path: bash
+  args:
+  - -exc
+  - |
+    bash <(curl -X POST -H  "Content-Type: application/json" $TEMPLATES_SERVER/templates/deploy_deb_rackhd.sh -d @RackHD-VMS/metadata)
+

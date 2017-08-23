@@ -1,0 +1,18 @@
+---
+platform: linux
+
+inputs:
+- name: RackHD
+- name: RackHD-VMS
+run:
+  path: bash
+  args:
+  - -exc
+  - |
+    mkdir RackHD/geoff
+    curl -X POST -H  "Content-Type: application/json" -d @RackHD-VMS/metadata -o RackHD/geoff/dell_r630.yml $TEMPLATES_SERVER/templates/dell_r630.yml
+    curl -X POST -H  "Content-Type: application/json" -d @RackHD-VMS/metadata -o RackHD/geoff/quanta_d51.yml $TEMPLATES_SERVER/templates/quanta_d51.yml
+    curl -X POST -H  "Content-Type: application/json" -d @RackHD-VMS/metadata -o RackHD/geoff/quanta_t41.yml $TEMPLATES_SERVER/templates/quanta_t41.yml
+    curl -X POST -H  "Content-Type: application/json" -d @RackHD-VMS/metadata -o RackHD/geoff/vnode.sh $TEMPLATES_SERVER/templates/vnodes.sh
+    bash <(curl -X POST -H  "Content-Type: application/json" $TEMPLATES_SERVER/templates/deploy_infrasim.sh -d @RackHD-VMS/metadata)
+
