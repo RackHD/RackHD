@@ -127,12 +127,6 @@ class redfish10_api_task_suite(fit_common.unittest.TestCase):
             print "Checking CompletedTasksOverWritePolicy field"
         self.assertIn(writepolicy, ["Manual", "Oldest"], "Unexpected policy per specification {0}".format(writepolicy))
 
-        tasklist = []
-        members = on_data['json']['Tasks']['Members']
-        for member in members:
-            tasklist.append(member['Id'])
-        if fit_common.VERBOSITY >= 2:
-            print("Task Service contains {0} tasks.".format(len(tasklist)))
 
     def test_redfish_v1_taskservice_check_all_tasks(self):
         # The API TaskService/Tasks will display a list of all the tasks
