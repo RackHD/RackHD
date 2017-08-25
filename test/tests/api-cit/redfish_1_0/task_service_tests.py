@@ -43,9 +43,6 @@ class TaskServiceTests(unittest.TestCase):
         self.__class__.__taskServiceList = taskService.get('Tasks')
         self.__taskServiceList = self.__class__.__taskServiceList
         self.assertIsNotNone(self.__taskServiceList)
-        taskMembers = self.__taskServiceList.get('Members')
-        self.assertIsNotNone(taskMembers)
-        self.assertNotEqual(0, len(taskMembers), msg='Task service members list was empty!')
 
     # @test(groups=['redfish.get_list_tasks'], \
     #      depends_on_groups=['redfish.get_task_service_root'])
