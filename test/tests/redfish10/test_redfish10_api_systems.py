@@ -231,13 +231,6 @@ class redfish10_api_systems(fit_common.unittest.TestCase):
                                    " SensorNumber:" + str(nodeid['SensorNumber']))
                     else:
                         self.assertGreater(len(nodeid[item]), 0, item + ' field empty')
-                for link in [ 'OriginOfCondition' ]:
-
-                    if fit_common.VERBOSITY >= 2:
-                        print ("Checking: {0}".format(link))
-                    self.assertIn('OriginOfCondition', nodeid['Links'], 'OriginOfCondition' + ' field not present')
-                    if fit_common.VERBOSITY >= 3:
-                        print ("\t {0} ".format(nodeid['Links']['OriginOfCondition']))
 
     def test_redfish_v1_systems_id_logservices_sel_entries_id(self):
         # iterate through node IDs
@@ -280,13 +273,6 @@ class redfish10_api_systems(fit_common.unittest.TestCase):
                                        " SensorNumber:" + str(seldata['json']['SensorNumber']))
                         else:
                             self.assertGreater(len(seldata['json'][item]), 0, item + ' field empty')
-
-                for link in [ 'OriginOfCondition' ]:
-                    if fit_common.VERBOSITY >= 2:
-                        print ("Checking: {0}".format(link))
-                    self.assertIn('OriginOfCondition', seldata['json']['Links'], 'OriginOfCondition' + ' field not present')
-                    if fit_common.VERBOSITY >= 3:
-                        print ("\t {0}".format(seldata['json']['Links']['OriginOfCondition']))
 
     def test_redfish_v1_systems_id_secureboot(self):
         # Currently relies on Dell/Racadm, so just test for exceptions
