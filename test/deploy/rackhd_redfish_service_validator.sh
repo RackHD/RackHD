@@ -1,11 +1,27 @@
 #!/bin/bash
 
 # This is a helper script to run the Redfish Service Validator on RackHD
+# Only runs on Ubuntu 16, not compatible with 14
+# Requires python3 and pip3 installed
 # Usage:
 # ./rackhd_redfish_service_validator.sh host:port
 
 if [ -z $1 -o "$1" == "-h" ]; then
   echo "Usage: ./rackhd_redfish_service_validator.sh host:port"
+  exit 1
+fi
+
+echo "**** Checking python3..."
+python3 -V
+if [ $? -gt 0 ]; then
+  echo "python3 not installed"
+  exit 1
+fi
+
+echo "**** Checking pip3..."
+pip3 -V
+if [ $? -gt 0 ]; then
+  echo "pip3 not installed"
   exit 1
 fi
 
@@ -18,23 +34,20 @@ fi
 
 echo "**** Setting up virtual environment..."
 rm -rf rsv1
-echo \
-"beautifulsoup4==4.5.3
-requests" > rsv_requirements.txt
 virtualenv -p python3 rsv1
-source rsv1/bin/activate
-pip3 install -r rsv_requirements.txt
 
 echo "**** Downloading RSV tool from GitHub..."
-rm -rf RSV
-git clone https://github.com/DMTF/Redfish-Service-Validator.git RSV
+commitid=$(git ls-remote   https://github.com/DMTF/Redfish-Service-Validator.git HEAD |cut -f 1)
+echo "Commit ID: $commitid"
+rm -rf RSV-$commitid
+git clone https://github.com/DMTF/Redfish-Service-Validator.git RSV-$commitid
 
 echo "**** Downloading on-http from RackHD GitHub..."
 rm -rf temp_rsv
 git clone https://www.github.com/rackhd/on-http temp_rsv
-mkdir RSV/config
-mkdir RSV/SchemaFiles
-mkdir RSV/logs
+mkdir RSV-$commitid/config
+mkdir RSV-$commitid/SchemaFiles
+mkdir RSV-$commitid/logs
 cp -rp temp_rsv/static/DSP8010_2016.3/metadata RSV/SchemaFiles
 
 echo "**** Creating config file..."
@@ -57,15 +70,16 @@ CertificateCheck = Off
 LocalOnlyMode = False
 ServiceMode = Off
 Session_UserName = admin
-Session_Password = admin123" > RSV/config/config.ini
+Session_Password = admin123" > RSV-$commitid/config/config.ini
 
 echo "**** Executing Redfish validator..."
-cd RSV
+cd RSV-$commitid
+pip3 install -r requirements.txt
 python3 RedfishServiceValidator.py -c config/config.ini
 exitcode=$?
 
 echo ""
 echo "**** Validator exited with status $exitcode"
-echo "**** Validator Test Results located in RSV/logs"
+echo "**** Validator Test Results located in RSV-$commitid/logs"
 exit $exitcode
 
