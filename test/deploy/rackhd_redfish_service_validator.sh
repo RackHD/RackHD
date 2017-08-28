@@ -48,7 +48,7 @@ git clone https://www.github.com/rackhd/on-http temp_rsv
 mkdir RSV-$commitid/config
 mkdir RSV-$commitid/SchemaFiles
 mkdir RSV-$commitid/logs
-cp -rp temp_rsv/static/DSP8010_2016.3/metadata RSV/SchemaFiles
+cp -rp temp_rsv/static/DSP8010_2016.3/metadata RSV-$commitid/SchemaFiles
 
 echo "**** Creating config file..."
 echo \
