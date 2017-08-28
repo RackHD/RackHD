@@ -7,15 +7,11 @@
 - apt: pkg=python-pycurl state=present
   sudo: yes
 
-- apt_repository: repo="deb https://dl.bintray.com/rackhd/debian trusty main"
+# example: deb https://dl.bintray.com/rackhd/debian trusty release
+- apt_repository: repo={{ deb_repository  }}
                   state=present
   sudo: yes
-  when: (is_release is undefined) or (not is_release)
 
-- apt_repository: repo="deb https://dl.bintray.com/rackhd/debian trusty release"
-                  state=present
-  sudo: yes
-  when: (is_release is not undefined) and is_release
 
 - name: Install RackHD Packages latest
   include: aptitude_install_rackhd.yml

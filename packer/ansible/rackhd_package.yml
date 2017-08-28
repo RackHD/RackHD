@@ -1,6 +1,9 @@
 ---
 - name: RackHD Demonstration Server
   hosts: local
+  vars:
+    rackhd_version: ""
+    deb_repository: "deb https://dl.bintray.com/rackhd/debian trusty release"
   sudo: no
   roles:
     - apt
@@ -14,7 +17,7 @@
     - config_admin_ip
     - snmptool
     - ipmitool
-    - rackhd-packages
-    - images
     - integrationtest
     - postgresql
+    - setuptools
+    - rackhd-builds

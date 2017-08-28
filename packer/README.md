@@ -44,7 +44,7 @@ jq 'del(.["post-processors", "push"])' /tmp/template-${OS_VER}.json > template-$
 
 ### To build using pre-built debian packages
 
-    export ANSIBLE_PLAYBOOK=rackhd_ci_builds
+    export ANSIBLE_PLAYBOOK=rackhd_package
     export BUILD_TYPE=virtualbox
     ./HWIMO-BUILD
 
