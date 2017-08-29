@@ -4,3 +4,6 @@
 
 - pip: name=setuptools extra_args='--upgrade'
   sudo: yes
+
+- pip: name=virtualenv extra_args='--upgrade'
+  sudo: yes
