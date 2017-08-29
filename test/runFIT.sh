@@ -15,7 +15,6 @@ Usage(){
     echo "Usage: $0 [OPTIONS]"
     echo "  OPTIONS:"
     echo "    Mandatory options:"
-    echo "      -p, --PASSWORD: password of current user which is used for FIT to log into host by, it's required."
     echo "    Optional options:"
     echo "      -g, --TEST_GROUP: test group of FIT, such as imageservice, smoke"
     echo "      -s, --TEST_STACK: target test stack of FIT, such as docker, vagrant..."
@@ -42,19 +41,6 @@ setupVirtualEnv(){
 
 deactivateVirtualEnv(){
     deactivate
-}
-
-####################################
-#
-# 1. Modify FIT config files , to  using actual DHCP Host IP instead of 172.31.128.1
-#
-##################################
-setupTestsConfig(){
-    echo "SetupTestsConfig ...replace the 172.31.128.1 IP in test configs with actual DHCP port IP"
-    pushd ${RACKHD_TEST_DIR}/config
-    sed -i "s/\"username\": \"vagrant\"/\"username\": \"${USER}\"/g" credentials_default.json
-    sed -i "s/\"password\": \"vagrant\"/\"password\": \"${PASSWORD}\"/g" credentials_default.json
-    popd
 }
 
 ####################################
@@ -103,7 +89,6 @@ runFIT() {
 #
 #############################################
 runTests(){
-    setupTestsConfig
     setupVirtualEnv
     runFIT
 }
@@ -133,9 +118,6 @@ main(){
             -w | --WORKSPACE )              shift
                                             WORKSPACE=$1
                                             ;;
-            -p | --PASSWORD )               shift
-                                            PASSWORD=$1
-                                            ;;
             -g | --TEST_GROUPS )            shift
                                             TEST_GROUP="$1"
                                             ;;
@@ -154,11 +136,6 @@ main(){
         esac
         shift
     done
-    if [ ! -n "$PASSWORD" ]; then
-        echo "The argument -p|--PASSWORD is required"
-        Usage
-        exit 1
-    fi
 
     if [ ! -n "$TEST_GROUP" ]; then
         TEST_GROUP="-test tests -group smoke"
