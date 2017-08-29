@@ -298,6 +298,12 @@ smi:
         -
           name: "updateComponents"
           url: "/api/1.0/server/configuration/updateComponents"
+        -
+          name: "getBiosConfiguration"
+          url: "/api/1.0/server/configuration/getBiosConfiguration"
+        -
+          name: "configureBios"
+          url: "/api/1.0/server/configuration/configureBios"
       name: "configuration"
     -
       endpoint:
