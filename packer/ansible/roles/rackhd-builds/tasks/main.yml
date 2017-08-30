@@ -8,7 +8,7 @@
   sudo: yes
 
 # example: deb https://dl.bintray.com/rackhd/debian trusty release
-- apt_repository: repo={{ deb_repository  }}
+- apt_repository: repo={{ deb_repository }}
                   state=present
   sudo: yes
 

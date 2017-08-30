@@ -10,7 +10,8 @@
         "atlas_token": "{{env `ATLAS_TOKEN`}}",
         "vm_name" : "rackhd-vm",
         "playbook": "rackhd_mini_release",
-        "rackhd_version": ""
+        "rackhd_version": "",
+        "deb_repository": "deb https://dl.bintray.com/rackhd/debian trusty release"
     },
     "provisioners": [
         {
@@ -66,7 +67,7 @@
             "inventory_groups": "local",
             "playbook_file": "ansible/{{user `playbook`}}.yml",
             "playbook_dir": "ansible",
-            "extra_arguments": [ "--extra-vars \"rackhd_version={{user `rackhd_version`}}\"" ],
+            "extra_arguments": [ "--extra-vars \"rackhd_version={{user `rackhd_version`}} deb_repository='{{user `deb_repository`}}'\"" ],
             "only": ["virtualbox-ovf","vmware-vmx"]
         },
         {
