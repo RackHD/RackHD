@@ -3,7 +3,7 @@
   hosts: local
   vars:
     rackhd_version: ""
-    is_release: false
+    deb_repository: "deb https://dl.bintray.com/rackhd/debian trusty release"
   sudo: no
   roles:
     - rackhd-builds

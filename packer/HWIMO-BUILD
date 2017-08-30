@@ -4,8 +4,9 @@
 # input (enviromental variable):
 # * OS_VER        -   ubuntu-14.04 or ubuntu-16.04, by default is ubuntu-14.04
 # * BUILD_TYPE    -   vmware or virtualbox, by default is virtualbox
-# * ANSIBLE_PLAYBOOK - which is the ansible yml playbook used. options are rackhd_package, rackhd_ci_builds, rackhd_release or rackhd_local, default is rackhd_local.
-# * RACKHD_VERSION        - optional , by default is blank(will apt-get install latest rackhwill apt-get install latest rackhd). used for rackhd_ci_builds.yml to install specific version of rackhd.deb(refer to https://bintray.com/rackhd to find correct version you need)
+# * ANSIBLE_PLAYBOOK - which is the ansible yml playbook used. options are rackhd_package or rackhd_local, default is rackhd_local.
+# * RACKHD_VERSION        - optional , by default is blank(will apt-get install latest rackhwill apt-get install latest rackhd). used for rackhd_package.yml to install specific version of rackhd.deb(refer to https://bintray.com/rackhd to find correct version you need)
+# * DEBIAN_REPOSITORY - optional, by defaul is to using RackHD Bintray repo: "deb https://dl.bintray.com/rackhd/debian trusty release", if using latest nightly build, can choose "deb https://dl.bintray.com/rackhd/debian trusty main". and other repo like private artifactory is also ok. just let the /etc/apt/source.list recognize it.
 # * UPLOAD_BOX_TO_ATLAS   - optional, by default is false. tell packer if upload the vagrant box generated to ATLAS. NOTE: ATLAS user/token and target ATLAS repo name should be specificed.
 # * ATLAS_USERNAME - optional, required only when UPLOAD_BOX_TO_ATLAS is true.
 # * ATLAS_NAME     - optional, required only when UPLOAD_BOX_TO_ATLAS is true.
@@ -119,6 +120,20 @@ else
    fi
 fi
 
+### Choose a deb repository/component , according to IS_OFFICIAL_RELEASE parameter
+if [ $ANSIBLE_PLAYBOOK != "rackhd_local" ]; then
+      if [  -n "${DEBIAN_REPOSITORY}" ];  then
+           echo "${INFO_HEADER} Build VM based on RackHD Debian Source Repository : using default one in ansible playbook"
+      else
+           echo "${INFO_HEADER} Build VM based on RackHD Debian Source Repository : $DEBIAN_REPOSITORY "
+      fi
+else
+       if [  -n "${DEBIAN_REPOSITORY}" ];  then
+           echo "${WARNING_HEADER} Skip the ENV VAR: DEBIAN_REPOSITORY=$DEBIAN_REPOSITORY, this variable is useless for rackhd_local.yml (build from src code)".
+       fi
+fi
+
+
 
 # By default. disable CUSTOMIZED_PROPERTY_OVA, because only supported by vCenter. not by vSphere
 if  [ ! -n "${CUSTOMIZED_PROPERTY_OVA}" ];  then
@@ -166,6 +181,9 @@ CFG_FILE=template.cfg
 echo {                                                > $CFG_FILE
 echo  \"playbook\": \"${ANSIBLE_PLAYBOOK}\",         >> $CFG_FILE
 echo  \"vm_name\": \"${VM_NAME}\",                   >> $CFG_FILE
+if [  -n "${DEBIAN_REPOSITORY}" ];  then
+     echo  \"deb_repository\": \"${DEBIAN_REPOSITORY}\",  >> $CFG_FILE
+fi
 echo  \"rackhd_version\": \"${RACKHD_VERSION}\"      >> $CFG_FILE
 
 if [[ $IS_UPLOAD_ATLAS == true ]]
