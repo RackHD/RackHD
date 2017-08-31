@@ -38,11 +38,7 @@ class redfish10_api_managers(fit_common.unittest.TestCase):
 
     def test_redfish_v1_managers_rackhd_serialinterfaces(self):
         api_data = fit_common.rackhdapi('/redfish/v1/Managers/RackHD/SerialInterfaces')
-        self.assertEqual(api_data['status'], 200, "Was expecting code 200. Got " + str(api_data['status']))
-        #iterate through member links
-        for item in api_data['json']['Members']:
-            manager_data = fit_common.rackhdapi(item['@odata.id'])
-            self.assertEqual(manager_data['status'], 200, "Was expecting code 200. Got " + str(manager_data['status']))
+        self.assertEqual(api_data['status'], 404, "Was expecting code 404. Got " + str(api_data['status']))
 
     def test_redfish_v1_managers_rackhd_virtualmedia(self):
         # not yet implemented
