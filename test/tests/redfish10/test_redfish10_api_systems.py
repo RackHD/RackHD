@@ -278,13 +278,13 @@ class redfish10_api_systems(fit_common.unittest.TestCase):
         # Currently relies on Dell/Racadm, so just test for exceptions
         for nodeid in NODECATALOG:
             api_data = fit_common.rackhdapi('/redfish/v1/Systems/' + nodeid + '/SecureBoot')
-            self.assertIn(api_data['status'], [500, 501], 'Incorrect HTTP return code, expected 500,501 got:' + str(api_data['status']))
+            self.assertIn(api_data['status'], [500, 501], 'HTTP status expected 500,501 got:' + str(api_data['status']))
             api_data = fit_common.rackhdapi('/redfish/v1/Systems/' + nodeid + '/SecureBoot', action='post',
                                             payload={"zzzSecureBootEnable": True})
-            self.assertEqual(api_data['status'], 400, 'Incorrect HTTP return code, expected 400, got:' + str(api_data['status']))
+            self.assertEqual(api_data['status'], 400, 'Incorrect HTTP status, expected 400, got:' + str(api_data['status']))
             api_data = fit_common.rackhdapi('/redfish/v1/Systems/' + nodeid + '/SecureBoot', action='post',
                                             payload={"SecureBootEnable": True})
-            self.assertIn(api_data['status'], [500, 501], 'Incorrect HTTP return code, expected 500,501 got:' + str(api_data['status']))
+            self.assertIn(api_data['status'], [500, 501], 'HTTP status expected 500,501 got:' + str(api_data['status']))
 
 if __name__ == '__main__':
     fit_common.unittest.main()
