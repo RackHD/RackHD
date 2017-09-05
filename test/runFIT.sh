@@ -15,6 +15,7 @@ Usage(){
     echo "Usage: $0 [OPTIONS]"
     echo "  OPTIONS:"
     echo "    Mandatory options:"
+    echo "      -c, --NODES_COUNT: the count of nodes"
     echo "    Optional options:"
     echo "      -g, --TEST_GROUP: test group of FIT, such as imageservice, smoke"
     echo "      -s, --TEST_STACK: target test stack of FIT, such as docker, vagrant..."
@@ -59,6 +60,36 @@ collectTestReport()
     fi
 }
 
+########################################################
+#  Wait for virtual nodes to be discovered.
+#  This expects exactly the number of virtual compute nodes defined by nodes_count 
+########################################################
+waitForNodes() {
+    timeout=0
+    maxto=60
+    nodes_count=$1
+    rackhd_host=$2
+    rackhd_http_port=$3
+    set +e
+    url=http://$rackhd_host:$rackhd_http_port/api/2.0/nodes
+    # check if nodeids have been created for the virtual nodes
+    sleep 20
+    while [ ${timeout} != ${maxto} ]; do
+      echo "Current node list: "
+      wget -SO- -T 1 -t 1 --retry-connrefused --waitretry=1 --read-timeout=20 --timeout=15 --continue ${url}
+      wget -SO- -T 1 -t 1 --retry-connrefused --waitretry=1 --read-timeout=20 --timeout=15 --continue ${url} | grep -o "compute" | wc -l | grep ${nodes_count}
+      if [ $? = 0 ]; then
+        break
+      fi
+      sleep 10
+      timeout=`expr ${timeout} + 1`
+    done
+    set -e
+    if [ ${timeout} == ${maxto} ]; then
+      echo "Timed out waiting for RackHD virtual node discovery (duration=`expr $maxto \* 10`s)."
+      exit 1
+    fi
+}
 
 ####################################
 #
@@ -90,6 +121,7 @@ runFIT() {
 #############################################
 runTests(){
     setupVirtualEnv
+    waitForNodes $NODES_COUNT $RACKHD_HOST $RACKHD_HTTP_PORT
     runFIT
 }
 
@@ -118,6 +150,9 @@ main(){
             -w | --WORKSPACE )              shift
                                             WORKSPACE=$1
                                             ;;
+            -c | --NODES_COUNT )            shift
+                                            NODES_COUNT=$1
+                                            ;;
             -g | --TEST_GROUPS )            shift
                                             TEST_GROUP="$1"
                                             ;;
@@ -137,6 +172,12 @@ main(){
         shift
     done
 
+    if [ ! -n "$NODES_COUNT" ]; then
+        echo "The argument -c | --NODES_COUNT is required"
+        Usage
+        exit 1
+    fi
+
     if [ ! -n "$TEST_GROUP" ]; then
         TEST_GROUP="-test tests -group smoke"
     fi
@@ -148,6 +189,10 @@ main(){
     if [ ! -n "$TEST_LOG_LEVEL" ]; then
         TEST_LOG_LEVEL="4"
     fi
+
+    RACKHD_HOST=$(cat $RACKHD_TEST_DIR/config/stack_config.json |jq -r ".$TEST_STACK.rackhd_host")
+    RACKHD_HTTP_PORT=$(cat $RACKHD_TEST_DIR/config/stack_config.json |jq ".$TEST_STACK[\"install-config\"].ports.http")
+
     trap deactivateVirtualEnv SIGINT SIGTERM SIGKILL EXIT   
     runTests
 }
