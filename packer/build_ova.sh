@@ -43,6 +43,11 @@ varDefine(){
     OVA="${BASENAME}.ova"
     # default is output-${type}. you can customized in packer's json by "output_directory" param
     VMDIR=output-vmware-vmx # output of Build VMWare from VMX
+    OUTPUT_PATH=`pwd`
+    TEMPLATE_OUTPUT_DIR="output-vmware-iso"
+    if [ "$BUILD_STAGE" == "BUILD_TEMPLATE" ]; then
+      OUTPUT_PATH=$OUTPUT_PATH/$TEMPLATE_OUTPUT_DIR
+    fi
 }
 
 prepareMaterials(){
@@ -96,7 +101,7 @@ packerBuildOVA(){
     else
         if [ "$BUILD_STAGE" == "BUILD_FINAL" ]; then
              #Build from cache template, and output the final image .(vmware: vmx-->ova, virtualbox: ovf-->box)
-             mkdir output-vmware-iso && mv $CACHE_IMAGE_DIR/* ./output-vmware-iso
+             mkdir $TEMPLATE_OUTPUT_DIR && mv $CACHE_IMAGE_DIR/* ./$TEMPLATE_OUTPUT_DIR
              $PACKER build --force --only=vmware-vmx  --var-file=$CFG_FILE  --var "playbook=${ANSIBLE_PLAYBOOK}" ${PACKER_TEMP}   | tee $TARGET_DIR/packer-install.log
         else
              #Build from scratch, vmware: iso-->vmx-->ova
@@ -121,9 +126,13 @@ postProcess(){
   createChecksum
   gpgSigning
   chmod a=r "$OVA"*
-  if [ $TARGET_DIR != `pwd` ]; then
+  # when BUILD_STAGE != BUILD_TEMPLATE, there'll be no vmdk files, so add +e here
+  set +e
+  if [ $TARGET_DIR != $OUTPUT_PATH ]; then
       mv "$OVA"* $TARGET_DIR
+      mv *.vmdk $TARGET_DIR
   fi
+  set -e
 }
 
 
