@@ -72,7 +72,7 @@ preparePackerEnv(){
     if [ -x /opt/packer/packer ];then
         PACKER=/opt/packer/packer
     fi
-    PACKER_CACHE_DIR=$HOME/.packer_cache
+    export PACKER_CACHE_DIR=$HOME/.packer_cache
     # Enable Verbose Packer Logging
     # see https://www.packer.io/docs/other/environmental-variables.html for details
     export PACKER_LOG=1
@@ -84,4 +84,3 @@ preparePackerEnv(){
     $PACKER -v  # $? of "packer -v" is 1 ...
     set -e
 }
-
