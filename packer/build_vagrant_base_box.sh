@@ -37,7 +37,7 @@ build(){
     echo }                                                         >> $CFG_FILE
     echo "[Info] the parameter file:"
     cat $CFG_FILE
-    
+
     echo "[Info] Customize the template-${OS_VER}.json , to remove the vagrant-upload step"
     # pre-process the packer template file
     PACKER_TEMP=template-${OS_VER}.json.tmp
@@ -55,9 +55,11 @@ build(){
         echo "[ERROR] Packer Build failed.. exit"
         exit 3
     fi
-
+    # src dir may be the same with TARGET_DIR
+    set +e
     mv  output-*/*.* $TARGET_DIR/
     mv packer-install.log $TARGET_DIR
+    set -e
     popd
 }
 
@@ -110,4 +112,3 @@ main(){
 }
 
 main "$@"
-
