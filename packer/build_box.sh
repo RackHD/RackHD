@@ -37,6 +37,7 @@ build(){
     # parameter file pass to packer
     echo {                                                         > $CFG_FILE
     echo  \"playbook\": \"${ANSIBLE_PLAYBOOK}\",                   >> $CFG_FILE
+    echo  \"vm_name\": \"rackhd-${OS_VER}\",                       >> $CFG_FILE
     echo  \"rackhd_version\": \"${RACKHD_VERSION}\",               >> $CFG_FILE
     echo  \"deb_repository\": \"${DEBIAN_REPOSITORY}\"             >> $CFG_FILE
     echo }                                                         >> $CFG_FILE
