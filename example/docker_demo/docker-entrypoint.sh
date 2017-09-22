@@ -59,16 +59,16 @@ PullRackHD(){
 }
 
 StartRackHD(){
+    echo "StartRackHD==========================================================================="
     pushd ~/RackHD/docker
     #UnixHTTPConnectionPool(host='localhost', port=None): Read timed out. (read timeout=60)
     #https://github.com/docker/compose/issues/3633
     service docker restart
     sleep 5
-    export DOCKER_CLIENT_TIMEOUT=120
-    export COMPOSE_HTTP_TIMEOUT=200
-    docker-compose -f docker-compose.yml up > /tmp/my.log & 
-    bg_pid=$! 
-    sleep 20
+    export DOCKER_CLIENT_TIMEOUT=400
+    export COMPOSE_HTTP_TIMEOUT=400
+    docker-compose -f docker-compose.yml up > /tmp/my.log &
+    bg_pid=$!
     popd
 }
 bg_pid=0
@@ -77,15 +77,22 @@ sleep 5
 CreateBridge
 CloneRackHDrepo
 PullRackHD
+#docker load -i /tmp/rackhd_docker_images.tar
 StartRackHD
+sleep 100
+echo "========================================================================="
 waitForAPI
+
+#workaround, fixme, the latest docker images doesn't include rancher micro-kernel.so I will have to download it here.
+pushd ~/RackHD/docker/files/mount/common
+wget http://10.240.19.21/job/MasterCI/379/artifact/packages/on-imagebuilder/on-imagebuilder_2.23.0-20170919UTC-f4ea9ee_all.deb
+dpkg -x on-imagebuilder_2.23.0-20170919UTC-f4ea9ee_all.deb .
+cp var/renasar/on-http/static/http/common/* .
+echo $(find ./)
+popd
+
+sleep 10
 StartInfraSIM
-wait bg_pid
-if [ "$?" != "0" ] ; then
-    pushd ~/RackHD/docker
-    docker-compose -f docker-compose.yml stop
-    docker-compose -f docker-compose.yml up > /tmp/my.log &
-    waitForAPI
-    infrasim node restart
-    popd
-fi
+wait $bg_pid
+sleep 1000
+
