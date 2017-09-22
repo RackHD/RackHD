@@ -32,7 +32,7 @@ class SchemaTests(unittest.TestCase):
 
     # @test(groups=['redfish.list_schemas'])
     def test_list_schemas(self):
-        # """ Testing GET /Schemas """
+        # """ Testing GET /JsonSchemas """
         redfish().list_schemas()
         schemas = self.__get_data()
         logs.debug(dumps(schemas, indent=4))
@@ -42,13 +42,13 @@ class SchemaTests(unittest.TestCase):
     # @test(groups=['redfish.get_schema'], depends_on_groups=['redfish.list_schemas'])
     @depends(after='test_list_schemas')
     def test_get_schema(self):
-        # """ Testing GET /Schemas/{identifier} """
+        # """ Testing GET /JsonSchemas/{identifier} """
         self.__class__.__membersList = self.__class__.__schemaList.get('Members')
         self.assertNotEqual(None, self.__class__.__membersList)
         for member in self.__class__.__membersList:
             dataId = member.get('@odata.id')
             self.assertNotEqual(None, dataId)
-            dataId = dataId.split('/redfish/v1/Schemas/')[1]
+            dataId = dataId.split('/redfish/v1/JsonSchemas/')[1]
             redfish().get_schema(dataId)
             schema_ref = self.__get_data()
             logs.debug(dumps(schema_ref, indent=4))
@@ -67,13 +67,13 @@ class SchemaTests(unittest.TestCase):
     # @test(groups=['redfish.get_schema_invalid'], depends_on_groups=['redfish.list_schemas'])
     @depends(after='test_list_schemas')
     def test_get_schema_invalid(self):
-        # """ Testing GET /Schemas/{identifier} 404s properly """
+        # """ Testing GET /JsonSchemas/{identifier} 404s properly """
         self.__class__.__membersList = self.__class__.__schemaList.get('Members')
         self.assertNotEqual(None, self.__class__.__membersList)
         for member in self.__class__.__membersList:
             dataId = member.get('@odata.id')
             self.assertNotEqual(None, dataId)
-            dataId = dataId.split('/redfish/v1/Schemas/')[1]
+            dataId = dataId.split('/redfish/v1/JsonSchemas/')[1]
             try:
                 redfish().get_schema(dataId + '-invalid')
                 self.fail(msg='did not raise exception')
@@ -95,7 +95,7 @@ class SchemaTests(unittest.TestCase):
     # @test(groups=['redfish.get_schema_content_invalid'], depends_on_groups=['redfish.get_schema'])
     @depends(after='test_get_schema')
     def test_get_schema_content_invalid(self):
-        # """ Testing GET /Schemas/en/{identifier} 404s properly """
+        # """ Testing GET /JsonSchemas/en/{identifier} 404s properly """
         self.assertNotEqual([], self.__class__.__locationUri)
         for member in self.__class__.__locationUri:
             self.assertNotEqual(None, member)
