@@ -14,7 +14,8 @@ $ vagrant up                  # Create and provision Docker VM.
 $ . export_docker_host.bash   # Point docker host to Docker VM.
 $ vagrant ssh                 # SSH into Docker VM.
 $ cd /RackHD/docker           # Go to RackHD/docker.
-$ docker-compose up           # Run RackHD.
+$ docker-compose pull         # Pull the required images
+$ docker-compose up           # Run RackHD.
 ```
 
 ## On a Linux host.
