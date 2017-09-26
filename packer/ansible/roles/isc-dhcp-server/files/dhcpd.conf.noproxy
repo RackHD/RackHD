@@ -120,7 +120,7 @@ subnet 172.31.128.0 netmask 255.255.240.0 {
 
  # Register leased hosts with RackHD
  if ((exists user-class) and (option user-class = "MonoRail")) {
-    filename "http://172.31.128.1:9080/api/common/profiles?mac=${net0/mac}&&ip=${net0/ip}";
+    filename "http://172.31.128.1:9030/api/common/profiles?mac=${net0/mac}&&ip=${net0/ip}";
   } else {
     if option arch-type = 00:09 {
       filename "monorail-efi64-snponly.efi";
@@ -140,7 +140,7 @@ subnet 172.31.128.0 netmask 255.255.240.0 {
 #    fixed-address 172.31.128.120;
 #    option routers 172.31.128.1;
 #    if ((exists user-class) and (option user-class = "MonoRail")) {
-#      filename "http://172.31.128.1:9080/api/common/profiles?mac=${net0/mac}&&ip=${net0/ip}";
+#      filename "http://172.31.128.1:9030/api/common/profiles?mac=${net0/mac}&&ip=${net0/ip}";
 #    }   else {
 #      filename "monorail.ipxe";
 #    }

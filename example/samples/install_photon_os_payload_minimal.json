@@ -2,7 +2,7 @@
     "options": {
         "defaults": {
             "version": "1.0",
-            "repo": "http://172.31.128.1:9080/photon/1.0"
+            "repo": "http://172.31.128.1:8080/photon/1.0"
         }
     }
 }

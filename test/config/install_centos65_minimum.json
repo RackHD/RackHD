@@ -5,7 +5,7 @@
             "defaults": {
                 "hostname": "rackhdnode",
                 "installDisk": "/dev/sda",
-                "repo": "http://172.31.128.1:9080/repo/centos/6.5",
+                "repo": "http://172.31.128.1:8080/repo/centos/6.5",
                 "rootPassword": "1234567",
                 "users": [
                     {

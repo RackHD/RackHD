@@ -6,9 +6,9 @@
                 "baseUrl": "install/netboot/ubuntu-installer/amd64",
                 "hostname": "rackhdnode",
                 "kargs": {
-                    "live-installer/net-image": "http://172.31.128.1:9080/repo/ubuntu/ubuntu/install/filesystem.squashfs"
+                    "live-installer/net-image": "http://172.31.128.1:8080/repo/ubuntu/ubuntu/install/filesystem.squashfs"
                 },
-                "repo": "http://172.31.128.1:9080/repo/ubuntu",
+                "repo": "http://172.31.128.1:8080/repo/ubuntu",
                 "rootPassword": "1234567",
                 "users": [
                     {
