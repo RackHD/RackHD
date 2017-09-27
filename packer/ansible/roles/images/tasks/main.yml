@@ -13,9 +13,14 @@
            validate_certs=no
            force=yes
   with_items:
-   - discovery.overlay.cpio.gz
    - base.trusty.3.16.0-25-generic.squashfs.img
+   - discovery.docker.tar.xz
+   - discovery.overlay.cpio.gz
+   - initrd-0.5.0-rancher
+   - initrd-1.0.2-rancher
    - initrd.img-3.16.0-25-generic
+   - vmlinuz-0.5.0-rancher
+   - vmlinuz-1.0.2-rancher
    - vmlinuz-3.16.0-25-generic
 
 - name: retrieve the latest bootloaders from bintray
