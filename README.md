@@ -9,6 +9,8 @@ RackHD is a technology stack created for enabling hardware management and orches
 
 This repository acts as a single source location to help you get or build all the pieces to learn about, take advantage of, and contribute to RackHD.
 
+Copyright © 2017 Dell Inc. or its subsidiaries.  All Rights Reserved. 
+
 ## Contribute
 
 The RackHD project is a collection of libraries and applications housed at https://github.com/RackHD/. The code for RackHD is a combination of Javascript (Node.js), and C, available under the Apache 2.0 license (or compatible sublicences for library dependencies).
