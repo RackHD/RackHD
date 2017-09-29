@@ -345,4 +345,6 @@ cd $RACKHD_DIR/packer
 varDefine
 prepareMaterials
 packerBuildOVA
-postProcess
+if [ "$BUILD_STAGE" != "BUILD_TEMPLATE" ]; then
+    postProcess
+fi
