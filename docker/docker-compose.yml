@@ -43,12 +43,18 @@ services:
     command: "/bin/echo \"exit\""
 
   tasks:
-    build: "../on-tasks"
+    build:
+      context: "../on-tasks"
+      args:
+        tag: ${TAG}
     image: rackhd/on-tasks:${TAG}
     command: "/bin/echo \"exit\""
 
   dhcp-proxy: # 68/udp, 4011
-    build: "../on-dhcp-proxy"
+    build:
+      context: "../on-dhcp-proxy"
+      args:
+        tag: ${TAG}
     depends_on:
       - dhcp
       - mongo
@@ -61,7 +67,10 @@ services:
       - "./monorail:/opt/monorail"
 
   http: # 9090, 9080
-    build: "../on-http"
+    build:
+      context: "../on-http"
+      args:
+        tag: ${TAG}
     depends_on:
       - files
       - mongo
@@ -75,7 +84,10 @@ services:
 
 
   syslog: # 514/udp
-    build: "../on-syslog"
+    build:
+      context: "../on-syslog"
+      args:
+        tag: ${TAG}
     depends_on:
       - mongo
       - rabbitmq
@@ -86,7 +98,10 @@ services:
       - "./monorail:/opt/monorail"
 
   taskgraph:
-    build: "../on-taskgraph"
+    build:
+      context: "../on-taskgraph"
+      args:
+        tag: ${TAG}
     depends_on:
       - dhcp
       - mongo
@@ -99,7 +114,10 @@ services:
       - "./monorail:/opt/monorail"
 
   tftp: # 69/udp
-    build: "../on-tftp"
+    build:
+      context: "../on-tftp"
+      args:
+        tag: ${TAG}
     depends_on:
       - files
       - mongo
