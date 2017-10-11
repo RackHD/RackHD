@@ -61,11 +61,12 @@ class SELPollerAlertTests(fit_common.unittest.TestCase):
     def tearDownClass(cls):
         if cls._on_events_tracker:
             # remove created sku pack (it may miss on various test failures, so ignore errors)
-            try:
-                Api().skus_id_delete(cls._run_context['sku_id'])
+            if cls._run_context['sku_id'] is not None:
+                try:
+                    Api().skus_id_delete(cls._run_context['sku_id'])
 
-            except ApiException:
-                pass
+                except ApiException:
+                    pass
 
             # Clearing out the full sel logs after test script runs
             ip = cls._run_context['bmc_ip']
