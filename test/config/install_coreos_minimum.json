@@ -4,7 +4,7 @@
         "options": {
             "defaults": {
                 "hostname": "rackhdnode",
-                "repo": "http://172.31.128.1:8080/repo/coreos",
+                "repo": "http://172.31.128.1:8080/coreos",
                 "rootPassword": "1234567",
                 "users": [
                     {
@@ -13,7 +13,7 @@
                         "uid": 1010
                     }
                 ],
-                "version": "899.17.0"
+                "version": "1465.8.0"
             },
             "install-os": {
                 "_taskTimeout": 7200000
