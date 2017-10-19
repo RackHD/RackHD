@@ -15,6 +15,10 @@ from nose.plugins.attrib import attr
 # get list of compute nodes once for this test suite
 NODELIST = fit_common.node_select()
 
+smoke_value = True
+if "stackType" in fit_common.fitcfg():
+    if fit_common.fitcfg()['stackType'] == "baremetal":
+        smoke_value = False
 
 def print_taskid_data(taskid, taskid_json):
     """
@@ -148,8 +152,7 @@ def workflow_tasklist_status_poller(tasklist, tasktype, timeout=180):
 
 # Test Cases
 
-
-@attr(all=True, regression=True, smoke=True)
+@attr(all=True, regression=False, smoke=smoke_value)
 class redfish10_api_computer_system_reset_base_suite(fit_common.unittest.TestCase):
     # This test suite covers the basic reset options supported by most compute
     # nodes - ON, ForceOff, ForceOn, ForceRestart
