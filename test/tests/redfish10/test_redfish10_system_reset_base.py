@@ -149,7 +149,7 @@ def workflow_tasklist_status_poller(tasklist, tasktype, timeout=180):
 # Test Cases
 
 
-@attr(all=True, regression=True, smoke=True)
+@attr(all=True, regression=False, smoke=False)
 class redfish10_api_computer_system_reset_base_suite(fit_common.unittest.TestCase):
     # This test suite covers the basic reset options supported by most compute
     # nodes - ON, ForceOff, ForceOn, ForceRestart

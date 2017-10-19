@@ -28,7 +28,7 @@ SKU_ATTACH_WAIT_TIME = 15
 TEST_SKU_PACK_NAME = 'SKUPACK_SEL_POLLER_TEST'
 
 
-@attr(regression=False, smoke=True, workflows_tasks_api2_tests=True)
+@attr(regression=False, smoke=False, workflows_tasks_api2_tests=True)
 class SELPollerAlertTests(fit_common.unittest.TestCase):
     @classmethod
     def setUpClass(cls):
