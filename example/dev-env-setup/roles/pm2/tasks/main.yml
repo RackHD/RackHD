@@ -1,4 +1,0 @@
----
-- name: install pm2
-  shell: npm install -g pm2
-

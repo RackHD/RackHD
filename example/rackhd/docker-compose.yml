@@ -1,0 +1,107 @@
+#Copyright © 2017 Dell Inc. or its subsidiaries.  All Rights Reserved. 
+
+version: '3'
+
+volumes:
+  dhcp-leases:
+    external: false
+
+networks:
+  southbound:
+    driver: bridge
+    ipam:
+      driver: default
+      config: 
+       - subnet: 172.31.128.0/24    
+  
+  admin:
+    driver: bridge
+    
+
+
+services:
+
+  mongo: # 27017
+    image: mongo:latest
+    networks: 
+      - admin 
+      - southbound
+    ports: ["9090:9090"]
+
+  rabbitmq: # 5672, 15672
+    image: rabbitmq:management
+    network_mode: "service:mongo"
+
+  dhcp: # 67/udp
+    image: rackhd/isc-dhcp-server
+    network_mode: "service:mongo"
+    volumes:
+      - "dhcp-leases:/var/lib/dhcp"
+      - "./dhcp/config:/etc/dhcp"
+      - "./dhcp/defaults:/etc/defaults"
+
+  files:
+    image: rackhd/files:latest
+    network_mode: "service:mongo"
+    volumes:
+      - "./files/mount:/RackHD/files"
+
+  # RackHD services
+
+  dhcp-proxy: # 68/udp, 4011
+    depends_on:
+      - dhcp
+      - mongo
+      - rabbitmq
+    image: rackhd/on-dhcp-proxy:latest
+    network_mode: "service:mongo"
+    volumes:
+      - "dhcp-leases:/var/lib/dhcp"
+      - "./monorail:/opt/monorail"
+
+  http: # 9090, 9080
+    depends_on:
+      - files
+      - mongo
+      - rabbitmq
+    image: rackhd/on-http:latest
+    network_mode: "service:mongo"    
+    volumes:
+      - "./files/mount/common:/RackHD/on-http/static/http/common"
+      - "./monorail:/opt/monorail"
+#    ports:
+#      - "9090:19090"
+
+
+  syslog: # 514/udp
+    depends_on:
+      - mongo
+      - rabbitmq
+    image: rackhd/on-syslog:latest
+    network_mode: "service:mongo"
+    volumes:
+      - "./monorail:/opt/monorail"
+
+  taskgraph:
+    depends_on:
+      - dhcp
+      - mongo
+      - rabbitmq
+      - syslog
+    image: rackhd/on-taskgraph:latest
+    network_mode: "service:mongo"
+    volumes:
+      - "./monorail:/opt/monorail"
+
+  tftp: # 69/udp
+    depends_on:
+      - files
+      - mongo
+      - rabbitmq
+      - syslog
+    image: rackhd/on-tftp:latest
+    network_mode: "service:mongo"
+    volumes:
+      - "./files/mount:/RackHD/on-tftp/static/tftp"
+      - "./monorail:/opt/monorail"
+
