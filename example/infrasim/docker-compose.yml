@@ -1,0 +1,17 @@
+#Copyright © 2017 Dell Inc. or its subsidiaries.  All Rights Reserved. 
+
+version: '3'
+
+networks:
+  southbound:
+    external:
+      name: rackhd_southbound    
+
+services:
+  infrasim:
+    build: '.'
+    networks:
+      - southbound
+    privileged: true
+
+
