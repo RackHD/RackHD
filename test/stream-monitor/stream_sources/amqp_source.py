@@ -71,17 +71,17 @@ class _KeyedConsumerHandler(object):
                 skip = True
 
             if skip:
-                self.__logs.idl.debug('AMQP-SKIP=%s', msg.delivery_info['routing_key'])
+                self.__logs.idl.debug_8('AMQP-SKIP=%s', msg.delivery_info['routing_key'])
                 msg.ack()
                 return
 
-        self.__logs.idl.debug(
+        self.__logs.idl.debug_8(
             'Inbound AMQP msg. %s (delivery_info=%s, content_type=%s, properties=%s, body=%s)',
             msg, msg.delivery_info, msg.content_type, msg.properties, body)
         for event_cb in self.__event_callbacks:
             try:
                 event_cb(msg, body)
-                self.__logs.debug(' -- ran %s on msg', event_cb)
+                self.__logs.debug_8(' -- ran %s on msg', event_cb)
             except Exception as proc_ex:
                 self.__logs.warning('exception while running %s on %s: %s', event_cb, msg, proc_ex)
         msg.ack()
@@ -418,7 +418,7 @@ class _AMQPQueueTracker(object):
         self.__in_test = test
 
     def __got_amqp_message_cb(self, msg, body):
-        self._logs.irl.debug('%s received msg=%s, body=%s', self, msg, body)
+        self._logs.irl.debug_8('%s received msg=%s, body=%s', self, msg, body)
         track = _AMQPTrackerRecord(self.__in_test, self.__prior_test, msg, body)
         self.__recorded_data.append(track)
         for processor in self.__processors:
