@@ -28,7 +28,7 @@ SKU_ATTACH_WAIT_TIME = 15
 TEST_SKU_PACK_NAME = 'SKUPACK_SEL_POLLER_TEST'
 
 
-@attr(regression=False, smoke=False, workflows_tasks_api2_tests=True)
+@attr(regression=False, smoke=True, workflows_tasks_api2_tests=True)
 class SELPollerAlertTests(fit_common.unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -270,7 +270,7 @@ class SELPollerAlertTests(fit_common.unittest.TestCase):
         available_sel_entries = self.__get_run_context('available_sel_entries')
 
         self.__qproc.match_on_routekey('polleralert-sel-update',
-                                       min=available_sel_entries - 3, max=available_sel_entries,
+                                       min=available_sel_entries - 3, max=available_sel_entries + 3,
                                        routing_key='polleralert.sel.updated.#.{}.{}'.format(poller_id, node_id))
 
         self.__run_ipmitool_command(bmc_ip, "sel clear")
