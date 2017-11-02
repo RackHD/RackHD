@@ -269,7 +269,7 @@ class SELPollerAlertTests(fit_common.unittest.TestCase):
         if "stackType" in fit_common.fitcfg():
             if fit_common.fitcfg()['stackType'] == "baremetal":
                 skip_test = True
-                log.info(" *** Skipping test_full_sel on baremetal stack")
+                logs.info(" *** Skipping test_full_sel on baremetal stack")
 
         if not skip_test:
             bmc_ip = self.__get_run_context('bmc_ip')
