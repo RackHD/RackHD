@@ -1,4 +1,5 @@
 {
+  "//": "Copyright 2017, Dell EMC, Inc.",
   "_comment":{
     "bmc": "appliance bmc address",
     "control": "control switch admin address",
@@ -101,6 +102,7 @@
         "ssh": 22
       }
     },
+    "stackType": "baremetal",
     "stack_nodes": [
         {"bmcmac": "2c:60:0c:73:14:be", "nodeid": "QUANTA129-001", "sku": "Quanta T41"},
         {"bmcmac": "2c:60:0c:73:27:66", "nodeid": "QUANTA129-002", "sku": "Quanta T41"},
@@ -125,9 +127,9 @@
         "ssh": 22
       }
     },
-    "stack_nodes": [
-        {"bmcmac": "4c:76:25:a9:59:8d", "nodeid": "DELL_FC630_001", "sku": "Dell_FC630"},
-        {"bmcmac": "4c:76:25:a9:59:80", "nodeid": "DELL_FC630_002", "sku": "Dell_FC630"}
+    "stackType": "baremetal",
+    "stackNodes": [
+       {"bmcmac": "18:66:da:6d:4e:d8", "nodeid": "DELL_R730_001", "sku": "dell-r730"}
      ]
   }
 }

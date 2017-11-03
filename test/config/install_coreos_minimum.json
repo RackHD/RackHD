@@ -1,4 +1,5 @@
 {
+    "//": "Copyright 2017, Dell EMC, Inc.",
     "bootstrap-payload": {
         "name": "Graph.InstallCoreOS",
         "options": {
