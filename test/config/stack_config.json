@@ -1,4 +1,5 @@
 {
+  "//": "Copyright 2017, Dell EMC, Inc.",
   "_comment":{
     "bmc": "appliance bmc address",
     "control": "control switch admin address",
@@ -87,5 +88,48 @@
         "ssh": 2222
       }
     }
+  },
+  "baremetal_env2_quanta":{
+    "rackhd_host": "localhost",
+    "type": "linux",
+    "install-config": {
+      "ports": {
+        "mongo_port": 27017,
+        "http": 9090,
+        "https": 8443,
+        "amqp_ssl": 5672,
+        "amqp_nossl": 5671,
+        "ssh": 22
+      }
+    },
+    "stackType": "baremetal",
+    "stack_nodes": [
+        {"bmcmac": "2c:60:0c:73:14:be", "nodeid": "QUANTA129-001", "sku": "Quanta T41"},
+        {"bmcmac": "2c:60:0c:73:27:66", "nodeid": "QUANTA129-002", "sku": "Quanta T41"},
+        {"bmcmac": "2c:60:0c:73:28:45", "nodeid": "QUANTA129-003", "sku": "Quanta T41"},
+        {"bmcmac": "2c:60:0c:73:14:52", "nodeid": "QUANTA129-004", "sku": "Quanta T41"},
+        {"bmcmac": "2c:60:0c:99:3e:53", "nodeid": "QUANTA261-005", "sku": "Quanta T41"},
+        {"bmcmac": "2c:60:0c:99:56:7e", "nodeid": "QUANTA261-006", "sku": "Quanta T41"},
+        {"bmcmac": "2c:60:0c:98:bf:0d", "nodeid": "QUANTA261-007", "sku": "Quanta T41"},
+        {"bmcmac": "2c:60:0c:98:c0:4e", "nodeid": "QUANTA261-008", "sku": "Quanta T41"}
+     ]
+  },
+  "baremetal_env1_dell":{
+    "rackhd_host": "localhost",
+    "type": "linux",
+    "install-config": {
+      "ports": {
+        "mongo_port": 27017,
+        "http": 9090,
+        "https": 8443,
+        "amqp_ssl": 5672,
+        "amqp_nossl": 5671,
+        "ssh": 22
+      }
+    },
+    "stackType": "baremetal",
+    "stackNodes": [
+       {"bmcmac": "18:66:da:6d:4e:d8", "nodeid": "DELL_R730_001", "sku": "dell-r730"}
+     ]
   }
 }

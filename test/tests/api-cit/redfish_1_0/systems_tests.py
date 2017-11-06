@@ -130,11 +130,14 @@ class SystemsTests(unittest.TestCase):
         self.assertIsNotNone(self.__class__.__membersList)
         membersList = self.__class__.__simpleStorageList.get('Members')
         self.assertIsNotNone(membersList, msg='missing simple storage members field!')
+        logs.info_1(dumps(membersList, indent=4))
         for member in membersList:
             dataId = member.get('@odata.id')
             self.assertIsNotNone(dataId)
             index = dataId.split('/SimpleStorage/')[1]
+            logs.info_1("Simple storage index: %s ", index)
             id = re.compile(r'/SimpleStorage/[0-9]+').split(dataId)[0].split('/redfish/v1/Systems/')[1]
+            logs.info_1("System Id: %s ", id)
             redfish().get_simple_storage(id, index)
             storage = self.__get_data()
             logs.debug(dumps(storage, indent=4))
