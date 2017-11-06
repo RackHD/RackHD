@@ -61,11 +61,12 @@ class SELPollerAlertTests(fit_common.unittest.TestCase):
     def tearDownClass(cls):
         if cls._on_events_tracker:
             # remove created sku pack (it may miss on various test failures, so ignore errors)
-            try:
-                Api().skus_id_delete(cls._run_context['sku_id'])
+            if cls._run_context['sku_id'] is not None:
+                try:
+                    Api().skus_id_delete(cls._run_context['sku_id'])
 
-            except ApiException:
-                pass
+                except ApiException:
+                    pass
 
             # Clearing out the full sel logs after test script runs
             ip = cls._run_context['bmc_ip']
@@ -263,27 +264,35 @@ class SELPollerAlertTests(fit_common.unittest.TestCase):
         # """Test: Full sel log"""
         # listen to AMQP
 
-        bmc_ip = self.__get_run_context('bmc_ip')
-        node_id = self.__get_run_context('node_id')
-        poller_id = self.__get_run_context('poller_id')
-        available_sel_entries = self.__get_run_context('available_sel_entries')
+        skip_test = False
+        # skip filling the BMC SEL log on real hardware as don't need to test how the HW is working
+        if "stackType" in fit_common.fitcfg():
+            if fit_common.fitcfg()['stackType'] == "baremetal":
+                skip_test = True
+                logs.info(" *** Skipping test_full_sel on baremetal stack")
 
-        self.__qproc.match_on_routekey('polleralert-sel-update',
-                                       min=available_sel_entries - 3, max=available_sel_entries,
-                                       routing_key='polleralert.sel.updated.#.{}.{}'.format(poller_id, node_id))
+        if not skip_test:
+            bmc_ip = self.__get_run_context('bmc_ip')
+            node_id = self.__get_run_context('node_id')
+            poller_id = self.__get_run_context('poller_id')
+            available_sel_entries = self.__get_run_context('available_sel_entries')
 
-        self.__run_ipmitool_command(bmc_ip, "sel clear")
-        self.__verify_empty_sel(bmc_ip)
+            self.__qproc.match_on_routekey('polleralert-sel-update',
+                                           min=available_sel_entries - 3, max=available_sel_entries + 3,
+                                           routing_key='polleralert.sel.updated.#.{}.{}'.format(poller_id, node_id))
 
-        sel_file = self.__create_selEntries_file(available_sel_entries)
-        fit_common.remote_shell('ls')
-        sel_file_path = fit_common.scp_file_to_host(sel_file)
+            self.__run_ipmitool_command(bmc_ip, "sel clear")
+            self.__verify_empty_sel(bmc_ip)
 
-        self.__run_ipmitool_command(bmc_ip, "sel add {0}".format(sel_file_path))
+            sel_file = self.__create_selEntries_file(available_sel_entries)
+            fit_common.remote_shell('ls')
+            sel_file_path = fit_common.scp_file_to_host(sel_file)
 
-        # wait for the results
-        results = self._amqp_sp.finish(timeout=360)
-        results[0].assert_errors(self)
+            self.__run_ipmitool_command(bmc_ip, "sel add {0}".format(sel_file_path))
+
+            # wait for the results
+            results = self._amqp_sp.finish(timeout=360)
+            results[0].assert_errors(self)
 
     def __run_ipmitool_command(self, ip, command):
         bmc_creds = self.__get_run_context('bmc_creds')
