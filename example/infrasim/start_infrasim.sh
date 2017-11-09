@@ -5,8 +5,8 @@
 INTERFACE=eth0
 BRIDGE=br0
 
-ifconfig $INTERFACE 0.0.0.0
-ifconfig $INTERFACE promisc
+ip addr flush dev $INTERFACE
+ip link set $INTERFACE promisc on
 brctl addbr $BRIDGE 
 brctl addif $BRIDGE $INTERFACE
 brctl setfd $BRIDGE 0
