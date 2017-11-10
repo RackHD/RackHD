@@ -1,3 +1,5 @@
+# Copyright 2017, Dell EMC, Inc.
+
 version: '2'
 
 services:
@@ -17,6 +19,8 @@ services:
     - "8400:8400"
     - "8500:8500"
     - "53:53"
+    extra_hosts:
+    - "service-registry:${REGISTRY_IP}"
     # uncoment the line below to persist/reuse data after container is destroyed
     #volumes:
     #- /var/consul/data:/consul/data
