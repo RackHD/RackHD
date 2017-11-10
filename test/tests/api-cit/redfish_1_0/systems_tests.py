@@ -228,7 +228,7 @@ class SystemsTests(unittest.TestCase):
             redfish().list_reset_types(dataId)
             reset_actions = self.__get_data()
             logs.debug(dumps(reset_actions, indent=4))
-            self.__class__.__resetActionTypes = reset_actions.get('reset_type@Redfish.AllowableValues')
+            self.__class__.__resetActionTypes = reset_actions.get('ResetType@Redfish.AllowableValues')
             self.assertEqual(dumps(self.__class__.__resetActionTypes), dumps(['On',
                                                                               'ForceOff',
                                                                               'GracefulRestart',
@@ -256,7 +256,7 @@ class SystemsTests(unittest.TestCase):
                     continue
                 logs.info('testing reset action "%s" for %s', action, dataId)
                 try:
-                    redfish().do_reset(dataId, {'reset_type': action})
+                    redfish().do_reset(dataId, {'ResetType': action})
                 except rest.ApiException as err:
                     message = loads(err.body)['message']
                     if message == 'value not found in map':

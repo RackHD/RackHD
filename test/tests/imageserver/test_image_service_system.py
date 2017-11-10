@@ -352,7 +352,7 @@ class test_image_service_system(fit_common.unittest.TestCase):
         # Reboot the node to begin rediscover.
         resetresponse = fit_common.rackhdapi(
             '/redfish/v1/Systems/' + node + '/Actions/ComputerSystem.Reset', action='post',
-            payload={"reset_type": "ForceRestart"})
+            payload={"ResetType": "ForceRestart"})
         self.assertTrue(resetresponse['status'] < 209,
                         'Incorrect HTTP return code, expected <209 , got:' + str(resetresponse['status']))
         # Delete original node
