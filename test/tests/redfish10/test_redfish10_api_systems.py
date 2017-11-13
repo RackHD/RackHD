@@ -95,10 +95,10 @@ class redfish10_api_systems(fit_common.unittest.TestCase):
                                 "PushPowerButton"
                               ]
             # iterate through all posted reset types for each node
-            for reset_type in api_data['json']['reset_type@Redfish.AllowableValues']:
+            for reset_type in api_data['json']['ResetType@Redfish.AllowableValues']:
                 if fit_common.VERBOSITY >= 2:
                     print "Checking: {0}".format(reset_type)
-                self.assertIn(reset_type, reset_commands, "Incorrect reset_type")
+                self.assertIn(reset_type, reset_commands, "Incorrect ResetType")
 
     def test_redfish_v1_systems_id_actions_computersystemreset_post(self):
         # iterate through node IDs
@@ -107,7 +107,7 @@ class redfish10_api_systems(fit_common.unittest.TestCase):
             _delete_active_tasks(nodeid)
             api_data = fit_common.rackhdapi('/redfish/v1/Systems/' + nodeid + '/Actions/ComputerSystem.Reset')
             self.assertEqual(api_data['status'], 200, 'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
-            on_payload = {"reset_type": "On"}
+            on_payload = {"ResetType": "On"}
             api_data = fit_common.rackhdapi('/redfish/v1/Systems/' + nodeid +
                                             '/Actions/ComputerSystem.Reset', action='post',
                                             payload=on_payload)

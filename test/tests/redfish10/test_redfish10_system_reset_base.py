@@ -85,7 +85,7 @@ def rackhd_compute_node_power_action(nodeid, action):
             print "ERROR: invalid action in function call - ", str(action)
     else:
         on_url = "/redfish/v1/Systems/" + nodeid + "/Actions/ComputerSystem.Reset"
-        on_payload = {"reset_type": action}
+        on_payload = {"ResetType": action}
         on_data = fit_common.rackhdapi(on_url, action='post', payload=on_payload)
         if on_data['status'] == 202:
             taskid = on_data['json']["@odata.id"].split('/')[-1]

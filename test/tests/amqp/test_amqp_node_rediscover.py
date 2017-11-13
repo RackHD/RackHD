@@ -284,7 +284,7 @@ class test_node_rediscover_amqp_message(unittest.TestCase):
         # now give the node a kick
         response = fit_common.rackhdapi(
             '/redfish/v1/Systems/' + nodeid + '/Actions/ComputerSystem.Reset', action='post',
-            payload={"reset_type": "ForceRestart"})
+            payload={"ResetType": "ForceRestart"})
         self.assertTrue(
             response['status'] < 209, 'Incorrect HTTP return code, expected<209, got:' + str(response['status']))
         graphid = response['json']["@odata.id"].split('/redfish/v1/TaskService/Tasks/')[1]
