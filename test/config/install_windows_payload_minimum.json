@@ -1,5 +1,6 @@
 {
   "bootstrap-payload": {
+    "name": "Graph.InstallWindowsServer",
     "options": {
       "defaults": {
         "productkey": "D2N9P-3P6X9-2R39C-7RTCD-MDVJX",
