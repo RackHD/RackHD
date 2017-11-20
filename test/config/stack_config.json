@@ -65,6 +65,8 @@
   "docker_local_run":{
     "rackhd_host": "localhost",
     "type": "linux",
+    "ucs_service_uri" : "https://localhost:7080",
+    "ucsm_config_file" : "./tests/ucs/ucsm_config.xml",
     "install-config": {
       "ports": {
         "mongo_port": 27017,
