@@ -1,3 +1,5 @@
+# Copyright 2017, Dell EMC, Inc.
+
 zuul:
   host:
     connect-timeout-millis: 100000
@@ -304,6 +306,9 @@ smi:
         -
           name: "configureBios"
           url: "/api/1.0/server/configuration/configureBios"
+        -
+          name: "systemErase"
+          url: "/api/1.0/server/configuration/systemErase"
       name: "configuration"
     -
       endpoint:
