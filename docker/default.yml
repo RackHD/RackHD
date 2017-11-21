@@ -1,0 +1,95 @@
+#Copyright © 2017 Dell Inc. or its subsidiaries.  All Rights Reserved. 
+---
+#This file is used as InfraSIM configuration file
+name: default
+
+#Node type of your infrasim compute, this will determine the
+#bmc emulation data and bios binary to use.
+#Supported compute node names:
+#	quanta_d51
+#	quanta_t41
+#	dell_c6320
+#	dell_r630
+#	dell_r730
+#	dell_r730xd
+#	s2600kp
+#	s2600tp
+#	s2600wtt
+#type: dell_r730
+type: quanta_d51
+
+compute:
+
+    boot:
+        splash: /usr/local/infrasim/data/boot_logo.jpg
+    cpu:
+        #Set node cpu num, the default value is 2
+        #
+        quantities: 2
+
+        #Set node cpu type, the default value is Haswell
+        #Supported type:
+        #	core2duo:  Intel(R) Core(TM)2 Duo CPU     T7700  @ 2.40GHz
+        #	coreduo:   Genuine Intel(R) CPU           T2600  @ 2.16GHz
+        #	Nehalem:   Intel Core i7 9xx (Nehalem Class Core i7)
+        #	Westmere:  Westmere E56xx/L56xx/X56xx (Nehalem-C)
+        #	SandyBridge:  Intel Xeon E312xx (Sandy Bridge)
+        #	IvyBridge:  Intel Xeon E3-12xx v2 (Ivy Bridge)
+        #	Haswell:  Intel Core Processor (Haswell)
+        #	Broadwell:  Intel Core Processor (Broadwell)
+        #   host:  default, KVM processor with all supported host features
+        #          (only available in KVM mode)
+        #
+        type: Haswell
+
+    memory:
+        #Set node memory size, the unit is MB.
+        #The default vaule is 512MB
+        #
+        size: 2048 
+
+    storage_backend:
+        #Set drive list and define drive attributes
+        -
+            type: ahci
+            max_drive_per_controller: 6 
+            drives:
+            
+            -
+                #Set node disk size, the unit is GB.
+                #The default value is 8GB
+                #
+                size: 8
+            
+
+    networks:
+        #Set network list and define drive attributes
+        #
+        
+        -
+            #Set node network mode for qemu. The options should be:
+            #	nat		--default
+            #	macvtap
+            #	bridge
+            #
+            network_mode: bridge 
+
+            #If you use bridge mode, please specify this with bridge name
+            #
+            network_name: br0
+
+            #Set network device for qemu. The options should be:
+            #	vmxnet3 
+            #   e1000       --default
+            device: e1000
+
+            #Set MAC for this network, this MAC is generated with
+            #datetime as random seed, but you can specify yours
+            #
+            #mac: 00:60:16:c2:98:27
+        
+
+    # cdrom: /dev/sr0
+    
+    bmc:
+        interface: br0
