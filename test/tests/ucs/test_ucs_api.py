@@ -24,7 +24,6 @@ UCSM_IP = fit_common.fitcfg().get('ucsm_ip')
 UCS_SERVICE_URI = fit_common.fitcfg().get('ucs_service_uri')
 UCSM_USER, UCSM_PASS = get_ucs_cred()
 
-
 @attr(all=True, regression=True, smoke=False, ucs=True)
 class ucs_api(unittest.TestCase):
 
@@ -142,7 +141,7 @@ class ucs_api(unittest.TestCase):
         total_elements = 0
         for elementTypes in api_data["json"]:
             for element in api_data["json"][str(elementTypes)]:
-                url, headers = self.ucs_url_factory("catalog", identifier=element["relative_path"].split("/")[-1])
+                url, headers = self.ucs_url_factory("catalog", identifier=element["relative_path"].strip("/"))
                 api_data_c = fit_common.restful(url, rest_headers=headers)
                 self.assertEqual(api_data_c['status'], 200,
                                  'Incorrect HTTP return code, expected 200, got:' + str(api_data_c['status']))
