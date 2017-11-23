@@ -124,12 +124,94 @@ class rackhd20_ucs_discovery(unittest.TestCase):
                                 'Expected to discover {0} UCS nodes, got: {1}'
                                 .format(0, newNodeCount - initialNodeCount))
 
-    @depends(after=test_api_20_ucs_discovery)
+    @depends(after=[test_api_20_ucs_discovery])
+    @unittest.skip("Skipping 'test_api_redfish_chassis' bug RAC-5358")
+    def test_api_redfish_chassis(self):
+        """
+        Tests the redfish/chassis routes with UCS nodes
+        :return:
+        """
+        ucsEnclList = self.get_ucs_encl_id_list()
+        errUrls = ''
+
+        api_data = fit_common.rackhdapi('/redfish/v1/Chassis')
+        self.assertEqual(api_data['status'], 200,
+                         'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
+        for chassis in api_data['json']['Members']:
+            url = chassis['@odata.id']
+            id = url[len('/redfish/v1/Chassis/'):]
+            if id in ucsEnclList:
+                ucsEnclList.remove(id)
+                api_data = fit_common.rackhdapi(url)
+                if api_data['status'] != 200:
+                    errUrls += url + ' returned status ' + str(api_data['status']) + ',\n'
+        self.assertEqual(len(ucsEnclList), 0, 'not all UCS chassis were listed under /chassis')
+        self.assertEqual(len(errUrls), 0, errUrls)
+
+    @depends(after=[test_api_20_ucs_discovery])
+    def test_api_20_ucs_discover_and_catalog_all(self):
+        """
+        Tests the UCS Discovery and Catalon All workflow in rackHD
+        :return:
+        """
+        # delete all previously discovered nodes and catalogs
+        self.assertTrue(ucs_common.restore_node_utility(), "failed to restore nodes")
+        self.assertTrue(ucs_common.restore_obms_utility(), "failed to restore obms")
+
+        initialNodeCount = len(self.get_ucs_node_list())
+        expected_ucs_logical_nodes = ucs_common.get_service_profile_count()
+        expected_ucs_physical_nodes = ucs_common.get_physical_server_count()
+
+        data_payload = {
+            "name": "Graph.Ucs.Discovery",
+            "options": {
+                "defaults": {
+                    "username": ucs_common.UCSM_USER,
+                    "password": ucs_common.UCSM_PASS,
+                    "ucs": ucs_common.UCSM_IP,
+                    "uri": ucs_common.UCS_SERVICE_URI
+                },
+                "when-discover-physical-ucs": {
+                    "discoverPhysicalServers": "true",
+                },
+                "when-discover-logical-ucs": {
+                    "discoverLogicalServer": "true"
+                },
+                "when-catalog-ucs": {
+                    "autoCatalogUcs": "true"
+                }
+            }
+        }
+
+        header = {"Content-Type": "application/json"}
+        api_data = fit_common.rackhdapi("/api/2.0/workflows", action="post",
+                                        headers=header, payload=data_payload)
+        id = api_data["json"]["context"]["graphId"]
+        self.assertEqual(api_data['status'], 201,
+                         'Incorrect HTTP return code, expected 201, got:' + str(api_data['status']))
+        status = ucs_common.wait_utility(str(id), 0, "Discovery", 240)
+        self.assertEqual(status, 'succeeded', 'Discovery graph returned status {}'.format(status))
+
+        newNodeCount = len(self.get_ucs_node_list())
+
+        logs.info_1("Found {0} Nodes after cataloging the UCS".format(len(api_data['json'])))
+
+        self.assertEqual(newNodeCount - initialNodeCount,
+                         expected_ucs_physical_nodes + expected_ucs_logical_nodes,
+                         'Expected to discover {0} UCS nodes, got: {1}'
+                         .format(expected_ucs_physical_nodes + expected_ucs_logical_nodes,
+                                 newNodeCount - initialNodeCount))
+
+    @depends(after=test_api_20_ucs_discover_and_catalog_all)
     def test_api_20_ucs_serviceProfile_discovery(self):
         """
         Tests the UCS Service Profile Discovery workflow in rackHD
         :return:
         """
+        # delete all previously discovered nodes and catalogs
+        self.assertTrue(ucs_common.restore_node_utility(), "failed to restore nodes")
+        self.assertTrue(ucs_common.restore_obms_utility(), "failed to restore obms")
+
         expected_ucs_logical_nodes = ucs_common.get_service_profile_count()
         if (expected_ucs_logical_nodes == 0):
             raise unittest.SkipTest("No Service Profiles Defined")
@@ -184,114 +266,9 @@ class rackhd20_ucs_discovery(unittest.TestCase):
         self.assertEqual(status, 'succeeded', 'Service Profile Discovery graph returned status {}'.format(status))
 
         newNodeCount = len(self.get_ucs_node_list())
-
         self.assertGreaterEqual(newNodeCount - initialNodeCount, 0,
                                 'Expected to discover {0} UCS nodes, got: {1}'
                                 .format(0, newNodeCount - initialNodeCount))
-
-    @depends(after=[test_api_20_ucs_discovery])
-    def test_api_20_ucs_catalog(self):
-        """
-        Tests the UCS Catalog workflow in rackHD
-        :return:
-        """
-
-        ucsNodes = self.get_ucs_node_list()
-        errNodes = ''
-        errGraphs = ''
-
-        for x in range(len(ucsNodes)):
-            postUrl = '/api/2.0/nodes/' + str(ucsNodes[x]["id"]) + "/workflows?name=Graph.Ucs.Catalog"
-            header = {"Content-Type": "application/json"}
-            api_data = fit_common.rackhdapi(postUrl, headers=header, action="post", payload={})
-            if api_data['status'] != 201:
-                errNodes += 'POST for node {} returned {}, '.format(ucsNodes[x]['id'], api_data['status'])
-            status = ucs_common.wait_utility(api_data["json"]["instanceId"], 0, "Catalog")
-            if status != 'succeeded':
-                errGraphs += 'graph id {} finished with status: {}, '.format(api_data["json"]["instanceId"], status)
-
-            logs.info_1("Posted URL: {0} with status: {1}".format(postUrl, api_data['status']))
-
-        self.assertEqual(len(errNodes), 0, errNodes)
-        self.assertEqual(len(errGraphs), 0, errGraphs)
-
-    @depends(after=[test_api_20_ucs_discovery])
-    @unittest.skip("Skipping 'test_api_redfish_chassis' bug RAC-5358")
-    def test_api_redfish_chassis(self):
-        """
-        Tests the redfish/chassis routes with UCS nodes
-        :return:
-        """
-        ucsEnclList = self.get_ucs_encl_id_list()
-        errUrls = ''
-
-        api_data = fit_common.rackhdapi('/redfish/v1/Chassis')
-        self.assertEqual(api_data['status'], 200,
-                         'Incorrect HTTP return code, expected 200, got:' + str(api_data['status']))
-        for chassis in api_data['json']['Members']:
-            url = chassis['@odata.id']
-            id = url[len('/redfish/v1/Chassis/'):]
-            if id in ucsEnclList:
-                ucsEnclList.remove(id)
-                api_data = fit_common.rackhdapi(url)
-                if api_data['status'] != 200:
-                    errUrls += url + ' returned status ' + str(api_data['status']) + ',\n'
-        self.assertEqual(len(ucsEnclList), 0, 'not all UCS chassis were listed under /chassis')
-        self.assertEqual(len(errUrls), 0, errUrls)
-
-    @depends(after=[test_api_20_ucs_catalog])
-    def test_api_20_ucs_discover_and_catalog_all(self):
-        """
-        Tests the UCS Discovery and Catalon All workflow in rackHD
-        :return:
-        """
-        # delete all previously discovered nodes and catalogs
-        self.assertTrue(ucs_common.restore_node_utility(), "failed to restore nodes")
-        self.assertTrue(ucs_common.restore_obms_utility(), "failed to restore obms")
-
-        initialNodeCount = len(self.get_ucs_node_list())
-        expected_ucs_logical_nodes = ucs_common.get_service_profile_count()
-        expected_ucs_physical_nodes = ucs_common.get_physical_server_count()
-
-        data_payload = {
-            "name": "Graph.Ucs.Discovery",
-            "options": {
-                "defaults": {
-                    "username": ucs_common.UCSM_USER,
-                    "password": ucs_common.UCSM_PASS,
-                    "ucs": ucs_common.UCSM_IP,
-                    "uri": ucs_common.UCS_SERVICE_URI
-                },
-                "when-discover-physical-ucs": {
-                    "discoverPhysicalServers": "true",
-                },
-                "when-discover-logical-ucs": {
-                    "discoverLogicalServer": "true"
-                },
-                "when-catalog-ucs": {
-                    "autoCatalogUcs": "true"
-                }
-            }
-        }
-
-        header = {"Content-Type": "application/json"}
-        api_data = fit_common.rackhdapi("/api/2.0/workflows", action="post",
-                                        headers=header, payload=data_payload)
-        id = api_data["json"]["context"]["graphId"]
-        self.assertEqual(api_data['status'], 201,
-                         'Incorrect HTTP return code, expected 201, got:' + str(api_data['status']))
-        status = ucs_common.wait_utility(str(id), 0, "Discovery", 240)
-        self.assertEqual(status, 'succeeded', 'Discovery graph returned status {}'.format(status))
-
-        newNodeCount = len(self.get_ucs_node_list())
-
-        logs.info_1("Found {0} Nodes after cataloging the UCS".format(len(api_data['json'])))
-
-        self.assertEqual(newNodeCount - initialNodeCount,
-                         expected_ucs_physical_nodes + expected_ucs_logical_nodes,
-                         'Expected to discover {0} UCS nodes, got: {1}'
-                         .format(expected_ucs_physical_nodes + expected_ucs_logical_nodes,
-                                 newNodeCount - initialNodeCount))
 
 
 if __name__ == '__main__':
