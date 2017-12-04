@@ -22,9 +22,12 @@ INITIAL_NODES = {}
 INITIAL_OBMS = {}
 MAX_WAIT = 240
 UCSM_IP = fit_common.fitcfg().get('ucsm_ip')
-UCSM_USER, UCSM_PASS = get_ucs_cred()
-UCS_SERVICE_URI = fit_common.fitcfg().get('ucs_service_uri')
+UCSM_USER = fit_common.fitcfg().get('ucsm_user')
+UCSM_PASS = fit_common.fitcfg().get('ucsm_pass')
 EXPECTED_UCS_PHYSICAL_NODES = 22
+if fit_common.fitcfg().get('physical_nodes_count') is not None:
+    EXPECTED_UCS_PHYSICAL_NODES = int(fit_common.fitcfg().get('physical_nodes_count'))
+UCS_SERVICE_URI = fit_common.fitcfg().get('ucs_service_uri')
 
 
 def get_nodes_utility():

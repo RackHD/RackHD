@@ -1,0 +1,7 @@
+{
+    "ucsm_ip":"172.31.128.252",
+    "ucsm_user":"user",
+    "ucsm_pass":"password",
+    "physical_nodes_count": 4
+}
+
