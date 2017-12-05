@@ -192,8 +192,6 @@ class rackhd20_ucs_pollers(unittest.TestCase):
                 if poll_len > 10:
                     errorlist.append('Error: Poller {} ID: {} - Number of cached polls should not exceed 10'
                                      .format(poller_id, poller))
-                elif poll_len == 0:
-                    errorlist.append('Error: Poller {} ID: {} - Pollers not running'.format(poller_id, poller))
         if errorlist != []:
             logs.info_2("{}".format(fit_common.json.dumps(errorlist, indent=4)))
             self.assertEqual(errorlist, [], "Error reported.")
