@@ -108,6 +108,7 @@ class rackhd20_ucs_discovery(unittest.TestCase):
                          .format(expected_ucs_physical_nodes, newNodeCount - initialNodeCount))
 
         # rerun discovery and verify duplicate nodes are not created
+        initialNodeCount = len(self.get_ucs_node_list())
         api_data = fit_common.rackhdapi("/api/2.0/workflows", action="post",
                                         headers=header, payload=data_payload)
         id = api_data["json"]["context"]["graphId"]
@@ -117,10 +118,9 @@ class rackhd20_ucs_discovery(unittest.TestCase):
         self.assertEqual(status, 'succeeded', 'Discovery graph returned status {}'.format(status))
 
         newNodeCount = len(self.get_ucs_node_list())
-
         logs.info_1("Found {0} Nodes after cataloging the UCS".format(len(api_data['json'])))
 
-        self.assertGreaterEqual(newNodeCount - initialNodeCount, 0,
+        self.assertEqual(newNodeCount - initialNodeCount, 0,
                                 'Expected to discover {0} UCS nodes, got: {1}'
                                 .format(0, newNodeCount - initialNodeCount))
 
