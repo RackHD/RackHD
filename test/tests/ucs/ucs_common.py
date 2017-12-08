@@ -11,7 +11,6 @@ import fit_path  # NOQA: unused import
 from common import fit_common
 import time
 import flogging
-from config.settings import get_ucs_cred
 from ucsmsdk import ucshandle
 from ucsmsdk.utils.ucsbackup import import_ucs_backup
 import os
@@ -266,3 +265,61 @@ def is_ucs_valid():
             time.sleep(5)
             ucsCount = get_physical_server_count()
     return True
+
+
+def get_ucs_node_list():
+    """
+    Get UCS nodes
+    """
+    nodeList = []
+    api_data = fit_common.rackhdapi('/api/2.0/nodes')
+    for node in api_data['json']:
+        if node["obms"] != [] and node["obms"][0]["service"] == "ucs-obm-service":
+            nodeList.append(node)
+    return nodeList
+
+
+def get_ucs_encl_id_list():
+    """
+    Get UCS enclosure nodes
+    """
+    enclIdList = []
+    nodeList = get_ucs_node_list()
+    for node in nodeList:
+        if node["type"] == 'enclosure':
+            enclIdList.append(node['id'])
+    return enclIdList
+
+
+def get_ucs_compute_id_list():
+    """
+    Get UCS compute nodes
+    """
+    enclIdList = []
+    nodeList = get_ucs_node_list()
+    for node in nodeList:
+        if node["type"] == 'compute':
+            enclIdList.append(node['id'])
+    return enclIdList
+
+
+def validate_redfish_data_payload(data, schema, url):
+    """
+    Check non-empty data for redfish API data payload
+    """
+    errStr = ""
+    schema_types = {
+        "int": int,
+        "str": unicode, # noqa: undefined name
+        "dict": dict,
+        "list": list
+    }
+
+    for key in schema:
+        data_type = schema_types[key]
+        test_items = schema[key]
+        for item in test_items:
+            value = data[item]
+            if not isinstance(value, data_type) or not value:
+                errStr += "Invalid data {{ {}: {} }} for {}, \n".format(item, value, url)
+    return errStr
