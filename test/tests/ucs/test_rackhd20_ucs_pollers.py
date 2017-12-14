@@ -16,6 +16,7 @@ from nose.plugins.attrib import attr
 import test_api_utils
 import ucs_common
 import flogging
+import time
 
 logs = flogging.get_loggers()
 
@@ -167,7 +168,12 @@ class rackhd20_ucs_pollers(unittest.TestCase):
                 poller_id = poller_dict[poller]["poller_id"]
                 logs.info_2("Poller: {}  ID: {} ".format(poller, str(poller_id)))
                 poller_data = test_api_utils.get_poller_data_by_id(poller_id)
-                if poller_data == []:
+                timeout = 120
+                while (poller_data == [] and timeout > 0):
+                    timeout -= 5
+                    time.sleep(5)
+                    poller_data = test_api_utils.get_poller_data_by_id(poller_id)
+                if timeout <= 0:
                     errorlist.append("Error: Node {} Poller ID {}, {} failed to return any data"
                                      .format(node, poller_id, poller))
                 logs.info_5(fit_common.json.dumps(poller_data, indent=4))
@@ -176,7 +182,7 @@ class rackhd20_ucs_pollers(unittest.TestCase):
             logs.info_2("{}".format(fit_common.json.dumps(errorlist, indent=4)))
             self.assertEqual(errorlist, [], "Error reported.")
 
-    @depends(after=[test_api_20_get_pollers_by_id])
+    @depends(after=[test_api_20_verify_poller_headers])
     def test_api_20_verify_poller_default_cache(self):
         msg = "Description: Check number of polls being kept for poller ID"
         logs.info_2("\t{0}".format(msg))
