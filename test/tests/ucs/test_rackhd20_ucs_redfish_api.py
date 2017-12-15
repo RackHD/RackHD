@@ -131,6 +131,7 @@ class rackhd20_ucs_redfish_api(unittest.TestCase):
         self.assertEqual(len(errUrls), 0, errUrls)
 
     @depends(after=[test_api_redfish_chassis])
+    @unittest.skip("Skipping 'test_api_redfish_chassis_thermal' which is not ready")
     def test_api_redfish_chassis_thermal(self):
         """
         Tests the redfish /Chassis/{identifier}/Thermal APIs with UCS nodes
@@ -146,6 +147,7 @@ class rackhd20_ucs_redfish_api(unittest.TestCase):
         self.assertEqual(len(errUrls), 0, errUrls)
 
     @depends(after=[test_api_redfish_chassis])
+    @unittest.skip("Skipping 'test_api_redfish_chassis_power' which is not ready")
     def test_api_redfish_chassis_power(self):
         """
         Tests the redfish /Chassis/{identifier}/Power APIs with UCS nodes
@@ -231,6 +233,7 @@ class rackhd20_ucs_redfish_api(unittest.TestCase):
         self.assertEqual(len(errUrls), 0, errUrls)
 
     @depends(after=[test_api_redfish_system])
+    @unittest.skip("Skipping 'test_api_redfish_simple_storage' which is not ready")
     def test_api_redfish_simple_storage(self):
         """
         Tests the redfish /Systems/{identifier}/simpleStorage APIs with UCS nodes

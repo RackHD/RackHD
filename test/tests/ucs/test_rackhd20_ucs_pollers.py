@@ -168,8 +168,9 @@ class rackhd20_ucs_pollers(unittest.TestCase):
                 poller_id = poller_dict[poller]["poller_id"]
                 logs.info_2("Poller: {}  ID: {} ".format(poller, str(poller_id)))
                 poller_data = test_api_utils.get_poller_data_by_id(poller_id)
-                timeout = 120
-                while (poller_data == [] and timeout > 0):
+                timeout = 60
+                while (poller_data == {} and timeout > 0):
+                    logs.info_2("Sleep 5s to wait for poller data for {0}".format(poller_id))
                     timeout -= 5
                     time.sleep(5)
                     poller_data = test_api_utils.get_poller_data_by_id(poller_id)
@@ -193,6 +194,13 @@ class rackhd20_ucs_pollers(unittest.TestCase):
                 poller_id = poller_dict[poller]["poller_id"]
                 poller_data = test_api_utils.get_poller_data_by_id(poller_id)
                 poll_len = len(poller_data)
+                timeout = 60
+                while (poll_len == 0 and timeout > 0):
+                    logs.info_2("Sleep 5s to wait for poller data for {0}".format(poller_id))
+                    timeout -= 5
+                    time.sleep(5)
+                    poller_data = test_api_utils.get_poller_data_by_id(poller_id)
+                    poll_len = len(poller_data)
                 logs.info_2("Poller: {}  ID: {} ".format(poller, str(poller_id)))
                 logs.info_2("Number of polls for " + str(poller_id) + ": " + str(len(poller_data)))
                 if poll_len > 10:
