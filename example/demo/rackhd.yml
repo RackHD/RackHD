@@ -1,0 +1,16 @@
+apps:
+  - script: index.js
+    name: on-taskgraph
+    cwd: /RackHD/on-taskgraph
+  - script: index.js
+    name: on-http
+    cwd: /RackHD/on-http
+  - script: index.js
+    name: on-dhcp-proxy
+    cwd: /RackHD/on-dhcp-proxy
+  - script: index.js
+    name: on-syslog
+    cwd: /RackHD/on-syslog
+  - script: index.js
+    name: on-tftp
+    cwd: /RackHD/on-tftp

@@ -1,0 +1,65 @@
+{
+    "CIDRNet": "172.31.128.0/22",
+    "amqp": "amqp://localhost",
+    "apiServerAddress": "172.31.128.1",
+    "apiServerPort": 9080,
+    "broadcastaddr": "172.31.131.255",
+    "dhcpGateway": "172.31.128.1",
+    "dhcpProxyBindAddress": "172.31.128.1",
+    "dhcpProxyBindPort": 4011,
+    "dhcpSubnetMask": "255.255.252.0",
+    "gatewayaddr": "172.31.128.1",
+    "httpEndpoints": [
+        {
+            "address": "0.0.0.0",
+            "port": 9090,
+            "httpsEnabled": false,
+            "proxiesEnabled": true,
+            "authEnabled": false,
+            "httpsCert": "data/dev-cert.pem",
+            "httpsKey": "data/dev-key.pem",
+            "routers": "northbound-api-router"
+        },
+        {
+            "address": "0.0.0.0",
+            "port": 8443,
+            "httpsEnabled": true,
+            "proxiesEnabled": true,
+            "authEnabled": true,
+            "routers": "northbound-api-router"
+        },
+        {
+            "address": "172.31.128.1",
+            "port": 9080,
+            "httpsEnabled": false,
+            "proxiesEnabled": true,
+            "authEnabled": false,
+            "routers": "southbound-api-router"
+        }
+    ],
+    "httpDocsRoot": "./build/apidoc",
+    "httpFileServiceRoot": "./static/files",
+    "httpFileServiceType": "FileSystem",
+    "httpProxies": [{
+        "localPath": "/repo/",
+        "server": "http://10.240.19.193",
+        "remotePath": "/repo/"
+    }],
+    "httpStaticRoot": "/opt/monorail/static/http",
+    "authUsername": "admin",
+    "authPasswordHash": "KcBN9YobNV0wdux8h0fKNqi4uoKCgGl/j8c6YGlG7iA0PB3P9ojbmANGhDlcSBE0iOTIsYsGbtSsbqP4wvsVcw==",
+    "authPasswordSalt": "zlxkgxjvcFwm0M8sWaGojh25qNYO8tuNWUMN4xKPH93PidwkCAvaX2JItLA3p7BSCWIzkw4GwWuezoMvKf3UXg==",
+    "authTokenSecret": "RackHDRocks!",
+    "authTokenExpireIn": 86400,
+    "autoCreateObm": "true",
+    "mongo": "mongodb://localhost/pxe",
+    "sharedKey": "qxfO2D3tIJsZACu7UA6Fbw0avowo8r79ALzn+WeuC8M=",
+    "statsd": "127.0.0.1:8125",
+    "subnetmask": "255.255.252.0",
+    "syslogBindAddress": "172.31.128.1",
+    "syslogBindPort": 514,
+    "tftpBindAddress": "172.31.128.1",
+    "tftpBindPort": 69,
+    "tftpRoot": "./static/tftp",
+    "minLogLevel": 0
+}
