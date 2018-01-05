@@ -29,7 +29,8 @@
                         "ipAddr": "192.168.1.29",
                         "gateway": "192.168.1.1",
                         "netmask": "255.255.255.0",
-                        "vlanIds": [104, 105]
+                        "vlanIds": [104, 105],
+                        "mtu": 9000
                     },
                     "ipv6": {
                         "ipAddr": "fec0::6ab4:0:5efe:157.60.14.21",
@@ -54,6 +55,27 @@
                     }
                 }
             ],
+            "bonds": [
+                {
+                    "name": "bond0",
+                    "nics": [
+                        "em2",
+                        "p1p2"
+                    ],
+                    "bondvlaninterfaces": [
+                        {
+                            "vlanid": 100,
+                            "ipv4": {
+                                "ipAddr": "192.168.100.100",
+                                "gateway": "192.168.100.1",
+                                "netmask": "255.255.255.0"
+                            }
+
+                        }
+                    ]
+                }
+
+            ],
             "kvm": true,
             "installDisk": "/dev/sda",
             "installPartitions": [
@@ -72,6 +94,14 @@
                     "size": "auto",
                     "fsType": "ext3"
                 }
+            ],
+            "packages": [
+                "@^infrastructure-server-environment"
+            ],
+            "disableServices": [
+                "kdump",
+                "firewalld",
+                "NetworkManager"
             ]
         }
     }
