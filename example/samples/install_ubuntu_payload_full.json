@@ -2,6 +2,7 @@
     "options": {
         "defaults": {
             "version": "trusty",
+            "osName": "ubuntu",
             "repo": "http://172.31.128.1:8080/ubuntu",
             "rootPassword": "RackHDRocks!",
             "hostname": "rackhd-node",
@@ -70,7 +71,26 @@
                 }
             ],
             "kvm": true,
-            "installDisk": "/dev/sda"
+	    "timezone": "UTC",
+	    "ntp": "192.168.1.21",
+            "installDisk": "/dev/sda",
+            "installPartitions": [
+                {
+                    "mountPoint": "/boot",
+                    "size": "500",
+                    "fsType": "ext4"
+                },
+                {
+                    "mountPoint": "swap",
+                    "size": "8192",
+                    "fsType": "swap"
+                },
+                {
+                    "mountPoint": "/",
+                    "size": "auto",
+                    "fsType": "ext4"
+                }
+            ]
         }
     }
 }
