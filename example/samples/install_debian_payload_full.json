@@ -85,7 +85,6 @@
                     "size": "10000",
                     "fsType": "ext4"
                 },
-
                 {
                     "mountPoint": "/",
                     "size": "auto",
