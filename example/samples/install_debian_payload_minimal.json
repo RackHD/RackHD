@@ -1,6 +1,6 @@
 {
     "options": {
-	"install-debian": {
+	"defaults": {
 		"rootPassword": "SamePassword",
 		"osName": "debian",
 		"version": "stretch",

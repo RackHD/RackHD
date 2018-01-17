@@ -1,6 +1,6 @@
 {
     "options": {
-        "install-debian": {
+        "defaults": {
             "rootPassword": "RackHDRocks!",
             "hostname": "rackhd",
             "domain": "rackhd.io",
@@ -61,4 +61,3 @@
         }
     }
 }
-
