@@ -2,7 +2,8 @@
     "options": {
         "defaults": {
             "repo": "http://172.31.128.1:8080/ubuntu",
-            "version": "trusty"
+            "version": "trusty",
+            "osName": "ubuntu"
         }
     }
 }

@@ -1,0 +1,9 @@
+{
+    "options": {
+	"defaults": {
+		"osName": "debian",
+		"version": "stretch",
+		"repo": "http://172.31.128.1:8080/debian"
+		}
+	}
+}
