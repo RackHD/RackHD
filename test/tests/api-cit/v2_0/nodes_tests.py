@@ -335,9 +335,11 @@ class NodesTests(fit_common.unittest.TestCase):
         self.test_node_tags_patch()
         t = 'tag3'
         logs.info(" Check to make sure invalid tag is not deleted")
-        Api().nodes_master_del_tag_by_id(tag_name=t)
-        rsp = self.__client.last_response
-        codes.append(rsp)
+        try:
+            Api().nodes_master_del_tag_by_id(tag_name=t)
+        except ApiException as e:
+            self.assertEqual(404, e.status, msg='unexpected response {0}, expected 404'.format(e.status))
+
         logs.info(" Test to check valid tags are deleted")
         for t in self.__test_tags.get('tags'):
             Api().nodes_master_del_tag_by_id(tag_name=t)
