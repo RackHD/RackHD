@@ -1,27 +1,27 @@
 [submodule "on-http"]
 	path = on-http
-	url = https://github.com/RackHD/on-http.git
+	url = https://github.com/AlaricChan/on-http.git
 [submodule "on-tftp"]
 	path = on-tftp
-	url = https://github.com/RackHD/on-tftp.git
+	url = https://github.com/AlaricChan/on-tftp.git
 [submodule "on-dhcp-proxy"]
 	path = on-dhcp-proxy
-	url = https://github.com/RackHD/on-dhcp-proxy.git
+	url = https://github.com/AlaricChan/on-dhcp-proxy.git
 [submodule "on-taskgraph"]
 	path = on-taskgraph
-	url = https://github.com/RackHD/on-taskgraph.git
+	url = https://github.com/AlaricChan/on-taskgraph.git
 [submodule "on-statsd"]
 	path = on-statsd
-	url = https://github.com/RackHD/on-statsd.git
+	url = https://github.com/AlaricChan/on-statsd.git
 [submodule "on-syslog"]
 	path = on-syslog
-	url = https://github.com/RackHD/on-syslog.git
+	url = https://github.com/AlaricChan/on-syslog.git
 [submodule "on-core"]
 	path = on-core
-	url = https://github.com/RackHD/on-core.git
+	url = https://github.com/AlaricChan/on-core.git
 [submodule "on-tasks"]
 	path = on-tasks
-	url = https://github.com/RackHD/on-tasks.git
+	url = https://github.com/AlaricChan/on-tasks.git
 [submodule "on-imagebuilder"]
 	path = on-imagebuilder
 	url = https://github.com/RackHD/on-imagebuilder.git
