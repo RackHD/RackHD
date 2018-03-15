@@ -283,6 +283,12 @@ smi:
     -
       endpoint:
         -
+          name: "powerthermal"
+          url: "/api/1.0/server/powerthermal"
+      name: "powerThermalMonitoring"
+    -
+      endpoint:
+        -
           name: "configureTraps"
           url: "/api/1.0/server/configuration/trap/configureTraps/{trapDestination}"
         -
@@ -346,8 +352,14 @@ smi:
     -
       endpoint:
         -
+          name: "create"
+          url: "/api/1.0/server/osdeployment/iso/create"
+        -
           name: "deploy"
           url: "/api/1.0/server/osdeployment/deploy"
+        -
+          name: "detach"
+          url: "/api/1.0/server/osdeployment/iso/detach"
         -
           name: "isominimal"
           url: "/api/1.0/server/osdeployment/iso/minimal"

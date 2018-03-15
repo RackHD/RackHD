@@ -1,8 +1,17 @@
 {
-	"dell":{
-
-		"configServerPath": "/api/smi/uri",
-		"wsmanCallbackUri": "http://172.31.128.1:9988/api/2.0/wsmanCallback/_IDENTIFIER_"
-
-	}
+    "dell":{
+        "configServerPath": "/api/smi/uri",
+        "wsmanCallbackUri": "http://172.31.128.1:9988/api/2.0/wsmanCallback/_IDENTIFIER_",
+        "credentials": {
+            "userName": "rackhd",
+            "password": "rackhd"
+        },
+        "shareFolder": {
+            "address": "172.31.128.1",
+            "shareType": 2,
+            "shareName": "share",
+            "username": "admin",
+            "password": "admin"
+        }
+    }
 }
