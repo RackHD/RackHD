@@ -46,7 +46,7 @@ zuul:
       serviceId: SERVER-OS-DEPLOYMENT
       stripPrefix: false
     POWER-THERMAL-MONITORING:
-      path: /api/1.0/powerthermal/**
+      path: /api/1.0/server/powerthermal/**
       serviceId: POWER-THERMAL-MONITORING
       stripPrefix: false
     SWAGGER-AGGREGATOR:
