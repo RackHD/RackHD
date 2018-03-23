@@ -1,4 +1,4 @@
-rackhd (2.49.0) UNRELEASED; urgency=low
+rackhd (2.50.0) UNRELEASED; urgency=low
 
   * Initial release
   * release 1.0.0
@@ -57,5 +57,6 @@ rackhd (2.49.0) UNRELEASED; urgency=low
   * release 2.47.0
   * release 2.48.0
   * release 2.49.0
+  * release 2.50.0
 
- -- rackhd <rackhd@emc.com>  Fri, 16 Mar 2018 22:31:56 +0000
+ -- rackhd <rackhd@emc.com>  Fri, 23 Mar 2018 22:31:16 +0000
