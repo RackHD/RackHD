@@ -1,4 +1,4 @@
-#Copyright © 2017 Dell Inc. or its subsidiaries.  All Rights Reserved. 
+#Copyright © 2017 Dell Inc. or its subsidiaries.  All Rights Reserved.
 
 version: '3'
 
@@ -11,22 +11,22 @@ networks:
     driver: bridge
     ipam:
       driver: default
-      config: 
-       - subnet: 172.31.128.0/24    
-  
+      config:
+       - subnet: 172.31.128.0/24
+
   admin:
     driver: bridge
-    
+
 
 
 services:
 
   mongo: # 27017
     image: mongo:latest
-    networks: 
-      - admin 
+    networks:
+      - admin
       - southbound
-    ports: ["9090:9090"]
+    ports: ["9090:9090", "15672:15672"]
 
   rabbitmq: # 5672, 15672
     image: rabbitmq:management
@@ -65,7 +65,7 @@ services:
       - mongo
       - rabbitmq
     image: rackhd/on-http:latest
-    network_mode: "service:mongo"    
+    network_mode: "service:mongo"
     volumes:
       - "./files/mount/common:/RackHD/on-http/static/http/common"
       - "./monorail:/opt/monorail"
