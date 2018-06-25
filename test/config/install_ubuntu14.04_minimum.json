@@ -26,15 +26,15 @@
             "set-boot-pxe": "ipmi-obm-service",
             "networkDevices": [
                 {
-                    "device": "p1p1",
+                    "device": "eth0",
                     "ipv4": {
                         "ipAddr": "172.31.128.7",
                         "gateway": "172.31.128.1",
                         "netmask": "255.255.255.0"
                     },
                     "ipv6": {
-                        "ipAddr": "fec0::6ab4:0:5efe:157.60.14.21",
-                        "gateway": "fe80::5efe:131.107.25.1",
+                        "ipAddr": "2a03:6f00:4::bce1:224d",
+                        "gateway": "2a03:6f00:4::1",
                         "prefixlen": 64
                     }
                 }
