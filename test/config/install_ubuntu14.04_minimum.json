@@ -38,7 +38,7 @@
                 "_taskTimeout": 7200000
             },
             "reboot": "ipmi-obm-service",
-            "set-boot-pxe": "ipmi-obm-service",
+            "set-boot-pxe": "ipmi-obm-service"
         }
     }
 }
