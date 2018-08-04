@@ -122,7 +122,7 @@ fi
 
 ### Choose a deb repository/component , according to IS_OFFICIAL_RELEASE parameter
 if [ $ANSIBLE_PLAYBOOK != "rackhd_local" ]; then
-      if [  -n "${DEBIAN_REPOSITORY}" ];  then
+      if [ ! -n "${DEBIAN_REPOSITORY}" ];  then
            echo "${INFO_HEADER} Build VM based on RackHD Debian Source Repository : using default one in ansible playbook"
       else
            echo "${INFO_HEADER} Build VM based on RackHD Debian Source Repository : $DEBIAN_REPOSITORY "
