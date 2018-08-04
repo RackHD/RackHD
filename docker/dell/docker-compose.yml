@@ -42,7 +42,7 @@ services:
     mem_limit: 512m
     environment:
     - "GATEWAY_HOST=${HOST_IP}"
-    - _JAVA_OPTIONS=-Xmx64m -Xss256k
+    - _JAVA_OPTIONS=-Xmx128m -Xss256k
 
   device-discovery:
     container_name: device-discovery
@@ -60,7 +60,7 @@ services:
     mem_limit: 768m
     environment:
     - "SPRING_PROFILES_ACTIVE=consul"
-    - _JAVA_OPTIONS=-Xmx128m -Xss228k
+    - _JAVA_OPTIONS=-Xmx384m -Xss228k
 
   dell-server-action:
     container_name: dell-server-action
@@ -75,10 +75,10 @@ services:
     #volumes:
     #- /var/log/dell/:/var/log/dell/
     #- /etc/ssl/:/etc/ssl
-    mem_limit: 512m
+    mem_limit: 768m
     environment:
     - "SPRING_PROFILES_ACTIVE=consul"
-    - _JAVA_OPTIONS=-Xmx64m -Xss256k
+    - _JAVA_OPTIONS=-Xmx384m -Xss256k
 
   dell-chassis-inventory:
     container_name: dell-chassis-inventory
@@ -96,7 +96,7 @@ services:
     mem_limit: 768m
     environment:
     - "SPRING_PROFILES_ACTIVE=consul"
-    - _JAVA_OPTIONS=-Xmx128m -Xss256k
+    - _JAVA_OPTIONS=-Xmx384m -Xss256k
 
   dell-server-inventory:
     container_name: dell-server-inventory
@@ -114,7 +114,7 @@ services:
     mem_limit: 1024m
     environment:
     - "SPRING_PROFILES_ACTIVE=consul"
-    - _JAVA_OPTIONS=-Xmx128m -Xss256k
+    - _JAVA_OPTIONS=-Xmx384m -Xss256k
 
   dell-server-configuration-profile:
     container_name: dell-server-configuration-profile
@@ -133,7 +133,7 @@ services:
     mem_limit: 768m
     environment:
     - "SPRING_PROFILES_ACTIVE=consul"
-    - _JAVA_OPTIONS=-Xmx128m -Xss256k
+    - _JAVA_OPTIONS=-Xmx384m -Xss256k
 
   dell-server-firmwareupdate:
     container_name: dell-server-firmwareupdate
@@ -151,7 +151,7 @@ services:
     mem_limit: 1024m
     environment:
     - "SPRING_PROFILES_ACTIVE=consul"
-    - _JAVA_OPTIONS=-Xmx128m -Xss256k
+    - _JAVA_OPTIONS=-Xmx384m -Xss256k
 
   virtualnetwork:
     container_name: virtualnetwork
@@ -207,7 +207,7 @@ services:
     mem_limit: 768m
     environment:
     - "SPRING_PROFILES_ACTIVE=consul"
-    - _JAVA_OPTIONS=-Xmx128m -Xss256k
+    - _JAVA_OPTIONS=-Xmx384m -Xss256k
 
   swagger-aggregator:
     container_name: swagger-aggregator
