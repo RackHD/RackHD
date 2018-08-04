@@ -57,6 +57,10 @@
                 }
             ],
             "installDisk": "t10.ATA_____SATADOM2DSH_TYPE_C_3SE___________________20151007AA8511725043",
+            "gdbPort": "default",
+            "logPort": "default",
+            "comport": "com1",
+            "debugLogToSerial": "1",
             "switchDevices": [
                 {
                     "switchName": "vSwitch0",
