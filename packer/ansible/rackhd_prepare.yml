@@ -17,6 +17,7 @@
     - ipmitool
     - foreman
     - pm2
+    - ntpdate
 
     - integrationtest
     - postgresql
