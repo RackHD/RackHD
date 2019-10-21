@@ -19,7 +19,7 @@ requests==2.9.0
 # there are problems with the 34.0.x setuptools and nosedeps. Pin for now.
 setuptools==33.1.1
 # urllib3 1.20 breaks CIT test, specify version as a temp solution
-urllib3==1.19.1
+urllib3==1.24.2
 ucsmsdk==0.9.2.0
 exrex==0.10.4
 pyOpenSSL==17.0.0
